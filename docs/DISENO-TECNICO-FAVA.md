@@ -7,24 +7,26 @@
 
 ---
 
-## 0. Cambios respecto al contexto original
+## 0. Stack de nube (Railway + Cloudflare)
 
-El documento de contexto asumía Azure. Con el presupuesto real y el despliegue en Railway, se
-ajustan **hosting, secretos y red**, pero se conservan **PostgreSQL, RLS, NestJS, React y Entra ID**.
+Todo el despliegue vive en **Railway** (cómputo + base de datos) con **Cloudflare** delante
+(DNS, WAF, CDN, almacenamiento) y **Entra ID** solo como proveedor de identidad para el login.
+No se usa Azure como nube; el cliente sí conserva Microsoft 365, que es lo que habilita el SSO.
 
-| Tema | Contexto original (Azure) | Decisión ajustada (Railway ~US$20/mes) |
+| Componente | Servicio | Rol |
 |---|---|---|
-| Hosting backend | Azure App Service | **Railway** (servicio Node/NestJS) |
-| Base de datos | Azure Postgres Flexible | **Railway PostgreSQL** (red privada de Railway) |
-| Frontend | Azure Static Web Apps | **Cloudflare Pages** (gratis, fuera del presupuesto) |
-| CDN / WAF / anti-DDoS | Azure Front Door | **Cloudflare** (plan gratuito, proxy delante de todo) |
-| Almacenamiento de PDFs | Azure Blob + signed URL | **Cloudflare R2** (10 GB gratis) + signed URL |
-| Secretos | Azure Key Vault + Managed Identity | **Variables/secretos de Railway** (ver §5, con sus límites) |
-| Identidad (SSO) | Entra ID | **Entra ID (sin cambios)** — es solo el IdP, es gratis con M365 |
+| Backend (NestJS) | **Railway** | Servicio Node público, detrás de Cloudflare |
+| Base de datos | **Railway PostgreSQL** | Accedida por red privada de Railway (no expuesta) |
+| Frontend (React) | **Cloudflare Pages** | Estáticos gratis, no gasta cómputo de Railway |
+| CDN / WAF / anti-DDoS | **Cloudflare** | Proxy delante del backend: TLS, WAF, rate-limit |
+| Archivos (PDFs) | **Cloudflare R2** | Storage privado + signed URL |
+| Identidad (SSO) | **Entra ID / Microsoft 365** | Login OIDC; la app no guarda contraseñas |
 
-**Punto clave:** Entra ID como proveedor de identidad **no** depende de hostear en Azure. El cliente ya
-paga Microsoft 365; usarlo como IdP OIDC desde Railway no cuesta extra. Así se conserva el SSO
-confirmado por el cliente sin salir del presupuesto.
+> **Nota:** el documento de contexto original (`CONTEXTO-PROYECTO-FAVA.md`) mencionaba Azure como
+> nube. Se descartó por presupuesto: Railway + Cloudflare cubren lo mismo dentro de ~US$20/mes.
+> Lo único que se conserva del ecosistema Microsoft es **Entra ID como IdP**, que es gratis con el
+> M365 que el cliente ya paga y no requiere hostear en Azure. Donde el diseño menciona Azure
+> (§4.5, §5) es para señalar qué función de Azure se está sustituyendo, no para usarlo.
 
 ### Presupuesto estimado (mensual)
 
