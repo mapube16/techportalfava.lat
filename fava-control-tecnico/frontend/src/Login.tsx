@@ -1,0 +1,58 @@
+import { svg, ICON, FavaLogo } from './icons';
+import { ghostBtn, ghostIconBtn } from './ui';
+import { useApp } from './state';
+
+export default function Login() {
+  const { state, t, login, toggleLang, toggleTheme } = useApp();
+  const themeIcon = state.theme === 'dark' ? svg(ICON.sun, { w: 17 }) : svg(ICON.moon, { w: 17 });
+  return (
+    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1.05fr .95fr', background: 'var(--bg)' }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 48, background: 'linear-gradient(150deg,var(--primary-700),var(--primary) 60%,var(--primary-600))', color: '#fff', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, opacity: 0.09, backgroundImage: 'repeating-linear-gradient(90deg,#fff 0 1px,transparent 1px 64px),repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 64px)' }} />
+        <div style={{ position: 'relative' }}>
+          <FavaLogo height={64} onDark />
+        </div>
+        <div style={{ position: 'relative', maxWidth: 400 }}>
+          <div style={{ fontSize: 12, letterSpacing: '3px', textTransform: 'uppercase', opacity: 0.7, marginBottom: 14 }}>Control Técnico</div>
+          <h1 className="serif" style={{ fontSize: 38, lineHeight: 1.15, fontWeight: 700, margin: '0 0 16px' }}>{t.login_head}</h1>
+          <p style={{ fontSize: 15, lineHeight: 1.6, opacity: 0.82, margin: 0 }}>{t.login_body}</p>
+        </div>
+        <div style={{ position: 'relative', display: 'flex', gap: 26, fontSize: 12, opacity: 0.72 }}>
+          <span>Montaggio</span><span>Collaudo</span><span>Cantiere</span><span>Venduto / Eseguito</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: 40, position: 'relative' }}>
+        <div style={{ position: 'absolute', top: 22, right: 24, display: 'flex', gap: 8 }}>
+          <button onClick={toggleLang} style={ghostBtn}>{state.lang.toUpperCase()}</button>
+          <button onClick={toggleTheme} aria-label="theme" style={ghostIconBtn}>{themeIcon}</button>
+        </div>
+        <div style={{ width: '100%', maxWidth: 360, animation: 'favaIn .4s ease both' }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px', color: 'var(--text)' }}>{t.login_signin}</h2>
+          <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: '0 0 30px' }}>{t.login_sub}</p>
+          <button
+            onClick={login}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '14px 16px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-2)', borderRadius: 'var(--radius)', fontSize: 15, fontWeight: 500, cursor: 'pointer', boxShadow: 'var(--shadow)' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 21 21">
+              <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+              <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+              <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+              <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+            </svg>
+            {t.login_ms}
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '26px 0', color: 'var(--text-3)', fontSize: 11.5 }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            {t.login_or}
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+          <div style={{ fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.6, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
+            <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{t.login_demo}</div>
+            {t.login_demo_body}
+          </div>
+          <p style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--text-3)', margin: '30px 0 0' }}>{t.login_foot}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
