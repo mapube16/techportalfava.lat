@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Autenticación y acceso
 
-- [ ] **AUTH-01**: Usuario inicia sesión con Microsoft Entra ID (SSO); la app no gestiona contraseñas (tenant dev → tenant FAVA solo por env vars)
-- [ ] **AUTH-02**: RBAC con 3 roles (Técnico/Admin/Super Admin) almacenados en BD y asignables en la app; solo Super Admin asigna el rol Admin
+- [x] **AUTH-01**: Usuario inicia sesión con Microsoft Entra ID (SSO); la app no gestiona contraseñas (tenant dev → tenant FAVA solo por env vars)
+- [x] **AUTH-02**: RBAC con 3 roles (Técnico/Admin/Super Admin) almacenados en BD y asignables en la app; solo Super Admin asigna el rol Admin
 - [x] **AUTH-03**: Row-Level Security en Postgres: un técnico no puede leer registros de otro ni con bug de código (rol de BD sin BYPASSRLS + FORCE RLS, verificado por test e2e)
-- [ ] **AUTH-04**: Usuario desactivado (en app o en directorio) pierde acceso de inmediato
+- [x] **AUTH-04**: Usuario desactivado (en app o en directorio) pierde acceso de inmediato
 
 ### Catálogos y maestros
 
@@ -123,10 +123,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 — Fundación segura y desplegada | Pending |
-| AUTH-02 | Phase 1 — Fundación segura y desplegada | Pending |
+| AUTH-01 | Phase 1 — Fundación segura y desplegada | Complete |
+| AUTH-02 | Phase 1 — Fundación segura y desplegada | Complete |
 | AUTH-03 | Phase 1 — Fundación segura y desplegada | Complete |
-| AUTH-04 | Phase 1 — Fundación segura y desplegada | Pending |
+| AUTH-04 | Phase 1 — Fundación segura y desplegada | Complete |
 | CAT-01 | Phase 2 — Maestros y catálogos | Pending |
 | CAT-02 | Phase 2 — Maestros y catálogos | Pending |
 | CAT-03 | Phase 2 — Maestros y catálogos | Pending |

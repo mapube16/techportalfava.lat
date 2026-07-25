@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-07-25T22:31:46.623Z"
-last_activity: "2026-07-25 — 01-02 completado: RLS con FORCE, interceptor tx-por-peticion y el spike de concurrencia en verde"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-07-25T22:39:59.209Z"
+last_activity: "2026-07-25 — 01-03 completado: guard de Entra sin cache, /api/me discriminado y la escalada de roles con anti-lockout"
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 6
-  completed_plans: 3
-  percent: 50
+  completed_plans: 4
+  percent: 67
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 1 of 8 (Fundación segura y desplegada)
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Executing
-Last activity: 2026-07-25 — 01-02 completado: RLS con FORCE, interceptor tx-por-peticion y el spike de concurrencia en verde
+Last activity: 2026-07-25 — 01-03 completado: guard de Entra sin cache, /api/me discriminado y la escalada de roles con anti-lockout
 
-Progress: [█████░░░░░] 50%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -46,9 +46,10 @@ Progress: [█████░░░░░] 50%
 | Phase 01 P05 | 1 | 55 min | 55 min (3 tasks, 13 files) |
 | Phase 01 P01 | 1 | 31 min | 31 min (3 tasks, 31 files) |
 | Phase 01 P02 | 1 | 15 min | 15 min (3 tasks, 5 files) |
+| Phase 01 P03 | 1 | 45 min | 45 min (3 tasks, 28 files) |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (15 min), 01-05 (55 min), 01-01 (31 min)
+- Last 5 plans: 01-03 (45 min), 01-02 (15 min), 01-05 (55 min), 01-01 (31 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -73,6 +74,9 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 01-fundaci-n-segura-y-desplegada]: [01-02]: users y access_requests SIN politica RLS: el guard busca por entra_oid fuera de la transaccion, una politica ahi bloquearia el login
 - [Phase 01-fundaci-n-segura-y-desplegada]: [01-02]: PrismaService.base/.client devuelven el Proxy de Prisma; dentro de la clase this NO expone los delegados de modelo
 - [Phase 01-fundaci-n-segura-y-desplegada]: [01-02]: transicion multi-tabla valida bajo concurrencia bloqueando primero la nota semanal (raiz del agregado), despues las entradas
+- [Phase 01-fundaci-n-segura-y-desplegada]: [01-03]: EntraGuard consulta users por entra_oid en CADA peticion (sin cache): desactivar corta en la siguiente peticion con el mismo token
+- [Phase 01-fundaci-n-segura-y-desplegada]: [01-03]: La escalada de roles y los dos anti-lockout viven en users.service (no en decoradores); los anti-lockout se evaluan antes que el permiso
+- [Phase 01-fundaci-n-segura-y-desplegada]: [01-03]: jose 6 es ESM-only: engines.node >=22.12 (require(esm)) y Jest transpila jose con allowJs + transformIgnorePatterns
 
 ### Pending Todos
 
@@ -97,6 +101,6 @@ Nota de inventario:
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:31:46.312Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-07-25T22:39:59.194Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None
