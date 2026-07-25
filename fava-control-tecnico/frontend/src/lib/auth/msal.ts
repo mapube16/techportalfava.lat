@@ -12,7 +12,8 @@ const pca = new PublicClientApplication({
 });
 
 // Un token sirve para UN recurso: solo el scope del API propio.
-// Nunca User.Read ni scopes de Graph — el backend no puede validar tokens de Graph.
+// Nunca scopes de Microsoft Graph: sus tokens son de formato propietario y el
+// backend no puede validarlos.
 const API_SCOPE = import.meta.env.VITE_API_SCOPE;
 
 export async function initAuth(): Promise<AccountInfo | null> {

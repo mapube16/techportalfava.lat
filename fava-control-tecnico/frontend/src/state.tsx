@@ -3,13 +3,26 @@ import type { ReactNode } from 'react';
 import { AUDIT, EXPENSES, NOTES, PROJECTS, USERS, WEEK } from './data';
 import { D } from './i18n';
 import type { Dict } from './i18n';
+import { initAuth, login as msalLogin, logout as msalLogout } from './lib/auth/msal';
+import { getMe, setUnauthorizedHandler } from './lib/api/client';
+import type { MeResponse } from './lib/api/client';
 import type {
   AuditRow, DayEntry, Density, Expense, Lang, Note, Project, Role, Route, Theme, ToastData, User,
 } from './types';
 
 export type KpiSeg = 'project' | 'tech' | 'phase';
 
+/** 'boot' = aún no sabemos; el resto lo dicta GET /api/me. */
+export type SessionStatus = 'boot' | 'anon' | 'ok' | 'not_invited' | 'deactivated';
+
+const FIRST_ROUTE: Record<Role, Route> = { T: 'home', A: 'inbox', S: 'kpis' };
+// Si el usuario tiene varios roles, el más alto manda al entrar.
+const ROLE_RANK: Role[] = ['S', 'A', 'T'];
+
 export interface AppState {
+  sessionStatus: SessionStatus;
+  me: MeResponse | null;
+  myRoles: Role[];
   loggedIn: boolean;
   theme: Theme;
   lang: Lang;
@@ -39,6 +52,9 @@ export interface AppState {
 }
 
 const initialState: AppState = {
+  sessionStatus: 'boot',
+  me: null,
+  myRoles: [],
   loggedIn: false,
   theme: 'light',
   lang: 'es',
@@ -105,6 +121,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const patch = (p: Partial<AppState>) => setState((s) => ({ ...s, ...p }));
   const t = D[state.lang];
 
+  const applyMe = (me: MeResponse) => {
+    if (me.status !== 'ok') {
+      patch({ sessionStatus: me.status, me, myRoles: [], loggedIn: false, loading: false });
+      return;
+    }
+    const roles = me.user.roles;
+    const role = ROLE_RANK.find((r) => roles.includes(r)) ?? 'T';
+    let seen = false;
+    try {
+      seen = localStorage.getItem('fava_onboard') === '1';
+    } catch {
+      /* almacenamiento no disponible */
+    }
+    patch({
+      sessionStatus: 'ok', me, myRoles: roles, loggedIn: true, loading: false,
+      role, route: FIRST_ROUTE[role], onboard: !seen, onboardStep: 0,
+    });
+  };
+
+  // Sesión real: MSAL resuelve la cuenta y GET /api/me decide qué pantalla ve el
+  // usuario (ok / no invitado / desactivado). Ni el rol ni el acceso salen del cliente.
+  useEffect(() => {
+    let alive = true;
+    setUnauthorizedHandler(() => {
+      // Token muerto en cualquier llamada: vuelta a anónimo.
+      if (alive) patch({ sessionStatus: 'anon', me: null, myRoles: [], loggedIn: false });
+    });
+    (async () => {
+      try {
+        const account = await initAuth();
+        if (!alive) return;
+        if (!account) {
+          patch({ sessionStatus: 'anon' });
+          return;
+        }
+        const me = await getMe();
+        if (alive) applyMe(me);
+      } catch (e) {
+        console.error('sesión', e);
+        if (alive) patch({ sessionStatus: 'anon', me: null, myRoles: [], loggedIn: false });
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const showToast = (kind: string) => {
     const dict = D[stateRef.current.lang] as unknown as Record<string, string>;
     patch({ toast: { title: dict['toast_' + kind], body: dict['toast_' + kind + '_b'], kind } });
@@ -121,30 +185,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const inboxCount = () => stateRef.current.notes.filter((n) => n.status === 'sent').length;
 
+  // loginRedirect sale de la página; al volver, el efecto de arriba retoma la sesión.
   const login = () => {
     patch({ loading: true });
-    let seen = false;
-    try {
-      seen = localStorage.getItem('fava_onboard') === '1';
-    } catch {
-      /* almacenamiento no disponible */
-    }
-    window.setTimeout(
-      () => patch({ loggedIn: true, loading: false, route: 'kpis', role: 'S', onboard: !seen, onboardStep: 0 }),
-      400,
-    );
+    void msalLogin();
   };
 
-  const logout = () => patch({ loggedIn: false });
+  const logout = () => {
+    patch({ sessionStatus: 'anon', me: null, myRoles: [], loggedIn: false });
+    void msalLogout();
+  };
 
+  // Cambiar de rol cambia navegación y filtros, NUNCA permisos: los permisos son
+  // del servidor. Solo se permiten los roles que el API asignó a este usuario.
   const switchRole = (role: Role) => {
-    const first: Record<Role, Route> = { T: 'home', A: 'inbox', S: 'kpis' };
+    if (!stateRef.current.myRoles.includes(role)) return;
     patch({ role });
-    go(first[role]);
+    go(FIRST_ROUTE[role]);
   };
 
   const goInbox = () => {
-    if (stateRef.current.role === 'T') patch({ role: 'A' });
+    const { role, myRoles } = stateRef.current;
+    const admin = ROLE_RANK.find((r) => r !== 'T' && myRoles.includes(r));
+    if (!admin) return; // un técnico raso no tiene bandeja de aprobación
+    if (role === 'T') patch({ role: admin });
     go('inbox');
   };
 
