@@ -123,13 +123,67 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (pending roadmap) | — | — |
+| AUTH-01 | Phase 1 — Fundación segura y desplegada | Pending |
+| AUTH-02 | Phase 1 — Fundación segura y desplegada | Pending |
+| AUTH-03 | Phase 1 — Fundación segura y desplegada | Pending |
+| AUTH-04 | Phase 1 — Fundación segura y desplegada | Pending |
+| CAT-01 | Phase 2 — Maestros y catálogos | Pending |
+| CAT-02 | Phase 2 — Maestros y catálogos | Pending |
+| CAT-03 | Phase 2 — Maestros y catálogos | Pending |
+| CAT-04 | Phase 2 — Maestros y catálogos | Pending |
+| CAT-05 | Phase 2 — Maestros y catálogos | Pending |
+| CAT-06 | Phase 4 — Flujo de aprobación y auditoría | Pending |
+| BIT-01 | Phase 3 — Bitácora diaria | Pending |
+| BIT-02 | Phase 3 — Bitácora diaria | Pending |
+| BIT-03 | Phase 3 — Bitácora diaria | Pending |
+| BIT-04 | Phase 3 — Bitácora diaria | Pending |
+| BIT-05 | Phase 4 — Flujo de aprobación y auditoría | Pending |
+| NOTA-01 | Phase 4 — Flujo de aprobación y auditoría | Pending |
+| NOTA-02 | Phase 4 — Flujo de aprobación y auditoría | Pending |
+| NOTA-03 | Phase 4 — Flujo de aprobación y auditoría | Pending |
+| NOTA-04 | Phase 5 — Nota Semanal PDF y firma | Pending |
+| NOTA-05 | Phase 5 — Nota Semanal PDF y firma | Pending |
+| NOTA-06 | Phase 5 — Nota Semanal PDF y firma | Pending |
+| NOTA-07 | Phase 5 — Nota Semanal PDF y firma | Pending |
+| NOTA-08 | Phase 5 — Nota Semanal PDF y firma | Pending |
+| NOTA-09 | Phase 4 — Flujo de aprobación y auditoría | Pending |
+| KPI-01 | Phase 7 — Tableros KPI en vivo | Pending |
+| KPI-02 | Phase 7 — Tableros KPI en vivo | Pending |
+| KPI-03 | Phase 7 — Tableros KPI en vivo | Pending |
+| KPI-04 | Phase 7 — Tableros KPI en vivo | Pending |
+| KPI-05 | Phase 7 — Tableros KPI en vivo | Pending |
+| KPI-06 | Phase 7 — Tableros KPI en vivo | Pending |
+| RT-01 | Phase 7 — Tableros KPI en vivo | Pending |
+| RT-02 | Phase 7 — Tableros KPI en vivo | Pending |
+| MIG-01 | Phase 6 — Migración del histórico | Pending |
+| MIG-02 | Phase 6 — Migración del histórico | Pending |
+| MIG-03 | Phase 6 — Migración del histórico | Pending |
+| AUD-01 | Phase 4 — Flujo de aprobación y auditoría | Pending |
+| AUD-02 | Phase 4 — Flujo de aprobación y auditoría | Pending |
+| INFRA-01 | Phase 1 — Fundación segura y desplegada | Pending |
+| INFRA-02 | Phase 1 — Fundación segura y desplegada | Pending |
+| INFRA-03 | Phase 1 — Fundación segura y desplegada | Pending |
+| INFRA-04 | Phase 8 — Endurecimiento y producción | Pending |
 
 **Coverage:**
-- v1 requirements: 38 total
-- Mapped to phases: 0
-- Unmapped: 38 ⚠️
+- v1 requirements: 41 total (el conteo previo de 38 era incorrecto — verificado por ID)
+- Mapped to phases: 41 ✓
+- Unmapped: 0
+- Duplicados (un requisito en 2 fases): 0
+
+**Por fase:**
+
+| Phase | Requisitos |
+|-------|-----------|
+| 1. Fundación segura y desplegada | 7 |
+| 2. Maestros y catálogos | 5 |
+| 3. Bitácora diaria | 4 |
+| 4. Flujo de aprobación y auditoría | 8 |
+| 5. Nota Semanal PDF y firma | 5 |
+| 6. Migración del histórico | 3 |
+| 7. Tableros KPI en vivo | 8 |
+| 8. Endurecimiento y producción | 1 |
 
 ---
 *Requirements defined: 2026-07-25*
-*Last updated: 2026-07-25 after initial definition*
+*Last updated: 2026-07-25 after roadmap creation (traceability mapped)*
