@@ -7,6 +7,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { EnvModule } from './config/env.module';
 import { HealthModule } from './common/health/health.module';
+import { PrismaModule } from './common/prisma/prisma.module';
 import { RlsInterceptor } from './common/prisma/rls.interceptor';
 
 /**
@@ -33,6 +34,7 @@ const staticRoot =
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 20 }]),
     // Express 5: el comodin es {*path}, no *.
     ServeStaticModule.forRoot({ rootPath: staticRoot, exclude: ['/api/{*path}'] }),
+    PrismaModule,
     HealthModule,
   ],
   providers: [{ provide: APP_INTERCEPTOR, useClass: RlsInterceptor }],

@@ -1,0 +1,106 @@
+// Prisma 7. El motor Rust desaparecio: el cliente habla por el adapter PrismaPg
+// (src/common/prisma/prisma.service.ts) y la URL de migraciones vive en prisma.config.ts.
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  // Sin cjs NestJS no arranca: el bundle ESM no se puede require() desde dist/.
+  moduleFormat = "cjs"
+}
+
+// Prisma 7 rechaza `url` aqui: la de migraciones va en prisma.config.ts y la del
+// cliente la trae el adapter. Asi el runtime no puede acabar conectado como owner.
+datasource db {
+  provider = "postgresql"
+}
+
+/// Coincide con `type Role = 'T' | 'A' | 'S'` del frontend (frontend/src/types.ts).
+enum Role {
+  T
+  A
+  S
+
+  @@map("role")
+}
+
+model User {
+  id String @id @default(uuid()) @db.Uuid
+
+  /// Identidad definitiva tras el primer login. El email solo sirve para la
+  /// vinculacion inicial y despues es dato de visualizacion.
+  /// @unique = lookup por peticion sin seq scan (el guard no cachea, AUTH-04).
+  entraOid    String? @unique @map("entra_oid")
+  email       String  @unique
+  displayName String  @map("display_name")
+
+  roles    Role[]
+  isActive Boolean @default(true) @map("is_active")
+
+  /// Sin FK: la tabla technicians llega en Fase 2.
+  technicianId String? @map("technician_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+/// Solicitud del boton «solicitar acceso» de la pantalla sin-acceso.
+/// Los Admins la ven en la pantalla de Usuarios (el feed de notificaciones es Fase 7).
+model AccessRequest {
+  id          String @id @default(uuid()) @db.Uuid
+  entraOid    String @unique @map("entra_oid")
+  email       String
+  displayName String @map("display_name")
+
+  /// pending | dismissed
+  status String @default("pending")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("access_requests")
+}
+
+/// Forma definitiva minima. Se crea en Fase 1 para que el spike de RLS
+/// (Plan 01-02) corra sobre las tablas reales y Fase 3 las encuentre hechas.
+/// Los campos source_* son los de la migracion del Excel (Fase 6): definirlos
+/// ahora evita migrar dos veces.
+model DailyEntry {
+  id           String   @id @default(uuid()) @db.Uuid
+  technicianId String   @map("technician_id") @db.Uuid
+  date         DateTime @db.Date
+
+  /// draft | submitted | approved | returned
+  status String @default("draft")
+
+  sourceYear  Int?    @map("source_year")
+  sourceSheet String? @map("source_sheet")
+  sourceRow   Int?    @map("source_row")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// BIT-02: un tecnico registra un dia una sola vez.
+  /// El indice de esta unique ya sirve para filtrar por technician_id.
+  @@unique([technicianId, date])
+  @@map("daily_entries")
+}
+
+model WeeklyNote {
+  id           String   @id @default(uuid()) @db.Uuid
+  technicianId String   @map("technician_id") @db.Uuid
+  weekStart    DateTime @map("week_start") @db.Date
+
+  /// draft | submitted | approved | returned
+  status String @default("draft")
+
+  sourceYear  Int?    @map("source_year")
+  sourceSheet String? @map("source_sheet")
+  sourceRow   Int?    @map("source_row")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([technicianId])
+  @@map("weekly_notes")
+}

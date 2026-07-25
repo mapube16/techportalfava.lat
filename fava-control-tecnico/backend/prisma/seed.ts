@@ -1,0 +1,41 @@
+/**
+ * Semilla dia 1: la cuenta del dev entra como Super Admin con los tres roles,
+ * para conservar el switcher T/A/S completo.
+ *
+ * entraOid queda null a proposito: el primer login real cuyo email coincida se
+ * vincula y fija el OID como identidad definitiva.
+ *
+ * Corre como OWNER (prisma.config.ts -> MIGRATE_DATABASE_URL): sembrar es tarea
+ * de migracion, no de runtime.
+ */
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../src/generated/prisma/client';
+import { env } from '../src/config/env';
+
+async function main() {
+  const email = env.SEED_SUPERADMIN_EMAIL.trim().toLowerCase();
+  const prisma = new PrismaClient({
+    adapter: new PrismaPg({ connectionString: env.MIGRATE_DATABASE_URL }),
+  });
+
+  try {
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: { roles: ['T', 'A', 'S'], isActive: true },
+      create: {
+        email,
+        displayName: email.split('@')[0],
+        roles: ['T', 'A', 'S'],
+        isActive: true,
+      },
+    });
+    console.log(`seed OK — ${user.email} es Super Admin (roles ${user.roles.join('+')})`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+main().catch((e) => {
+  console.error('seed FALLO:', e instanceof Error ? e.message : e);
+  process.exit(1);
+});
