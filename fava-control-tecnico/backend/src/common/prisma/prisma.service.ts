@@ -18,6 +18,17 @@ export const als = new AsyncLocalStorage<TxClient>();
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  /**
+   * El cliente que expone los delegados de modelo (`.user`, `.dailyEntry`...).
+   *
+   * NO es `this`: Prisma 7 envuelve la instancia en un Proxy y los delegados solo
+   * existen a traves de el. Dentro de un getter o de un metodo de la clase, `this` es
+   * el objeto envuelto, y `this.user` sale `undefined` — con TypeScript contento,
+   * porque los tipos no ven la diferencia. Dentro del constructor `this` SI es el
+   * Proxy, asi que se guarda ahi.
+   */
+  private readonly delegados: PrismaClient;
+
   constructor() {
     super({
       // Prisma 7: el pool se configura aqui. Un ?connection_limit= en la URL se
@@ -30,6 +41,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       // Los defaults (5 s / 2 s) matan handlers lentos con P2028.
       transactionOptions: { timeout: 10_000, maxWait: 5_000 },
     });
+    this.delegados = this;
   }
 
   async onModuleInit(): Promise<void> {
@@ -42,11 +54,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   /** Cliente sin transaccion: guard y lookups previos al contexto RLS. */
   get base(): PrismaClient {
-    return this;
+    return this.delegados;
   }
 
   /** Tx de la peticion si existe; si no, el cliente base. Lo usan los servicios. */
   get client(): TxClient {
-    return als.getStore() ?? this;
+    return als.getStore() ?? this.delegados;
   }
 }
