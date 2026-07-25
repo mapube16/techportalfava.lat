@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-05-PLAN.md
-last_updated: "2026-07-25T22:00:25.182Z"
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-07-25T22:11:38.965Z"
 last_activity: "2026-07-25 — 01-05 completado: frontend cableado a la identidad real (MSAL + /api/me)"
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
-  percent: 17
+  completed_plans: 2
+  percent: 33
 ---
 
 # Project State
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 Phase: 1 of 8 (Fundación segura y desplegada)
 Plan: 5 of 6
 Status: Executing
-Last activity: 2026-07-25 — 01-05 completado: frontend cableado a la identidad real (MSAL + /api/me)
+Last activity: 2026-07-25 — 01-01 completado: monorepo workspaces, backend NestJS 11 + Prisma 7 y los dos roles de Postgres
 
-Progress: [██░░░░░░░░] 17%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
@@ -44,9 +44,10 @@ Progress: [██░░░░░░░░] 17%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | Phase 01 P05 | 1 | 55 min | 55 min (3 tasks, 13 files) |
+| Phase 01 P01 | 1 | 31 min | 31 min (3 tasks, 31 files) |
 
 **Recent Trend:**
-- Last 5 plans: 01-05 (55 min)
+- Last 5 plans: 01-05 (55 min), 01-01 (31 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -65,6 +66,9 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 01]: [01-05]: Sin @azure/msal-react (exige React >=19.2.1) — MSAL Browser v5 directo desde state.tsx
 - [Phase 01]: [01-05]: sessionStatus de /api/me gobierna el arbol de render; el 401 se maneja una vez en el cliente API
 - [Phase 01]: [01-05]: Tipos del API a mano (4 interfaces); codegen OpenAPI aplazado a Fase 2
+- [Phase 01-fundaci-n-segura-y-desplegada]: EnvModule global (zod + declaration merging) sustituye a ConfigModule; @nestjs/config no instalado — inyectar EnvService de src/config/env.ts
+- [Phase 01-fundaci-n-segura-y-desplegada]: Sin setGlobalPrefix: los controladores declaran la ruta completa (@Controller('api/...')); /health queda en la raiz para Railway
+- [Phase 01-fundaci-n-segura-y-desplegada]: Prisma 7 prohibe url en el bloque datasource: la URL de migraciones vive en backend/prisma.config.ts (raiz del paquete, unico sitio que auto-descubre)
 
 ### Pending Todos
 
@@ -88,6 +92,6 @@ Nota de inventario:
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:00:25.171Z
-Stopped at: Completed 01-05-PLAN.md
+Last session: 2026-07-25T22:11:24.044Z
+Stopped at: Completed 01-01-PLAN.md
 Resume file: None

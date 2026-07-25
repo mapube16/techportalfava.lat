@@ -70,8 +70,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Plataforma e integración
 
-- [ ] **INFRA-01**: Backend NestJS monolito modular — un módulo por dominio en su propia carpeta — con Prisma 7 (cjs) + PostgreSQL; TypeScript pineado 5.9.x
-- [ ] **INFRA-02**: Deploy en Railway desde el inicio con dos roles de Postgres (owner para migraciones, app sin BYPASSRLS) y secretos en env vars
+- [x] **INFRA-01**: Backend NestJS monolito modular — un módulo por dominio en su propia carpeta — con Prisma 7 (cjs) + PostgreSQL; TypeScript pineado 5.9.x
+- [x] **INFRA-02**: Deploy en Railway desde el inicio con dos roles de Postgres (owner para migraciones, app sin BYPASSRLS) y secretos en env vars
 - [x] **INFRA-03**: Frontend conectado al API real con cliente tipado + MSAL React; los mocks de data.ts se retiran pantalla por pantalla
 - [ ] **INFRA-04**: Backups automáticos con PITR cubriendo datos y PDFs firmados
 
@@ -160,8 +160,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MIG-03 | Phase 6 — Migración del histórico | Pending |
 | AUD-01 | Phase 4 — Flujo de aprobación y auditoría | Pending |
 | AUD-02 | Phase 4 — Flujo de aprobación y auditoría | Pending |
-| INFRA-01 | Phase 1 — Fundación segura y desplegada | Pending |
-| INFRA-02 | Phase 1 — Fundación segura y desplegada | Pending |
+| INFRA-01 | Phase 1 — Fundación segura y desplegada | Complete |
+| INFRA-02 | Phase 1 — Fundación segura y desplegada | Complete |
 | INFRA-03 | Phase 1 — Fundación segura y desplegada | Complete |
 | INFRA-04 | Phase 8 — Endurecimiento y producción | Pending |
 
