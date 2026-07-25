@@ -31,8 +31,16 @@ El frontend React con 11 pantallas ya existe con datos mock. Este roadmap constr
   3. Desactivar a un usuario le corta el acceso en su siguiente petición, sin esperar a que expire el token.
   4. Un Admin que intenta asignar el rol Admin recibe 403; un Super Admin lo consigue.
   5. Una transición multi-tabla de prueba corre dentro del patrón transacción-por-petición con RLS activo, sin P2028 ni fuga de contexto entre conexiones del pool.
-**Frontend cutover**: `Login.tsx`, `Layout.tsx` (usuario/rol), cliente API tipado + MSAL React
-**Plans**: TBD
+**Frontend cutover**: `Login.tsx`, `Layout.tsx` (usuario/rol), cliente API tipado + MSAL (msal-browser directo)
+**Plans**: 6 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Monorepo workspaces, scaffold NestJS 11 + Prisma 7, esquema y bootstrap de los 2 roles de Postgres (Wave 1)
+- [ ] 01-02-PLAN.md — RLS: migración FORCE + políticas, interceptor tx-por-petición, tests de aislamiento y spike multi-tabla (Wave 2)
+- [ ] 01-03-PLAN.md — Guard Entra (jose) + /api/me + solicitudes de acceso + módulo users con escalada de roles (Wave 2)
+- [ ] 01-04-PLAN.md — Docs ENTRA-SETUP/ENV + registro de las 2 apps en el tenant dev (checkpoint) (Wave 1)
+- [ ] 01-05-PLAN.md — Frontend: MSAL Browser v5 + redirect.html + cliente API tipado + pantallas de sesión (Wave 1)
+- [ ] 01-06-PLAN.md — Deploy Railway + smoke post-deploy + verificación humana de 3 cuentas (checkpoint) (Wave 3)
 
 ### Phase 2: Maestros y catálogos
 **Goal**: Un admin administra desde la app todos los datos que alimentan el resto del sistema — técnicos, proyectos con el encabezado real de la Nota, días vendidos y usuarios — sin texto libre.
@@ -160,7 +168,7 @@ Las fases se ejecutan en orden numérico. Phase 6 (migración) puede adelantarse
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundación segura y desplegada | 0/TBD | Not started | - |
+| 1. Fundación segura y desplegada | 0/6 | Not started | - |
 | 2. Maestros y catálogos | 0/TBD | Not started | - |
 | 3. Bitácora diaria | 0/TBD | Not started | - |
 | 4. Flujo de aprobación y auditoría | 0/TBD | Not started | - |
