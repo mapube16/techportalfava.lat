@@ -1,8 +1,73 @@
+import { useEffect, useState } from 'react';
 import { svg, ICON, hi } from '../icons';
-import { Card, CardHead, filterBy, pbtn } from '../ui';
+import { Card, CardHead, filterBy, gbtn, pbtn } from '../ui';
 import { useApp } from '../state';
+import { dismissAccessRequest, listAccessRequests } from '../lib/api/client';
+import type { AccessRequest } from '../lib/api/client';
 import { initials } from '../data';
 import type { Role } from '../types';
+
+// Solicitudes creadas desde la pantalla «sin acceso», vía GET/PATCH /api/access-requests.
+// El feed de notificaciones in-app es Fase 7 (RT-02): aquí solo aterrizan en la lista.
+function AccessRequests() {
+  const { state, t } = useApp();
+  const [reqs, setReqs] = useState<AccessRequest[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    listAccessRequests()
+      .then((r) => alive && setReqs(r))
+      .catch(() => alive && setReqs([]));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const pending = (reqs || []).filter((r) => r.status === 'pending');
+
+  const dismiss = (id: string) => {
+    setReqs((rs) => (rs || []).filter((r) => r.id !== id)); // optimista
+    dismissAccessRequest(id).catch(() => listAccessRequests().then(setReqs).catch(() => {}));
+  };
+
+  if (!reqs) return null;
+
+  return (
+    <Card>
+      <CardHead
+        title={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            {t.access_requests}
+            {pending.length ? (
+              <span style={{ background: 'var(--accent)', color: '#fff', fontSize: 10, fontWeight: 700, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, display: 'grid', placeItems: 'center' }}>
+                {pending.length}
+              </span>
+            ) : null}
+          </span>
+        }
+      />
+      {pending.length ? (
+        <div>
+          {pending.map((r, i) => (
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'var(--row-pad)', borderTop: i ? '1px solid var(--border)' : 'none', flexWrap: 'wrap' }}>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surface-3)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>{initials(r.displayName || r.email)}</div>
+              <div style={{ flex: 1, minWidth: 160 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600 }}>{r.displayName}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{r.email}</div>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                {new Date(r.createdAt).toLocaleDateString(state.lang === 'es' ? 'es-ES' : 'it-IT')}
+              </div>
+              <button onClick={() => dismiss(r.id)} style={gbtn}>{t.access_requests_dismiss}</button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ padding: 'var(--row-pad)', fontSize: 13, color: 'var(--text-3)' }}>{t.access_requests_empty}</div>
+      )}
+    </Card>
+  );
+}
 
 export default function Users() {
   const { state, t, patch } = useApp();
@@ -20,6 +85,7 @@ export default function Users() {
         {svg(ICON.shieldPlain, { w: 16 })}
         {t.only_super}
       </div>
+      {state.role === 'A' || state.role === 'S' ? <AccessRequests /> : null}
       <Card>
         <CardHead
           title={t.t_users}

@@ -47,8 +47,8 @@ export default function Login() {
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
           <div style={{ fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.6, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
-            <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{t.login_demo}</div>
-            {t.login_demo_body}
+            <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{t.login_note}</div>
+            {t.login_note_body}
           </div>
           <p style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--text-3)', margin: '30px 0 0' }}>{t.login_foot}</p>
         </div>

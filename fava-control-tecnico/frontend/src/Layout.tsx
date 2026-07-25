@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { svg, ICON, hi, FavaLogo } from './icons';
 import { ghostBtn, ghostIconBtn } from './ui';
 import { useApp } from './state';
+import { initials } from './data';
 import type { Role, Route } from './types';
 import Home from './screens/Home';
 import Week from './screens/Week';
@@ -75,8 +76,13 @@ export default function Layout() {
   };
 
   const themeIcon = state.theme === 'dark' ? svg(ICON.sun, { w: 17 }) : svg(ICON.moon, { w: 17 });
-  const roleLabel: Record<Role, string> = { T: t.role_t, A: t.role_a, S: t.roles_all };
+  const roleLabel: Record<Role, string> = { T: t.role_t, A: t.role_a, S: t.role_s };
   const count = inboxCount();
+
+  // Identidad real de /api/me. El switcher T·A·S solo existe para multi-rol y
+  // solo con los roles del propio usuario (cambia navegación, nunca permisos).
+  const me = state.me?.status === 'ok' ? state.me.user : null;
+  const roleList = state.myRoles.map((r) => roleLabel[r]).join(' · ');
 
   const mobileBtnStyle: CSSProperties = {
     display: 'inline-flex', alignItems: 'center', padding: '7px 12px',
@@ -128,10 +134,13 @@ export default function Layout() {
           </nav>
           <div style={{ padding: 12, borderTop: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 9, background: 'var(--surface-2)' }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary-700)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>IC</div>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary-700)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>
+                {initials(me?.displayName || '?')}
+              </div>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Ivan Cortés</div>
-                <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{roleLabel[state.role]}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{me?.displayName}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{me?.email}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{roleList}</div>
               </div>
               <button onClick={logout} aria-label="logout" style={ghostIconBtn}>
                 {svg(ICON.logout, { w: 16 })}
@@ -158,23 +167,25 @@ export default function Layout() {
                 style={{ border: 0, background: 'transparent', outline: 'none', color: 'var(--text)', fontSize: 13, marginLeft: 8, width: '100%', fontFamily: 'inherit' }}
               />
             </div>
-            {/* selector de rol */}
-            <div style={{ display: 'flex', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: 2 }}>
-              {([['T', t.role_t], ['A', t.role_a], ['S', t.role_s]] as [Role, string][]).map(([code, title]) => (
-                <button
-                  key={code}
-                  onClick={() => switchRole(code)}
-                  title={title}
-                  style={{
-                    padding: '5px 11px', border: 0, borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Roboto Mono',
-                    background: state.role === code ? 'var(--primary)' : 'transparent',
-                    color: state.role === code ? '#fff' : 'var(--text-3)',
-                  }}
-                >
-                  {code}
-                </button>
-              ))}
-            </div>
+            {/* selector de rol — solo si el usuario tiene más de uno */}
+            {state.myRoles.length > 1 ? (
+              <div style={{ display: 'flex', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: 2 }}>
+                {state.myRoles.map((code) => (
+                  <button
+                    key={code}
+                    onClick={() => switchRole(code)}
+                    title={roleLabel[code]}
+                    style={{
+                      padding: '5px 11px', border: 0, borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Roboto Mono',
+                      background: state.role === code ? 'var(--primary)' : 'transparent',
+                      color: state.role === code ? '#fff' : 'var(--text-3)',
+                    }}
+                  >
+                    {code}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <button onClick={toggleLang} style={ghostBtn}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 5 }}>
                 <circle cx="12" cy="12" r="9" />
@@ -187,14 +198,16 @@ export default function Layout() {
               <span style={{ marginLeft: 6 }}>{state.mobile ? t.view_desktop : t.view_mobile}</span>
             </button>
             <button onClick={toggleTheme} aria-label="theme" style={ghostIconBtn}>{themeIcon}</button>
-            <button onClick={goInbox} aria-label="inbox" style={{ ...ghostIconBtn, position: 'relative' }}>
-              {svg(ICON.bell, { w: 17 })}
-              {count ? (
-                <span style={{ position: 'absolute', top: 2, right: 2, background: 'var(--accent)', color: '#fff', fontSize: 9, fontWeight: 700, minWidth: 15, height: 15, padding: '0 3px', borderRadius: 8, display: 'grid', placeItems: 'center' }}>
-                  {count}
-                </span>
-              ) : null}
-            </button>
+            {state.myRoles.some((r) => r !== 'T') ? (
+              <button onClick={goInbox} aria-label="inbox" style={{ ...ghostIconBtn, position: 'relative' }}>
+                {svg(ICON.bell, { w: 17 })}
+                {count ? (
+                  <span style={{ position: 'absolute', top: 2, right: 2, background: 'var(--accent)', color: '#fff', fontSize: 9, fontWeight: 700, minWidth: 15, height: 15, padding: '0 3px', borderRadius: 8, display: 'grid', placeItems: 'center' }}>
+                    {count}
+                  </span>
+                ) : null}
+              </button>
+            ) : null}
           </header>
 
           <main style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
