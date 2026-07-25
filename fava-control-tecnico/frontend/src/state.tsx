@@ -4,6 +4,7 @@ import { AUDIT, EXPENSES, NOTES, PROJECTS, USERS, WEEK } from './data';
 import { D } from './i18n';
 import type { Dict } from './i18n';
 import { initAuth, login as msalLogin, logout as msalLogout } from './lib/auth/msal';
+import { devLogin as devSignIn, devLogout, getDevToken } from './lib/auth/dev';
 import { getMe, setUnauthorizedHandler } from './lib/api/client';
 import type { MeResponse } from './lib/api/client';
 import type {
@@ -91,6 +92,8 @@ export interface AppCtx {
   showToast: (kind: string) => void;
   inboxCount: () => number;
   login: () => void;
+  /** Solo con VITE_DEV_AUTH=true; ver lib/auth/dev.ts. */
+  devLogin: (email: string, password: string) => Promise<void>;
   logout: () => void;
   switchRole: (role: Role) => void;
   goInbox: () => void;
@@ -146,10 +149,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let alive = true;
     setUnauthorizedHandler(() => {
       // Token muerto en cualquier llamada: vuelta a anónimo.
+      devLogout(); // si era una sesión de desarrollo, el token muerto se tira
       if (alive) patch({ sessionStatus: 'anon', me: null, myRoles: [], loggedIn: false });
     });
     (async () => {
       try {
+        // Sesión de desarrollo ya abierta en esta pestaña: MSAL no interviene.
+        if (getDevToken()) {
+          const meDev = await getMe();
+          if (alive) applyMe(meDev);
+          return;
+        }
         const account = await initAuth();
         if (!alive) return;
         if (!account) {
@@ -191,8 +201,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void msalLogin();
   };
 
+  // Email + contraseña compartida contra POST /api/dev-auth/login. El servidor
+  // decide igual que siempre: esto solo consigue el token, no el acceso.
+  const devLogin = async (email: string, password: string) => {
+    patch({ loading: true });
+    try {
+      await devSignIn(email, password);
+      applyMe(await getMe());
+    } catch (e) {
+      patch({ loading: false });
+      throw e; // Login.tsx muestra el error genérico
+    }
+  };
+
   const logout = () => {
     patch({ sessionStatus: 'anon', me: null, myRoles: [], loggedIn: false });
+    if (getDevToken()) {
+      devLogout(); // no hay sesión de Microsoft que cerrar
+      return;
+    }
     void msalLogout();
   };
 
@@ -256,7 +283,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const value: AppCtx = {
-    state, t, patch, go, showToast, inboxCount, login, logout, switchRole, goInbox,
+    state, t, patch, go, showToast, inboxCount, login, devLogin, logout, switchRole, goInbox,
     toggleTheme, toggleLang, approve, returnNote, resend, addUser, addProject, closeOnboard,
   };
 

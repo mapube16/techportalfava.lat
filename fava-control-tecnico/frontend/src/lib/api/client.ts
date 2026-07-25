@@ -1,4 +1,5 @@
 import { getToken } from '../auth/msal';
+import { getDevToken } from '../auth/dev';
 import type { Role } from '../../types';
 
 // Tipos escritos a mano: en Fase 1 el contrato son 4 interfaces.
@@ -47,7 +48,9 @@ export const setUnauthorizedHandler = (fn: () => void) => {
 };
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = await getToken();
+  // Con el login de desarrollo activo el token ya está en sessionStorage y MSAL
+  // no pinta nada; sin él (o sin la variable) esto es null y todo sigue igual.
+  const token = getDevToken() ?? (await getToken());
   // Mismo origen: el backend sirve el build de Vite, no hay CORS ni base URL.
   const res = await fetch(`/api${path}`, {
     ...init,

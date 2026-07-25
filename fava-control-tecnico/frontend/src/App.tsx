@@ -2,12 +2,22 @@ import { AppProvider, useApp } from './state';
 import Login from './Login';
 import Layout from './Layout';
 import NoAccess from './screens/NoAccess';
+import { devAuthEnabled } from './lib/auth/dev';
 
 function Root() {
   const { state, t } = useApp();
   // El árbol lo gobierna sessionStatus, que viene del servidor (GET /api/me).
   return (
     <div className="fava" data-theme={state.theme} data-density={state.density} style={{ minHeight: '100vh' }}>
+      {/* Aviso permanente mientras el login de desarrollo esté activo: nadie debe
+          confundir esta instancia con una asegurada por Microsoft Entra. */}
+      {devAuthEnabled && (
+        <div
+          style={{ position: 'sticky', top: 0, zIndex: 200, background: 'var(--warn)', color: '#fff', padding: '7px 14px', fontSize: 12, fontWeight: 700, letterSpacing: '.3px', textAlign: 'center' }}
+        >
+          {t.dev_auth_banner}
+        </div>
+      )}
       {state.sessionStatus === 'ok' ? (
         <Layout />
       ) : state.sessionStatus === 'boot' || state.loading ? (

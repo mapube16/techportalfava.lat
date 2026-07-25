@@ -1,10 +1,24 @@
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { svg, ICON, FavaLogo } from './icons';
-import { ghostBtn, ghostIconBtn } from './ui';
+import { ghostBtn, ghostIconBtn, inputStyle, pbtn } from './ui';
 import { useApp } from './state';
+import { devAuthEnabled } from './lib/auth/dev';
 
 export default function Login() {
-  const { state, t, login, toggleLang, toggleTheme } = useApp();
+  const { state, t, login, devLogin, toggleLang, toggleTheme } = useApp();
   const themeIcon = state.theme === 'dark' ? svg(ICON.sun, { w: 17 }) : svg(ICON.moon, { w: 17 });
+  // Estado del acceso temporal de desarrollo. Sin la variable, nada de esto se pinta.
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(false);
+
+  const onDevSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    setError(false);
+    // El error es siempre el mismo: el servidor no dice qué falló y el cliente tampoco.
+    devLogin(email.trim(), password).catch(() => setError(true));
+  };
   return (
     <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1.05fr .95fr', background: 'var(--bg)' }}>
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 48, background: 'linear-gradient(150deg,var(--primary-700),var(--primary) 60%,var(--primary-600))', color: '#fff', overflow: 'hidden' }}>
@@ -46,6 +60,23 @@ export default function Login() {
             {t.login_or}
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
+          {devAuthEnabled && (
+            <form onSubmit={onDevSubmit} style={{ display: 'grid', gap: 10, marginBottom: 26 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--warn)' }}>{t.dev_login_title}</div>
+              <input
+                type="email" required autoComplete="username" value={email} placeholder={t.dev_login_email}
+                onChange={(e) => setEmail(e.target.value)} style={inputStyle}
+              />
+              <input
+                type="password" required autoComplete="current-password" value={password} placeholder={t.dev_login_password}
+                onChange={(e) => setPassword(e.target.value)} style={inputStyle}
+              />
+              {error && <div style={{ fontSize: 12.5, color: 'var(--warn)' }}>{t.dev_login_error}</div>}
+              <button type="submit" style={{ ...pbtn, justifyContent: 'center', padding: '11px 16px' }}>
+                {t.dev_login_submit}
+              </button>
+            </form>
+          )}
           <div style={{ fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.6, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
             <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{t.login_note}</div>
             {t.login_note_body}
