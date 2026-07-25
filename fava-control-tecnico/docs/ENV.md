@@ -14,7 +14,7 @@ Los `.env` reales están en `.gitignore` y **nunca** se commitean.
 
 ## Backend — `fava-control-tecnico/backend/.env`
 
-Las 8 variables que valida `src/config/env.ts` con zod. Si falta una que no tenga
+Las variables que valida `src/config/env.ts` con zod. Si falta una que no tenga
 default, **el proceso no arranca** (a propósito: mejor un fallo en el boot que un
 fallo intermitente en producción).
 
@@ -28,6 +28,8 @@ fallo intermitente en producción).
 | `ENTRA_REQUIRED_SCOPE` | no | `access_as_user` | Nombre del scope expuesto por el Registro A. Sólo cambia si se renombra el scope |
 | `SEED_SUPERADMIN_EMAIL` | no | — | Email de la cuenta que el seed crea como Super Admin (T+A+S). En dev, tu cuenta del tenant; en FAVA, el email corporativo del primer admin |
 | `PORT` | no | `3000` | Railway lo inyecta solo. En local no hace falta tocarlo |
+| `DEV_AUTH_ENABLED` | no | `false` | **Temporal.** `true` enciende el login de desarrollo. Solo acepta `true` o `false`: cualquier otro valor no arranca. Ver [§ Login de desarrollo temporal](#login-de-desarrollo-temporal) |
+| `DEV_AUTH_PASSWORD` | 🔴 sí | — | Contraseña compartida de ese login. Obligatoria y de **12 caracteres o más** si el flag está encendido; sin ella el proceso no arranca. No existe valor por defecto |
 
 **Por qué dos URLs de base de datos.** El rol que Railway entrega
 (`postgres`) es superusuario y dueño de las tablas: **salta RLS sin dejar ningún
@@ -52,6 +54,7 @@ reiniciar el servicio.
 | `VITE_ENTRA_TENANT_ID` | no | El mismo valor que `ENTRA_TENANT_ID`. Copia separada porque el frontend no ve las variables sin prefijo |
 | `VITE_ENTRA_SPA_CLIENT_ID` | no | Registro **B** (SPA) → *Application (client) ID* |
 | `VITE_API_SCOPE` | no | Registro A → Expose an API → `api://<api-client-id>/access_as_user` |
+| `VITE_DEV_AUTH` | no | **Temporal.** `true` pinta el formulario de acceso de desarrollo y el aviso permanente. Va siempre a la par de `DEV_AUTH_ENABLED`; sola no sirve de nada (el backend responde 404) |
 
 ⚠️ **Nada secreto puede vivir en una `VITE_*`**: acaba en texto plano dentro del
 JS que descarga el navegador. Los tres valores de arriba son identificadores
@@ -61,6 +64,73 @@ sin secreto). Cualquier clave, contraseña o token de servicio va en el backend.
 La URL del API no es variable: el backend sirve el frontend desde el mismo
 origen, así que las llamadas son a rutas relativas `/api/...`. Sin CORS, sin
 preflight, sin `VITE_API_URL`.
+
+---
+
+## Login de desarrollo temporal
+
+**Existe solo mientras FAVA no tenga su tenant de Entra**, y hay que retirarlo el
+día que lo tenga. Permite entrar en la app desplegada con email + una contraseña
+compartida en vez de con Microsoft.
+
+**Lo que no es: un bypass.** `POST /api/dev-auth/login` no autoriza nada: emite un
+JWT RS256 firmado con un par de claves que el proceso genera **en memoria** al
+arrancar, y ese token recorre después el mismo `EntraGuard` que un token real —
+firma, issuer, audiencia, expiración, `tid`, scope y consulta del usuario en la
+base **en cada petición**. El guard no tiene ni una rama para este modo: lo único
+que cambia es qué keyset lo verifica (`src/common/auth/jwks.provider.ts`). Un
+usuario que no exista, o que esté desactivado, no entra ni con la contraseña
+correcta, y los roles siguen saliendo de la base de datos.
+
+### Encenderlo
+
+Las tres variables **a la vez**; las `VITE_*` se hornean en el build, así que hay
+que **redesplegar**, no basta con reiniciar:
+
+| Variable | Valor |
+|---|---|
+| `DEV_AUTH_ENABLED` | `true` |
+| `DEV_AUTH_PASSWORD` | Contraseña **generada al azar**, 12 caracteres mínimo (el arranque lo exige). Nunca una frase común: es lo único que separa a internet de la app |
+| `VITE_DEV_AUTH` | `true` |
+
+Con el modo encendido es imposible no verlo: el arranque escribe un log en nivel
+`warn` diciéndolo, y la interfaz lleva una banda naranja permanente en todas las
+pantallas. Si la app está asegurada por Microsoft, esa banda no aparece.
+
+### Apagarlo — obligatorio al llegar el tenant real
+
+1. **Quitar las tres variables** del servicio `app` y redesplegar. La ruta deja de
+   existir (responde **404**, no 401) y el keyset local ni se carga: los tokens
+   de desarrollo que hubiera sueltos dejan de valer en el acto.
+2. **Limpiar los OID de desarrollo**, con la conexión de owner
+   (`MIGRATE_DATABASE_URL`):
+   ```sql
+   UPDATE users SET entra_oid = NULL WHERE entra_oid LIKE 'dev:%';
+   ```
+   **Este paso no es opcional.** Sin tenant, el usuario no tiene OID de Microsoft,
+   así que el primer login de desarrollo vincula uno ficticio con prefijo `dev:`
+   (la misma vinculación que hace un primer login real). Si esa fila se queda con
+   el OID ficticio, el login real de esa persona **no encuentra su cuenta y no
+   puede vincularla** — el usuario ve «tu cuenta no está habilitada» y en los logs
+   no hay ningún error. Es un fallo silencioso, y se arregla con esta línea.
+3. Comprobar que no quedó rastro:
+   ```bash
+   curl -s -o /dev/null -w '%{http_code}\n' -X POST https://<dominio>/api/dev-auth/login   # 404
+   ```
+
+### Límites conocidos (mientras esté encendido)
+
+- **La contraseña es compartida: quien la tenga puede entrar como cualquier email
+  dado de alta**, incluido el Super Admin. La identidad la declara quien inicia
+  sesión; no hay segundo factor ni trazabilidad individual. Por eso el modo es
+  temporal y por eso la app no debe llevar datos reales mientras dure.
+- **30 intentos por hora** en el endpoint. Detrás del proxy de Railway todas las
+  peticiones llegan con la misma IP, así que ese límite es de hecho global para
+  todo el equipo.
+- El token dura **8 horas** y las claves viven en memoria: cada redespliegue o
+  reinicio cierra todas las sesiones abiertas.
+- El botón de Microsoft sigue en la pantalla, pero **no funciona con este modo
+  encendido**: el keyset local sustituye al de Microsoft, no se suma.
 
 ---
 
@@ -114,6 +184,7 @@ build**, que es cuando Vite hornea las `VITE_*`.
 | `VITE_ENTRA_TENANT_ID` | Mismo valor que `ENTRA_TENANT_ID` |
 | `VITE_ENTRA_SPA_CLIENT_ID` | Client ID del Registro **B** (SPA) |
 | `VITE_API_SCOPE` | `api://<ENTRA_API_CLIENT_ID>/access_as_user` |
+| `DEV_AUTH_ENABLED` · `DEV_AUTH_PASSWORD` · `VITE_DEV_AUTH` | **Solo mientras no exista el tenant de FAVA** — ver [§ Login de desarrollo temporal](#login-de-desarrollo-temporal). Retirarlas es el primer paso del cutover |
 
 `PORT` **no se pone**: Railway la inyecta sola.
 
