@@ -10,7 +10,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Autenticación y acceso
 
 - [ ] **AUTH-01**: Usuario inicia sesión con Microsoft Entra ID (SSO); la app no gestiona contraseñas (tenant dev → tenant FAVA solo por env vars)
-  - *2026-07-25:* código construido y probado (12 unit + 45 e2e con tokens firmados localmente: firma, tenant equivocado, audiencia ajena, usuario desactivado). **Sin verificar contra Microsoft real** — el dev no tiene tenant propio; queda pendiente del tenant de FAVA. Mientras tanto opera el login de desarrollo (`DEV_AUTH_ENABLED`), que emite tokens validados por ese mismo guard.
+  - *2026-07-25:* código construido y probado (12 unit + 53 e2e con tokens firmados localmente: firma, tenant equivocado, audiencia ajena, usuario desactivado). **Sin verificar contra Microsoft real** — el dev no tiene tenant propio; queda pendiente del tenant de FAVA. Mientras tanto opera el login de desarrollo (`DEV_AUTH_ENABLED`, Plan 01-07), que emite tokens validados por ese mismo guard: el flujo de sesión funciona end-to-end, pero la app **sí** gestiona una contraseña compartida mientras dure, que es justo lo que este requisito prohíbe. Cierre = tenant real + cutover documentado en `docs/ENV.md`.
 - [x] **AUTH-02**: RBAC con 3 roles (Técnico/Admin/Super Admin) almacenados en BD y asignables en la app; solo Super Admin asigna el rol Admin
 - [x] **AUTH-03**: Row-Level Security en Postgres: un técnico no puede leer registros de otro ni con bug de código (rol de BD sin BYPASSRLS + FORCE RLS, verificado por test e2e)
 - [x] **AUTH-04**: Usuario desactivado (en app o en directorio) pierde acceso de inmediato
@@ -124,7 +124,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 — Fundación segura y desplegada | Complete |
+| AUTH-01 | Phase 1 — Fundación segura y desplegada | Parcial — falta el login real contra el tenant de FAVA |
 | AUTH-02 | Phase 1 — Fundación segura y desplegada | Complete |
 | AUTH-03 | Phase 1 — Fundación segura y desplegada | Complete |
 | AUTH-04 | Phase 1 — Fundación segura y desplegada | Complete |

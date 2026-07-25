@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-07-25T22:39:59.209Z"
-last_activity: "2026-07-25 — 01-03 completado: guard de Entra sin cache, /api/me discriminado y la escalada de roles con anti-lockout"
+stopped_at: Completed 01-07-PLAN.md
+last_updated: "2026-07-25T23:53:04.691Z"
+last_activity: "2026-07-25 — 01-07 completado: login de desarrollo temporal con el keyset conmutado y el EntraGuard sin tocar (0 líneas de diff)"
 progress:
   total_phases: 8
   completed_phases: 0
-  total_plans: 6
-  completed_plans: 4
-  percent: 67
+  total_plans: 7
+  completed_plans: 5
+  percent: 71
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 1 of 8 (Fundación segura y desplegada)
-Plan: 6 of 6
+Plan: 7 of 7
 Status: Executing
-Last activity: 2026-07-25 — 01-03 completado: guard de Entra sin cache, /api/me discriminado y la escalada de roles con anti-lockout
+Last activity: 2026-07-25 — 01-07 completado: login de desarrollo temporal con el keyset conmutado y el EntraGuard sin tocar (0 líneas de diff)
 
-Progress: [███████░░░] 67%
+Progress: [███████░░░] 71%
 
 ## Performance Metrics
 
@@ -47,9 +47,10 @@ Progress: [███████░░░] 67%
 | Phase 01 P01 | 1 | 31 min | 31 min (3 tasks, 31 files) |
 | Phase 01 P02 | 1 | 15 min | 15 min (3 tasks, 5 files) |
 | Phase 01 P03 | 1 | 45 min | 45 min (3 tasks, 28 files) |
+| Phase 01 P07 | 1 | 50 min | 50 min (3 tasks, 17 files) |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (45 min), 01-02 (15 min), 01-05 (55 min), 01-01 (31 min)
+- Last 5 plans: 01-07 (50 min), 01-03 (45 min), 01-02 (15 min), 01-05 (55 min), 01-01 (31 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -77,6 +78,9 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 01-fundaci-n-segura-y-desplegada]: [01-03]: EntraGuard consulta users por entra_oid en CADA peticion (sin cache): desactivar corta en la siguiente peticion con el mismo token
 - [Phase 01-fundaci-n-segura-y-desplegada]: [01-03]: La escalada de roles y los dos anti-lockout viven en users.service (no en decoradores); los anti-lockout se evaluan antes que el permiso
 - [Phase 01-fundaci-n-segura-y-desplegada]: [01-03]: jose 6 es ESM-only: engines.node >=22.12 (require(esm)) y Jest transpila jose con allowJs + transformIgnorePatterns
+- [Phase 01-fundaci-n-segura-y-desplegada]: [01-07]: El modo dev conmuta el KEYSET en jwks.provider, nunca el guard: entra.guard.ts tiene 0 lineas de diff y el token de dev recorre la misma validacion
+- [Phase 01-fundaci-n-segura-y-desplegada]: [01-07]: DevAuthModule se REGISTRA o no segun env.DEV_AUTH_ENABLED: apagado la ruta responde 404 (no 401) y el par local ni se genera
+- [Phase 01-fundaci-n-segura-y-desplegada]: [01-07]: El oid ficticio lleva prefijo dev: — el cutover al tenant real EXIGE UPDATE users SET entra_oid = NULL WHERE entra_oid LIKE 'dev:%' o el primer login real falla en silencio
 
 ### Pending Todos
 
@@ -98,9 +102,10 @@ Riesgo técnico:
 
 Nota de inventario:
 - REQUIREMENTS.md declaraba 38 requisitos v1; el conteo real por ID es 41. Corregido en la sección Traceability.
+- [Phase 1] Mientras DEV_AUTH_ENABLED este encendido, quien conozca la contrasena compartida entra como CUALQUIER email dado de alta (incluido el Super Admin): no meter datos reales hasta el cutover al tenant de FAVA (docs/ENV.md)
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:39:59.194Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-07-25T23:52:15.328Z
+Stopped at: Completed 01-07-PLAN.md
 Resume file: None
