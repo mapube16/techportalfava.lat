@@ -11,7 +11,8 @@
     "test:e2e": "jest --config test/jest-e2e.json --runInBand",
     "db:bootstrap": "tsx scripts/db-bootstrap.ts",
     "db:migrate": "prisma migrate deploy",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "smoke": "tsx scripts/smoke.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",
