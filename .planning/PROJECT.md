@@ -56,6 +56,7 @@ Captura única: el técnico registra el día una vez → Nota Semanal + KPIs + c
 - **Arquitectura**: monolito modular, un módulo por dominio en su propia carpeta, legible — pedido explícito; NO microservicios (~50 usuarios)
 - **Auth**: Entra ID real desde el inicio; tenant dev propio hasta que FAVA entregue acceso; cambio = solo variables de entorno
 - **Hosting**: Railway (app + Postgres) — decisión 2026-07-25; Railway bloquea SMTP saliente (usar Resend u otro API si hay email)
+- **Cuenta cloud**: se crea con la cuenta personal del dev; migrará a cuenta de empresa cuando exista. Implica: cero config manual sin documentar — todo scripteado o anotado (Dockerfile, railway.toml, env vars, migraciones) para que el traspaso sea transferir el proyecto o recrear + restore, sin arqueología
 - **Producción**: ~50 personas, fiabilidad sobre performance; decenas de miles de registros/año
 - **Seguridad**: RBAC en app + Row-Level Security en Postgres, auditoría de toda transición, PDFs en storage privado con URLs firmadas (CONTEXTO §12)
 - **Idioma**: interfaz ES/IT (toggle existente); tolerar términos italianos heredados en catálogos y exportaciones
@@ -73,6 +74,7 @@ Captura única: el técnico registra el día una vez → Nota Semanal + KPIs + c
 | Gastos/anticipos solo informativos en v1 | Default del documento §12; no bloquea MVP | — Pending |
 | Días vendidos por rol×fase | Como las hojas de proyecto y el frontend actual | — Pending |
 | SSE (no WebSockets) para tiempo real | Suficiente para ~50 usuarios (CONTEXTO §13) | — Pending |
+| Railway con cuenta personal, migrar a cuenta empresa después | La cuenta de empresa aún no existe; setup 100% reproducible hace la migración trivial | — Pending |
 
 ---
 *Last updated: 2026-07-25 after initialization*
