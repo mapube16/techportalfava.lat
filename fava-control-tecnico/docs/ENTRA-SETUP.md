@@ -191,6 +191,7 @@ pero cada usuario ve un diálogo de permisos la primera vez.
 
 - [ ] Registro A → Manifest → `requestedAccessTokenVersion` (o `accessTokenAcceptedVersion`) = `2`
 - [ ] Registro A → Expose an API → scope `access_as_user` **Enabled** y el SPA en *Authorized client applications*
+- [ ] Registro A → **Token configuration → Add optional claim → Access → `email`**. Sin este claim el primer login de un invitado **no vincula**: el backend empareja la invitación por el claim `email` y nunca por `preferred_username`/`upn` (son mutables y reasignables en Entra). Síntoma: usuario dado de alta que ve «tu cuenta no está habilitada»
 - [ ] Registro B → Authentication → plataforma **Single-page application**, URI acabada en `/redirect.html`
 - [ ] Registro B → API permissions → `access_as_user` con estado **Granted**
 
@@ -206,6 +207,8 @@ pero cada usuario ve un diálogo de permisos la primera vez.
 | `iss` | `https://login.microsoftonline.com/<tenant-id>/v2.0` | Si acaba en `/` sin `v2.0`, es un token v1 → manifiesto |
 | `tid` | tu `ENTRA_TENANT_ID` | Registro creado en otro tenant |
 | `scp` | `access_as_user` | El scope no se concedió (paso B.3) |
+| `email` | el email corporativo del usuario | Falta el optional claim del Registro A → el invitado ve «sin acceso» aunque su email esté dado de alta en la app |
+| `oid` | UUID estable del usuario en el tenant | Es la identidad definitiva: se guarda en `users.entra_oid` en el primer login y el email pasa a ser dato de visualización |
 
 ---
 
