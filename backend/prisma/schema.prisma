@@ -1,0 +1,333 @@
+// ============================================================================
+//  Control Técnico FAVA — Modelo de datos (Prisma / PostgreSQL)
+//  Para auditoría. Ver docs/DISENO-TECNICO-FAVA.md para el racional completo.
+//
+//  Principios:
+//   - FKs a catálogos controlados → eliminan de raíz los problemas de calidad
+//     de datos del Excel (§5 del contexto).
+//   - Un usuario puede tener VARIOS roles (M:N vía UserRole). Permiso = unión.
+//   - Toda transición de estado deja rastro en audit_log.
+//   - Row-Level Security (RLS) se define por migración SQL, no por Prisma
+//     (Prisma no modela políticas RLS). Ver la migración `rls/`.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+//  Enums
+// ----------------------------------------------------------------------------
+
+/// Roles del sistema. Un usuario puede acumular varios.
+enum RoleCode {
+  TECNICO
+  ADMIN
+  SUPER_ADMIN
+}
+
+/// Interno = plantilla FAVA (aplica LR). Externo = contratista (aplica NR).
+enum EmploymentType {
+  INTERNO
+  EXTERNO
+}
+
+/// Estado de un registro diario o de una Nota Semanal.
+enum WorkflowStatus {
+  DRAFT      // borrador editable por el técnico
+  SUBMITTED  // enviado a revisión
+  APPROVED   // validado por Admin → cuenta para KPIs
+  RETURNED   // devuelto con comentario, vuelve a editable
+}
+
+/// Fase de proyecto para días vendidos/ejecutados.
+enum Phase {
+  MONTAJE
+  COLAUDO
+}
+
+// ----------------------------------------------------------------------------
+//  Identidad, roles y permisos (RBAC multi-rol)
+// ----------------------------------------------------------------------------
+
+/// Usuario autenticado vía Entra ID (OIDC). La app NO almacena contraseñas.
+model User {
+  id           String   @id @default(uuid())
+  entraOid     String   @unique // object id del token de Entra ID
+  email        String   @unique
+  name         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Un usuario con rol TECNICO se enlaza a su ficha de técnico.
+  technicianId String?     @unique
+  technician   Technician? @relation(fields: [technicianId], references: [id])
+
+  roles        UserRole[]
+
+  // Rastros de autoría (quién creó/aprobó qué).
+  assignedRoles     UserRole[]     @relation("RoleAssigner")
+  createdEntries    DailyEntry[]   @relation("EntryCreatedBy")
+  approvedEntries   DailyEntry[]   @relation("EntryApprovedBy")
+  approvedNotes     WeeklyNote[]   @relation("NoteApprovedBy")
+  createdProjects   Project[]      @relation("ProjectCreatedBy")
+  auditEvents       AuditLog[]     @relation("AuditActor")
+
+  @@index([isActive])
+  @@map("users")
+}
+
+/// Catálogo de roles (extensible sin tocar código).
+model Role {
+  id    String     @id @default(uuid())
+  code  RoleCode   @unique
+  name  String
+  users UserRole[]
+
+  @@map("roles")
+}
+
+/// Asignación de rol a usuario (muchos-a-muchos), con auditoría de quién asignó.
+/// Regla de negocio (en endpoint): ADMIN puede asignar TECNICO; solo SUPER_ADMIN
+/// puede asignar ADMIN o SUPER_ADMIN.
+model UserRole {
+  id           String   @id @default(uuid())
+  userId       String
+  roleId       String
+  assignedById String?
+  assignedAt   DateTime @default(now())
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role  @relation(fields: [roleId], references: [id])
+  assignedBy User? @relation("RoleAssigner", fields: [assignedById], references: [id])
+
+  @@unique([userId, roleId]) // no duplicar el mismo rol en un usuario
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+// ----------------------------------------------------------------------------
+//  Catálogos controlados
+// ----------------------------------------------------------------------------
+
+/// Concepto de la jornada: DC, DFD, DVSF, DVRC, LR, NR, MD, IL (§3 del contexto).
+model Concept {
+  id          String       @id @default(uuid())
+  code        String       @unique // "DC", "DFD", ...
+  description String
+  category    String       // p.ej. "En fábrica", "Viaje", "Ausencia"
+  entries     DailyEntry[]
+  trips       Trip[]
+
+  @@map("concepts")
+}
+
+/// Tipo de rol técnico: Mecánico, Meccatronico, Eléctrico… (normaliza las 11
+/// grafías del Excel).
+model RoleType {
+  id          String            @id @default(uuid())
+  name        String            @unique
+  technicians Technician[]
+  soldDays    ProjectSoldDays[]
+
+  @@map("role_types")
+}
+
+/// Cliente final de FAVA (Cibao, Lucchetti, JAV, etc.).
+model Client {
+  id       String    @id @default(uuid())
+  name     String
+  country  String
+  nit      String?
+  projects Project[]
+
+  @@unique([name, country])
+  @@map("clients")
+}
+
+// ----------------------------------------------------------------------------
+//  Técnicos, proyectos y máquinas
+// ----------------------------------------------------------------------------
+
+/// Ficha del técnico de campo. Maestro con alias para resolver las 3 grafías
+/// del mismo técnico en el Excel (§5).
+model Technician {
+  id             String         @id @default(uuid())
+  fullName       String
+  aliases        String[]       // grafías históricas para la migración
+  roleTypeId     String
+  employmentType EmploymentType
+  isActive       Boolean        @default(true)
+
+  roleType    RoleType     @relation(fields: [roleTypeId], references: [id])
+  user        User?        // enlace inverso (User.technicianId)
+  dailyEntries DailyEntry[]
+  weeklyNotes  WeeklyNote[]
+  trips        Trip[]
+
+  @@index([isActive])
+  @@map("technicians")
+}
+
+/// Proyecto = contrato con un cliente. El Admin lo crea con sus días vendidos.
+model Project {
+  id            String   @id @default(uuid())
+  clientId      String
+  name          String
+  oaNumber      String?  // N° OA
+  commessa      String?  // commessa italiana
+  contractValue Decimal? @db.Decimal(14, 2)
+  currency      String?  @default("EUR")
+  status        String   @default("ACTIVE")
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  client       Client            @relation(fields: [clientId], references: [id])
+  createdBy    User?             @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+  soldDays     ProjectSoldDays[]
+  machines     Machine[]
+  dailyEntries DailyEntry[]
+  weeklyNotes  WeeklyNote[]
+  trips        Trip[]
+
+  @@index([clientId])
+  @@map("projects")
+}
+
+/// Días vendidos por proyecto, abiertos por rol y fase (§7.1).
+model ProjectSoldDays {
+  id         String @id @default(uuid())
+  projectId  String
+  roleTypeId String
+  phase      Phase
+  soldDays   Int
+
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  roleType RoleType @relation(fields: [roleTypeId], references: [id])
+
+  @@unique([projectId, roleTypeId, phase])
+  @@map("project_sold_days")
+}
+
+/// Máquina asociada a un proyecto (normaliza el campo texto-libre del Excel).
+model Machine {
+  id          String       @id @default(uuid())
+  projectId   String
+  code        String       // CTA1000, PC4500, PL6000…
+  description String?
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  dailyEntries DailyEntry[]
+
+  @@map("machines")
+}
+
+// ----------------------------------------------------------------------------
+//  Núcleo operativo: bitácora diaria y Nota Semanal
+// ----------------------------------------------------------------------------
+
+/// Una fila por técnico por día. Es el dato de captura única.
+model DailyEntry {
+  id           String         @id @default(uuid())
+  technicianId String
+  date         DateTime       @db.Date
+  projectId    String?
+  machineId    String?
+  conceptId    String
+  description  String?
+  status       WorkflowStatus @default(DRAFT)
+  weeklyNoteId String?
+  createdById  String?
+  approvedById String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  technician Technician  @relation(fields: [technicianId], references: [id])
+  project    Project?    @relation(fields: [projectId], references: [id])
+  machine    Machine?    @relation(fields: [machineId], references: [id])
+  concept    Concept     @relation(fields: [conceptId], references: [id])
+  weeklyNote WeeklyNote? @relation(fields: [weeklyNoteId], references: [id])
+  createdBy  User?       @relation("EntryCreatedBy", fields: [createdById], references: [id])
+  approvedBy User?       @relation("EntryApprovedBy", fields: [approvedById], references: [id])
+
+  @@unique([technicianId, date]) // una fila por técnico por día
+  @@index([projectId])
+  @@index([status])
+  @@map("daily_entries")
+}
+
+/// Nota de Prestación Semanal: 7 días, gastos, firma del cliente y PDF.
+model WeeklyNote {
+  id              String         @id @default(uuid())
+  technicianId    String
+  projectId       String
+  weekStart       DateTime       @db.Date
+  weekEnd         DateTime       @db.Date
+  status          WorkflowStatus @default(DRAFT)
+  clientName      String?
+  expenses        Json?          // [{descripcion, fecha, valor}] — JSONB
+  clientSignature String?        // firma digital (imagen/base64 o ref a storage)
+  signedAt        DateTime?
+  pdfUrl          String?        // signed URL en storage privado (R2)
+  submittedAt     DateTime?
+  approvedById    String?
+  approvedAt      DateTime?
+  createdAt       DateTime       @default(now())
+
+  technician Technician   @relation(fields: [technicianId], references: [id])
+  project    Project      @relation(fields: [projectId], references: [id])
+  approvedBy User?        @relation("NoteApprovedBy", fields: [approvedById], references: [id])
+  entries    DailyEntry[]
+
+  @@unique([technicianId, weekStart])
+  @@index([status])
+  @@map("weekly_notes")
+}
+
+// ----------------------------------------------------------------------------
+//  Fase 2 y auditoría
+// ----------------------------------------------------------------------------
+
+/// Días de viaje con facturación a la casa matriz (§8, Fase 2).
+model Trip {
+  id            String   @id @default(uuid())
+  technicianId  String
+  projectId     String
+  month         Int
+  year          Int
+  days          Int
+  conceptId     String
+  invoiceNumber String?
+  amountEur     Decimal? @db.Decimal(12, 2)
+
+  technician Technician @relation(fields: [technicianId], references: [id])
+  project    Project    @relation(fields: [projectId], references: [id])
+  concept    Concept    @relation(fields: [conceptId], references: [id])
+
+  @@index([projectId])
+  @@map("trips")
+}
+
+/// Bitácora de auditoría inmutable. Todo cambio de estado / dato sensible escribe aquí.
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorUserId String?
+  action      String   // "APPROVE_NOTE", "ASSIGN_ROLE", ...
+  entity      String   // "WeeklyNote", "UserRole", ...
+  entityId    String?
+  before      Json?
+  after       Json?
+  ip          String?
+  at          DateTime @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorUserId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([at])
+  @@map("audit_log")
+}
