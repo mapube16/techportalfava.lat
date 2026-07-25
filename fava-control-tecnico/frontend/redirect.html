@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirect</title>
+  </head>
+  <body>
+    <p>Procesando autenticación…</p>
+    <script type="module">
+      import { broadcastResponseToMainFrame } from '@azure/msal-browser/redirect-bridge';
+      broadcastResponseToMainFrame().catch((e) => console.error('redirect bridge', e));
+    </script>
+  </body>
+</html>
