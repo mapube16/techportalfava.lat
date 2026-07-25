@@ -14,6 +14,7 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { RlsInterceptor } from './common/prisma/rls.interceptor';
 import { AccessRequestsModule } from './modules/access-requests/access-requests.module';
 import { MeModule } from './modules/me/me.module';
+import { UsersModule } from './modules/users/users.module';
 
 /**
  * `npm -w backend run start:prod` deja cwd en backend/, pero Railway puede
@@ -43,6 +44,7 @@ const staticRoot =
     HealthModule,
     MeModule,
     AccessRequestsModule,
+    UsersModule,
   ],
   providers: [
     jwksProvider,
