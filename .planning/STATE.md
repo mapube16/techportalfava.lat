@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-07-25T22:11:38.965Z"
-last_activity: "2026-07-25 — 01-05 completado: frontend cableado a la identidad real (MSAL + /api/me)"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-07-25T22:31:46.623Z"
+last_activity: "2026-07-25 — 01-02 completado: RLS con FORCE, interceptor tx-por-peticion y el spike de concurrencia en verde"
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 6
-  completed_plans: 2
-  percent: 33
+  completed_plans: 3
+  percent: 50
 ---
 
 # Project State
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 Phase: 1 of 8 (Fundación segura y desplegada)
 Plan: 5 of 6
 Status: Executing
-Last activity: 2026-07-25 — 01-01 completado: monorepo workspaces, backend NestJS 11 + Prisma 7 y los dos roles de Postgres
+Last activity: 2026-07-25 — 01-02 completado: RLS con FORCE, interceptor tx-por-peticion y el spike de concurrencia en verde
 
-Progress: [███░░░░░░░] 33%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -45,9 +45,10 @@ Progress: [███░░░░░░░] 33%
 |-------|-------|-------|----------|
 | Phase 01 P05 | 1 | 55 min | 55 min (3 tasks, 13 files) |
 | Phase 01 P01 | 1 | 31 min | 31 min (3 tasks, 31 files) |
+| Phase 01 P02 | 1 | 15 min | 15 min (3 tasks, 5 files) |
 
 **Recent Trend:**
-- Last 5 plans: 01-05 (55 min), 01-01 (31 min)
+- Last 5 plans: 01-02 (15 min), 01-05 (55 min), 01-01 (31 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -69,6 +70,9 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 01-fundaci-n-segura-y-desplegada]: EnvModule global (zod + declaration merging) sustituye a ConfigModule; @nestjs/config no instalado — inyectar EnvService de src/config/env.ts
 - [Phase 01-fundaci-n-segura-y-desplegada]: Sin setGlobalPrefix: los controladores declaran la ruta completa (@Controller('api/...')); /health queda en la raiz para Railway
 - [Phase 01-fundaci-n-segura-y-desplegada]: Prisma 7 prohibe url en el bloque datasource: la URL de migraciones vive en backend/prisma.config.ts (raiz del paquete, unico sitio que auto-descubre)
+- [Phase 01-fundaci-n-segura-y-desplegada]: [01-02]: users y access_requests SIN politica RLS: el guard busca por entra_oid fuera de la transaccion, una politica ahi bloquearia el login
+- [Phase 01-fundaci-n-segura-y-desplegada]: [01-02]: PrismaService.base/.client devuelven el Proxy de Prisma; dentro de la clase this NO expone los delegados de modelo
+- [Phase 01-fundaci-n-segura-y-desplegada]: [01-02]: transicion multi-tabla valida bajo concurrencia bloqueando primero la nota semanal (raiz del agregado), despues las entradas
 
 ### Pending Todos
 
@@ -84,14 +88,15 @@ Decisiones abiertas con FAVA — detalle y fase que bloquean en ROADMAP.md § "D
 - [Phase 7] Denominador de utilización (LR/NR/IL) — define si el KPI titular es defendible.
 - [Phase 8] ¿Railway es mandato o IT de FAVA exige Azure? CONTEXTO §12 está escrito para Azure.
 
-Riesgo técnico abierto:
-- [Phase 1] Prisma 7 + RLS + `$transaction()` interactivo es una tensión documentada por Prisma. Prototipar la transición submit/approve multi-tabla antes de confiar en el patrón.
+Riesgo técnico:
+- ~~[Phase 1] Prisma 7 + RLS + `$transaction()` interactivo~~ — **cerrado por 01-02**: 200 transiciones multi-tabla concurrentes sobre un pool de 10, sin P2028 ni fuga de GUC (`test/rls-transaction.e2e-spec.ts`). Pendiente repetir una version reducida ya desplegado (Plan 01-06).
+- [Phase 1] Railway no debe entregar al runtime una `DATABASE_URL` de superusuario: un superusuario se salta RLS **incluso con FORCE** y sin ningún síntoma. Verificar en el Plan 01-06.
 
 Nota de inventario:
 - REQUIREMENTS.md declaraba 38 requisitos v1; el conteo real por ID es 41. Corregido en la sección Traceability.
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:11:24.044Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-07-25T22:31:46.312Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
