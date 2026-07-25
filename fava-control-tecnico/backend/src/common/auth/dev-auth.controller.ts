@@ -15,14 +15,16 @@ export class DevAuthController {
 
   /**
    * @Public porque es el unico sitio donde todavia no hay token que validar.
-   * Rate limit como en POST /api/access-requests (el ThrottlerGuard no es global):
-   * 10/hora deja margen a un dedo torpe y no le sirve de nada a un ataque de
-   * fuerza bruta contra una contraseña de 12 caracteres o mas.
+   * Rate limit igual que POST /api/access-requests (el ThrottlerGuard no es
+   * global), pero con techo mas alto: detras del proxy de Railway todas las
+   * peticiones llegan con la MISMA ip, asi que el limite es de hecho global. Con
+   * 5/hora el cuarto miembro del equipo se quedaria fuera; 30 intentos/hora
+   * siguen sin servirle de nada a una fuerza bruta contra >=12 caracteres.
    */
   @Post('login')
   @Public()
   @UseGuards(ThrottlerGuard)
-  @Throttle({ default: { limit: 10, ttl: 3_600_000 } })
+  @Throttle({ default: { limit: 30, ttl: 3_600_000 } })
   @HttpCode(HttpStatus.OK)
   login(@Body() body: DevLoginBody) {
     return this.service.login(body ?? {});
