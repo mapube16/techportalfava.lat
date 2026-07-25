@@ -1,0 +1,27 @@
+# Postgres local para desarrollo y tests e2e.
+# Major 17 = la misma que provisiona Railway (verificar en Plan 01-06 antes del deploy):
+# un desajuste de major entre local y produccion cambia defaults de permisos y RLS.
+#
+#   docker compose up -d db
+#   npm -w backend run db:bootstrap   # crea el rol fava_app ANTES del primer migrate dev
+services:
+  db:
+    image: postgres:17
+    container_name: fava-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fava
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fava_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - fava-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fava"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  fava-db-data:

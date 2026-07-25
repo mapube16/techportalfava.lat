@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Secretos: las 8 variables viven en el entorno, nunca en el repo (docs/ENV.md)
+.env
+.env.*
+!.env.example
+
+# Cliente generado por Prisma 7 (output explicito en schema.prisma)
+backend/src/generated/
