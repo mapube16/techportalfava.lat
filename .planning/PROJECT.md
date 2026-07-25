@@ -75,6 +75,7 @@ Captura única: el técnico registra el día una vez → Nota Semanal + KPIs + c
 | Días vendidos por rol×fase | Como las hojas de proyecto y el frontend actual | — Pending |
 | SSE (no WebSockets) para tiempo real | Suficiente para ~50 usuarios (CONTEXTO §13) | — Pending |
 | Railway con cuenta personal, migrar a cuenta empresa después | La cuenta de empresa aún no existe; setup 100% reproducible hace la migración trivial | — Pending |
+| Login de desarrollo temporal en vez de tenant Entra propio (2026-07-25) | El dev no tiene tenant (lo que ve es el "Microsoft Services tenant" del sistema, sin directorio). Crear uno exige cuenta Azure con tarjeta, y la verificación habría que repetirla con el tenant real de FAVA. El guard de Entra ya está probado con 12 unit + 45 e2e | — Pending |
 
 ---
 *Last updated: 2026-07-25 after initialization*

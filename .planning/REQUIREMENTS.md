@@ -9,7 +9,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Autenticación y acceso
 
-- [x] **AUTH-01**: Usuario inicia sesión con Microsoft Entra ID (SSO); la app no gestiona contraseñas (tenant dev → tenant FAVA solo por env vars)
+- [ ] **AUTH-01**: Usuario inicia sesión con Microsoft Entra ID (SSO); la app no gestiona contraseñas (tenant dev → tenant FAVA solo por env vars)
+  - *2026-07-25:* código construido y probado (12 unit + 45 e2e con tokens firmados localmente: firma, tenant equivocado, audiencia ajena, usuario desactivado). **Sin verificar contra Microsoft real** — el dev no tiene tenant propio; queda pendiente del tenant de FAVA. Mientras tanto opera el login de desarrollo (`DEV_AUTH_ENABLED`), que emite tokens validados por ese mismo guard.
 - [x] **AUTH-02**: RBAC con 3 roles (Técnico/Admin/Super Admin) almacenados en BD y asignables en la app; solo Super Admin asigna el rol Admin
 - [x] **AUTH-03**: Row-Level Security en Postgres: un técnico no puede leer registros de otro ni con bug de código (rol de BD sin BYPASSRLS + FORCE RLS, verificado por test e2e)
 - [x] **AUTH-04**: Usuario desactivado (en app o en directorio) pierde acceso de inmediato
