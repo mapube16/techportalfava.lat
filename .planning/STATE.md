@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-07-25T21:00:41.978Z"
-last_activity: 2026-07-25 — Roadmap creado, 41 requisitos v1 mapeados a 8 fases
+status: executing
+stopped_at: Completed 01-05-PLAN.md
+last_updated: "2026-07-25T22:00:25.182Z"
+last_activity: "2026-07-25 — 01-05 completado: frontend cableado a la identidad real (MSAL + /api/me)"
 progress:
   total_phases: 8
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 6
+  completed_plans: 1
+  percent: 17
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 1 of 8 (Fundación segura y desplegada)
-Plan: — (sin planes aún)
-Status: Ready to plan
-Last activity: 2026-07-25 — Roadmap creado, 41 requisitos v1 mapeados a 8 fases
+Plan: 5 of 6
+Status: Executing
+Last activity: 2026-07-25 — 01-05 completado: frontend cableado a la identidad real (MSAL + /api/me)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 17%
 
 ## Performance Metrics
 
@@ -43,10 +43,10 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| Phase 01 P05 | 1 | 55 min | 55 min (3 tasks, 13 files) |
 
 **Recent Trend:**
-- Last 5 plans: —
+- Last 5 plans: 01-05 (55 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -62,6 +62,9 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Roadmap]: Migración (Phase 6) puede correr en paralelo con Phases 3-5, pero debe cerrar antes de los tableros (Phase 7).
 - [Stack]: TypeScript pineado en 5.9.x y Prisma 7 con `moduleFormat = "cjs"` — sin eso NestJS no arranca.
 - [Stack]: `jose` reemplaza `passport-azure-ad` (archivado); Nivo reemplaza ECharts.
+- [Phase 01]: [01-05]: Sin @azure/msal-react (exige React >=19.2.1) — MSAL Browser v5 directo desde state.tsx
+- [Phase 01]: [01-05]: sessionStatus de /api/me gobierna el arbol de render; el 401 se maneja una vez en el cliente API
+- [Phase 01]: [01-05]: Tipos del API a mano (4 interfaces); codegen OpenAPI aplazado a Fase 2
 
 ### Pending Todos
 
@@ -85,6 +88,6 @@ Nota de inventario:
 
 ## Session Continuity
 
-Last session: 2026-07-25T21:00:41.951Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-fundaci-n-segura-y-desplegada/01-CONTEXT.md
+Last session: 2026-07-25T22:00:25.171Z
+Stopped at: Completed 01-05-PLAN.md
+Resume file: None
