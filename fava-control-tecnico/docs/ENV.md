@@ -77,8 +77,99 @@ dashboard de Railway. Nunca en el repo, nunca en un chat, nunca en un log
 
 ---
 
+## Railway — variables del servicio `app`
+
+> ## ⛔ La que hay que hacer bien: `DATABASE_URL`
+>
+> Railway autogenera una `DATABASE_URL` en el servicio Postgres. Esa URL es del
+> usuario **`postgres`**: superusuario y dueño de las tablas. Un superusuario
+> **se salta RLS incluso con `FORCE ROW LEVEL SECURITY`**, y lo hace **sin
+> ningún síntoma**: la app funciona, los tests pasan, los logs están limpios, y
+> cada técnico ve los datos de todos.
+>
+> **Referenciar `${{Postgres.DATABASE_URL}}` en la variable `DATABASE_URL` del
+> servicio `app` desactiva silenciosamente todo el aislamiento del producto.**
+>
+> Esa referencia va **sólo** en `MIGRATE_DATABASE_URL`, que únicamente usa el
+> pre-deploy. El runtime conecta como `fava_app`, y su URL se escribe a mano.
+>
+> Comprobación después del primer deploy — debe devolver `fava_app / f / f`:
+> ```sql
+> SELECT current_user, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user;
+> ```
+
+Todas se cargan en el servicio `app` (no en el de Postgres), desde el dashboard o
+con `railway variables --set 'NOMBRE=valor'`. Railway las inyecta **también en el
+build**, que es cuando Vite hornea las `VITE_*`.
+
+| Variable | Valor en Railway |
+|---|---|
+| `MIGRATE_DATABASE_URL` | `${{Postgres.DATABASE_URL}}` — referencia de Railway (red privada, usuario owner). La lee el pre-deploy y nadie más |
+| `DATABASE_URL` | **A mano**: `postgresql://fava_app:${{APP_DB_PASSWORD}}@${{Postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/${{Postgres.PGDATABASE}}?schema=public` — ver el aviso de arriba |
+| `APP_DB_PASSWORD` | Contraseña aleatoria que se le dio a `fava_app` en el bootstrap (paso 3). Debe coincidir con la de `DATABASE_URL` |
+| `ENTRA_TENANT_ID` | Directory (tenant) ID del tenant dev |
+| `ENTRA_API_CLIENT_ID` | Client ID del Registro **A** (API) |
+| `ENTRA_REQUIRED_SCOPE` | `access_as_user` |
+| `SEED_SUPERADMIN_EMAIL` | Email de la cuenta del tenant que será Super Admin |
+| `VITE_ENTRA_TENANT_ID` | Mismo valor que `ENTRA_TENANT_ID` |
+| `VITE_ENTRA_SPA_CLIENT_ID` | Client ID del Registro **B** (SPA) |
+| `VITE_API_SCOPE` | `api://<ENTRA_API_CLIENT_ID>/access_as_user` |
+
+`PORT` **no se pone**: Railway la inyecta sola.
+
+Las tres `VITE_*` se hornean en el bundle: cambiarlas exige **redesplegar**, no
+basta con reiniciar el servicio.
+
+### Configuración del servicio (dashboard)
+
+| Ajuste | Valor | Por qué |
+|---|---|---|
+| Root Directory | `/fava-control-tecnico` | El repo tiene la documentación del proyecto fuera de la app |
+| Config-as-code | `/fava-control-tecnico/railway.toml` | **Ruta absoluta desde la raíz del repo**: el archivo de configuración *no* sigue el Root Directory. Con la ruta relativa Railway no lo encuentra y no avisa |
+
+Todo lo demás (build, start, healthcheck, pre-deploy, réplicas) vive en
+`railway.toml`, no en el dashboard.
+
+### Primer deploy en una cuenta Railway nueva
+
+Orden obligatorio; los pasos 1–4 se corren **desde local**, antes de que exista
+un deploy que funcione:
+
+1. `railway login` → `railway init` → `railway add --database postgres` → `railway link`.
+2. Copiar del servicio Postgres la variable **`DATABASE_PUBLIC_URL`**
+   (`*.proxy.rlwy.net`). La privada (`*.railway.internal`) **no es alcanzable
+   desde fuera de Railway**: contra ella, el bootstrap se cuelga.
+3. Bootstrap del rol y esquema, con esa URL pública:
+   ```bash
+   cd fava-control-tecnico
+   MIGRATE_DATABASE_URL='<DATABASE_PUBLIC_URL>' APP_DB_PASSWORD='<pw generada>' \
+     npm -w backend run db:bootstrap    # crea fava_app NOBYPASSRLS + default privileges
+   MIGRATE_DATABASE_URL='<DATABASE_PUBLIC_URL>' npm -w backend run db:migrate
+   MIGRATE_DATABASE_URL='<DATABASE_PUBLIC_URL>' SEED_SUPERADMIN_EMAIL='<email>' \
+     npm -w backend run db:seed
+   ```
+   El bootstrap **antes** de la primera migración no es negociable: las
+   migraciones hacen `GRANT` a `fava_app`, que tiene que existir ya.
+4. Cargar las variables de la tabla de arriba en el servicio `app`.
+5. Ajustar Root Directory y Config-as-code (tabla anterior) y desplegar
+   (`railway up` o conectando el repo de GitHub).
+6. En los logs del deploy, verificar dos cosas: la versión de Node (**≥ 22.12**,
+   o `jose` no carga) y que el healthcheck pasó.
+7. Añadir en Entra el redirect URI de producción: Registro B (SPA) →
+   Authentication → `https://<dominio>.up.railway.app/redirect.html`.
+8. Smoke: `npm -w backend run smoke -- https://<dominio>.up.railway.app` → 4/4.
+
+La major de Postgres que provisiona Railway debe coincidir con la del
+`docker-compose.yml` (17). Si difiere, se alinea el compose: un desajuste de
+major cambia defaults de permisos y comportamiento de RLS entre local y
+producción.
+
+---
+
 ## Primer arranque en una cuenta nueva
 
+Versión genérica; para Railway, la secuencia concreta está en
+[§ Primer deploy en una cuenta Railway nueva](#primer-deploy-en-una-cuenta-railway-nueva).
 Orden obligatorio — cada paso depende del anterior:
 
 1. **Entra:** seguir [ENTRA-SETUP.md](./ENTRA-SETUP.md) → obtener los 4 valores.

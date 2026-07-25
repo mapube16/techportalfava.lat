@@ -1,0 +1,59 @@
+# Config-as-code del servicio `app` (FAVA Control Tecnico).
+#
+# RUTA DEL ARCHIVO EN EL DASHBOARD — la trampa de este archivo:
+# Railway NO aplica el Root Directory al archivo de configuracion. En
+# Service -> Settings -> Config-as-code hay que escribir la ruta ABSOLUTA
+# desde la raiz del repositorio:
+#
+#     /fava-control-tecnico/railway.toml
+#
+# El Root Directory del servicio SI es `/fava-control-tecnico` (ahi corren
+# build y start). Con la ruta relativa, Railway no encuentra el archivo, no
+# avisa, y despliega con los valores por defecto del dashboard.
+#
+# VARIABLES: la lista cerrada vive en docs/ENV.md. Ninguna variable existe
+# solo en el dashboard (regla dura del proyecto).
+#
+# VERSION DE NODE: la fija `.nvmrc` ("22" -> siempre la ultima 22.x) y la
+# exige `package.json` (engines.node ">=22.12 <23"). El minimo no es
+# cosmetico: `jose` 6 es ESM-only y solo se carga desde CommonJS con
+# require(esm), estable a partir de 22.12. Con 22.11 el proceso muere al
+# arrancar y el healthcheck nunca pasa.
+
+[build]
+builder = "RAILPACK"
+# `--include=dev` es deliberado: nest, vite, tsc y prisma son devDependencies
+# y el build las necesita. Si el builder exporta NODE_ENV=production, un
+# `npm ci` seco las omite y la compilacion falla sin explicar por que.
+# `npm run build` (raiz) = frontend (vite) + backend (prisma generate + nest).
+buildCommand = "npm ci --include=dev && npm run build"
+
+[deploy]
+# npm start (raiz) -> npm -w backend run start:prod -> node dist/main.js.
+# Nest sirve frontend/dist como estatico: un solo servicio, sin CORS.
+startCommand = "npm start"
+
+# /health es la unica ruta @Public() y no consulta la base: mide que el
+# proceso vive, no que Postgres responde. Un indicador de BD aqui reiniciaria
+# el contenedor en cada hipo de la base; la liveness de Postgres la cubre el
+# smoke (npm -w backend run smoke).
+healthcheckPath = "/health"
+healthcheckTimeout = 120
+
+# Corre entre build y deploy, en un contenedor aparte, con las variables del
+# servicio y SIN volumenes. Si falla, Railway no promociona el deploy y la
+# version anterior sigue sirviendo; no se reintenta.
+#
+# Usa MIGRATE_DATABASE_URL (owner) a traves de backend/prisma.config.ts.
+# Correr las migraciones como owner es correcto — es DDL. El que NUNCA debe
+# ser owner es el RUNTIME: su DATABASE_URL apunta a fava_app (NOBYPASSRLS).
+# Ver docs/ENV.md § Railway.
+preDeployCommand = "npm -w backend run db:migrate"
+
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Una sola instancia a proposito: el rate limit de @nestjs/throttler es en
+# memoria, asi que N replicas multiplican el limite por N. Escalar exige
+# antes un store compartido.
+numReplicas = 1
