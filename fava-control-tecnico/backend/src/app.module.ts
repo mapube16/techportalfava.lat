@@ -12,6 +12,8 @@ import { RolesGuard } from './common/auth/roles.guard';
 import { HealthModule } from './common/health/health.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RlsInterceptor } from './common/prisma/rls.interceptor';
+import { AccessRequestsModule } from './modules/access-requests/access-requests.module';
+import { MeModule } from './modules/me/me.module';
 
 /**
  * `npm -w backend run start:prod` deja cwd en backend/, pero Railway puede
@@ -39,6 +41,8 @@ const staticRoot =
     ServeStaticModule.forRoot({ rootPath: staticRoot, exclude: ['/api/{*path}'] }),
     PrismaModule,
     HealthModule,
+    MeModule,
+    AccessRequestsModule,
   ],
   providers: [
     jwksProvider,

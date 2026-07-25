@@ -21,12 +21,16 @@ describe('swap de tenant (AUTH-01)', () => {
   let tokenB: string;
 
   beforeAll(async () => {
-    await truncateAll();
-    await crearUsuario({ email: EMAIL, displayName: 'Swap', entraOid: OID });
     appA = await createTestApp(TENANT_A);
     appB = await createTestApp(TENANT_B);
     tokenA = await signTestToken({ oid: OID, email: EMAIL, tid: TENANT_A });
     tokenB = await signTestToken({ oid: OID, email: EMAIL, tid: TENANT_B });
+  });
+
+  // Sembrar por test, no una vez: la BD local es compartida con las otras suites.
+  beforeEach(async () => {
+    await truncateAll();
+    await crearUsuario({ email: EMAIL, displayName: 'Swap', entraOid: OID });
   });
 
   afterAll(async () => {
