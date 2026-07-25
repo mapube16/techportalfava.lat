@@ -20,11 +20,13 @@ export interface DevLoginResponse {
 }
 
 /**
- * Emisor de tokens del login de desarrollo (Plan 01-07). Este servicio NO
- * autentica a nadie: emite un JWT RS256 que despues recorre entero el
- * EntraGuard de siempre (firma contra el JWKS, issuer, audiencia, expiracion,
- * tid, scope y lookup del usuario en BD). No existe ningun camino que salte esa
- * verificacion; lo unico que cambia frente a produccion es quien firma.
+ * Emisor de tokens del login de desarrollo (Plan 01-07). Solo se instancia con
+ * DEV_AUTH_ENABLED=true: app.module no registra su modulo en ningun otro caso.
+ *
+ * Este servicio NO autentica a nadie: emite un JWT RS256 que despues recorre
+ * entero el EntraGuard de siempre (firma contra el JWKS, issuer, audiencia,
+ * expiracion, tid, scope y lookup del usuario en BD). No existe ningun camino
+ * que salte esa verificacion; lo unico que cambia es quien firma.
  */
 @Injectable()
 export class DevAuthService {
