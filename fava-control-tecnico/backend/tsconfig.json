@@ -7,6 +7,9 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    // jose 6 es ESM-only. Node 22.17 lo carga con require(esm), pero el runtime CJS
+    // de Jest no: alli lo transpila ts-jest, y para eso necesita compilar .js.
+    "allowJs": true,
     "esModuleInterop": true,
     "target": "ES2023",
     "sourceMap": true,

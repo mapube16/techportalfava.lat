@@ -1,11 +1,14 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { EnvModule } from './config/env.module';
+import { EntraGuard } from './common/auth/entra.guard';
+import { jwksProvider } from './common/auth/jwks.provider';
+import { RolesGuard } from './common/auth/roles.guard';
 import { HealthModule } from './common/health/health.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RlsInterceptor } from './common/prisma/rls.interceptor';
@@ -37,6 +40,13 @@ const staticRoot =
     PrismaModule,
     HealthModule,
   ],
-  providers: [{ provide: APP_INTERCEPTOR, useClass: RlsInterceptor }],
+  providers: [
+    jwksProvider,
+    // Todo protegido por defecto; el opt-out es explicito (@Public, @AllowUnprovisioned).
+    // El orden importa: Entra resuelve req.user y RolesGuard lo lee.
+    { provide: APP_GUARD, useClass: EntraGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_INTERCEPTOR, useClass: RlsInterceptor },
+  ],
 })
 export class AppModule {}
