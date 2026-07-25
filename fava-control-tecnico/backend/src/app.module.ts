@@ -6,6 +6,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { EnvModule } from './config/env.module';
+import { env } from './config/env';
+import { DevAuthModule } from './common/auth/dev-auth.module';
 import { EntraGuard } from './common/auth/entra.guard';
 import { jwksProvider } from './common/auth/jwks.provider';
 import { RolesGuard } from './common/auth/roles.guard';
@@ -45,6 +47,9 @@ const staticRoot =
     MeModule,
     AccessRequestsModule,
     UsersModule,
+    // Login de desarrollo temporal: se REGISTRA o no. Sin el flag la ruta no
+    // existe (404, no 401) y el keyset local no se carga (jwks.provider.ts).
+    ...(env.DEV_AUTH_ENABLED ? [DevAuthModule] : []),
   ],
   providers: [
     jwksProvider,
