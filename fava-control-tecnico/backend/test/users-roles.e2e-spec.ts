@@ -141,12 +141,15 @@ describe('users: escalada de roles y anti-lockout (AUTH-02)', () => {
     const res = await http().get('/api/users').set(auth(tokenAdmin)).expect(200);
 
     expect(res.body).toHaveLength(3);
+    // `technicianId` es la expansion anunciada por el comentario de CAMPOS (Fase 2,
+    // CAT-05): la pantalla Usuarios tiene que poder mostrar el vinculo con el tecnico.
     expect(Object.keys(res.body[0]).sort()).toEqual([
       'displayName',
       'email',
       'id',
       'isActive',
       'roles',
+      'technicianId',
     ]);
   });
 });
