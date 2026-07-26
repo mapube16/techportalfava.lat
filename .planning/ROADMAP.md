@@ -66,7 +66,15 @@ Plans:
   4. Cerrar el navegador con la semana a medio llenar y volver a abrirlo conserva el borrador; pulsar "enviar" dos veces con señal intermitente produce un solo envío.
   5. La pantalla Semana y el drawer de registro funcionan contra el API real.
 **Frontend cutover**: `Week.tsx`, `LogDayDrawer.tsx`
-**Plans**: TBD
+**Plans**: 6 plans (4 waves)
+
+Plans:
+- [ ] 03-01-PLAN.md — Migración (description + CHECK BIT-03 + GRANT), `fecha.ts` del servidor y el guarda-rail `check-fecha-servidor` (Wave 1)
+- [ ] 03-02-PLAN.md — Primer runner de tests del frontend (`node --test` + tsx, cero deps) + `lib/fecha.ts` y `lib/draft.ts` como módulos puros (Wave 1)
+- [ ] 03-03-PLAN.md — `GET /api/projects` relajado a T con proyección de técnico (solo nombre y máquinas) (Wave 1)
+- [ ] 03-04-PLAN.md — API de la bitácora: GET de la semana, PUT/DELETE del día, idempotencia por clave natural y la suite de 4 husos (Wave 2)
+- [ ] 03-05-PLAN.md — Cliente tipado + `Week.tsx`: grilla de 7 días, navegación, ventana temporal y borrador local (Wave 3)
+- [ ] 03-06-PLAN.md — `LogDayDrawer.tsx` contra el API, retirada de `MACHINES`/`LOG_PROJECTS` y guarda-rail ampliado a 9 archivos (Wave 4)
 
 ### Phase 4: Flujo de aprobación y auditoría
 **Goal**: La semana enviada se convierte sola en una nota por proyecto que el admin aprueba o devuelve, y ningún movimiento ocurre sin dejar rastro.
@@ -169,7 +177,7 @@ Las fases se ejecutan en orden numérico. Phase 6 (migración) puede adelantarse
 |-------|----------------|--------|-----------|
 | 1. Fundación segura y desplegada | 0/6 | Not started | - |
 | 2. Maestros y catálogos | 6/6 | Complete    | 2026-07-26 |
-| 3. Bitácora diaria | 0/TBD | Not started | - |
+| 3. Bitácora diaria | 0/6 | Planned     | - |
 | 4. Flujo de aprobación y auditoría | 0/TBD | Not started | - |
 | 5. Nota Semanal PDF y firma | 0/TBD | Not started | - |
 | 6. Migración del histórico | 0/TBD | Not started | - |
