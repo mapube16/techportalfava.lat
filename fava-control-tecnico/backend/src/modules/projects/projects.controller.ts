@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
 } from '@nestjs/common';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { Roles } from '../../common/auth/roles.decorator';
@@ -17,6 +18,9 @@ type Cuerpo = Record<string, unknown>;
 
 /** ISO-4217: exactamente 3 letras (mismo criterio que el catalogo de monedas). */
 const ISO_4217 = /^[A-Za-z]{3}$/;
+
+/** `ParseUUIDPipe` solo cubre el path; en el body un uuid mal formado seria un 500 (22P02). */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Maquinas y dias vendidos son recursos APARTE (PUT propios). Mandarlos aqui es un
@@ -129,6 +133,24 @@ export class ProjectsController {
   cambiarActivo(@Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo) {
     if (typeof body?.isActive !== 'boolean') throw new BadRequestException('IS_ACTIVE_INVALIDO');
     return this.service.editar(id, { isActive: body.isActive });
+  }
+
+  /**
+   * Reemplaza la seleccion completa (idempotente). Recurso aparte del PATCH: un
+   * `PATCH /:id` que tambien tocase maquinas es el anti-patron declarado del research.
+   */
+  @Put(':id/machines')
+  fijarMaquinas(@Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo) {
+    const ids = body?.machineModelIds;
+    if (!Array.isArray(ids)) throw new BadRequestException('MAQUINAS_INVALIDAS');
+    return this.service.fijarMaquinas(
+      id,
+      ids.map((v) => {
+        if (typeof v !== 'string' || !UUID.test(v))
+          throw new BadRequestException('MAQUINA_INVALIDA');
+        return v;
+      }),
+    );
   }
 }
 

@@ -107,7 +107,68 @@ export class ProjectsService {
   async detalle(id: string) {
     const p = await this.prisma.client.project.findUnique({ where: { id }, select: DETALLE });
     if (!p) throw new NotFoundException('PROYECTO_NO_ENCONTRADO');
-    return this.plano(p);
+    return { ...this.plano(p), machines: await this.maquinas(id) };
+  }
+
+  /**
+   * Reemplaza la seleccion completa dentro de la MISMA transaccion de la peticion (la
+   * abre el RlsInterceptor; una $transaction anidada aqui seria un P2028).
+   *
+   * `project_machines` es seleccion pura y NADA la referencia, asi que sus filas se
+   * borran de verdad: no es un maestro y la regla «desactivar nunca borrar» no aplica.
+   *
+   * IMPORTANTE: `daily_entries.machine_model_id` apunta a `machine_models` — el
+   * catalogo GLOBAL —, nunca a esta fila de seleccion. Si apuntara aqui, quitar una
+   * maquina de un proyecto seria un FK roto o un borrado en cascada de bitacora, y la
+   * decision bloqueada «se avisa y se permite» no se podria cumplir. El aviso lo da la
+   * UI con el `entryCount`; el servidor permite.
+   */
+  async fijarMaquinas(projectId: string, machineModelIds: string[]) {
+    const ids = [...new Set(machineModelIds)];
+    const c = this.prisma.client;
+
+    // Se comprueba ANTES de borrar: asi «todo o nada» no depende de deshacer una
+    // transaccion que el error del motor ya habria dejado abortada (25P02).
+    const [proyecto, existentes] = await Promise.all([
+      c.project.findUnique({ where: { id: projectId }, select: { id: true } }),
+      ids.length ? c.machineModel.count({ where: { id: { in: ids } } }) : Promise.resolve(0),
+    ]);
+    if (!proyecto) throw new NotFoundException('PROYECTO_NO_ENCONTRADO');
+    if (existentes !== ids.length) throw new BadRequestException('MAQUINA_INEXISTENTE');
+
+    await c.projectMachine.deleteMany({ where: { projectId } });
+    if (ids.length)
+      await c.projectMachine.createMany({
+        data: ids.map((machineModelId) => ({ projectId, machineModelId })),
+      });
+
+    return this.maquinas(projectId);
+  }
+
+  /**
+   * `entryCount` sale de UN groupBy sobre `daily_entries`, no de un count por maquina
+   * en bucle. Es el dato que necesita la UI para avisar antes de quitar una maquina
+   * que ya tiene bitacora.
+   */
+  private async maquinas(projectId: string) {
+    const c = this.prisma.client;
+    const [seleccion, jornadas] = await Promise.all([
+      c.projectMachine.findMany({
+        where: { projectId },
+        select: { machineModelId: true, machineModel: { select: { code: true, description: true } } },
+      }),
+      c.dailyEntry.groupBy({ by: ['machineModelId'], where: { projectId }, _count: { _all: true } }),
+    ]);
+
+    const conteo = new Map(jornadas.map((j) => [j.machineModelId, j._count._all]));
+    return seleccion
+      .map((m) => ({
+        machineModelId: m.machineModelId,
+        code: m.machineModel.code,
+        description: m.machineModel.description,
+        entryCount: conteo.get(m.machineModelId) ?? 0,
+      }))
+      .sort((a, b) => a.code.localeCompare(b.code));
   }
 
   /** `createdById` es rastro de autoria y no tiene FK declarada (decision de 02-01). */
