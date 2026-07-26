@@ -13,7 +13,26 @@ body { font-family: Roboto, system-ui, sans-serif; -webkit-font-smoothing: antia
   --shadow: 0 1px 2px rgba(19,35,48,.06), 0 4px 16px rgba(19,35,48,.06);
   --shadow-lg: 0 8px 40px rgba(19,35,48,.18);
   --row-pad: 13px 16px; --radius: 10px;
+  /* Tokens responsivos. Los estilos de esta app son inline y un atributo `style` no
+     admite media queries: la media query de abajo cambia la VARIABLE y el estilo
+     inline consume `var(--…)`. Es lo que evita reescribir 30 pantallas en clases. */
+  --gap-page: 24px;   /* padding del contenido y del encabezado */
+  --tap: auto;        /* alto minimo de lo pulsable; en escritorio no estorba */
+  --fs-input: 14px;   /* tamano de los campos de texto */
+  --pad-brand: 48px; --pad-login: 40px; --fs-hero: 38px;  /* solo la pantalla de acceso */
   color: var(--text); background: var(--bg);
+}
+/* EL punto de ruptura de la app. El mismo numero esta en `lib/useIsMobile.ts`
+   (CSS no puede leer un modulo TS) y `useIsMobile.test.ts` compara los dos.
+   44px es el minimo tactil; 16px en los campos es el umbral por debajo del cual
+   Safari hace zoom al enfocar y descuadra la pantalla. */
+@media (max-width: 899px) {
+  .fava {
+    --gap-page: 14px;
+    --tap: 44px;
+    --fs-input: 16px;
+    --pad-brand: 20px; --pad-login: 18px; --fs-hero: 26px;
+  }
 }
 .fava[data-theme="dark"] {
   --primary: #3f86c4; --primary-600: #4f93cf; --primary-700: #2b6ea8; --primary-tint: #22364a;
@@ -30,6 +49,32 @@ body { font-family: Roboto, system-ui, sans-serif; -webkit-font-smoothing: antia
 .fava *::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 6px; border: 2px solid transparent; background-clip: content-box; }
 .fava *:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; border-radius: 4px; }
 .serif { font-family: "Times New Roman", Georgia, serif; }
+
+/* La UNICA clase estructural de la app, y va comentada porque rompe la norma de
+   estilos inline: en movil la barra lateral tiene que SALIR DEL FLUJO (246px son el
+   63% de un telefono de 390px) y eso es `position`+`transform`, no un valor que se
+   pueda meter en una variable como el resto de los tokens de arriba. */
+.fava-aside {
+  width: 246px; flex: none;
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+  z-index: 45;  /* por encima del fondo oscurecido (40) y del encabezado (20); por debajo de los modales (60) */
+}
+@media (max-width: 899px) {
+  .fava-aside {
+    position: fixed; top: 0; bottom: 0; left: 0; height: 100%;
+    width: 264px; max-width: 84vw;
+    transform: translateX(-100%);
+    /* `visibility` ademas del desplazamiento: un panel solo desplazado sigue siendo
+       enfocable y el tabulador se iria a una barra lateral invisible detras del
+       fondo oscurecido. `visibility: hidden` lo saca del orden de tabulacion. */
+    visibility: hidden;
+    box-shadow: var(--shadow-lg);
+    transition: transform .22s ease, visibility .22s;
+  }
+  .fava-aside[data-open="true"] { transform: none; visibility: visible; }
+}
+@media (prefers-reduced-motion: reduce) { .fava-aside { transition: none; } }
 @keyframes favaSpin { to { transform: rotate(360deg); } }
 @keyframes favaIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes favaToast { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

@@ -4,9 +4,11 @@ import { svg, ICON, FavaLogo } from './icons';
 import { ghostBtn, ghostIconBtn, inputStyle, pbtn } from './ui';
 import { useApp } from './state';
 import { devAuthEnabled } from './lib/auth/dev';
+import { useIsMobile } from './lib/useIsMobile';
 
 export default function Login() {
   const { state, t, login, devLogin, toggleLang, toggleTheme } = useApp();
+  const movil = useIsMobile();
   const themeIcon = state.theme === 'dark' ? svg(ICON.sun, { w: 17 }) : svg(ICON.moon, { w: 17 });
   // Estado del acceso temporal de desarrollo. Sin la variable, nada de esto se pinta.
   const [email, setEmail] = useState('');
@@ -20,23 +22,26 @@ export default function Login() {
     devLogin(email.trim(), password).catch(() => setError(true));
   };
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1.05fr .95fr', background: 'var(--bg)' }}>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 48, background: 'linear-gradient(150deg,var(--primary-700),var(--primary) 60%,var(--primary-600))', color: '#fff', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: movil ? '1fr' : '1.05fr .95fr', background: 'var(--bg)' }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 20, padding: 'var(--pad-brand)', background: 'linear-gradient(150deg,var(--primary-700),var(--primary) 60%,var(--primary-600))', color: '#fff', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: 0.09, backgroundImage: 'repeating-linear-gradient(90deg,#fff 0 1px,transparent 1px 64px),repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 64px)' }} />
         <div style={{ position: 'relative' }}>
           <FavaLogo height={64} onDark />
         </div>
         <div style={{ position: 'relative', maxWidth: 400 }}>
           <div style={{ fontSize: 12, letterSpacing: '3px', textTransform: 'uppercase', opacity: 0.7, marginBottom: 14 }}>Control Técnico</div>
-          <h1 className="serif" style={{ fontSize: 38, lineHeight: 1.15, fontWeight: 700, margin: '0 0 16px' }}>{t.login_head}</h1>
+          <h1 className="serif" style={{ fontSize: 'var(--fs-hero)', lineHeight: 1.15, fontWeight: 700, margin: '0 0 16px' }}>{t.login_head}</h1>
           <p style={{ fontSize: 15, lineHeight: 1.6, opacity: 0.82, margin: 0 }}>{t.login_body}</p>
         </div>
         <div style={{ position: 'relative', display: 'flex', gap: 26, fontSize: 12, opacity: 0.72 }}>
           <span>Montaggio</span><span>Collaudo</span><span>Cantiere</span><span>Venduto / Eseguito</span>
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: 40, position: 'relative' }}>
-        <div style={{ position: 'absolute', top: 22, right: 24, display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: 'var(--pad-login)', position: 'relative',
+        // En móvil el panel se ajusta a su contenido: sin este hueco, los botones de
+        // idioma y tema (posicionados en absoluto) caerían encima del título.
+        paddingTop: movil ? 'calc(var(--pad-login) + 44px)' : undefined }}>
+        <div style={{ position: 'absolute', top: 'var(--pad-login)', right: 'var(--pad-login)', display: 'flex', gap: 8 }}>
           <button onClick={toggleLang} style={ghostBtn}>{state.lang.toUpperCase()}</button>
           <button onClick={toggleTheme} aria-label="theme" style={ghostIconBtn}>{themeIcon}</button>
         </div>
@@ -72,7 +77,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)} style={inputStyle}
               />
               {error && <div style={{ fontSize: 12.5, color: 'var(--warn)' }}>{t.dev_login_error}</div>}
-              <button type="submit" style={{ ...pbtn, justifyContent: 'center', padding: '11px 16px' }}>
+              <button type="submit" style={{ ...pbtn, justifyContent: 'center', padding: '11px 16px', minHeight: 'var(--tap)' }}>
                 {t.dev_login_submit}
               </button>
             </form>

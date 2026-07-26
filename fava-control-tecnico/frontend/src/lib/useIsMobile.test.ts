@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { readFileSync } from 'node:fs';
 import { CONSULTA_MOVIL, esMovil, observarMovil } from './useIsMobile';
 import type { MediaLike, VentanaLike } from './useIsMobile';
 
@@ -43,6 +44,23 @@ function ventanaFalsa(movilInicial: boolean) {
     },
   };
 }
+
+/**
+ * El punto de ruptura esta escrito dos veces —una en TS y otra en CSS— porque una
+ * media query no puede importar un modulo. Este es el unico caso que impide que se
+ * separen: sin el, cambiar 899 en un solo lado deja la suite verde (verificado por
+ * mutacion) y la app con una franja de anchos que tiene el layout de escritorio y
+ * las tarjetas de movil a la vez.
+ */
+describe('el punto de ruptura, escrito en TS y en CSS', () => {
+  it('index.css rompe en el mismo pixel que CONSULTA_MOVIL', () => {
+    const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
+    const consultas = [...css.matchAll(/@media\s*\(([^)]*max-width[^)]*)\)/g)]
+      .map((m) => `(${m[1].trim()})`);
+    assert.ok(consultas.length > 0, 'index.css tiene que traer la media query del movil');
+    assert.deepEqual([...new Set(consultas)], [CONSULTA_MOVIL]);
+  });
+});
 
 describe('esMovil', () => {
   it('lee el ancho real del dispositivo, no un toggle', () => {

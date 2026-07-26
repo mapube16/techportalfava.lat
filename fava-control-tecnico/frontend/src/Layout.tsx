@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { svg, ICON, FavaLogo } from './icons';
 import { ghostBtn, ghostIconBtn, initials } from './ui';
 import { useApp } from './state';
+import { useIsMobile } from './lib/useIsMobile';
 import type { Role, Route } from './types';
 import Home from './screens/Home';
 import Week from './screens/Week';
@@ -51,6 +53,38 @@ interface NavItem {
 export default function Layout() {
   const { state, t, go, logout, switchRole, goInbox, toggleTheme, toggleLang, patch, inboxCount } = useApp();
   const tr = t as unknown as Record<string, string>;
+  const movil = useIsMobile();
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const btnMenu = useRef<HTMLButtonElement>(null);
+
+  // Si la ventana crece con el panel abierto, la barra vuelve a ser fija y el estado
+  // «abierto» quedaria sin boton con el que cerrarlo.
+  useEffect(() => {
+    if (!movil) setMenuAbierto(false);
+  }, [movil]);
+
+  // Mientras el panel esta abierto: Escape lo cierra, el cuerpo no hace scroll por
+  // detras del fondo oscurecido, y al cerrarse el foco vuelve al boton que lo abrio
+  // (la limpieza corre tanto al cerrar como al desmontar; ahi el ref ya es null).
+  useEffect(() => {
+    if (!menuAbierto) return;
+    const alPulsar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuAbierto(false);
+    };
+    document.addEventListener('keydown', alPulsar);
+    const scrollPrevio = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', alPulsar);
+      document.body.style.overflow = scrollPrevio;
+      btnMenu.current?.focus();
+    };
+  }, [menuAbierto]);
+
+  const irA = (r: Route) => {
+    go(r);
+    setMenuAbierto(false); // navegar cierra el panel: en movil tapa la pantalla entera
+  };
 
   const mk = (key: string, route: Route, icon: string, badge?: number): NavItem => ({
     key, route, icon: svg(ICON[icon], { w: 17 }), label: tr['nav_' + key], badge,
@@ -83,11 +117,71 @@ export default function Layout() {
   const me = state.me?.status === 'ok' ? state.me.user : null;
   const roleList = state.myRoles.map((r) => roleLabel[r]).join(' · ');
 
+  // Buscador, selector de rol, idioma y tema. En escritorio van en el encabezado; en
+  // movil no caben (el buscador solo ya son 220px de los 390 del telefono) y bajan al
+  // panel. Declarados una vez para que no haya dos copias que se desincronicen.
+  const controles = (
+    <>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '0 10px', height: 34, minHeight: 'var(--tap)', width: movil ? '100%' : 220, color: 'var(--text-3)' }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flex: 'none' }}>
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4-4" />
+        </svg>
+        <input
+          placeholder={t.search}
+          value={state.search}
+          onChange={(e) => patch({ search: e.target.value })}
+          style={{ border: 0, background: 'transparent', outline: 'none', color: 'var(--text)', fontSize: 'var(--fs-input)', marginLeft: 8, width: '100%', fontFamily: 'inherit' }}
+        />
+      </div>
+      {/* selector de rol — solo si el usuario tiene más de uno */}
+      {state.myRoles.length > 1 ? (
+        <div style={{ display: 'flex', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: 2 }}>
+          {state.myRoles.map((code) => (
+            <button
+              key={code}
+              onClick={() => switchRole(code)}
+              title={roleLabel[code]}
+              style={{
+                padding: '5px 11px', minHeight: 'var(--tap)', border: 0, borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Roboto Mono',
+                background: state.role === code ? 'var(--primary)' : 'transparent',
+                color: state.role === code ? '#fff' : 'var(--text-3)',
+              }}
+            >
+              {code}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <button onClick={toggleLang} style={ghostBtn}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 5 }}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
+        </svg>
+        {state.lang.toUpperCase()}
+      </button>
+      <button onClick={toggleTheme} aria-label="theme" style={ghostIconBtn}>{themeIcon}</button>
+    </>
+  );
+
   return (
     <>
+      {/* Fondo oscurecido: cierra al tocar fuera y tapa el contenido de detras. Solo
+          existe con el panel abierto, asi que en escritorio no hay nada que pintar. */}
+      {menuAbierto ? (
+        <div
+          onClick={() => setMenuAbierto(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(8,16,24,.5)', zIndex: 40, animation: 'favaIn .2s ease' }}
+        />
+      ) : null}
       <div style={{ display: 'flex', minHeight: '100vh' }}>
-        {/* SIDEBAR */}
-        <aside style={{ width: 246, flex: 'none', background: 'var(--surface)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh' }}>
+        {/* SIDEBAR — en movil es un panel deslizante; ver `.fava-aside` en index.css */}
+        <aside
+          id="fava-nav"
+          className="fava-aside"
+          data-open={menuAbierto ? 'true' : 'false'}
+          style={{ background: 'var(--surface)', borderRight: '1px solid var(--border)' }}
+        >
           <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid var(--border)' }}>
             <FavaLogo height={44} onDark={state.theme === 'dark'} />
             <div style={{ fontSize: 10, letterSpacing: '1.5px', color: 'var(--text-3)', textTransform: 'uppercase', marginTop: 8 }}>{t.brand_sub}</div>
@@ -101,9 +195,10 @@ export default function Layout() {
                   return (
                     <button
                       key={it.key}
-                      onClick={() => go(it.route)}
+                      onClick={() => irA(it.route)}
                       style={{
                         width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '9px 11px', marginBottom: 2,
+                        minHeight: 'var(--tap)',
                         border: 0, borderRadius: 8, cursor: 'pointer', fontSize: 13.5, fontWeight: active ? 600 : 500,
                         fontFamily: 'inherit', textAlign: 'left',
                         color: active ? 'var(--primary)' : 'var(--text-2)',
@@ -123,6 +218,11 @@ export default function Layout() {
               </div>
             ))}
           </nav>
+          {movil ? (
+            <div style={{ padding: 12, borderTop: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {controles}
+            </div>
+          ) : null}
           <div style={{ padding: 12, borderTop: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 9, background: 'var(--surface-2)' }}>
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary-700)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>
@@ -142,51 +242,29 @@ export default function Layout() {
 
         {/* MAIN */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <header style={{ height: 60, flex: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '0 22px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 20 }}>
+          <header style={{ height: 60, flex: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '0 var(--gap-page)', background: 'var(--surface)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 20 }}>
+            {movil ? (
+              <button
+                ref={btnMenu}
+                onClick={() => setMenuAbierto((v) => !v)}
+                aria-label={menuAbierto ? t.menu_close : t.menu_open}
+                aria-expanded={menuAbierto}
+                aria-controls="fava-nav"
+                style={{ ...ghostIconBtn, flex: 'none' }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d={menuAbierto ? 'M6 18 18 6M6 6l12 12' : 'M4 7h16M4 12h16M4 17h16'} />
+                </svg>
+              </button>
+            ) : null}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{titleMap[state.route] || ''}</div>
             </div>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '0 10px', height: 34, width: 220, color: 'var(--text-3)' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="7" />
-                <path d="M21 21l-4-4" />
-              </svg>
-              <input
-                placeholder={t.search}
-                value={state.search}
-                onChange={(e) => patch({ search: e.target.value })}
-                style={{ border: 0, background: 'transparent', outline: 'none', color: 'var(--text)', fontSize: 13, marginLeft: 8, width: '100%', fontFamily: 'inherit' }}
-              />
-            </div>
-            {/* selector de rol — solo si el usuario tiene más de uno */}
-            {state.myRoles.length > 1 ? (
-              <div style={{ display: 'flex', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: 2 }}>
-                {state.myRoles.map((code) => (
-                  <button
-                    key={code}
-                    onClick={() => switchRole(code)}
-                    title={roleLabel[code]}
-                    style={{
-                      padding: '5px 11px', border: 0, borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Roboto Mono',
-                      background: state.role === code ? 'var(--primary)' : 'transparent',
-                      color: state.role === code ? '#fff' : 'var(--text-3)',
-                    }}
-                  >
-                    {code}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            <button onClick={toggleLang} style={ghostBtn}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 5 }}>
-                <circle cx="12" cy="12" r="9" />
-                <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
-              </svg>
-              {state.lang.toUpperCase()}
-            </button>
-            <button onClick={toggleTheme} aria-label="theme" style={ghostIconBtn}>{themeIcon}</button>
+            {/* En movil estos cuatro no caben en 390px: viven dentro del panel. Se
+                renderizan en un sitio o en el otro, nunca en los dos. */}
+            {movil ? null : controles}
             {state.myRoles.some((r) => r !== 'T') ? (
-              <button onClick={goInbox} aria-label="inbox" style={{ ...ghostIconBtn, position: 'relative' }}>
+              <button onClick={goInbox} aria-label="inbox" style={{ ...ghostIconBtn, position: 'relative', flex: 'none' }}>
                 {svg(ICON.bell, { w: 17 })}
                 {count ? (
                   <span style={{ position: 'absolute', top: 2, right: 2, background: 'var(--accent)', color: '#fff', fontSize: 9, fontWeight: 700, minWidth: 15, height: 15, padding: '0 3px', borderRadius: 8, display: 'grid', placeItems: 'center' }}>
@@ -197,7 +275,7 @@ export default function Layout() {
             ) : null}
           </header>
 
-          <main style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+          <main style={{ flex: 1, overflowY: 'auto', padding: 'var(--gap-page)' }}>
             {state.loading ? (
               <div style={{ display: 'grid', placeItems: 'center', minHeight: '50vh', color: 'var(--text-3)' }}>
                 <div style={{ textAlign: 'center' }}>
