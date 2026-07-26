@@ -41,3 +41,43 @@ sí cruza husos — pero el `updatedAt` viaja serializado por Prisma como ISO en
 como prueba de cuándo se aprobó la nota, un `timestamp` sin zona es un instante sin
 referencia — legible pero no defendible. Decidir allí si se migra a `timestamptz` o si
 el expediente imprime explícitamente «hora UTC».
+
+---
+
+## 3. `roadmap update-plan-progress` corrompe el mapa de cutover de ROADMAP.md — dueño: **la verificación de fase / quien mantenga gsd-tools**
+
+**Encontrado en:** 03-02, al cerrar el plan.
+
+El comando busca la fila `| N |` para escribir el progreso y **acierta en la tabla
+equivocada**: en vez de la tabla de progreso de fases toca «Frontend Cutover Map», cuya
+primera columna también es el número de fase. Al ejecutar `update-plan-progress 3`
+reescribió `| 3 | Week, LogDayDrawer |` como
+`| 3 | 1/6 | In Progress|  | Inbox, Notes, ReturnModal, Audit, bandeja de Home |`,
+**borrando de paso la fila entera de la Fase 4**. Se revirtió a mano en 03-02.
+
+**Lo que queda diferido:** la fila `| 1 |` de esa misma tabla **sigue corrupta y ya está
+commiteada** (`| 1 | 1/6 | In Progress|  | Projects, ProjectDetail, … |`), de una
+ejecución anterior del mismo comando. No se toca desde aquí porque es dato de otra fase.
+El contenido original, recuperable de git, es
+`| 1 | Projects, ProjectDetail, Techs, Users, Config, NewProjectModal, InviteUserModal |`.
+
+**Y lo importante para esta wave:** 03-01 y 03-03 corren en paralelo y **volverán a
+ejecutar el mismo comando**, así que la fila de la Fase 3 puede aparecer rota otra vez al
+cerrar la wave — conviene mirarla en la verificación de fase. Es el tercer fallo conocido
+de estas herramientas en este repo, junto con `state advance-plan` (busca campos que este
+STATE.md no usa) y el `update-plan-progress` que responde `updated: true` sin escribir la
+fila de la tabla de progreso.
+
+---
+
+## 4. `BIT-02` y `BIT-04` NO se marcan «Complete» al cerrar 03-02 — dueño: **la verificación de fase**
+
+**Encontrado en:** 03-02, al ejecutar `requirements mark-complete BIT-02 BIT-04` según el
+frontmatter del plan.
+
+La herramienta marcó los dos como `Complete` en REQUIREMENTS.md y **es falso**: BIT-02 lo
+reclaman 5 de los 6 planes de la fase y BIT-04, 4 de 6. 03-02 entrega la **mitad cliente**
+(`hoyLocal` en 4 husos, borrador local con su detección de conflicto); la columna `DATE`,
+el `UNIQUE` y la idempotencia del `PUT` son 03-01 y 03-04. Revertidos a
+`In Progress` con la mitad que falta escrita en la celda. **Quien cierre la fase es quien
+los marca Complete**, y solo con los 6 planes ejecutados.

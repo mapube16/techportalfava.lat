@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completado 02-06-PLAN.md (cutover de frontend: fase 2 con sus 6 planes ejecutados)"
-last_updated: "2026-07-26T19:21:43.232Z"
-last_activity: "2026-07-26 — 02-06 completado: las 5 pantallas de administración leen del API real. Delta invertido borrado (el servidor lo calcula), matriz derivada del catálogo de roles, autoguardado por celda y check:no-free-text en verde y enganchado al build"
+stopped_at: Completado 03-02-PLAN.md (runner de tests del frontend + fecha.ts y draft.ts del cliente)
+last_updated: "2026-07-26T20:19:09.422Z"
+last_activity: "2026-07-26 — 03-02 completado: el frontend estrena runner de tests (`node --import tsx --test`, cero dependencias nuevas, enganchado al build del workspace) con `fecha.ts` probado en 4 husos del dispositivo y `draft.ts` (borrador local, Storage inyectable) en sus 4 modos de fallo. 35/35 en verde"
 progress:
   total_phases: 8
   completed_phases: 1
-  total_plans: 13
-  completed_plans: 11
-  percent: 85
+  total_plans: 19
+  completed_plans: 12
+  percent: 63
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Captura única — el técnico registra el día una vez → Nota Semanal firmada + KPIs + control comercial salen solos.
-**Current focus:** Phase 2 — Maestros y catálogos
+**Current focus:** Phase 3 — Bitácora diaria
 
 ## Current Position
 
-Phase: 2 of 8 (Maestros y catálogos)
-Plan: 6 of 6 (los 6 ejecutados — pendiente la verificación de fase)
+Phase: 3 of 8 (Bitácora diaria)
+Plan: wave 1 en curso — 03-01, 03-02 y 03-03 en paralelo; **03-02 completado**
 Status: Executing
-Last activity: 2026-07-26 — 02-06 completado: las 5 pantallas de administración leen del API real. Delta invertido borrado (el servidor lo calcula), matriz derivada del catálogo de roles, autoguardado por celda y check:no-free-text en verde y enganchado al build
+Last activity: 2026-07-26 — 03-02 completado: el frontend estrena runner de tests (`node --import tsx --test`, cero dependencias nuevas, enganchado al build del workspace) con `fecha.ts` probado en 4 husos del dispositivo y `draft.ts` (borrador local, Storage inyectable) en sus 4 modos de fallo. 35/35 en verde
 
-Progress: [█████████░] 85%
+Progress: [██████░░░░] 63%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [█████████░] 85%
 | Phase 02 P03 | 1 | 42 min | 42 min (2 tasks, 9 files) |
 | Phase 02 P05 | 1 | 35 min | 35 min (3 tasks, 8 files) |
 | Phase 02 P06 | 1 | 62 min | 62 min (3 tasks, 23 files) |
+| Phase 03 P02 | 1 | 34 min | 34 min (2 tasks, 5 files) |
 
 **Recent Trend:**
 - Last 5 plans: 02-06 (62 min), 02-05 (35 min), 02-03 (42 min), 02-04 (21 min), 02-02 (24 min)
@@ -112,6 +113,10 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 02]: [02-06]: Los tipos del API viven junto a su cliente en lib/api/*.ts, que es donde esta el contrato; types.ts se queda con los tipos de interfaz
 - [Phase 02]: [02-06]: check:no-free-text esta enganchado a npm run build (raiz): un input de concepto/rol/moneda o un mock de vuelta tumban el deploy de Railway en el primer paso
 - [Phase 02]: [02-06]: LogDayDrawer sigue con mock a proposito: la Fase 3 tiene que RELAJAR el @Roles del GET /api/projects a T, no crear un endpoint nuevo
+- [Phase 03]: [03-02]: El runner de tests del frontend se engancha al build del WORKSPACE (npm run test && tsc && vite build), no al de la raiz: entra en el build de Railway sin tocar el package.json que 03-01 edita en la misma wave
+- [Phase 03]: [03-02]: Los .test.ts van listados POR NOMBRE en el script test: npm lanza los scripts por cmd.exe en Windows (no expande globs) y el descubrimiento de .ts de node --test depende de la minor de Node
+- [Phase 03]: [03-02]: En los tests del frontend se usa import { strict as assert } from 'node:assert': el tsconfig no tiene esModuleInterop y el default import de node:assert/strict (export =) no type-checa
+- [Phase 03]: [03-02]: El GET de la semana (03-04) DEBE devolver updatedAt por fila: enConflicto compara updatedAt del servidor contra savedAt del borrador y sin el no hay deteccion de conflicto
 
 ### Pending Todos
 
@@ -138,9 +143,10 @@ Riesgo técnico:
 Nota de inventario:
 - REQUIREMENTS.md declaraba 38 requisitos v1; el conteo real por ID es 41. Corregido en la sección Traceability.
 - [Phase 1] Mientras DEV_AUTH_ENABLED este encendido, quien conozca la contrasena compartida entra como CUALQUIER email dado de alta (incluido el Super Admin): no meter datos reales hasta el cutover al tenant de FAVA (docs/ENV.md)
+- [Phase 3] gsd-tools roadmap update-plan-progress N corrompe el mapa de cutover de ROADMAP.md: busca la fila de la fase y acierta en la tabla equivocada, borrando la fila de la fase siguiente (verificado y revertido a mano en 03-02; la fila de la Phase 1 sigue corrupta y commiteada). 03-01 y 03-03 ejecutan el mismo comando en esta wave: revisar esa tabla en la puerta de fase
 
 ## Session Continuity
 
-Last session: 2026-07-26T18:09:28.489Z
-Stopped at: Completado 02-06-PLAN.md (cutover de frontend: fase 2 con sus 6 planes ejecutados)
+Last session: 2026-07-26T20:15:29.291Z
+Stopped at: Completado 03-02-PLAN.md (runner de tests del frontend + fecha.ts y draft.ts del cliente)
 Resume file: None

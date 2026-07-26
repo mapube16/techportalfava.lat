@@ -70,7 +70,7 @@ Plans:
 
 Plans:
 - [ ] 03-01-PLAN.md — Migración (description + CHECK BIT-03 + GRANT), `fecha.ts` del servidor y el guarda-rail `check-fecha-servidor` (Wave 1)
-- [ ] 03-02-PLAN.md — Primer runner de tests del frontend (`node --test` + tsx, cero deps) + `lib/fecha.ts` y `lib/draft.ts` como módulos puros (Wave 1)
+- [x] 03-02-PLAN.md — Primer runner de tests del frontend (`node --test` + tsx, cero deps) + `lib/fecha.ts` y `lib/draft.ts` como módulos puros (Wave 1)
 - [ ] 03-03-PLAN.md — `GET /api/projects` relajado a T con proyección de técnico (solo nombre y máquinas) (Wave 1)
 - [ ] 03-04-PLAN.md — API de la bitácora: GET de la semana, PUT/DELETE del día, idempotencia por clave natural y la suite de 4 husos (Wave 2)
 - [ ] 03-05-PLAN.md — Cliente tipado + `Week.tsx`: grilla de 7 días, navegación, ventana temporal y borrador local (Wave 3)
