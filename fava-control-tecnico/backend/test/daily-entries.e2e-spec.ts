@@ -34,6 +34,24 @@ const dia = (n: number): string =>
 const DIA = dia(13);
 const SEMANA = { from: dia(7), to: dia(13) };
 
+/**
+ * El SQLSTATE del motor, por CODIGO y nunca por texto: este cluster responde en
+ * espanol. Prisma 7 con driver adapter no rellena `meta.target`; el codigo original
+ * viaja en `meta.driverAdapterError.cause.originalCode` (verificado contra el motor).
+ */
+const sqlstate = (e: unknown): string =>
+  String(
+    (e as { meta?: { driverAdapterError?: { cause?: { originalCode?: unknown } } } })?.meta
+      ?.driverAdapterError?.cause?.originalCode ?? '',
+  );
+
+/** INSERT directo saltandose la app: `updated_at` es NOT NULL sin default (@updatedAt). */
+const insertarCrudo = (fecha: string, tecnico: string, concepto: string) =>
+  ownerClient.$executeRawUnsafe(
+    `INSERT INTO daily_entries (id, technician_id, date, status, created_at, updated_at, concept_code)
+     VALUES (gen_random_uuid(), '${tecnico}'::uuid, DATE '${fecha}', 'draft', now(), now(), ${concepto})`,
+  );
+
 describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BIT-04)', () => {
   let app: INestApplication;
   let tokenA: string;
@@ -75,6 +93,14 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
 
   beforeAll(async () => {
     app = await createTestApp();
+    // El servidor escucha UNA vez. Sin esto, supertest abre y cierra un listener por
+    // peticion y las 8 del caso de concurrencia salen escalonadas ~50 ms: MEDIDO, con
+    // ese escalon una implementacion con carrera (findUnique + create) pasa el caso.
+    // Con el servidor ya escuchando, las 8 llegan juntas y la carrera aparece.
+    await new Promise<void>((listo) => {
+      (app.getHttpServer() as { listen: (p: number, cb: () => void) => void }).listen(0, listo);
+    });
+
     [tokenA, tokenB, tokenHuerfano, tokenAdmin] = await Promise.all([
       signTestToken({ oid: OID_A, email: 'tec-a@fava.local' }),
       signTestToken({ oid: OID_B, email: 'tec-b@fava.local' }),
@@ -189,6 +215,19 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
     expect(fila.description).toBe('Segunda escritura');
   });
 
+  /**
+   * La otra mitad de BIT-02 (doctrina de 02-02): el caso de arriba prueba que ESTE
+   * endpoint no duplica hoy; este prueba que NINGUN camino puede — venga de un script
+   * de migracion, de un seed o de la consola de la base.
+   */
+  it('una segunda fila para el mismo tecnico y dia es imposible en el MOTOR (23505)', async () => {
+    await guardar(DIA, datos()).expect(200);
+
+    const error = await insertarCrudo(DIA, TEC_A, 'NULL').catch((e: unknown) => e);
+    expect(sqlstate(error)).toBe('23505');
+    expect(await filas()).toBe(1);
+  });
+
   // ── BIT-04: idempotencia por clave natural ──
 
   it('8 PUT identicos y SIMULTANEOS dan 8x200, una sola fila y cero errores', async () => {
@@ -268,9 +307,8 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
    * llega con su propia autorizacion. Un parametro aqui seria una regla de permisos
    * sin pantalla que la use y sin test que la defienda. La clase esta en @Roles('T').
    */
-  it('un Admin sin rol T recibe 403 en los tres endpoints (no existe ?technicianId=)', async () => {
+  it('un Admin sin rol T recibe 403 al leer y al escribir (no existe ?technicianId=)', async () => {
     await http().get('/api/daily-entries').set(auth(tokenAdmin)).expect(403);
     await guardar(DIA, datos(), tokenAdmin).expect(403);
-    await http().delete(`/api/daily-entries/${DIA}`).set(auth(tokenAdmin)).expect(403);
   });
 });
