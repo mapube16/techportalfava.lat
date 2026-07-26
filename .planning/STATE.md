@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completado 02-04-PLAN.md (invitacion + vinculo usuario<->tecnico: precondicion de la Fase 3 cubierta)"
-last_updated: "2026-07-26T13:18:43.927Z"
-last_activity: "2026-07-26 — 02-04 completado: CAT-05 por backend (invitar + vincular con técnico) y la precondición de la Fase 3 probada end-to-end: sin vínculo el usuario ve 0 jornadas, con vínculo solo las suyas"
+stopped_at: "Completado 02-03-PLAN.md (catalogos + maestro de tecnicos: wave 2 cerrada)"
+last_updated: "2026-07-26T13:20:26.575Z"
+last_activity: "2026-07-26 — 02-03 completado: wave 2 cerrada. `GET /api/catalogs` (4 catálogos, abierto a T/A/S) y el maestro de técnicos (alta sin cuenta Entra, baja no destructiva); 12 rutas y ni un DELETE"
 progress:
   total_phases: 8
   completed_phases: 0
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 2 of 8 (Maestros y catálogos)
-Plan: 3 of 6
+Plan: 5 of 6
 Status: Executing
-Last activity: 2026-07-26 — 02-04 completado: CAT-05 por backend (invitar + vincular con técnico) y la precondición de la Fase 3 probada end-to-end: sin vínculo el usuario ve 0 jornadas, con vínculo solo las suyas
+Last activity: 2026-07-26 — 02-03 completado: wave 2 cerrada. `GET /api/catalogs` (4 catálogos, abierto a T/A/S) y el maestro de técnicos (alta sin cuenta Entra, baja no destructiva); 12 rutas y ni un DELETE
 
 Progress: [███████░░░] 69%
 
@@ -100,6 +100,11 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 02-maestros-y-cat-logos]: [02-04]: La regla de escalada se extrae a exigirSuperParaAdmins y la comparten asignarRoles y crear: una condicion, dos caminos, imposible relajar uno solo
 - [Phase 02-maestros-y-cat-logos]: [02-04]: Prisma 7 con driver adapter NO rellena meta.target: el nombre de la restriccion violada solo viaja en meta.driverAdapterError.cause.originalMessage (mensaje traducido, identificador no)
 - [Phase 02-maestros-y-cat-logos]: [02-04]: app.technician_id ya se puede poblar y esta probado end-to-end (endpoint -> columna -> guard -> interceptor -> politica): un tecnico sin vinculo ve CERO registros, no un error
+- [Phase 02]: [02-03]: @Roles restrictivo en la CLASE y relajado en el metodo que lo necesita (el guard hace getAllAndOverride): el olvido del decorador en un endpoint futuro cae del lado seguro, no queda abierto
+- [Phase 02]: [02-03]: El duplicado se detecta con un findUnique PREVIO, no capturando P2002: un error del motor aborta la transaccion-por-peticion y el SELECT que distingue YA_EXISTE de YA_EXISTE_INACTIVO ya no se podria ejecutar
+- [Phase 02]: [02-03]: Traduccion Prisma->HTTP obligatoria en todo servicio nuevo (P2002->409, P2003->400, P2025->404): sin ella un id inexistente o un FK roto salen como 500
+- [Phase 02]: [02-03]: GET /api/catalogs es el contrato cerrado que consume la Fase 3 y 02-06; los listados NO filtran por isActive (filtran los selectores del cliente)
+- [Phase 02]: [02-03]: Las suites e2e de la fase NO se pueden correr en paralelo contra el mismo Postgres: truncateAll() es global y sin aislamiento por suite; ante un fallo asi se reejecuta, no se edita el test
 
 ### Pending Todos
 
@@ -120,6 +125,8 @@ Riesgo técnico:
 - [Phase 1] Railway no debe entregar al runtime una `DATABASE_URL` de superusuario: un superusuario se salta RLS **incluso con FORCE** y sin ningún síntoma. Verificar en el Plan 01-06.
 - [Phase 2] **Pitfall 7 mitigado, no cerrado.** El `GRANT` dentro de `20260726123024_rls_maestros` cubre el caso en que `db:bootstrap` y `migrate deploy` los corra un rol distinto (las 8 tablas nuevas nacerían sin permisos y la app daría `permission denied for table projects` justo tras un deploy exitoso). Confirmarlo en Railway exige un `GET /api/projects` autenticado en el smoke — dueño: el plan que amplíe `scripts/smoke.ts`.
 - [Phase 2] `frontend/src/screens/Kpis.tsx` romperá el build (`tsc && vite build`) cuando `types.ts` deje de ser el contrato del API. Salida de una línea documentada en `.planning/phases/02-maestros-y-cat-logos/deferred-items.md` — dueño: plan 02-06.
+- [Phase 2] **Las suites e2e no están aisladas entre procesos.** `truncateAll()` vacía `users` global, así que dos agentes (o un CI con `--maxWorkers>1`) sobre la misma base se tumban tests mutuamente: en 02-03 pasó tres veces (7 fallos en `catalogs`, 2 en `users-invite`, 1 build sin error de tsc) y las tres se resolvieron re-ejecutando, sin tocar código. Dentro de un proceso `--runInBand` ya lo cubre; entre procesos hace falta base por worker — dueño: el plan que monte el CI de la fase.
+- [Phase 2] `gsd-tools roadmap update-plan-progress` responde `updated: true` pero **no escribe** la fila de la tabla de progreso (verificado dos veces en 02-03: `summary_count: 4`, fila intacta en `2/6`), y `state advance-plan` falla siempre en este repo porque busca los campos `Current Plan` / `Total Plans in Phase` y el STATE.md usa `Plan: N of M`. Los dos se están supliendo a mano en cada plan.
 
 Nota de inventario:
 - REQUIREMENTS.md declaraba 38 requisitos v1; el conteo real por ID es 41. Corregido en la sección Traceability.
@@ -127,6 +134,6 @@ Nota de inventario:
 
 ## Session Continuity
 
-Last session: 2026-07-26T13:16:40.669Z
-Stopped at: Completado 02-04-PLAN.md (invitacion + vinculo usuario<->tecnico: precondicion de la Fase 3 cubierta)
-Resume file: None
+Last session: 2026-07-26T13:20:25.960Z
+Stopped at: Completado 02-03-PLAN.md (catalogos + maestro de tecnicos: wave 2 cerrada)
+Resume file: .planning/phases/02-maestros-y-cat-logos/02-05-PLAN.md
