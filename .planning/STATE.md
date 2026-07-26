@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completado 02-01-PLAN.md (esquema de maestros cerrado)
-last_updated: "2026-07-26T12:50:55.683Z"
-last_activity: "2026-07-26 — 02-01 completado: esquema de maestros cerrado (8 tablas, 3 enums, 12 FKs, RLS en las 8) y las 7 suites de la Fase 1 verdes sin editarlas"
+stopped_at: "Completado 02-02-PLAN.md (criterio 4 comprobable: introspeccion + guarda-rail de repo)"
+last_updated: "2026-07-26T13:08:43.356Z"
+last_activity: "2026-07-26 — 02-02 completado: el criterio 4 («sin texto libre») ya es comprobable — 4 casos de introspección en verde + guarda-raíl de repo enganchado a npm (rojo con 4 hallazgos que cierra 02-06)"
 progress:
   total_phases: 8
   completed_phases: 1
   total_plans: 13
-  completed_plans: 6
-  percent: 46
+  completed_plans: 7
+  percent: 54
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 2 of 8 (Maestros y catálogos)
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Executing
-Last activity: 2026-07-26 — 02-01 completado: esquema de maestros cerrado (8 tablas, 3 enums, 12 FKs, RLS en las 8) y las 7 suites de la Fase 1 verdes sin editarlas
+Last activity: 2026-07-26 — 02-02 completado: el criterio 4 («sin texto libre») ya es comprobable — 4 casos de introspección en verde + guarda-raíl de repo enganchado a npm (rojo con 4 hallazgos que cierra 02-06)
 
-Progress: [█████░░░░░] 46%
+Progress: [█████░░░░░] 54%
 
 ## Performance Metrics
 
@@ -49,9 +49,10 @@ Progress: [█████░░░░░] 46%
 | Phase 01 P03 | 1 | 45 min | 45 min (3 tasks, 28 files) |
 | Phase 01 P07 | 1 | 50 min | 50 min (3 tasks, 17 files) |
 | Phase 02 P01 | 1 | 33 min | 33 min (3 tasks, 7 files) |
+| Phase 02 P02 | 1 | 24 min | 24 min (2 tasks, 3 files) |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (33 min), 01-07 (50 min), 01-03 (45 min), 01-02 (15 min), 01-05 (55 min)
+- Last 5 plans: 02-02 (24 min), 02-01 (33 min), 01-07 (50 min), 01-03 (45 min), 01-02 (15 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -90,6 +91,10 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 02-maestros-y-cat-logos]: [02-01]: GRANT explicito a fava_app dentro de la migracion de RLS (contra la doctrina de 01-02): ALTER DEFAULT PRIVILEGES solo cubre las tablas creadas por ESE rol (Pitfall 7)
 - [Phase 02-maestros-y-cat-logos]: [02-01]: La receta de migracion de este repo es migrate diff --from-config-datasource + migrate deploy: migrate dev aborta en entorno no interactivo y --from-url fue removido en Prisma 7
 - [Phase 02-maestros-y-cat-logos]: [02-01]: Fase 5: el NIT: del encabezado de la Nota es el de FAVA (901137532-4), constante del membrete, NUNCA projects.client_nit
+- [Phase 02-maestros-y-cat-logos]: [02-02]: El criterio 4 se demuestra por INTROSPECCION (information_schema + pg_enum), no por endpoint: un test de API prueba que ESE endpoint valida hoy; el catalogo del sistema prueba que ningun endpoint, script, seed ni consola de BD podra meter un valor fuera de la lista
+- [Phase 02-maestros-y-cat-logos]: [02-02]: Los fallos de un test de introspeccion se afirman como LISTA de strings (expect(faltantes).toEqual([])), nunca como booleano: el mensaje tiene que nombrar la columna
+- [Phase 02-maestros-y-cat-logos]: [02-02]: check:no-free-text NO se engancha a npm run build mientras salga rojo (4 hallazgos legitimos de mocks); engancharlo es una linea y es tarea de 02-06 cuando lo ponga en verde
+- [Phase 02-maestros-y-cat-logos]: [02-02]: El DDL sobre la base local esta denegado por el sandbox: la verificacion en rojo de un test table-driven se hace anadiendo una fila falsa a la tabla de casos, no rompiendo el esquema
 
 ### Pending Todos
 
@@ -117,6 +122,6 @@ Nota de inventario:
 
 ## Session Continuity
 
-Last session: 2026-07-26T12:50:36.710Z
-Stopped at: Completado 02-01-PLAN.md (esquema de maestros cerrado)
-Resume file: .planning/phases/02-maestros-y-cat-logos/02-02-PLAN.md
+Last session: 2026-07-26T13:07:20.381Z
+Stopped at: Completado 02-02-PLAN.md (criterio 4 comprobable: introspeccion + guarda-rail de repo)
+Resume file: None
