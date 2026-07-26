@@ -53,7 +53,7 @@ Plans:
   4. Concepto de jornada, rol técnico y moneda solo se eligen de listas cerradas — ninguno de los tres acepta texto libre en ninguna pantalla.
   5. Proyectos, Detalle de Proyecto, Técnicos, Usuarios y Config leen del API real; sus mocks salieron de `data.ts`.
 **Frontend cutover**: `Projects.tsx`, `ProjectDetail.tsx`, `Techs.tsx`, `Users.tsx`, `Config.tsx`, `NewProjectModal.tsx`, `InviteUserModal.tsx`
-**Plans**: TBD
+**Plans**: 6 (0/6 complete)
 
 ### Phase 3: Bitácora diaria
 **Goal**: El técnico registra su semana una sola vez desde el móvil en planta, y el dato sobrevive a la conectividad mala y al doble toque.
@@ -168,7 +168,7 @@ Las fases se ejecutan en orden numérico. Phase 6 (migración) puede adelantarse
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fundación segura y desplegada | 0/6 | Not started | - |
-| 2. Maestros y catálogos | 0/TBD | Not started | - |
+| 2. Maestros y catálogos | 0/6 | Planned    |  |
 | 3. Bitácora diaria | 0/TBD | Not started | - |
 | 4. Flujo de aprobación y auditoría | 0/TBD | Not started | - |
 | 5. Nota Semanal PDF y firma | 0/TBD | Not started | - |

@@ -1,10 +1,11 @@
 ---
 phase: 2
 slug: maestros-y-cat-logos
-status: draft
-nyquist_compliant: false
+status: planned
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-07-25
+updated: 2026-07-26
 ---
 
 # Phase 2 — Validation Strategy
@@ -40,12 +41,31 @@ Base de datos: Postgres 17 local en el puerto 55432 (`db:bootstrap` + `db:migrat
 
 ## Per-Task Verification Map
 
-Lo completa el planner. El mapa autoritativo requisito → comportamiento → comando está en
-`02-RESEARCH.md` § Validation Architecture (24 comportamientos sobre CAT-01..CAT-05).
+El mapa autoritativo requisito → comportamiento → comando está en `02-RESEARCH.md`
+§ Validation Architecture (24 comportamientos sobre CAT-01..CAT-05). Aquí, el mapa por tarea:
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| (lo llena el planner) | — | — | CAT-01..05 | — | — | ❌ W0 | ⬜ pending |
+| 02-01-T1 | 02-01 | 1 | CAT-01..05 | migración + build | `prisma migrate deploy && npm -w backend run build` | ❌ la task lo crea | ⬜ pending |
+| 02-01-T2 | 02-01 | 1 | CAT-01 | e2e (RLS de maestros) | `npm -w backend run test:e2e -- rls-maestros` | ❌ la task lo crea | ⬜ pending |
+| 02-01-T3 | 02-01 | 1 | CAT-01..05 | e2e (suites de Fase 1 siguen verdes tras los FKs) | `npm -w backend run test:e2e` | ✅ existen | ⬜ pending |
+| 02-01-T4 | 02-01 | 1 | CAT-01 | e2e (8 conceptos sembrados) | `npm -w backend run test:e2e -- catalogs` | ❌ la task lo crea | ⬜ pending |
+| 02-02-T1 | 02-02 | 2 | CAT-01 | e2e (introspección: FKs y enum) | `npm -w backend run test:e2e -- no-free-text` | ❌ la task lo crea | ⬜ pending |
+| 02-02-T2 | 02-02 | 2 | CAT-01 | e2e (API rechaza valores fuera de catálogo) | `npm -w backend run test:e2e -- no-free-text` | ❌ la task lo crea | ⬜ pending |
+| 02-02-T3 | 02-02 | 2 | CAT-01 | script de repo (7 pantallas sin input libre) | `node scripts/check-no-free-text.mjs` | ❌ la task lo crea | ⬜ pending |
+| 02-03-T1 | 02-03 | 2 | CAT-01 | e2e | `npm -w backend run test:e2e -- catalogs` | ❌ la task lo crea | ⬜ pending |
+| 02-03-T2 | 02-03 | 2 | CAT-01 | e2e (etiquetas: Admin 403, Super 200) | `npm -w backend run test:e2e -- catalogs` | ❌ | ⬜ pending |
+| 02-03-T3 | 02-03 | 2 | CAT-02 | e2e (técnico sin Entra, desactivar conserva historia) | `npm -w backend run test:e2e -- technicians` | ❌ la task lo crea | ⬜ pending |
+| 02-04-T1 | 02-04 | 2 | CAT-05 | e2e (invitar + escalada) | `npm -w backend run test:e2e -- users-invite` | ❌ la task lo crea | ⬜ pending |
+| 02-04-T2 | 02-04 | 2 | CAT-05 | e2e (vínculo usuario↔técnico → /api/me) | `npm -w backend run test:e2e -- users-invite` | ❌ | ⬜ pending |
+| 02-04-T3 | 02-04 | 2 | CAT-05 | e2e (reasignar técnico vinculado → 409) | `npm -w backend run test:e2e -- users-invite` | ❌ | ⬜ pending |
+| 02-05-T1 | 02-05 | 3 | CAT-03 | e2e (7 campos del encabezado, Decimal como number) | `npm -w backend run test:e2e -- projects` | ❌ la task lo crea | ⬜ pending |
+| 02-05-T2 | 02-05 | 3 | CAT-03 | e2e (máquinas: PUT reemplaza, quitar con jornadas) | `npm -w backend run test:e2e -- projects.machines` | ❌ | ⬜ pending |
+| 02-05-T3 | 02-05 | 3 | CAT-04 | e2e (delta = sold − executed, sin campo delta) | `npm -w backend run test:e2e -- sold-days` | ❌ la task lo crea | ⬜ pending |
+| 02-05-T4 | 02-05 | 3 | CAT-04 | e2e (idempotencia de celda, bucket «sin fase») | `npm -w backend run test:e2e -- sold-days` | ❌ | ⬜ pending |
+| 02-06-T1 | 02-06 | 4 | CAT-01, CAT-02, CAT-05 | build + script | `npm run build && node scripts/check-no-free-text.mjs` | dep: 02-02 | ⬜ pending |
+| 02-06-T2 | 02-06 | 4 | CAT-03, CAT-04 | build + script | `npm run build && node scripts/check-no-free-text.mjs` | dep: 02-02 | ⬜ pending |
+| 02-06-T3 | 02-06 | 4 | CAT-01..05 | build (Kpis.tsx compila con tipos nuevos) | `npm run build` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
