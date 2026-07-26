@@ -134,7 +134,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CAT-04 | Phase 2 — Maestros y catálogos | Complete |
 | CAT-05 | Phase 2 — Maestros y catálogos | Complete |
 | CAT-06 | Phase 4 — Flujo de aprobación y auditoría | Pending |
-| BIT-01 | Phase 3 — Bitácora diaria | Pending |
+| BIT-01 | Phase 3 — Bitácora diaria | In Progress (selector de proyecto/máquina servido en 03-03; columna description en 03-01; captura y escritura en 03-04/03-05) |
 | BIT-02 | Phase 3 — Bitácora diaria | In Progress (mitad cliente en 03-02; servidor en 03-01/03-04) |
 | BIT-03 | Phase 3 — Bitácora diaria | Pending |
 | BIT-04 | Phase 3 — Bitácora diaria | In Progress (borrador local en 03-02; idempotencia en 03-04) |

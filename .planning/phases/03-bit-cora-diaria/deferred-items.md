@@ -81,3 +81,36 @@ reclaman 5 de los 6 planes de la fase y BIT-04, 4 de 6. 03-02 entrega la **mitad
 el `UNIQUE` y la idempotencia del `PUT` son 03-01 y 03-04. Revertidos a
 `In Progress` con la mitad que falta escrita en la celda. **Quien cierre la fase es quien
 los marca Complete**, y solo con los 6 planes ejecutados.
+
+**Reincidencia en 03-03:** `requirements mark-complete BIT-01` marcó BIT-01 como
+`Complete` con el mismo criterio equivocado. 03-03 solo sirve el **selector** (la lista de
+proyectos activos con sus máquinas); la grilla, el drawer y la escritura son 03-04 y
+03-05, y la columna `description` es 03-01. Revertido a `In Progress` con las tres mitades
+que faltan escritas en la celda. Es el mismo fallo, la tercera vez: **el frontmatter
+`requirements:` de un plan dice qué requisito TOCA, no cuál CIERRA**.
+
+---
+
+## 5. Dos suites de la Fase 2 caen contra el CHECK nuevo — dueño: **03-01** (o la verificación de fase)
+
+**Encontrado en:** 03-03, al correr la suite completa (`14 suites, 278 tests → 276 verdes`).
+
+`crearJornadaAprobada()` (`test/helpers/fixtures.ts`) tiene `conceptCode: 'DC'` fijo y
+`projectId` **opcional**. Desde que 03-01 aplicó `20260726150806_bitacora`, llamarla sin
+`projectId` es un **23514** (`de_proyecto_por_concepto`). Caen exactamente dos casos, los
+dos de suites de la Fase 2 y los dos por la misma línea:
+
+| Suite | Caso |
+|---|---|
+| `technicians.e2e-spec.ts` | `desactivar a un tecnico lo deja en la lista y sus jornadas siguen legibles` |
+| `sold-days.e2e-spec.ts` | `la matriz no cuenta las jornadas de otro proyecto ni las de ninguno` |
+
+No es interferencia entre procesos (no se arregla re-ejecutando): es la consecuencia
+esperada del CHECK, y el fallo es **legítimo** — esas dos jornadas «sin proyecto» con
+concepto `DC` ya no son estado posible en la base. Ojo con el segundo: su enunciado es
+justamente «ni las de ninguno», así que el arreglo no es meterle un `projectId` sino usar
+un concepto **sin proyecto** (`LR`/`NR`/`IL`), que es lo que el CHECK permite.
+
+**03-03 no lo toca a propósito:** `fixtures.ts` es contrato cerrado (02-01) y las dos
+suites son de otros planes. Se deja escrito aquí para que quien cierre la wave no lo lea
+como flakiness de `truncateAll()`.

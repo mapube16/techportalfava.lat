@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completado 03-02-PLAN.md (runner de tests del frontend + fecha.ts y draft.ts del cliente)
-last_updated: "2026-07-26T20:19:09.422Z"
-last_activity: "2026-07-26 — 03-02 completado: el frontend estrena runner de tests (`node --import tsx --test`, cero dependencias nuevas, enganchado al build del workspace) con `fecha.ts` probado en 4 husos del dispositivo y `draft.ts` (borrador local, Storage inyectable) en sus 4 modos de fallo. 35/35 en verde"
+stopped_at: Completado 03-03-PLAN.md (GET /api/projects abierto al Tecnico con proyeccion propia)
+last_updated: "2026-07-26T20:25:00.000Z"
+last_activity: "2026-07-26 — 03-03 completado: un Tecnico lista los proyectos ACTIVOS y recibe exactamente {id, name, machines}; las otras 6 rutas de /api/projects siguen en 403, asertadas una a una. Cuatro verificaciones en rojo (2, 2, 1 y 6 casos caidos); projects 52/52"
 progress:
   total_phases: 8
   completed_phases: 1
   total_plans: 19
-  completed_plans: 12
-  percent: 63
+  completed_plans: 13
+  percent: 68
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 3 of 8 (Bitácora diaria)
-Plan: wave 1 en curso — 03-01, 03-02 y 03-03 en paralelo; **03-02 completado**
+Plan: wave 1 en curso — 03-01, 03-02 y 03-03 en paralelo; **03-02 y 03-03 completados**
 Status: Executing
-Last activity: 2026-07-26 — 03-02 completado: el frontend estrena runner de tests (`node --import tsx --test`, cero dependencias nuevas, enganchado al build del workspace) con `fecha.ts` probado en 4 husos del dispositivo y `draft.ts` (borrador local, Storage inyectable) en sus 4 modos de fallo. 35/35 en verde
+Last activity: 2026-07-26 — 03-03 completado: un Tecnico lista los proyectos ACTIVOS y recibe exactamente {id, name, machines} (ni contrato, ni OA, ni cliente, ni horas); las otras 6 rutas de /api/projects siguen en 403, asertadas una a una. Cuatro verificaciones en rojo; projects 52/52
 
-Progress: [██████░░░░] 63%
+Progress: [███████░░░] 68%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [██████░░░░] 63%
 | Phase 02 P05 | 1 | 35 min | 35 min (3 tasks, 8 files) |
 | Phase 02 P06 | 1 | 62 min | 62 min (3 tasks, 23 files) |
 | Phase 03 P02 | 1 | 34 min | 34 min (2 tasks, 5 files) |
+| Phase 03 P03 | 1 | 13 min | 13 min (2 tasks, 3 files) |
 
 **Recent Trend:**
 - Last 5 plans: 02-06 (62 min), 02-05 (35 min), 02-03 (42 min), 02-04 (21 min), 02-02 (24 min)
@@ -117,6 +118,10 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 03]: [03-02]: Los .test.ts van listados POR NOMBRE en el script test: npm lanza los scripts por cmd.exe en Windows (no expande globs) y el descubrimiento de .ts de node --test depende de la minor de Node
 - [Phase 03]: [03-02]: En los tests del frontend se usa import { strict as assert } from 'node:assert': el tsconfig no tiene esModuleInterop y el default import de node:assert/strict (export =) no type-checa
 - [Phase 03]: [03-02]: El GET de la semana (03-04) DEBE devolver updatedAt por fila: enConflicto compara updatedAt del servidor contra savedAt del borrador y sin el no hay deteccion de conflicto
+- [Phase 03]: [03-03]: Una proyeccion por rol se escribe como `select` PROPIO (LISTA_TECNICO), nunca como subconjunto calculado de LISTA: asi una columna comercial nueva no puede llegar al tecnico sin que alguien la escriba a mano. Cero delete, cero omit
+- [Phase 03]: [03-03]: El reparto por rol del GET /api/projects va en el CONTROLADOR y por roles, no por RLS: proj_read es USING (TRUE) y el motor no oculta ni una columna. Un usuario con ['T','A'] es admin y ve la forma completa
+- [Phase 03]: [03-03]: Un aislamiento de datos se prueba con DOS aserciones: conjunto EXACTO de claves + sonda sobre JSON.stringify. Verificado en rojo que la fuga ANIDADA (dentro de machines) deja verde a la primera y solo la caza la segunda
+- [Phase 03]: [03-03]: El it.each de los 403 se conserva ruta por ruta: mover el @Roles('T','A','S') del @Get() a la clase tumba los 6 casos con el nombre de cada ruta abierta en el mensaje
 
 ### Pending Todos
 
@@ -138,6 +143,7 @@ Riesgo técnico:
 - [Phase 2] **Pitfall 7 mitigado, no cerrado.** El `GRANT` dentro de `20260726123024_rls_maestros` cubre el caso en que `db:bootstrap` y `migrate deploy` los corra un rol distinto (las 8 tablas nuevas nacerían sin permisos y la app daría `permission denied for table projects` justo tras un deploy exitoso). Confirmarlo en Railway exige un `GET /api/projects` autenticado en el smoke — dueño: el plan que amplíe `scripts/smoke.ts`.
 - ~~[Phase 2] `frontend/src/screens/Kpis.tsx` romperá el build cuando `types.ts` deje de ser el contrato~~ — **cerrado por 02-06**: la pantalla lleva su propio mock con la forma nueva (filas rol × fase) y `npm run build` es verde.
 - [Phase 2] **Las suites e2e no están aisladas entre procesos.** `truncateAll()` vacía `users` global, así que dos agentes (o un CI con `--maxWorkers>1`) sobre la misma base se tumban tests mutuamente: en 02-03 pasó tres veces (7 fallos en `catalogs`, 2 en `users-invite`, 1 build sin error de tsc) y las tres se resolvieron re-ejecutando, sin tocar código. Dentro de un proceso `--runInBand` ya lo cubre; entre procesos hace falta base por worker — dueño: el plan que monte el CI de la fase.
+- [Phase 3] **Dos suites de la Fase 2 caen contra el CHECK `de_proyecto_por_concepto` de 03-01** (`technicians` y `sold-days`, un caso cada una): `crearJornadaAprobada()` usa `conceptCode: 'DC'` con `projectId` opcional y eso ya es un 23514. No es flakiness (reproducido en 2 pasadas completas y 2 aisladas). 03-03 no lo toca (`fixtures.ts` es contrato cerrado y las suites son de otros planes) — dueño: **03-01**; detalle y arreglo correcto en `deferred-items.md` ítem 5
 - [Phase 2] `gsd-tools roadmap update-plan-progress` responde `updated: true` pero **no escribe** la fila de la tabla de progreso (verificado dos veces en 02-03: `summary_count: 4`, fila intacta en `2/6`), y `state advance-plan` falla siempre en este repo porque busca los campos `Current Plan` / `Total Plans in Phase` y el STATE.md usa `Plan: N of M`. Los dos se están supliendo a mano en cada plan.
 
 Nota de inventario:
@@ -147,6 +153,6 @@ Nota de inventario:
 
 ## Session Continuity
 
-Last session: 2026-07-26T20:15:29.291Z
-Stopped at: Completado 03-02-PLAN.md (runner de tests del frontend + fecha.ts y draft.ts del cliente)
+Last session: 2026-07-26T20:25:00.000Z
+Stopped at: Completado 03-03-PLAN.md (GET /api/projects abierto al Tecnico con proyeccion propia)
 Resume file: None
