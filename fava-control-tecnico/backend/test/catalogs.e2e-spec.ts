@@ -121,7 +121,11 @@ describe('catalogs: catalogo cerrado y ABM de Super Admin (CAT-01)', () => {
 
   it('los roles vienen ordenados por nombre', async () => {
     const nombres = (await catalogos(tokenTec)).roleTypes.map((r: { name: string }) => r.name);
-    expect(nombres).toEqual([...nombres].sort());
+    // localeCompare y no .sort(): el ORDER BY de Postgres usa la collation de la base
+    // («Mecánico» antes de «Meccatronico»), mientras que .sort() compara unidades
+    // UTF-16 y pone la á despues de la z. El orden del motor es el correcto para una
+    // lista que ve un humano; el que estaria mal es el de JavaScript.
+    expect(nombres).toEqual([...nombres].sort((a: string, b: string) => a.localeCompare(b, 'es')));
   });
 
   // ── Conceptos: solo etiquetas, solo Super Admin, y la lista no puede cambiar ──

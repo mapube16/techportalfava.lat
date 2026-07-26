@@ -15,6 +15,7 @@ import { HealthModule } from './common/health/health.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RlsInterceptor } from './common/prisma/rls.interceptor';
 import { AccessRequestsModule } from './modules/access-requests/access-requests.module';
+import { CatalogsModule } from './modules/catalogs/catalogs.module';
 import { MeModule } from './modules/me/me.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -47,6 +48,7 @@ const staticRoot =
     MeModule,
     AccessRequestsModule,
     UsersModule,
+    CatalogsModule,
     // Login de desarrollo temporal: se REGISTRA o no. Sin el flag la ruta no
     // existe (404, no 401) y el keyset local no se carga (jwks.provider.ts).
     ...(env.DEV_AUTH_ENABLED ? [DevAuthModule] : []),
