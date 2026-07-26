@@ -51,7 +51,13 @@ El bloqueo al enviar (BIT-05), la derivación de notas semanales y la aprobació
 ## Specific Ideas
 
 - La fecha es **DATE local del sitio**, sin hora ni zona: el mismo día debe verse igual con el dispositivo en Bogotá, Roma o São Paulo. Nunca `new Date()` en el servidor para la fecha de trabajo.
-- Conceptos sin proyecto (LR/NR/IL) se registran sin proyecto; un día de trabajo en obra sin proyecto se rechaza. La restricción `CHECK` por concepto ya existe en el esquema desde la Fase 2.
+- Conceptos sin proyecto (LR/NR/IL) se registran sin proyecto; un día de trabajo en obra sin proyecto se rechaza.
+
+**CORRECCIÓN (2026-07-26, tras el research):** dos afirmaciones de este documento eran falsas y se comprobaron contra la base real por introspección:
+- `daily_entries` **no tiene columna `description`** — BIT-01 no tiene hoy dónde guardar el texto del trabajo.
+- El `CHECK` por concepto **no existe**: `pg_constraint` devuelve la PK y 4 FKs, cero CHECK. BIT-03 está sin motor.
+
+Por tanto **esta fase SÍ lleva migración de esquema** (columna + CHECK + GRANT), con la receta `migrate diff` + `migrate deploy` porque `migrate dev` aborta en este entorno.
 
 </specifics>
 
@@ -62,7 +68,7 @@ El bloqueo al enviar (BIT-05), la derivación de notas semanales y la aprobació
 - `frontend/src/screens/Week.tsx` y `components/LogDayDrawer.tsx`: ambas pantallas ya construidas con mocks (`LOG_PROJECTS`, `MACHINES` en `data.ts`).
 - `frontend/src/lib/api/useApiData.ts` + `ui.tsx` `ApiState`: patrón de carga/error creado en 02-06, a reutilizar.
 - `frontend/src/lib/api/projects.ts`, `catalogs.ts`: clientes tipados ya existentes.
-- Backend: `daily_entries` ya tiene todas sus columnas desde la Fase 2 — incluidas `role_type_id`, `phase` nullable y las `source_*` de la Fase 6. **No hace falta migración de esquema.**
+- Backend: `daily_entries` tiene `role_type_id`, `phase` nullable y las `source_*` de la Fase 6 — pero **le falta `description` y le falta el CHECK por concepto** (verificado por introspección, ver corrección arriba). Hay migración.
 
 ### Established Patterns
 - Módulo por dominio; controladores con ruta completa (`@Controller('api/daily-entries')`); sin `setGlobalPrefix`.
