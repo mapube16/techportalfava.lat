@@ -145,7 +145,8 @@ El frontend existe (`fava-control-tecnico/frontend/`) con datos mock en `data.ts
 
 | Fase | Pantallas / componentes conectados |
 |------|------------------------------------|
-| 1 | 1/6 | In Progress|  | Projects, ProjectDetail, Techs, Users, Config, NewProjectModal, InviteUserModal |
+| 1 | Login, Layout (usuario/rol), cliente API tipado + MSAL |
+| 2 | Projects, ProjectDetail, Techs, Users, Config, NewProjectModal, InviteUserModal |
 | 3 | Week, LogDayDrawer |
 | 4 | Inbox, Notes, ReturnModal, Audit, bandeja de Home |
 | 5 | PdfPreview, SignatureBox |
