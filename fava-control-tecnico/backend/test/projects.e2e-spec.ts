@@ -599,6 +599,51 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
       });
     });
 
+    it('un proyecto DESACTIVADO no le llega al tecnico, y si al admin', async () => {
+      const activo = await crearProyecto({ name: 'AAA sigue abierta' });
+      const cerrado = await crearProyecto({ name: 'BBB ya cerrada' });
+      await ownerClient.project.update({ where: { id: cerrado.id }, data: { isActive: false } });
+
+      // Las dos mitades en el mismo caso y contra el conteo del owner, no contra «> 0»:
+      // un filtro que se llevara los dos por delante pasaria un `length >= 1`.
+      const total = await ownerClient.project.count();
+      expect(total).toBe(2);
+
+      expect((await listarTec()).map((f: { id: string }) => f.id)).toEqual([activo.id]);
+      // LISTA no filtra por diseno: «filtra el selector, no el endpoint» (02-05).
+      expect(await listar(tokenAdmin)).toHaveLength(total);
+    });
+
+    it('un proyecto sin maquinas llega con machines vacio, no se omite ni revienta', async () => {
+      const p = await crearProyecto({ name: 'Obra sin maquinas' });
+
+      const filas = await listarTec();
+      expect(filas).toHaveLength(1);
+      expect(filas[0]).toEqual({ id: p.id, name: 'Obra sin maquinas', machines: [] });
+    });
+
+    it('las maquinas llegan ordenadas por code, no por orden de insercion', async () => {
+      const p = await crearProyecto({ name: 'Obra con dos maquinas' });
+      // Sembradas al reves de como deben salir.
+      await conMaquinas(p.id, [MAQ_Z, MAQ_M]);
+
+      const [fila] = await listarTec();
+      expect(fila.machines.map((m: { code: string }) => m.code)).toEqual([
+        'MMM-0303-M',
+        'ZZZ-0303-Z',
+      ]);
+    });
+
+    it('los proyectos llegan ordenados por name ascendente', async () => {
+      for (const name of ['Cordoba', 'Antioquia', 'Barranquilla']) await crearProyecto({ name });
+
+      expect((await listarTec()).map((f: { name: string }) => f.name)).toEqual([
+        'Antioquia',
+        'Barranquilla',
+        'Cordoba',
+      ]);
+    });
+
     it('un Admin y un Super Admin siguen recibiendo la forma ANTERIOR', async () => {
       const p = await crearSecreto();
       await conMaquinas(p.id, [MAQ_TEST]);
