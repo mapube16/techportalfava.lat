@@ -23,10 +23,17 @@
 [build]
 builder = "RAILPACK"
 # `--include=dev` es deliberado: nest, vite, tsc y prisma son devDependencies
-# y el build las necesita. Si el builder exporta NODE_ENV=production, un
-# `npm ci` seco las omite y la compilacion falla sin explicar por que.
+# y el build las necesita. Si el builder exporta NODE_ENV=production (lo hace),
+# una instalacion seca las omite y la compilacion falla sin explicar por que.
+#
+# `npm install` y NO `npm ci`: Railpack ya corre su propio `npm ci` antes de
+# este comando. Un segundo `npm ci` borra node_modules entero y muere con
+# EBUSY sobre frontend/node_modules/.vite, que el paso anterior deja abierto.
+# `npm install` es incremental: completa las devDependencies que falten sin
+# arrasar lo ya instalado.
+#
 # `npm run build` (raiz) = frontend (vite) + backend (prisma generate + nest).
-buildCommand = "npm ci --include=dev && npm run build"
+buildCommand = "npm install --include=dev --no-audit --no-fund && npm run build"
 
 [deploy]
 # npm start (raiz) -> npm -w backend run start:prod -> node dist/main.js.
