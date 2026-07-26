@@ -13,8 +13,8 @@
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { createTestApp, crearUsuario } from './helpers/app';
-import { CUR_TEST, disconnectAll, ownerClient, truncateAll } from './helpers/db';
-import { crearProyecto } from './helpers/fixtures';
+import { CUR_TEST, MAQ_TEST, TEC_A, TEC_B, disconnectAll, ownerClient, truncateAll } from './helpers/db';
+import { crearJornadaAprobada, crearProyecto } from './helpers/fixtures';
 import { signTestToken } from './helpers/tokens';
 
 const OID_SUPER = 'oid-proj-super';
@@ -287,6 +287,173 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
 
   it('un Super Admin tambien crea proyectos', async () => {
     await crear({ ...ENCABEZADO, contractNumber: '345501' }, tokenSuper);
+  });
+
+  // ── Seleccion de maquinas: recurso aparte, y quitar una NUNCA toca la bitacora ──
+
+  describe('PUT /api/projects/:id/machines', () => {
+    /** Un segundo modelo del catalogo de arranque: la seleccion es de dos o mas. */
+    let otra: { id: string; code: string };
+
+    beforeEach(async () => {
+      otra = await ownerClient.machineModel.findFirstOrThrow({
+        where: { NOT: { id: MAQ_TEST } },
+        select: { id: true, code: true },
+      });
+    });
+
+    const fijar = async (id: string, machineModelIds: string[], token = tokenAdmin) =>
+      (
+        await http()
+          .put(`/api/projects/${id}/machines`)
+          .set(auth(token))
+          .send({ machineModelIds })
+          .expect(200)
+      ).body;
+
+    const maquinasDe = async (id: string) => (await detalle(id)).machines;
+
+    it('reemplaza la seleccion completa, y repetir el mismo PUT deja el mismo estado', async () => {
+      const p = await crearProyecto();
+
+      const primera = await fijar(p.id, [MAQ_TEST, otra.id]);
+      expect(primera.map((m: { machineModelId: string }) => m.machineModelId).sort()).toEqual(
+        [MAQ_TEST, otra.id].sort(),
+      );
+
+      // Idempotente: el mismo PUT otra vez no duplica ni pierde nada.
+      const segunda = await fijar(p.id, [MAQ_TEST, otra.id]);
+      expect(segunda).toEqual(primera);
+
+      // «Reemplaza», no «añade»: la que no viene en el body se va.
+      const tercera = await fijar(p.id, [otra.id]);
+      expect(tercera).toHaveLength(1);
+      expect(tercera[0].machineModelId).toBe(otra.id);
+    });
+
+    it('el contrato de cada maquina seleccionada es machineModelId, code, description y entryCount', async () => {
+      const p = await crearProyecto();
+      await fijar(p.id, [MAQ_TEST]);
+
+      const [m] = await maquinasDe(p.id);
+      expect(Object.keys(m).sort()).toEqual([
+        'code',
+        'description',
+        'entryCount',
+        'machineModelId',
+      ]);
+      expect(m).toMatchObject({ machineModelId: MAQ_TEST, code: 'TEST-MAQ', entryCount: 0 });
+    });
+
+    it('entryCount cuenta las jornadas de ESE proyecto con ese modelo, no las de otro', async () => {
+      const p = await crearProyecto();
+      const otroProyecto = await crearProyecto();
+
+      // Dos jornadas del proyecto (tecnicos distintos: @@unique(tecnico, fecha)).
+      await crearJornadaAprobada({
+        technicianId: TEC_A,
+        projectId: p.id,
+        date: new Date('2026-03-02T00:00:00Z'),
+      });
+      await crearJornadaAprobada({
+        technicianId: TEC_B,
+        projectId: p.id,
+        date: new Date('2026-03-02T00:00:00Z'),
+      });
+      // Y una del OTRO proyecto con la misma maquina: no debe sumar aqui.
+      await crearJornadaAprobada({
+        technicianId: TEC_A,
+        projectId: otroProyecto.id,
+        date: new Date('2026-03-03T00:00:00Z'),
+      });
+
+      await fijar(p.id, [MAQ_TEST, otra.id]);
+      const maquinas = await maquinasDe(p.id);
+      const buscar = (idMaquina: string) =>
+        maquinas.find((m: { machineModelId: string }) => m.machineModelId === idMaquina);
+
+      expect(buscar(MAQ_TEST).entryCount).toBe(2);
+      expect(buscar(otra.id).entryCount).toBe(0);
+    });
+
+    it('quitar una maquina con jornadas → 200, y la jornada CONSERVA su modelo', async () => {
+      const p = await crearProyecto();
+      await fijar(p.id, [MAQ_TEST]);
+      const jornada = await crearJornadaAprobada({
+        technicianId: TEC_A,
+        projectId: p.id,
+        date: new Date('2026-03-04T00:00:00Z'),
+      });
+
+      // Decision bloqueada: «se avisa y se permite». El aviso lo da la UI con el
+      // entryCount; el servidor permite. La jornada apunta al modelo GLOBAL.
+      expect(await fijar(p.id, [])).toEqual([]);
+
+      const relectura = await ownerClient.dailyEntry.findUniqueOrThrow({
+        where: { id: jornada.id },
+      });
+      expect(relectura.machineModelId).toBe(MAQ_TEST);
+      expect(relectura.projectId).toBe(p.id);
+      expect(await ownerClient.machineModel.count({ where: { id: MAQ_TEST } })).toBe(1);
+    });
+
+    it('machineModelIds vacio → 200 y proyecto sin maquinas', async () => {
+      const p = await crearProyecto();
+      await fijar(p.id, [MAQ_TEST]);
+
+      expect(await fijar(p.id, [])).toEqual([]);
+      expect(await maquinasDe(p.id)).toEqual([]);
+    });
+
+    it('un machineModelId inexistente → 400 y la seleccion previa NO se toca', async () => {
+      const p = await crearProyecto();
+      await fijar(p.id, [MAQ_TEST]);
+
+      const res = await http()
+        .put(`/api/projects/${p.id}/machines`)
+        .set(auth(tokenAdmin))
+        .send({ machineModelIds: [otra.id, '77777777-7777-4777-8777-777777777777'] })
+        .expect(400);
+
+      expect(res.body.message).toBe('MAQUINA_INEXISTENTE');
+      // Todo o nada: sigue exactamente la seleccion anterior.
+      const maquinas = await maquinasDe(p.id);
+      expect(maquinas.map((m: { machineModelId: string }) => m.machineModelId)).toEqual([MAQ_TEST]);
+    });
+
+    it('ids repetidos no revientan la clave primaria compuesta', async () => {
+      const p = await crearProyecto();
+      expect(await fijar(p.id, [MAQ_TEST, MAQ_TEST])).toHaveLength(1);
+    });
+
+    it.each([
+      ['machineModelIds que no es un array', { machineModelIds: MAQ_TEST }],
+      ['machineModelIds ausente', {}],
+      ['un id que no es UUID', { machineModelIds: ['no-soy-uuid'] }],
+    ])('%s → 400', async (_caso, body) => {
+      const p = await crearProyecto();
+      await http()
+        .put(`/api/projects/${p.id}/machines`)
+        .set(auth(tokenAdmin))
+        .send(body)
+        .expect(400);
+    });
+
+    it('PUT de maquinas sobre un proyecto que no existe → 404', async () => {
+      await http()
+        .put(`/api/projects/${FANTASMA}/machines`)
+        .set(auth(tokenAdmin))
+        .send({ machineModelIds: [] })
+        .expect(404);
+    });
+
+    it('machineCodes del listado refleja la seleccion (son los chips de Projects.tsx)', async () => {
+      const p = await crearProyecto();
+      await fijar(p.id, [MAQ_TEST, otra.id]);
+
+      const fila = (await listar()).find((f: { id: string }) => f.id === p.id);
+      expect(fila.machineCodes).toEqual(['TEST-MAQ', otra.code].sort());
+    });
   });
 
   it.each([
