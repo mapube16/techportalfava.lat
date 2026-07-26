@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { AUDIT, EXPENSES, NOTES, PROJECTS, WEEK } from './data';
+import { AUDIT, EXPENSES, NOTES, WEEK } from './data';
 import { D } from './i18n';
 import type { Dict } from './i18n';
 import { initAuth, login as msalLogin, logout as msalLogout } from './lib/auth/msal';
@@ -8,7 +8,7 @@ import { devLogin as devSignIn, devLogout, getDevToken } from './lib/auth/dev';
 import { getMe, setUnauthorizedHandler } from './lib/api/client';
 import type { MeResponse } from './lib/api/client';
 import type {
-  AuditRow, DayEntry, Density, Expense, Lang, Note, Project, Role, Route, Theme, ToastData,
+  AuditRow, DayEntry, Density, Expense, Lang, Note, Role, Route, Theme, ToastData,
 } from './types';
 
 export type KpiSeg = 'project' | 'tech' | 'phase';
@@ -50,7 +50,6 @@ export interface AppState {
    * recarga. Es lo que sustituye a los arrays de mocks que vivían aquí.
    */
   dataVersion: number;
-  projects: Project[];
   notes: Note[];
   week: DayEntry[];
   expenses: Expense[];
@@ -82,7 +81,6 @@ const initialState: AppState = {
   onboardStep: 0,
   selProject: '',
   dataVersion: 0,
-  projects: PROJECTS.map((p) => ({ ...p })),
   notes: NOTES.map((n) => ({ ...n })),
   week: WEEK,
   expenses: EXPENSES,
@@ -109,7 +107,6 @@ export interface AppCtx {
   approve: (id: string) => void;
   returnNote: (id: string, comment: string) => void;
   resend: (id: string) => void;
-  addProject: (p: Project) => void;
   closeOnboard: () => void;
 }
 
@@ -270,12 +267,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     showToast('submitted');
   };
 
-  const addProject = (p: Project) => {
-    setState((s) => ({ ...s, projects: [...s.projects, p], projOpen: false, selProject: p.id }));
-    showToast('proj');
-    go('project');
-  };
-
   const closeOnboard = () => {
     try {
       localStorage.setItem('fava_onboard', '1');
@@ -287,7 +278,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value: AppCtx = {
     state, t, patch, go, showToast, refresh, inboxCount, login, devLogin, logout, switchRole, goInbox,
-    toggleTheme, toggleLang, approve, returnNote, resend, addProject, closeOnboard,
+    toggleTheme, toggleLang, approve, returnNote, resend, closeOnboard,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

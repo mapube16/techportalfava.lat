@@ -4,7 +4,7 @@ import { hi } from '../icons';
 import { CONCEPTS } from '../i18n';
 import { FieldError, gbtn, pbtn } from '../ui';
 import { useApp } from '../state';
-import { MACHINES } from '../data';
+import { LOG_PROJECTS, MACHINES } from '../data';
 
 const inp: CSSProperties = { width: '100%', padding: '12px 13px', border: '1px solid var(--border-2)', borderRadius: 10, background: 'var(--surface-2)', color: 'var(--text)', fontSize: 15, fontFamily: 'inherit', outline: 'none' };
 const errInp: CSSProperties = { ...inp, border: '1px solid var(--warn)', background: 'var(--warn-tint)' };
@@ -52,7 +52,7 @@ export default function LogDayDrawer() {
           {field(
             t.log_project,
             <select defaultValue="p2" style={inp}>
-              {state.projects.map((p) => (
+              {LOG_PROJECTS.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>,

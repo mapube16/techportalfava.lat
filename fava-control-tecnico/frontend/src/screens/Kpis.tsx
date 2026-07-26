@@ -2,13 +2,68 @@ import { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
 import { Card, CardHead, nf, td, th } from '../ui';
 import { useApp } from '../state';
-import { STD_HOURS_PER_DAY as STD, TECHS } from '../data';
 import type { KpiSeg } from '../state';
-import type { PhaseMatrix, Project, RoleType } from '../types';
 
-const sumM = (o: PhaseMatrix) =>
-  Object.values(o).reduce((x, ph) => x + Object.values(ph).reduce((y, v) => y + v, 0), 0);
-const sumPhase = (o: Record<RoleType, number>) => Object.values(o).reduce((x, v) => x + v, 0);
+/**
+ * ESTA PANTALLA SIGUE CON MOCKS, A PROPÓSITO. Los tableros son la Fase 7 (KPI-01…);
+ * hasta que exista bitácora (Fase 3) todo lo ejecutado saldría en cero y cinco
+ * gráficas planas confunden más que unos datos de ejemplo.
+ *
+ * Lo que sí cambió aquí es la FORMA: la matriz dejó de ser
+ * `Record<fase, Record<rol, número>>` y ahora son filas (rol × fase), como las
+ * devuelve `GET /api/projects/:id`. Así el cutover de la Fase 7 es cambiar el origen,
+ * no reescribir las agregaciones.
+ *
+ * ponytail: el mock vive aquí y no en data.ts porque es de esta pantalla y de nadie
+ * más; data.ts guarda lo de bitácora, notas, gastos y auditoría.
+ */
+type MockPhase = 'MONTAJE' | 'COLLAUDO';
+interface MockRow {
+  role: string;
+  phase: MockPhase;
+  sold: number;
+  executed: number;
+}
+interface MockProject {
+  id: string;
+  name: string;
+  normalHours: number;
+  rows: MockRow[];
+}
+
+const STD = 8; // horas de una jornada estándar
+const FASES: MockPhase[] = ['MONTAJE', 'COLLAUDO'];
+const ROLES = ['Mecánico', 'Meccatronico', 'Eléctrico'];
+
+const mock = (
+  id: string, name: string, normalHours: number, s: number[][], e: number[][],
+): MockProject => ({
+  id, name, normalHours,
+  rows: FASES.flatMap((phase, f) =>
+    ROLES.map((role, r) => ({ role, phase, sold: s[f][r], executed: e[f][r] }))),
+});
+
+const PROJECTS: MockProject[] = [
+  mock('p1', 'Molino Cibao Bocel — RD', 1120, [[22, 14, 10], [8, 12, 6]], [[19, 14, 8], [3, 5, 2]]),
+  mock('p2', 'Lucchetti Chile', 2400, [[30, 18, 16], [12, 16, 10]], [[31, 17, 16], [12, 15, 9]]),
+  mock('p3', 'Pastificio Bariloche — AR', 640, [[16, 10, 8], [6, 8, 4]], [[5, 3, 2], [0, 0, 0]]),
+  mock('p4', 'Barilla USA — Ames', 3600, [[40, 26, 22], [18, 22, 14]], [[38, 24, 20], [16, 20, 12]]),
+];
+
+/** La utilización por técnico se calculará desde la bitácora; hoy es del mock. */
+const TECHS = [
+  { n: 'Ivan Cortés', util: 88 },
+  { n: 'Leomar Klein', util: 76 },
+  { n: 'Marco Ferro', util: 92 },
+  { n: 'Diego Salas', util: 64 },
+  { n: 'Anahí Rueda', util: 81 },
+];
+
+type Medida = 'sold' | 'executed';
+const suma = (rows: MockRow[], k: Medida) => rows.reduce((a, r) => a + r[k], 0);
+const totalP = (p: MockProject, k: Medida) => suma(p.rows, k);
+const porFase = (p: MockProject, k: Medida, ph: MockPhase) =>
+  suma(p.rows.filter((r) => r.phase === ph), k);
 
 function palette() {
   const el = document.querySelector('.fava');
@@ -28,15 +83,15 @@ export default function Kpis() {
   const rolesRef = useRef<HTMLDivElement>(null);
   const charts = useRef<Record<string, echarts.ECharts>>({});
 
-  const projects = state.projects;
-  const per = projects.map((p) => ({ sold: sumM(p.sold), done: sumM(p.done), nh: p.nh || 0 }));
+  const projects = PROJECTS;
+  const per = projects.map((p) => ({ sold: totalP(p, 'sold'), done: totalP(p, 'executed'), nh: p.normalHours }));
   const tot = per.reduce(
     (a: { sold: number; done: number; nh: number; exec: number }, p) =>
       ({ sold: a.sold + p.sold, done: a.done + p.done, nh: a.nh + p.nh, exec: a.exec + p.done * STD }),
     { sold: 0, done: 0, nh: 0, exec: 0 },
   );
   const overtime = Math.max(0, tot.exec - tot.nh);
-  const act = TECHS.filter((x) => x.active);
+  const act = TECHS;
   const avgUtil = act.length ? Math.round(act.reduce((a, x) => a + x.util, 0) / act.length) : 0;
   const avgProg = tot.sold ? Math.round((tot.done / tot.sold) * 100) : 0;
 
@@ -77,10 +132,10 @@ export default function Kpis() {
       let opt: Record<string, unknown>;
       const seg = state.kpiSeg;
       if (seg === 'project') {
-        const names = projects.map((p: Project) => p.name.split(' —')[0]);
+        const names = projects.map((p) => p.name.split(' —')[0]);
         opt = {
           ...base(), grid, xAxis: catAxis(names), yAxis: valAxis(t.days_unit),
-          series: [bar(t.kpi_sold, projects.map((p) => sumM(p.sold)), P.primary), bar(t.kpi_done, projects.map((p) => sumM(p.done)), P.accent)],
+          series: [bar(t.kpi_sold, projects.map((p) => totalP(p, 'sold')), P.primary), bar(t.kpi_done, projects.map((p) => totalP(p, 'executed')), P.accent)],
         };
       } else if (seg === 'tech') {
         const names = act.map((x) => x.n.split(' ')[0] + ' ' + (x.n.split(' ')[1] || '').charAt(0));
@@ -94,14 +149,13 @@ export default function Kpis() {
           ],
         };
       } else {
-        const phases: ('Montaje' | 'Collaudo')[] = ['Montaje', 'Collaudo'];
         const lbl = [t.montaje, t.colaudo];
-        const sp = (k: 'sold' | 'done', ph: 'Montaje' | 'Collaudo') => projects.reduce((a, p) => a + sumPhase(p[k][ph]), 0);
+        const sp = (k: Medida, ph: MockPhase) => projects.reduce((a, p) => a + porFase(p, k, ph), 0);
         opt = {
           ...base(), grid, xAxis: catAxis(lbl), yAxis: valAxis(t.days_unit),
           series: [
-            { ...bar(t.kpi_sold, phases.map((ph) => sp('sold', ph)), P.primary), barMaxWidth: 64 },
-            { ...bar(t.kpi_done, phases.map((ph) => sp('done', ph)), P.accent), barMaxWidth: 64 },
+            { ...bar(t.kpi_sold, FASES.map((ph) => sp('sold', ph)), P.primary), barMaxWidth: 64 },
+            { ...bar(t.kpi_done, FASES.map((ph) => sp('executed', ph)), P.accent), barMaxWidth: 64 },
           ],
         };
       }
@@ -115,7 +169,7 @@ export default function Kpis() {
       hrs.setOption(
         {
           ...base(), grid, xAxis: catAxis(names), yAxis: valAxis('h'),
-          series: [bar(t.k_hours_norm, projects.map((p) => p.nh || 0), P.info), bar(t.k_hours_exec, projects.map((p) => sumM(p.done) * STD), P.accent)],
+          series: [bar(t.k_hours_norm, projects.map((p) => p.normalHours), P.info), bar(t.k_hours_exec, projects.map((p) => totalP(p, 'executed') * STD), P.accent)],
         },
         true,
       );
@@ -124,11 +178,10 @@ export default function Kpis() {
 
     const rls = getC('roles', rolesRef.current);
     if (rls) {
-      const roles: RoleType[] = ['Mecánico', 'Meccatronico', 'Eléctrico'];
-      const rl: Record<RoleType, string> = { Mecánico: t.mechanic, Meccatronico: t.mecatronic, Eléctrico: t.electric };
-      const data = roles.map((r, i) => ({
-        name: rl[r],
-        value: projects.reduce((a, p) => a + p.done.Montaje[r] + p.done.Collaudo[r], 0),
+      const rl: Record<string, string> = { Mecánico: t.mechanic, Meccatronico: t.mecatronic, Eléctrico: t.electric };
+      const data = ROLES.map((r, i) => ({
+        name: rl[r] ?? r,
+        value: projects.reduce((a, p) => a + suma(p.rows.filter((x) => x.role === r), 'executed'), 0),
         itemStyle: { color: [P.primary, P.accent, P.info][i] },
       }));
       rls.setOption(
@@ -142,7 +195,7 @@ export default function Kpis() {
       );
       rls.resize();
     }
-  }, [state.kpiSeg, state.lang, state.theme, state.projects, state.notes, state.mobile, state.density]);
+  }, [state.kpiSeg, state.lang, state.theme, state.notes, state.mobile, state.density]);
 
   useEffect(() => {
     const onResize = () => Object.values(charts.current).forEach((c) => { if (c && !c.isDisposed()) c.resize(); });
@@ -177,9 +230,10 @@ export default function Kpis() {
   };
 
   const phaseRows = projects.map((p) => {
-    const mS = sumPhase(p.sold.Montaje), mD = sumPhase(p.done.Montaje);
-    const cS = sumPhase(p.sold.Collaudo), cD = sumPhase(p.done.Collaudo);
-    return { name: p.name, mS, mD, cS, cD, dl: mD + cD - (mS + cS) };
+    const mS = porFase(p, 'sold', 'MONTAJE'), mD = porFase(p, 'executed', 'MONTAJE');
+    const cS = porFase(p, 'sold', 'COLLAUDO'), cD = porFase(p, 'executed', 'COLLAUDO');
+    // Delta agregado del proyecto, con la convención correcta: vendido − ejecutado.
+    return { name: p.name, mS, mD, cS, cD, dl: mS + cS - (mD + cD) };
   });
 
   const byPhase = state.mobile ? (
