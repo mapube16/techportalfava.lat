@@ -32,3 +32,15 @@ export const inviteUser = (body: {
  */
 export const linkTechnician = (id: string, technicianId: string | null) =>
   apiSend<UserRow>(`/users/${id}/technician`, 'PATCH', { technicianId });
+
+/**
+ * La escalada es del servidor (solo un Super Admin concede o quita A/S) y también los
+ * dos anti-lockout, que se evalúan ANTES que el permiso: la app no se puede quedar sin
+ * Super Admin ni nadie puede quitarse a sí mismo el último rol que le da acceso.
+ */
+export const setUserRoles = (id: string, roles: Role[]) =>
+  apiSend<UserRow>(`/users/${id}/roles`, 'PATCH', { roles });
+
+/** Desactivar corta el acceso en la siguiente petición: el guard relee `users` cada vez. */
+export const setUserActive = (id: string, isActive: boolean) =>
+  apiSend<UserRow>(`/users/${id}/active`, 'PATCH', { isActive });

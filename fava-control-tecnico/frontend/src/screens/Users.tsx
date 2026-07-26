@@ -5,7 +5,7 @@ import { useApp } from '../state';
 import { dismissAccessRequest, listAccessRequests } from '../lib/api/client';
 import type { AccessRequest } from '../lib/api/client';
 import { codigo, useApiData } from '../lib/api/useApiData';
-import { linkTechnician, listUsers } from '../lib/api/users';
+import { linkTechnician, listUsers, setUserActive, setUserRoles } from '../lib/api/users';
 import type { UserRow } from '../lib/api/users';
 import { listTechnicians } from '../lib/api/technicians';
 import type { Role } from '../types';
@@ -98,12 +98,25 @@ export default function Users() {
    * 409 y hay que desvincular al otro usuario primero. El código se muestra tal cual
    * porque nombra exactamente eso.
    */
-  const vincular = (u: UserRow, technicianId: string | null) => {
+  const aplicar = (peticion: Promise<UserRow>, id: string) => {
     setErrLink(null);
-    linkTechnician(u.id, technicianId)
-      .then((actualizado) => setData({ ...data, users: data.users.map((x) => (x.id === u.id ? actualizado : x)) }))
+    peticion
+      .then((actualizado) => setData({ ...data, users: data.users.map((x) => (x.id === id ? actualizado : x)) }))
       .catch((e: unknown) => setErrLink(codigo(e)));
   };
+
+  const vincular = (u: UserRow, technicianId: string | null) =>
+    aplicar(linkTechnician(u.id, technicianId), u.id);
+
+  /**
+   * Las dos reglas duras viven en el servidor y aquí NO se reimplementan: solo un
+   * Super Admin concede o quita A/S, y los dos anti-lockout impiden quedarse sin
+   * Super Admin. Si el servidor dice que no, se muestra su código.
+   */
+  const conmutarRol = (u: UserRow, rc: Role) =>
+    aplicar(setUserRoles(u.id, u.roles.includes(rc) ? u.roles.filter((r) => r !== rc) : [...u.roles, rc]), u.id);
+
+  const conmutarActivo = (u: UserRow) => aplicar(setUserActive(u.id, !u.isActive), u.id);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -157,6 +170,7 @@ export default function Users() {
                     <button
                       key={rc}
                       disabled={locked}
+                      onClick={() => conmutarRol(u, rc)}
                       title={locked ? t.only_super : ''}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: locked ? 'not-allowed' : 'pointer', border: '1px solid ' + (on ? c : 'var(--border-2)'), background: on ? bg : 'transparent', color: on ? c : 'var(--text-3)', opacity: locked ? 0.5 : 1 }}
                     >
@@ -167,6 +181,9 @@ export default function Users() {
                   );
                 })}
               </div>
+              <button onClick={() => conmutarActivo(u)} style={gbtn}>
+                {u.isActive ? t.cat_deactivate : t.cat_activate}
+              </button>
             </div>
           ))}
         </div>
