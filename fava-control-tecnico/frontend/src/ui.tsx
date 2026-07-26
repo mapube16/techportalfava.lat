@@ -4,20 +4,26 @@ import type { Dict } from './i18n';
 import type { Lang, NoteStatus } from './types';
 
 // ---- estilos compartidos de botones / tablas / chips
-export const pbtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
-export const gbtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border-2)', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
+// `--tap` vale 44px por debajo de 900px y `auto` por encima (index.css): en movil
+// sube el alto al minimo tactil y en escritorio los botones siguen compactos.
+// Medidas de partida, todas por debajo de 44: pbtn ~34, gbtn ~32, sbtn ~27,
+// ghostBtn ~30, ghostIconBtn 34x34, btnGhostLight ~34.
+export const pbtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 16px', minHeight: 'var(--tap)', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
+export const gbtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 14px', minHeight: 'var(--tap)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border-2)', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
 export const wbtn: CSSProperties = { ...pbtn, background: 'var(--warn)' };
-export const sbtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--accent-tint)', color: 'var(--accent)', border: 0, borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
-export const ghostBtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '7px 11px', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
-export const ghostIconBtn: CSSProperties = { display: 'inline-grid', placeItems: 'center', width: 34, height: 34, background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer' };
-export const btnGhostLight: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'rgba(255,255,255,.14)', color: '#fff', border: '1px solid rgba(255,255,255,.35)', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
+export const sbtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '6px 12px', minHeight: 'var(--tap)', background: 'var(--accent-tint)', color: 'var(--accent)', border: 0, borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
+export const ghostBtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '7px 11px', minHeight: 'var(--tap)', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
+export const ghostIconBtn: CSSProperties = { display: 'inline-grid', placeItems: 'center', width: 34, height: 34, minWidth: 'var(--tap)', minHeight: 'var(--tap)', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer' };
+export const btnGhostLight: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 16px', minHeight: 'var(--tap)', background: 'rgba(255,255,255,.14)', color: '#fff', border: '1px solid rgba(255,255,255,.35)', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
 
 export const th: CSSProperties = { textAlign: 'left', padding: '11px 16px', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.5px', background: 'var(--surface-2)', whiteSpace: 'nowrap' };
 export const td: CSSProperties = { padding: 'var(--row-pad)', color: 'var(--text)', verticalAlign: 'middle' };
 
+// `chip` NO lleva `--tap`: hoy los 4 usos del repo son <span> de etiqueta, no
+// controles. Si alguna vez cuelga de un onClick, tiene que llevarlo.
 export const chip = (bg?: string, c?: string): CSSProperties => ({ display: 'inline-block', padding: '3px 9px', borderRadius: 6, fontSize: 11.5, fontWeight: 600, fontFamily: 'Roboto Mono', background: bg || 'var(--surface-3)', color: c || 'var(--text-2)' });
 
-export const inputStyle: CSSProperties = { width: '100%', padding: '11px 12px', border: '1px solid var(--border-2)', borderRadius: 9, background: 'var(--surface-2)', color: 'var(--text)', fontSize: 14, fontFamily: 'inherit', outline: 'none' };
+export const inputStyle: CSSProperties = { width: '100%', padding: '11px 12px', minHeight: 'var(--tap)', border: '1px solid var(--border-2)', borderRadius: 9, background: 'var(--surface-2)', color: 'var(--text)', fontSize: 'var(--fs-input)', fontFamily: 'inherit', outline: 'none' };
 export const inputError: CSSProperties = { ...inputStyle, border: '1px solid var(--warn)', background: 'var(--warn-tint)' };
 
 // ---- contenedores

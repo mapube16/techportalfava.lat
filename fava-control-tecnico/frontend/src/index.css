@@ -7,7 +7,14 @@ body { font-family: Roboto, system-ui, sans-serif; -webkit-font-smoothing: antia
   --primary: #104A78; --primary-600: #0e4d7a; --primary-700: #133e5d; --primary-tint: #cfdbe4;
   --accent: #e86c00; --accent-tint: #fbe4d1; --info: #2182f6; --steel: #95a2ab;
   --bg: #eef2f5; --surface: #ffffff; --surface-2: #f4f7f9; --surface-3: #e8edf1;
-  --border: #dde3e9; --border-2: #c9d2da; --text: #132330; --text-2: #5a6b7a; --text-3: #8494a2;
+  --border: #dde3e9; --border-2: #c9d2da; --text: #132330; --text-2: #5a6b7a;
+  /* --text-3 medido (WCAG 2.x, no estimado): 4.95:1 sobre --surface #ffffff y
+     4.60:1 sobre --surface-2 #f4f7f9, que es el fondo de `th`. Era #8494a2 = 3.12:1,
+     ilegible bajo el sol de una planta. Sobre --surface-3 da 4.20:1 y ahi se queda:
+     esa pareja solo la usa el icono de 64px de `Empty`, que es grafico (umbral 3:1).
+     Comprobado con la formula de luminancia relativa; `useIsMobile.test.ts` lo repite
+     en cada build para que un retoque de paleta no lo deshaga en silencio. */
+  --text-3: #63727f;
   --ok: #1f9d5b; --ok-tint: #e2f4ea; --warn: #e86c00; --warn-tint: #fbe4d1; --sent: #2182f6; --sent-tint: #e2eefd;
   --draft: #78889a; --draft-tint: #eceff2;
   --shadow: 0 1px 2px rgba(19,35,48,.06), 0 4px 16px rgba(19,35,48,.06);
@@ -38,7 +45,10 @@ body { font-family: Roboto, system-ui, sans-serif; -webkit-font-smoothing: antia
   --primary: #3f86c4; --primary-600: #4f93cf; --primary-700: #2b6ea8; --primary-tint: #22364a;
   --accent: #ff8a2b; --accent-tint: #3a2410; --info: #4f9dff; --steel: #7d8b98;
   --bg: #0b131c; --surface: #131f2b; --surface-2: #182734; --surface-3: #20313f;
-  --border: #26384a; --border-2: #324a60; --text: #e9eff4; --text-2: #9fb0be; --text-3: #6f8291;
+  --border: #26384a; --border-2: #324a60; --text: #e9eff4; --text-2: #9fb0be;
+  /* --text-3 oscuro medido: 5.38:1 sobre --surface #131f2b y 4.91:1 sobre
+     --surface-2 #182734. Era #6f8291 = 4.19:1, que tambien fallaba. */
+  --text-3: #8195a4;
   --ok: #35c17e; --ok-tint: #12291d; --warn: #ff8a2b; --warn-tint: #3a2410; --sent: #4f9dff; --sent-tint: #122438;
   --draft: #7d8b98; --draft-tint: #1b2836;
   --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.35);

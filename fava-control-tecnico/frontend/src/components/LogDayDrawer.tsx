@@ -6,7 +6,7 @@ import { FieldError, gbtn, pbtn } from '../ui';
 import { useApp } from '../state';
 import { LOG_PROJECTS, MACHINES } from '../data';
 
-const inp: CSSProperties = { width: '100%', padding: '12px 13px', border: '1px solid var(--border-2)', borderRadius: 10, background: 'var(--surface-2)', color: 'var(--text)', fontSize: 15, fontFamily: 'inherit', outline: 'none' };
+const inp: CSSProperties = { width: '100%', padding: '12px 13px', minHeight: 'var(--tap)', border: '1px solid var(--border-2)', borderRadius: 10, background: 'var(--surface-2)', color: 'var(--text)', fontSize: 'max(15px, var(--fs-input))', fontFamily: 'inherit', outline: 'none' };
 const errInp: CSSProperties = { ...inp, border: '1px solid var(--warn)', background: 'var(--warn-tint)' };
 
 export default function LogDayDrawer() {
@@ -66,7 +66,7 @@ export default function LogDayDrawer() {
                   <button
                     key={m}
                     onClick={() => setMachine(m)}
-                    style={{ flex: 1, padding: 11, border: '1px solid ' + (on ? 'var(--primary)' : 'var(--border-2)'), background: on ? 'var(--primary-tint)' : 'var(--surface-2)', color: on ? 'var(--primary)' : 'var(--text-2)', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'Roboto Mono' }}
+                    style={{ flex: 1, padding: 11, minHeight: 'var(--tap)', border: '1px solid ' + (on ? 'var(--primary)' : 'var(--border-2)'), background: on ? 'var(--primary-tint)' : 'var(--surface-2)', color: on ? 'var(--primary)' : 'var(--text-2)', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'Roboto Mono' }}
                   >
                     {m}
                   </button>
@@ -84,7 +84,7 @@ export default function LogDayDrawer() {
                     key={c.c}
                     onClick={() => setConcept(c.c)}
                     title={c[state.lang]}
-                    style={{ padding: '10px 4px', border: '1px solid ' + (on ? c.color : 'var(--border-2)'), background: on ? c.color : 'var(--surface-2)', color: on ? '#fff' : 'var(--text-2)', borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Roboto Mono' }}
+                    style={{ padding: '10px 4px', minHeight: 'var(--tap)', border: '1px solid ' + (on ? c.color : 'var(--border-2)'), background: on ? c.color : 'var(--surface-2)', color: on ? '#fff' : 'var(--text-2)', borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Roboto Mono' }}
                   >
                     {c.c}
                   </button>

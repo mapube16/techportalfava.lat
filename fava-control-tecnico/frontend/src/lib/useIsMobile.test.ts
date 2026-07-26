@@ -62,6 +62,49 @@ describe('el punto de ruptura, escrito en TS y en CSS', () => {
   });
 });
 
+/**
+ * Contraste del texto secundario. Va aqui y no en un comentario porque un comentario
+ * no se entera de que alguien retoco la paleta: `--text-3` daba 3.12:1 en claro y
+ * 4.19:1 en oscuro, y nada lo dijo hasta que se midio a mano.
+ *
+ * Formula de WCAG 2.x: luminancia relativa y (L1+0.05)/(L2+0.05).
+ */
+const lineal = (canal: number): number => {
+  const c = canal / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+};
+const luminancia = (hex: string): number => {
+  const n = parseInt(hex.slice(1), 16);
+  return 0.2126 * lineal((n >> 16) & 255) + 0.7152 * lineal((n >> 8) & 255) + 0.0722 * lineal(n & 255);
+};
+const contraste = (a: string, b: string): number => {
+  const [x, y] = [luminancia(a), luminancia(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+};
+
+describe('contraste del texto secundario', () => {
+  const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
+  /** El valor de una variable en el bloque del tema pedido (el oscuro va despues). */
+  const token = (nombre: string, tema: 'claro' | 'oscuro'): string => {
+    const bloque = css.split('.fava[data-theme="dark"]');
+    const trozo = tema === 'claro' ? bloque[0] : bloque[1];
+    const m = trozo.match(new RegExp(`--${nombre}:\\s*(#[0-9a-f]{6})`, 'i'));
+    assert.ok(m, `no se encuentra --${nombre} en el tema ${tema}`);
+    return m[1];
+  };
+
+  // `th` (cabecera de tabla, 11px en mayusculas) pinta --text-3 sobre --surface-2:
+  // es el fondo mas exigente sobre el que este color hace de TEXTO.
+  for (const tema of ['claro', 'oscuro'] as const) {
+    for (const fondo of ['surface', 'surface-2'] as const) {
+      it(`--text-3 sobre --${fondo} pasa 4.5:1 en tema ${tema}`, () => {
+        const r = contraste(token('text-3', tema), token(fondo, tema));
+        assert.ok(r >= 4.5, `${r.toFixed(2)}:1 — texto normal necesita 4.5:1`);
+      });
+    }
+  }
+});
+
 describe('esMovil', () => {
   it('lee el ancho real del dispositivo, no un toggle', () => {
     assert.equal(esMovil(ventanaFalsa(true).win), true);
