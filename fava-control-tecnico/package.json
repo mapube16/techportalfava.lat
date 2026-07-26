@@ -10,9 +10,10 @@
     "node": ">=22.12 <23"
   },
   "scripts": {
-    "build": "npm run check:no-free-text && npm -w frontend run build && npm -w backend run build",
+    "build": "npm run check:no-free-text && npm run check:fecha-servidor && npm -w frontend run build && npm -w backend run build",
     "start": "npm -w backend run start:prod",
     "db:bootstrap": "npm -w backend run db:bootstrap",
-    "check:no-free-text": "node scripts/check-no-free-text.mjs"
+    "check:no-free-text": "node scripts/check-no-free-text.mjs",
+    "check:fecha-servidor": "node scripts/check-fecha-servidor.mjs"
   }
 }
