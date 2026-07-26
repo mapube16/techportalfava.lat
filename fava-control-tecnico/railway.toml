@@ -26,20 +26,23 @@ builder = "RAILPACK"
 # y el build las necesita. Si el builder exporta NODE_ENV=production (lo hace),
 # una instalacion seca las omite y la compilacion falla sin explicar por que.
 #
-# El `rm -rf` inicial no es paranoia, resuelve dos fallos reales encadenados:
-# Railpack corre su propio `npm ci` antes de este comando, y encima de esa
-# instalacion (a) un segundo `npm ci` muere con EBUSY al hacer rmdir de
-# frontend/node_modules/.vite, y (b) un `npm install` deja los binarios
-# nativos por plataforma a medias — rollup falla con MODULE_NOT_FOUND sobre
-# @rollup/rollup-linux-x64-gnu. Borrar con `rm` (no con npm) y reinstalar
-# de cero deja un arbol coherente para linux.
+# SOLO build, sin instalar: Railpack ya corre su propio `npm ci` antes de este
+# comando, y hay que dejarlo en paz. Monta volumenes de cache DENTRO de
+# node_modules (`/app/node_modules/.cache`, `frontend/node_modules/.vite`), asi
+# que cualquier intento de reinstalar encima falla contra un punto de montaje:
+#   - `npm ci`  -> EBUSY al hacer rmdir de frontend/node_modules/.vite
+#   - `rm -rf`  -> "Device or resource busy" por lo mismo
+#   - `npm install` -> no muere, pero deja los binarios nativos por plataforma
+#     a medias y rollup revienta con MODULE_NOT_FOUND sobre
+#     @rollup/rollup-linux-x64-gnu
 #
-# `--include=dev` es deliberado: nest, vite, tsc y prisma son devDependencies
-# y el build las necesita. El builder exporta NODE_ENV=production, asi que sin
-# esta bandera la instalacion las omite y la compilacion falla sin explicar por que.
+# Las devDependencies (nest, vite, tsc, prisma) las necesita el build y el
+# builder exporta NODE_ENV=production, que las omitiria. La solucion no es
+# reinstalar sino que la UNICA instalacion las incluya: la variable de servicio
+# NPM_CONFIG_INCLUDE=dev (docs/ENV.md). Sin ella el build muere con "vite: not found".
 #
 # `npm run build` (raiz) = frontend (vite) + backend (prisma generate + nest).
-buildCommand = "rm -rf node_modules */node_modules && npm ci --include=dev --no-audit --no-fund && npm run build"
+buildCommand = "npm run build"
 
 [deploy]
 # npm start (raiz) -> npm -w backend run start:prod -> node dist/main.js.
