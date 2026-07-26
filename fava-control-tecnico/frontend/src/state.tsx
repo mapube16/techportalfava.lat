@@ -39,7 +39,6 @@ export interface AppState {
   projOpen: boolean;
   inviteOpen: boolean;
   pdfOpen: boolean;
-  mobile: boolean;
   search: string;
   onboard: boolean;
   onboardStep: number;
@@ -75,7 +74,6 @@ const initialState: AppState = {
   projOpen: false,
   inviteOpen: false,
   pdfOpen: false,
-  mobile: false,
   search: '',
   onboard: false,
   onboardStep: 0,

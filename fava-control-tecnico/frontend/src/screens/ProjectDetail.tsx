@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { hi } from '../icons';
 import { ApiState, Card, CardHead, gbtn, money, nf, td, th } from '../ui';
 import { useApp } from '../state';
+import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getCatalogs } from '../lib/api/catalogs';
 import { getProject, setProjectMachines, setSoldDays } from '../lib/api/projects';
@@ -12,6 +13,7 @@ const clave = (r: MatrixRow) => `${r.roleTypeId}|${r.phase ?? ''}`;
 
 export default function ProjectDetail() {
   const { state, t, go, showToast } = useApp();
+  const movil = useIsMobile();
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [celdas, setCeldas] = useState<Record<string, 'saving' | 'error'>>({});
   const [errMaq, setErrMaq] = useState<string | null>(null);
@@ -181,8 +183,8 @@ export default function ProjectDetail() {
       </Card>
       <Card>
         <CardHead title={t.matrix} right={<span style={{ fontSize: 12, color: 'var(--text-3)' }}>{t.matrix_hint}</span>} />
-        <div style={{ display: 'grid', gridTemplateColumns: state.mobile ? '1fr' : '1fr 1fr', gap: 0 }}>
-          <div style={{ padding: '12px 18px', borderRight: state.mobile ? 'none' : '1px solid var(--border)', borderBottom: state.mobile ? '1px solid var(--border)' : 'none' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: movil ? '1fr' : '1fr 1fr', gap: 0 }}>
+          <div style={{ padding: '12px 18px', borderRight: movil ? 'none' : '1px solid var(--border)', borderBottom: movil ? '1px solid var(--border)' : 'none' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.montaje}</div>
             {matriz('MONTAJE')}
           </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { hi, Dots } from '../icons';
 import { ApiState, Card, CardHead, chip, filterBy, gbtn, initials, inputStyle, pbtn, td, th } from '../ui';
 import { useApp } from '../state';
+import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { activos, getCatalogs } from '../lib/api/catalogs';
 import {
@@ -19,6 +20,7 @@ interface Form {
 
 export default function Techs() {
   const { state, t } = useApp();
+  const movil = useIsMobile();
   const [form, setForm] = useState<Form | null>(null);
   const [errSave, setErrSave] = useState<string | null>(null);
 
@@ -129,7 +131,7 @@ export default function Techs() {
     </>
   );
 
-  if (state.mobile) {
+  if (movil) {
     return (
       <Card>
         <CardHead title={t.t_techs} right={addBtn} />

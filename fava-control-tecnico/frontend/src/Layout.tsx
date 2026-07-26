@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
-import { svg, ICON, hi, FavaLogo } from './icons';
+import type { ReactNode } from 'react';
+import { svg, ICON, FavaLogo } from './icons';
 import { ghostBtn, ghostIconBtn, initials } from './ui';
 import { useApp } from './state';
 import type { Role, Route } from './types';
@@ -82,14 +82,6 @@ export default function Layout() {
   // solo con los roles del propio usuario (cambia navegación, nunca permisos).
   const me = state.me?.status === 'ok' ? state.me.user : null;
   const roleList = state.myRoles.map((r) => roleLabel[r]).join(' · ');
-
-  const mobileBtnStyle: CSSProperties = {
-    display: 'inline-flex', alignItems: 'center', padding: '7px 12px',
-    background: state.mobile ? 'var(--primary-tint)' : 'var(--surface-2)',
-    color: state.mobile ? 'var(--primary)' : 'var(--text-2)',
-    border: '1px solid ' + (state.mobile ? 'var(--primary)' : 'var(--border)'),
-    borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-  };
 
   return (
     <>
@@ -192,10 +184,6 @@ export default function Layout() {
               </svg>
               {state.lang.toUpperCase()}
             </button>
-            <button onClick={() => patch({ mobile: !state.mobile })} title={state.mobile ? t.view_desktop : t.view_mobile} style={mobileBtnStyle}>
-              {state.mobile ? hi('desktop', { w: 16 }) : hi('phone', { w: 16 })}
-              <span style={{ marginLeft: 6 }}>{state.mobile ? t.view_desktop : t.view_mobile}</span>
-            </button>
             <button onClick={toggleTheme} aria-label="theme" style={ghostIconBtn}>{themeIcon}</button>
             {state.myRoles.some((r) => r !== 'T') ? (
               <button onClick={goInbox} aria-label="inbox" style={{ ...ghostIconBtn, position: 'relative' }}>
@@ -215,17 +203,6 @@ export default function Layout() {
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ width: 34, height: 34, border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'favaSpin .8s linear infinite', margin: '0 auto 14px' }} />
                   <div style={{ fontSize: 13 }}>{t.loading}</div>
-                </div>
-              </div>
-            ) : state.mobile ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
-                <div style={{ width: 392, height: 768, background: 'var(--surface)', border: '11px solid #0d1319', borderRadius: 46, boxShadow: 'var(--shadow-lg)', overflow: 'hidden', position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 32, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', zIndex: 5 }}>
-                    <div style={{ width: 130, height: 24, background: '#0d1319', borderRadius: '0 0 16px 16px' }} />
-                  </div>
-                  <div key={state.route} className="fava-anim" style={{ height: '100%', overflowY: 'auto', padding: '40px 16px 20px' }}>
-                    <Screen />
-                  </div>
                 </div>
               </div>
             ) : (

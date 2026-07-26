@@ -1,6 +1,7 @@
 import { hi } from '../icons';
 import { ApiState, Card, CardHead, chip, filterBy, money, nf, pbtn, td, th } from '../ui';
 import { useApp } from '../state';
+import { useIsMobile } from '../lib/useIsMobile';
 import { useApiData } from '../lib/api/useApiData';
 import { listProjects } from '../lib/api/projects';
 import type { ProjectListItem } from '../lib/api/projects';
@@ -11,6 +12,7 @@ const valor = (p: ProjectListItem) =>
 
 export default function Projects() {
   const { state, t, go, patch } = useApp();
+  const movil = useIsMobile();
   const { data, error } = useApiData(listProjects, [state.dataVersion]);
 
   const addBtn = (
@@ -31,7 +33,7 @@ export default function Projects() {
     go('project');
   };
 
-  if (state.mobile) {
+  if (movil) {
     const meta = (a: string, b: string) => (
       <div>
         <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.5px' }}>{a}</div>

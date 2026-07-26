@@ -1,6 +1,7 @@
 import { hi } from '../icons';
 import { Card, CardHead, filterBy, gbtn, td, th } from '../ui';
 import { useApp } from '../state';
+import { useIsMobile } from '../lib/useIsMobile';
 import type { AuditRow } from '../types';
 
 const AM: Record<AuditRow['act'], [string, string]> = {
@@ -14,6 +15,7 @@ const AM: Record<AuditRow['act'], [string, string]> = {
 
 export default function Audit() {
   const { state, t, showToast } = useApp();
+  const movil = useIsMobile();
   const list = filterBy(state.audit, state.search, (a) => a.actor + ' ' + a.ent + ' ' + a.act);
   const exportBtn = (
     <button onClick={() => showToast('saved')} style={gbtn}>
@@ -22,7 +24,7 @@ export default function Audit() {
     </button>
   );
 
-  if (state.mobile) {
+  if (movil) {
     return (
       <Card>
         <CardHead title={t.t_audit} right={exportBtn} />

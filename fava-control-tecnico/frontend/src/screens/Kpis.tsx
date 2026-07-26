@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
 import { Card, CardHead, nf, td, th } from '../ui';
 import { useApp } from '../state';
+import { useIsMobile } from '../lib/useIsMobile';
 import type { KpiSeg } from '../state';
 
 /**
@@ -78,6 +79,7 @@ function palette() {
 
 export default function Kpis() {
   const { state, t, patch } = useApp();
+  const movil = useIsMobile();
   const mainRef = useRef<HTMLDivElement>(null);
   const hoursRef = useRef<HTMLDivElement>(null);
   const rolesRef = useRef<HTMLDivElement>(null);
@@ -195,7 +197,7 @@ export default function Kpis() {
       );
       rls.resize();
     }
-  }, [state.kpiSeg, state.lang, state.theme, state.notes, state.mobile, state.density]);
+  }, [state.kpiSeg, state.lang, state.theme, state.notes, movil, state.density]);
 
   useEffect(() => {
     const onResize = () => Object.values(charts.current).forEach((c) => { if (c && !c.isDisposed()) c.resize(); });
@@ -236,7 +238,7 @@ export default function Kpis() {
     return { name: p.name, mS, mD, cS, cD, dl: mS + cS - (mD + cD) };
   });
 
-  const byPhase = state.mobile ? (
+  const byPhase = movil ? (
     <Card>
       <CardHead title={t.by_phase} />
       <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -316,7 +318,7 @@ export default function Kpis() {
         </div>
         <div ref={mainRef} style={{ height: 352, width: '100%' }} />
       </Card>
-      <div style={{ display: 'grid', gridTemplateColumns: state.mobile ? '1fr' : '1.35fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: movil ? '1fr' : '1.35fr 1fr', gap: 16 }}>
         <Card>
           <CardHead title={t.chart_hours} />
           <div ref={hoursRef} style={{ height: 300, width: '100%' }} />

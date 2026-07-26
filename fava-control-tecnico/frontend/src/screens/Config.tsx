@@ -3,6 +3,7 @@ import { Dots } from '../icons';
 import { ApiState, Card, CardHead, gbtn, inputStyle, pbtn } from '../ui';
 import { CONCEPT_COLOR } from '../i18n';
 import { useApp } from '../state';
+import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import {
   createCurrency, createMachineModel, createRoleType, getCatalogs,
@@ -137,6 +138,7 @@ function CatalogCard(p: CatalogCardProps) {
 
 export default function Config() {
   const { state, t } = useApp();
+  const movil = useIsMobile();
   // Los permisos son del servidor (403 para quien no sea S); esto solo evita ofrecer
   // controles que no van a funcionar.
   const isSuper = state.role === 'S';
@@ -170,7 +172,7 @@ export default function Config() {
   ];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: state.mobile ? '1fr' : '1fr 1fr', gap: 16, maxWidth: 900 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: movil ? '1fr' : '1fr 1fr', gap: 16, maxWidth: 900 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <Card>
           <CardHead title={t.config_concepts} right={isSuper ? null : <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{t.cat_only_super}</span>} />
