@@ -53,7 +53,7 @@ Plans:
   4. Concepto de jornada, rol técnico y moneda solo se eligen de listas cerradas — ninguno de los tres acepta texto libre en ninguna pantalla.
   5. Proyectos, Detalle de Proyecto, Técnicos, Usuarios y Config leen del API real; sus mocks salieron de `data.ts`.
 **Frontend cutover**: `Projects.tsx`, `ProjectDetail.tsx`, `Techs.tsx`, `Users.tsx`, `Config.tsx`, `NewProjectModal.tsx`, `InviteUserModal.tsx`
-**Plans**: 6 (2/6 complete)
+**Plans**: 6 (4/6 complete)
 
 ### Phase 3: Bitácora diaria
 **Goal**: El técnico registra su semana una sola vez desde el móvil en planta, y el dato sobrevive a la conectividad mala y al doble toque.

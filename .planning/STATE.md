@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completado 02-02-PLAN.md (criterio 4 comprobable: introspeccion + guarda-rail de repo)"
-last_updated: "2026-07-26T13:08:43.356Z"
-last_activity: "2026-07-26 — 02-02 completado: el criterio 4 («sin texto libre») ya es comprobable — 4 casos de introspección en verde + guarda-raíl de repo enganchado a npm (rojo con 4 hallazgos que cierra 02-06)"
+stopped_at: "Completado 02-04-PLAN.md (invitacion + vinculo usuario<->tecnico: precondicion de la Fase 3 cubierta)"
+last_updated: "2026-07-26T13:18:43.927Z"
+last_activity: "2026-07-26 — 02-04 completado: CAT-05 por backend (invitar + vincular con técnico) y la precondición de la Fase 3 probada end-to-end: sin vínculo el usuario ve 0 jornadas, con vínculo solo las suyas"
 progress:
   total_phases: 8
-  completed_phases: 1
+  completed_phases: 0
   total_plans: 13
-  completed_plans: 7
-  percent: 54
+  completed_plans: 9
+  percent: 69
 ---
 
 # Project State
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 Phase: 2 of 8 (Maestros y catálogos)
 Plan: 3 of 6
 Status: Executing
-Last activity: 2026-07-26 — 02-02 completado: el criterio 4 («sin texto libre») ya es comprobable — 4 casos de introspección en verde + guarda-raíl de repo enganchado a npm (rojo con 4 hallazgos que cierra 02-06)
+Last activity: 2026-07-26 — 02-04 completado: CAT-05 por backend (invitar + vincular con técnico) y la precondición de la Fase 3 probada end-to-end: sin vínculo el usuario ve 0 jornadas, con vínculo solo las suyas
 
-Progress: [█████░░░░░] 54%
+Progress: [███████░░░] 69%
 
 ## Performance Metrics
 
@@ -50,9 +50,11 @@ Progress: [█████░░░░░] 54%
 | Phase 01 P07 | 1 | 50 min | 50 min (3 tasks, 17 files) |
 | Phase 02 P01 | 1 | 33 min | 33 min (3 tasks, 7 files) |
 | Phase 02 P02 | 1 | 24 min | 24 min (2 tasks, 3 files) |
+| Phase 02 P04 | 1 | 21 min | 21 min (2 tasks, 4 files) |
+| Phase 02 P03 | 1 | 42 min | 42 min (2 tasks, 9 files) |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (24 min), 02-01 (33 min), 01-07 (50 min), 01-03 (45 min), 01-02 (15 min)
+- Last 5 plans: 02-03 (42 min), 02-04 (21 min), 02-02 (24 min), 02-01 (33 min), 01-07 (50 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -95,6 +97,9 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 02-maestros-y-cat-logos]: [02-02]: Los fallos de un test de introspeccion se afirman como LISTA de strings (expect(faltantes).toEqual([])), nunca como booleano: el mensaje tiene que nombrar la columna
 - [Phase 02-maestros-y-cat-logos]: [02-02]: check:no-free-text NO se engancha a npm run build mientras salga rojo (4 hallazgos legitimos de mocks); engancharlo es una linea y es tarea de 02-06 cuando lo ponga en verde
 - [Phase 02-maestros-y-cat-logos]: [02-02]: El DDL sobre la base local esta denegado por el sandbox: la verificacion en rojo de un test table-driven se hace anadiendo una fila falsa a la tabla de casos, no rompiendo el esquema
+- [Phase 02-maestros-y-cat-logos]: [02-04]: La regla de escalada se extrae a exigirSuperParaAdmins y la comparten asignarRoles y crear: una condicion, dos caminos, imposible relajar uno solo
+- [Phase 02-maestros-y-cat-logos]: [02-04]: Prisma 7 con driver adapter NO rellena meta.target: el nombre de la restriccion violada solo viaja en meta.driverAdapterError.cause.originalMessage (mensaje traducido, identificador no)
+- [Phase 02-maestros-y-cat-logos]: [02-04]: app.technician_id ya se puede poblar y esta probado end-to-end (endpoint -> columna -> guard -> interceptor -> politica): un tecnico sin vinculo ve CERO registros, no un error
 
 ### Pending Todos
 
@@ -122,6 +127,6 @@ Nota de inventario:
 
 ## Session Continuity
 
-Last session: 2026-07-26T13:07:20.381Z
-Stopped at: Completado 02-02-PLAN.md (criterio 4 comprobable: introspeccion + guarda-rail de repo)
+Last session: 2026-07-26T13:16:40.669Z
+Stopped at: Completado 02-04-PLAN.md (invitacion + vinculo usuario<->tecnico: precondicion de la Fase 3 cubierta)
 Resume file: None
