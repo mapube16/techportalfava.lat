@@ -11,7 +11,7 @@ El frontend React con 11 pantallas ya existe con datos mock. Este roadmap constr
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [ ] **Phase 1: Fundación segura y desplegada** - Login Microsoft real, RLS a prueba de bugs y primer deploy a Railway
-- [ ] **Phase 2: Maestros y catálogos** - Técnicos, proyectos con encabezado de Nota, días vendidos rol×fase y usuarios (6/6 planes ejecutados 2026-07-26 — pendiente la verificación de fase)
+- [x] **Phase 2: Maestros y catálogos** - Técnicos, proyectos con encabezado de Nota, días vendidos rol×fase y usuarios (6/6 planes ejecutados 2026-07-26 — pendiente la verificación de fase) (completed 2026-07-26)
 - [ ] **Phase 3: Bitácora diaria** - Captura única de la semana desde el móvil, con borrador local y envío idempotente
 - [ ] **Phase 4: Flujo de aprobación y auditoría** - Notas derivadas por proyecto, draft→submitted→approved/returned y rastro completo
 - [ ] **Phase 5: Nota Semanal PDF y firma del cliente** - PDF fiel al papel, doble firma con expediente de evidencia, congelado e inmutable
@@ -168,7 +168,7 @@ Las fases se ejecutan en orden numérico. Phase 6 (migración) puede adelantarse
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fundación segura y desplegada | 0/6 | Not started | - |
-| 2. Maestros y catálogos | 6/6 | Complete   | 2026-07-26 |
+| 2. Maestros y catálogos | 6/6 | Complete    | 2026-07-26 |
 | 3. Bitácora diaria | 0/TBD | Not started | - |
 | 4. Flujo de aprobación y auditoría | 0/TBD | Not started | - |
 | 5. Nota Semanal PDF y firma | 0/TBD | Not started | - |

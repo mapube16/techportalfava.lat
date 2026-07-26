@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: "Completado 02-06-PLAN.md (cutover de frontend: fase 2 con sus 6 planes ejecutados)"
-last_updated: "2026-07-26T18:09:43.084Z"
+last_updated: "2026-07-26T19:21:43.232Z"
 last_activity: "2026-07-26 — 02-06 completado: las 5 pantallas de administración leen del API real. Delta invertido borrado (el servidor lo calcula), matriz derivada del catálogo de roles, autoguardado por celda y check:no-free-text en verde y enganchado al build"
 progress:
   total_phases: 8
