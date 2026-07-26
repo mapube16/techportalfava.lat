@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { SoldDaysService } from './sold-days.service';
 
 /**
  * Prisma representa `@db.Decimal` con el Decimal de decimal.js. VERIFICADO contra
@@ -86,7 +87,10 @@ interface FilaDetalle {
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly soldDays: SoldDaysService,
+  ) {}
 
   /**
    * Sin filtro por `isActive`: igual que el maestro de tecnicos, la lista muestra
@@ -107,7 +111,10 @@ export class ProjectsService {
   async detalle(id: string) {
     const p = await this.prisma.client.project.findUnique({ where: { id }, select: DETALLE });
     if (!p) throw new NotFoundException('PROYECTO_NO_ENCONTRADO');
-    return { ...this.plano(p), machines: await this.maquinas(id) };
+    // Las filas de la matriz salen del catalogo de roles, nunca de una lista cableada:
+    // el delta lo calcula `sold-days.service.ts` y el cliente solo pinta.
+    const [machines, matrix] = await Promise.all([this.maquinas(id), this.soldDays.matriz(id)]);
+    return { ...this.plano(p), machines, matrix };
   }
 
   /**

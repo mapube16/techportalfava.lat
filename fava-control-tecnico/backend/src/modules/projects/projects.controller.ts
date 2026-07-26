@@ -11,10 +11,15 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { Roles } from '../../common/auth/roles.decorator';
+import { Phase } from '../../generated/prisma/enums';
 import type { UserModel } from '../../generated/prisma/models';
 import { type DatosProyecto, ProjectsService } from './projects.service';
+import { SoldDaysService } from './sold-days.service';
 
 type Cuerpo = Record<string, unknown>;
+
+/** Las dos fases del enum de Postgres, no una lista copiada a mano. */
+const FASES: string[] = Object.values(Phase);
 
 /** ISO-4217: exactamente 3 letras (mismo criterio que el catalogo de monedas). */
 const ISO_4217 = /^[A-Za-z]{3}$/;
@@ -76,7 +81,10 @@ function moneda(valor: unknown): string | null {
 @Controller('api/projects')
 @Roles('A', 'S')
 export class ProjectsController {
-  constructor(private readonly service: ProjectsService) {}
+  constructor(
+    private readonly service: ProjectsService,
+    private readonly soldDays: SoldDaysService,
+  ) {}
 
   @Get()
   listar() {
@@ -151,6 +159,34 @@ export class ProjectsController {
         return v;
       }),
     );
+  }
+
+  /**
+   * UNA celda. El autoguardado al salir del campo necesita un endpoint pequeno y
+   * aislado: un `PATCH /:id` generico que ademas tocase dias vendidos es el
+   * anti-patron declarado del research.
+   */
+  @Put(':id/sold-days')
+  fijarDiasVendidos(
+    @CurrentUser() actor: UserModel,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: Cuerpo,
+  ) {
+    // Primero que nada: `delta` y `executed` los calcula el servidor. Aceptarlos y
+    // descartarlos en silencio dejaria creer al cliente que los ha guardado.
+    if (body && ('delta' in body || 'executed' in body))
+      throw new BadRequestException('CAMPO_CALCULADO_NO_ADMITIDO');
+
+    const { roleTypeId, phase, soldDays } = body ?? {};
+    if (typeof roleTypeId !== 'string' || !UUID.test(roleTypeId))
+      throw new BadRequestException('ROL_TECNICO_INVALIDO');
+    if (typeof phase !== 'string' || !FASES.includes(phase))
+      throw new BadRequestException('FASE_INVALIDA');
+    // Techo de 9999: mas dias vendidos que 27 anos de proyecto es un dedo, no un dato.
+    if (!Number.isInteger(soldDays) || (soldDays as number) < 0 || (soldDays as number) > 9999)
+      throw new BadRequestException('DIAS_VENDIDOS_INVALIDOS');
+
+    return this.soldDays.fijar(actor.id, id, roleTypeId, phase as Phase, soldDays as number);
   }
 }
 
