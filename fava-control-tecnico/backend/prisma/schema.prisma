@@ -132,6 +132,11 @@ model DailyEntry {
   /// o el tablero miente por omision.
   phase Phase?
 
+  /// BIT-01: el texto del trabajo del dia. Lo imprime el cuerpo de la Nota Semanal
+  /// (Fase 5) en cada una de las 7 filas. Nullable porque el historico del Excel
+  /// (Fase 6) trae filas sin descripcion y un '' obligatorio seria peor que un NULL.
+  description String?
+
   /// Snapshot del rol con el que trabajo ESE dia, no el del maestro. 5 de los 14
   /// tecnicos del Excel tienen mas de un `Tipo` (Ivan Cortes: Software 652 filas +
   /// Capo Elettricista 78). Sin esta columna la Fase 6 pierde informacion.
