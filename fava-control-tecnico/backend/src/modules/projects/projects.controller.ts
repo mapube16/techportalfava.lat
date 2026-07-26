@@ -86,9 +86,22 @@ export class ProjectsController {
     private readonly soldDays: SoldDaysService,
   ) {}
 
+  /**
+   * El UNICO metodo relajado a Tecnico (BIT-01): la clase sigue en `@Roles('A','S')` y
+   * el guard hace `getAllAndOverride`, asi que el metodo la pisa. Al reves —clase
+   * abierta y restrictivo por metodo— el olvido de un decorador en un endpoint futuro
+   * caeria del lado inseguro.
+   *
+   * El reparto es por ROLES y no por RLS: `proj_read` es `USING (TRUE)`, o sea que el
+   * motor le dejaria leer todas las columnas. Un usuario con `['T','A']` es admin
+   * (mismo criterio que `ROLE_RANK` del frontend y que `app.is_admin` del interceptor).
+   * No hay endpoint aparte: es la misma ruta con dos proyecciones.
+   */
   @Get()
-  listar() {
-    return this.service.listar();
+  @Roles('T', 'A', 'S')
+  listar(@CurrentUser() actor: UserModel) {
+    const admin = actor.roles.some((r) => r === 'A' || r === 'S');
+    return admin ? this.service.listar() : this.service.listarParaTecnico();
   }
 
   @Get(':id')

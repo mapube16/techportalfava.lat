@@ -54,6 +54,21 @@ const LISTA = {
   machines: { select: { machineModel: { select: { code: true } } } },
 } as const;
 
+/**
+ * Lo que ve un TECNICO. Es un `select` PROPIO y no un subconjunto calculado de LISTA:
+ * asi una columna nueva del esquema (o de LISTA) NO puede aparecer aqui sin que alguien
+ * la escriba a mano. contractValue / oaNumber / normalHours / currencyCode / clientName
+ * son informacion comercial y la decision bloqueada dice «solo nombre y maquinas».
+ *
+ * Nada de `delete p.contractValue` ni de `omit`: lo que no se pide no se puede filtrar
+ * por error.
+ */
+const LISTA_TECNICO = {
+  id: true,
+  name: true,
+  machines: { select: { machineModel: { select: { id: true, code: true, description: true } } } },
+} as const;
+
 export interface DatosProyecto {
   name?: string;
   clientName?: string;
@@ -105,6 +120,35 @@ export class ProjectsService {
       ...resto,
       contractValue: dinero(contractValue),
       machineCodes: machines.map((m) => m.machineModel.code).sort(),
+    }));
+  }
+
+  /**
+   * Solo ACTIVOS: «los proyectos cerrados no aparecen en la lista» (decision bloqueada).
+   * Los dias YA registrados contra un proyecto cerrado se siguen viendo — eso lo resuelve
+   * el `projectName` denormalizado de GET /api/daily-entries (03-04), no este filtro.
+   *
+   * Se desestructura en vez de hacer `...p`: dos puertas (el `select` y esta lista) en vez
+   * de una para que una columna nueva no llegue sola a la respuesta del tecnico.
+   */
+  async listarParaTecnico() {
+    const filas = await this.prisma.client.project.findMany({
+      where: { isActive: true },
+      select: LISTA_TECNICO,
+      orderBy: { name: 'asc' },
+    });
+    return filas.map(({ id, name, machines }) => ({
+      id,
+      name,
+      // Aplanado a lo que consume el drawer: `machineModelId` es lo que la bitacora
+      // escribe en `daily_entries.machine_model_id` (el catalogo GLOBAL, no la seleccion).
+      machines: machines
+        .map((m) => ({
+          machineModelId: m.machineModel.id,
+          code: m.machineModel.code,
+          description: m.machineModel.description,
+        }))
+        .sort((a, b) => a.code.localeCompare(b.code)),
     }));
   }
 
