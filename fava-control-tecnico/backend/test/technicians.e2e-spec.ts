@@ -217,9 +217,13 @@ describe('technicians: alta sin Entra y baja que conserva la historia (CAT-02)',
       isActive: false,
     });
 
-    // La jornada sigue entera y sigue apuntando a su tecnico: la baja no la toca.
+    // La jornada sigue entera y sigue apuntando a su tecnico: la baja no la toca. Se
+    // compara la fila ENTERA contra la que se creo, en vez de tres campos elegidos a
+    // mano: dice mas («no cambio NADA») y no se acopla al concepto que use el fixture,
+    // que desde el CHECK de 03-01 depende de si la jornada lleva proyecto o no.
     const relectura = await ownerClient.dailyEntry.findUnique({ where: { id: jornada.id } });
-    expect(relectura).toMatchObject({ technicianId: t.id, status: 'approved', conceptCode: 'DC' });
+    expect(relectura).toEqual(jornada);
+    expect(relectura?.technicianId).toBe(t.id);
   });
 
   it('reactivar a un tecnico → 200', async () => {

@@ -67,6 +67,13 @@ export function crearProyecto(
  *
  * `date` es obligatoria porque `@@unique([technicianId, date])` (BIT-02) la convierte en
  * parte de la identidad: un default la haria colisionar en la segunda llamada.
+ *
+ * El CONCEPTO lo decide el proyecto, no el que llama. Desde el CHECK `de_proyecto_por_concepto`
+ * (03-01) una jornada de trabajo SIN proyecto no existe: el motor la rechaza con 23514.
+ * Con proyecto -> `DC` (dia de campo, cuenta como ejecutado); sin proyecto -> `LR`, que es
+ * lo que BIT-03 dice que puede ir suelto. Antes esta funcion emitia `DC` en los dos casos,
+ * o sea que fabricaba una fila imposible en cuanto le omitias el proyecto; no se veia
+ * porque hasta 03-01 no habia ningun CHECK que lo dijera.
  */
 export function crearJornadaAprobada(d: {
   technicianId: string;
@@ -83,7 +90,7 @@ export function crearJornadaAprobada(d: {
       projectId: d.projectId ?? null,
       roleTypeId: d.roleTypeId ?? ROL_TEST,
       phase: d.phase ?? null,
-      conceptCode: 'DC',
+      conceptCode: d.projectId ? 'DC' : 'LR',
       machineModelId: MAQ_TEST,
     },
   });
