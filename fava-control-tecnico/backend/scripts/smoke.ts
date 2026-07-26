@@ -7,6 +7,11 @@
  * Sin argumento apunta a http://127.0.0.1:3000, util contra el build local.
  * Salida: una linea por check y exit code 1 si alguno falla (para CI).
  *
+ * Con SMOKE_DEV_EMAIL y SMOKE_DEV_PASSWORD (las credenciales del login de dev,
+ * DEV_AUTH_ENABLED=true) se activa ademas el check AUTENTICADO, que es el unico que
+ * caza el Pitfall 7: tablas nuevas sin privilegios para fava_app tras un deploy.
+ * Sin esas variables ese check se OMITE y no cuenta como fallo.
+ *
  * Solo fetch nativo de Node 22: un smoke con dependencias es una cosa mas que
  * puede fallar por su cuenta justo cuando hay que confiar en el.
  */
