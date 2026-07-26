@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "test": "node --import tsx --test src/lib/fecha.test.ts",
+    "build": "npm run test && tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
