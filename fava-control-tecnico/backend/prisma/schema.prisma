@@ -22,6 +22,43 @@ enum Role {
   @@map("role")
 }
 
+/// CAT-01. Los 8 codigos son FIJOS (decision bloqueada del CONTEXT). Enum de
+/// Postgres = el catalogo no puede crecer ni por un bug de servicio ni por SQL
+/// suelto. Las etiquetas visibles (mutables) viven en la tabla `concepts`.
+/// OJO con LR/NR: la hoja Parametros del Excel llama «LR» a los codigos 4 y 5;
+/// el 4 es NR (no remunerado, solo EXTERNOS) y el 5 es LR (solo internos).
+enum ConceptCode {
+  DC
+  MD
+  DFD
+  DVSF
+  DVRC
+  LR
+  NR
+  IL
+
+  @@map("concept_code")
+}
+
+/// Montaje / collaudo. En el Excel la fase solo existe en el lado *vendido*
+/// (hojas de proyecto); las hojas diarias no la traen. De ahi que en
+/// `daily_entries` sea nullable y en `project_sold_days` obligatoria.
+enum Phase {
+  MONTAJE
+  COLLAUDO
+
+  @@map("phase")
+}
+
+/// Interno = plantilla FAVA, externo = contratista. No es decorativo: la hoja
+/// Parametros reserva NR a los externos y LR a los internos.
+enum EmploymentType {
+  INTERNO
+  EXTERNO
+
+  @@map("employment_type")
+}
+
 model User {
   id String @id @default(uuid()) @db.Uuid
 
@@ -35,11 +72,15 @@ model User {
   roles    Role[]
   isActive Boolean @default(true) @map("is_active")
 
-  /// Sin FK: la tabla technicians llega en Fase 2.
-  technicianId String? @map("technician_id") @db.Uuid
+  /// Un usuario <-> un tecnico. De aqui sale la GUC `app.technician_id` que aisla
+  /// la bitacora, asi que dos usuarios apuntando al mismo tecnico serian dos
+  /// identidades con la misma bitacora: @unique lo impide en el motor.
+  technicianId String? @unique @map("technician_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  technician Technician? @relation(fields: [technicianId], references: [id], onDelete: Restrict)
 
   @@map("users")
 }
@@ -73,12 +114,43 @@ model DailyEntry {
   /// draft | submitted | approved | returned
   status String @default("draft")
 
+  /// Nullable por BIT-03: el Excel usa «Sin Proyecto» como centinela en 1.438 filas
+  /// y un centinela en la tabla seria peor que un NULL honesto.
+  projectId String? @map("project_id") @db.Uuid
+
+  /// Apunta al modelo GLOBAL, no a la seleccion del proyecto: asi quitar una
+  /// maquina de un proyecto nunca rompe ni vacia el historico.
+  machineModelId String? @map("machine_model_id") @db.Uuid
+
+  /// El «sin texto libre» de CAT-01, a nivel de tipo. Sin relacion a `concepts`
+  /// a proposito: el enum ya constrine la columna y una FK obligaria a leer el
+  /// catalogo en cada escritura de bitacora sin ganar ninguna garantia.
+  conceptCode ConceptCode? @map("concept_code")
+
+  /// Nullable a proposito: las hojas diarias del Excel no tienen columna de fase y
+  /// TODO el historico entra con NULL. La agregacion necesita un bucket «sin fase»
+  /// o el tablero miente por omision.
+  phase Phase?
+
+  /// Snapshot del rol con el que trabajo ESE dia, no el del maestro. 5 de los 14
+  /// tecnicos del Excel tienen mas de un `Tipo` (Ivan Cortes: Software 652 filas +
+  /// Capo Elettricista 78). Sin esta columna la Fase 6 pierde informacion.
+  roleTypeId String? @map("role_type_id") @db.Uuid
+
   sourceYear  Int?    @map("source_year")
   sourceSheet String? @map("source_sheet")
   sourceRow   Int?    @map("source_row")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  // onDelete: Restrict explicito en las cuatro. Prisma pone SetNull por defecto en
+  // las relaciones opcionales: borrar un proyecto por error vaciaria en silencio el
+  // project_id de la bitacora. Nada de Cascade en ningun sitio de este esquema.
+  technician   Technician    @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+  project      Project?      @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  machineModel MachineModel? @relation(fields: [machineModelId], references: [id], onDelete: Restrict)
+  roleType     RoleType?     @relation(fields: [roleTypeId], references: [id], onDelete: Restrict)
 
   /// BIT-02: un tecnico registra un dia una sola vez.
   /// El indice de esta unique ya sirve para filtrar por technician_id.
@@ -101,6 +173,200 @@ model WeeklyNote {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  technician Technician @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+
   @@index([technicianId])
   @@map("weekly_notes")
+}
+
+// ─────────────────────────── Fase 2: maestros y catalogos ───────────────────────────
+
+/// CAT-01. Ocho filas, sembradas por la MIGRACION y no por seed.ts: son estructura.
+/// Si un deploy olvida `db:seed`, un catalogo vacio rompe la captura de la Fase 3 y
+/// la pantalla Config. Aqui vive solo lo MUTABLE (las etiquetas y el orden); el
+/// codigo es el enum, y por eso esta tabla no puede crecer ni encoger.
+model Concept {
+  code      ConceptCode @id
+  labelEs   String      @map("label_es")
+  labelIt   String      @map("label_it")
+  sortOrder Int         @map("sort_order")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  @@map("concepts")
+}
+
+/// ABM completo del Super Admin. El Excel tenia ~21 grafias de rol para 14 tecnicos:
+/// cablear tres roles en el codigo es demostrablemente falso. Consecuencia de diseno:
+/// las FILAS de la matriz vendido/ejecutado se generan desde este catalogo.
+model RoleType {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String  @unique
+  isActive Boolean @default(true) @map("is_active")
+
+  technicians  Technician[]
+  soldDays     ProjectSoldDays[]
+  dailyEntries DailyEntry[]
+
+  @@map("role_types")
+}
+
+/// ABM simple: codigo y simbolo. Sin tasas de cambio (fuera de alcance).
+model Currency {
+  /// ISO-4217: 3 letras mayusculas. @unique normal, no parcial: desactivar una
+  /// moneda NO libera su codigo, y la UI ofrece reactivarla.
+  code     String  @id
+  symbol   String
+  isActive Boolean @default(true) @map("is_active")
+
+  projects Project[]
+
+  @@map("currencies")
+}
+
+/// Catalogo GLOBAL de los modelos que FAVA fabrica; la seleccion por proyecto vive
+/// en `project_machines`. La descripcion libre no es decorativa: es lo que permite
+/// que la linea «Maquinaria:» de la Nota diga «Linea Pasta Larga 4500 Kg/h» y no
+/// «PL6000». Sustituye al texto libre con separadores mixtos del Excel
+/// («CTA1000,PC4500», «CTA1000/PL6000», «PL 6000 PC 4500»).
+model MachineModel {
+  id          String  @id @default(uuid()) @db.Uuid
+  code        String  @unique
+  description String?
+  isActive    Boolean @default(true) @map("is_active")
+
+  projects     ProjectMachine[]
+  dailyEntries DailyEntry[]
+
+  @@map("machine_models")
+}
+
+/// CAT-02. Desacoplada de `users` a proposito: los tecnicos historicos del Excel no
+/// tienen cuenta Entra y hay que poder registrarles jornadas igual. El vinculo
+/// opcional con una cuenta es `users.technician_id`.
+model Technician {
+  id             String         @id @default(uuid()) @db.Uuid
+  fullName       String         @map("full_name")
+  roleTypeId     String         @map("role_type_id") @db.Uuid
+  employmentType EmploymentType @map("employment_type")
+
+  /// Las grafias con las que el tecnico aparece en el Excel («Leomar/Leomir»,
+  /// «Klein/Kleir»). Las consume la conciliacion de la Fase 6 (MIG-01).
+  aliases String[] @default([])
+
+  /// Desactivar, nunca borrar: deja de ofrecerse en formularios nuevos y sus
+  /// jornadas historicas siguen siendo legibles.
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  roleType     RoleType     @relation(fields: [roleTypeId], references: [id], onDelete: Restrict)
+  user         User?
+  dailyEntries DailyEntry[]
+  weeklyNotes  WeeklyNote[]
+
+  @@index([isActive])
+  @@map("technicians")
+}
+
+/// CAT-03. Los campos del bloque «encabezado» son exactamente los que imprime la
+/// Nota Semanal (Fase 5), extraidos del PDF de ejemplo por coordenadas.
+model Project {
+  id String @id @default(uuid()) @db.Uuid
+
+  /// Nombre interno (listas y KPIs). El que sale impreso es `clientName`.
+  name String
+
+  // ── Encabezado literal de la Nota Semanal ──
+
+  /// «Cliente:». Sin tabla `clients` en v1: KPI-04 agrupa por este texto y el
+  /// autocompletado con <datalist> mitiga las grafias duplicadas.
+  clientName String @map("client_name")
+
+  /// CAT-03. OJO Fase 5: NO es el «NIT:» que imprime la Nota — ese es el de FAVA
+  /// (901137532-4), constante del membrete. Esta columna NUNCA va en esa casilla del PDF.
+  clientNit String? @map("client_nit")
+
+  /// «Localidad:» SIN pais. Son dos columnas porque KPI-04 pide «dias por cliente y
+  /// pais» y una cadena unica lo impide; la Nota las imprime unidas por «, ».
+  locality String
+  country  String
+
+  /// «Suministro:»
+  supply String
+
+  /// «Contrato:», y tambien el valor de la columna NOTA de los 7 dias (no es un
+  /// campo aparte). Texto, no numero: es un identificador («345500», «OA0163864»).
+  contractNumber String @map("contract_number")
+
+  // ── Comercial ──
+
+  oaNumber String? @map("oa_number")
+
+  /// Se devuelve al frontend como `number` con una conversion explicita en el
+  /// controlador: Prisma lo representa con el Decimal de decimal.js y en JSON
+  /// saldria como string. Los valores reales (~4,15 M con 2 decimales) estan muy
+  /// por debajo de 2^53, asi que Number es exacto.
+  contractValue Decimal? @map("contract_value") @db.Decimal(14, 2)
+  currencyCode  String?  @map("currency_code")
+
+  /// El «nh» del prototipo: horas normales pactadas por jornada.
+  normalHours Int? @map("normal_hours")
+
+  isActive Boolean @default(true) @map("is_active")
+
+  /// Rastro de autoria, sin FK a proposito: un Restrict impediria dar de baja al
+  /// usuario que lo creo y un SetNull/Cascade falsearia el rastro.
+  createdById String? @map("created_by_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  currency     Currency?         @relation(fields: [currencyCode], references: [code], onDelete: Restrict)
+  machines     ProjectMachine[]
+  soldDays     ProjectSoldDays[]
+  dailyEntries DailyEntry[]
+
+  @@index([isActive])
+  @@map("projects")
+}
+
+/// Seleccion pura (proyecto <-> modelo). NADA la referencia, y por eso quitar una
+/// maquina de un proyecto SI es un borrado real: la jornada apunta al modelo global
+/// (`daily_entries.machine_model_id`), nunca a esta fila, asi que el historico
+/// sigue resolviendo su maquina. Es lo que hace posible la decision bloqueada
+/// «quitar una maquina con jornadas registradas: se avisa y se permite».
+model ProjectMachine {
+  projectId      String @map("project_id") @db.Uuid
+  machineModelId String @map("machine_model_id") @db.Uuid
+
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  machineModel MachineModel @relation(fields: [machineModelId], references: [id], onDelete: Restrict)
+
+  @@id([projectId, machineModelId])
+  @@map("project_machines")
+}
+
+/// CAT-04. NO existe columna `delta`: es `sold_days - ejecutado` y lo calcula el
+/// servidor en cada lectura. Tampoco hay CHECK que impida quedar por debajo de lo
+/// ejecutado — el delta negativo es un hecho real del negocio (Resoconto fila 39:
+/// 20 vendidos | 332 ejecutados | -312).
+model ProjectSoldDays {
+  id         String @id @default(uuid()) @db.Uuid
+  projectId  String @map("project_id") @db.Uuid
+  roleTypeId String @map("role_type_id") @db.Uuid
+  phase      Phase
+
+  /// >= 0, validado en el servicio (Postgres no modela CHECK desde Prisma).
+  soldDays Int @map("sold_days")
+
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  roleType RoleType @relation(fields: [roleTypeId], references: [id], onDelete: Restrict)
+
+  /// Clave natural del upsert por celda (autoguardado al salir del campo).
+  @@unique([projectId, roleTypeId, phase])
+  @@map("project_sold_days")
 }

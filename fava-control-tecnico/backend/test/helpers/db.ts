@@ -11,9 +11,18 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../src/generated/prisma/client';
 import { env } from '../../src/config/env';
 
-/** Tecnicos de prueba con UUID fijo: 01-02 (RLS) y 01-03 (auth) siembran sobre estos. */
+/**
+ * Tecnicos de prueba con UUID fijo. Desde la Fase 2 `daily_entries.technician_id`
+ * y `weekly_notes.technician_id` tienen FK real a `technicians`, asi que estos dos
+ * UUID YA NO pueden ser literales sueltos: `truncateAll()` los repone como filas.
+ */
 export const TEC_A = '11111111-1111-4111-8111-111111111111';
 export const TEC_B = '22222222-2222-4222-8222-222222222222';
+
+/** Catalogo minimo que necesita cualquier suite. Nunca se truncan (ver TABLAS_TX). */
+export const ROL_TEST = '33333333-3333-4333-8333-333333333333';
+export const CUR_TEST = 'TST';
+export const MAQ_TEST = '44444444-4444-4444-8444-444444444444';
 
 /** Owner: DDL, siembra de fixtures y limpieza. Salta RLS a proposito. */
 export const ownerClient = new PrismaClient({
@@ -25,16 +34,75 @@ export const appClient = new PrismaClient({
   adapter: new PrismaPg({ connectionString: env.DATABASE_URL }),
 });
 
-const TABLAS = ['daily_entries', 'weekly_notes', 'access_requests', 'users'] as const;
+/**
+ * Transaccionales: se truncan entre tests. El orden no importa (CASCADE), pero la
+ * lista si: una tabla nueva que falte aqui filtra estado de una suite a la siguiente
+ * y produce fallos que dependen del orden de ejecucion.
+ */
+const TABLAS_TX = [
+  'daily_entries',
+  'weekly_notes',
+  'project_sold_days',
+  'project_machines',
+  'projects',
+  'technicians',
+  'access_requests',
+  'users',
+] as const;
 
 /**
- * Limpia las 4 tablas de la fase. Se ejecuta como owner porque TRUNCATE es DDL.
- * OJO: se lleva por delante al Super Admin del seed; tras correr la suite,
- * `npm -w backend run db:seed` lo repone.
+ * Catalogos: NUNCA se truncan. Los 8 conceptos los siembra la migracion (son
+ * estructura, no datos de ejemplo) y un `TRUNCATE ... CASCADE` sobre `concepts`
+ * se los llevaria por delante dejando la base en un estado que ninguna migracion
+ * repone. Listados aqui para que quede escrito por que NO estan en TABLAS_TX.
+ */
+export const CATALOGOS = ['concepts', 'role_types', 'currencies', 'machine_models'] as const;
+
+/**
+ * Catalogo minimo e idempotente: un rol, una moneda y un modelo de maquina con
+ * identificadores fijos. Se puede llamar cuantas veces se quiera.
+ */
+export async function seedCatalogos(): Promise<void> {
+  await ownerClient.roleType.upsert({
+    where: { id: ROL_TEST },
+    update: {},
+    create: { id: ROL_TEST, name: 'Rol de prueba' },
+  });
+  await ownerClient.currency.upsert({
+    where: { code: CUR_TEST },
+    update: {},
+    create: { code: CUR_TEST, symbol: '¤' },
+  });
+  await ownerClient.machineModel.upsert({
+    where: { id: MAQ_TEST },
+    update: {},
+    create: { id: MAQ_TEST, code: 'TEST-MAQ', description: 'Modelo de prueba' },
+  });
+}
+
+/**
+ * Deja la base en un BASELINE conocido: tablas transaccionales vacias, catalogos
+ * garantizados y TEC_A/TEC_B existiendo como filas reales de `technicians`.
+ *
+ * ponytail: conserva el nombre y la firma de la Fase 1 a proposito. Las suites
+ * `bootstrap`, `rls-isolation` y `rls-transaction` la llaman en beforeEach para
+ * decir «parte de cero»; su intencion no cambia porque ahora existan FKs, asi que
+ * cambia el helper y no las tres suites.
+ *
+ * Se ejecuta como owner porque TRUNCATE es DDL. OJO: se lleva por delante al Super
+ * Admin del seed; tras correr la suite, `npm -w backend run db:seed` lo repone.
  */
 export async function truncateAll(): Promise<void> {
-  const lista = TABLAS.map((t) => `"public"."${t}"`).join(', ');
+  const lista = TABLAS_TX.map((t) => `"public"."${t}"`).join(', ');
   await ownerClient.$executeRawUnsafe(`TRUNCATE TABLE ${lista} RESTART IDENTITY CASCADE`);
+
+  await seedCatalogos();
+  await ownerClient.technician.createMany({
+    data: [
+      { id: TEC_A, fullName: 'Tecnico A', roleTypeId: ROL_TEST, employmentType: 'INTERNO' },
+      { id: TEC_B, fullName: 'Tecnico B', roleTypeId: ROL_TEST, employmentType: 'EXTERNO' },
+    ],
+  });
 }
 
 export async function disconnectAll(): Promise<void> {
