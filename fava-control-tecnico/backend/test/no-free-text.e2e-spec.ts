@@ -127,3 +127,56 @@ describe('Criterio 4 — ninguna eleccion cerrada acepta texto libre (introspecc
     expect(filas.map((f) => f.donde)).toEqual([]);
   });
 });
+
+/**
+ * BIT-01 y BIT-03 (plan 03-01), por el mismo camino que el resto de la suite: el
+ * catalogo del sistema, no un endpoint.
+ *
+ * Aqui la diferencia entre las dos capas es literal. El CONTEXT de la Fase 3 daba las
+ * dos cosas por hechas («daily_entries ya tiene todas sus columnas», «el CHECK ya
+ * existe desde la Fase 2») y la introspeccion demostro que NINGUNA de las dos era
+ * cierta. Un test de endpoint no lo habria detectado: no habia endpoint todavia.
+ */
+describe('Bitacora — la columna y el CHECK son del MOTOR (introspeccion)', () => {
+  it('daily_entries.description existe, es text y es nullable (BIT-01)', async () => {
+    const filas = await ownerClient.$queryRaw<{ data_type: string; is_nullable: string }[]>`
+      SELECT data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'daily_entries'
+        AND column_name = 'description'`;
+
+    // Nullable a proposito: el historico del Excel (Fase 6) trae filas sin descripcion
+    // y un '' obligatorio seria peor que un NULL honesto.
+    const real = filas[0] ? `${filas[0].data_type}/${filas[0].is_nullable}` : 'NO EXISTE';
+    const problemas =
+      real === 'text/YES' ? [] : [`daily_entries.description es ${real} (esperado text/YES)`];
+
+    expect(problemas).toEqual([]);
+  });
+
+  it('el CHECK de_proyecto_por_concepto existe y NO menciona phase (BIT-03)', async () => {
+    const filas = await ownerClient.$queryRaw<{ def: string }[]>`
+      SELECT pg_get_constraintdef(c.oid) AS def
+      FROM pg_constraint c
+      JOIN pg_class t ON t.oid = c.conrelid
+      JOIN pg_namespace n ON n.oid = t.relnamespace
+      WHERE n.nspname = 'public'
+        AND t.relname = 'daily_entries'
+        AND c.contype = 'c'
+        AND c.conname = 'de_proyecto_por_concepto'`;
+
+    const problemas: string[] = [];
+    if (filas.length === 0)
+      problemas.push(
+        "daily_entries no tiene el CHECK de_proyecto_por_concepto (contype = 'c'): BIT-03 no tiene motor",
+      );
+    // TODO el historico del Excel entra con phase = NULL. Un CHECK que exigiera fase
+    // haria imposible la migracion de la Fase 6, y la fase se valida en la capa de
+    // servicio para las jornadas nuevas. Si alguien la mete aqui, esto se pone rojo.
+    else if (/\bphase\b/i.test(filas[0].def))
+      problemas.push(`de_proyecto_por_concepto menciona phase: ${filas[0].def}`);
+
+    expect(problemas).toEqual([]);
+  });
+});
