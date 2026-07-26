@@ -456,8 +456,14 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
     });
   });
 
+  /**
+   * `['get', '/api/projects']` YA NO esta en esta lista: 03-03 relajo ese metodo a
+   * `T` con una proyeccion propia (ver el describe de abajo). Las SEIS rutas que
+   * quedan son la prueba de que se relajo UN metodo y no la clase: si alguien mueve
+   * el `@Roles('T','A','S')` al `@Controller`, caen las seis y el mensaje nombra
+   * cual quedo abierta.
+   */
   it.each([
-    ['get', '/api/projects'],
     ['post', '/api/projects'],
     ['get', `/api/projects/${FANTASMA}`],
     ['patch', `/api/projects/${FANTASMA}`],
@@ -470,5 +476,143 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
       .set(auth(tokenTec))
       .send({})
       .expect(403);
+  });
+
+  /**
+   * BIT-01: el selector de proyecto de la captura. Un Tecnico lista proyectos, pero
+   * con una PROYECCION distinta: «solo nombre y maquinas» (decision bloqueada del
+   * CONTEXT). El valor de contrato, el n.º de OA, el cliente y las horas normales son
+   * informacion comercial que los ~15 tecnicos no necesitan.
+   *
+   * RLS no protege nada de esto: `proj_read` es `USING (TRUE)`, o sea que el motor le
+   * dejaria leer todas las columnas de todos los proyectos. El aislamiento es de capa
+   * de servicio y por eso se prueba aqui, con dos aserciones DISTINTAS:
+   *  - el conjunto EXACTO de claves (un `contractValue` de mas lo tumba),
+   *  - y una sonda sobre el JSON serializado (caza la fuga ANIDADA, dentro de
+   *    `machines`, que el conjunto de claves de primer nivel no ve).
+   */
+  describe('GET /api/projects con token de Tecnico: solo nombre y maquinas (BIT-01)', () => {
+    /**
+     * Dos modelos con prefijo propio, sembrados en orden INVERSO al esperado: prueban
+     * que la respuesta ordena por `code` y no por el orden de insercion. Los catalogos
+     * NO se truncan (02-01), asi que se borran en afterAll o la segunda pasada de la
+     * suite choca con el @unique de `machine_models.code`.
+     */
+    const MAQ_Z = '03030303-0303-4303-8303-000000000002';
+    const MAQ_M = '03030303-0303-4303-8303-000000000001';
+
+    /** Valores que NO pueden aparecer en la respuesta del tecnico, ni como valor ni como clave. */
+    const SECRETOS = [
+      '4150000',
+      'OA-SECRETO',
+      'CLIENTE-SECRETO',
+      'contractValue',
+      'soldDays',
+      'currencyCode',
+      'oaNumber',
+      'normalHours',
+      'clientName',
+    ];
+
+    beforeAll(async () => {
+      await ownerClient.machineModel.create({
+        data: { id: MAQ_Z, code: 'ZZZ-0303-Z', description: 'La segunda por codigo' },
+      });
+      await ownerClient.machineModel.create({
+        data: { id: MAQ_M, code: 'MMM-0303-M', description: 'La primera por codigo' },
+      });
+    });
+
+    afterAll(async () => {
+      await ownerClient.machineModel.deleteMany({ where: { id: { in: [MAQ_M, MAQ_Z] } } });
+    });
+
+    beforeEach(async () => {
+      // El tecnico de la captura esta VINCULADO a su ficha: de esa columna sale la
+      // GUC `app.technician_id` que gobierna el resto de la Fase 3.
+      await ownerClient.user.update({
+        where: { email: 'tec@fava.local' },
+        data: { technicianId: TEC_A },
+      });
+    });
+
+    const listarTec = () => listar(tokenTec);
+
+    const conMaquinas = (projectId: string, ids: string[]) =>
+      ownerClient.projectMachine.createMany({
+        data: ids.map((machineModelId) => ({ projectId, machineModelId })),
+      });
+
+    /** Proyecto con TODO el dato comercial relleno: si algo se filtra, se filtra aqui. */
+    const crearSecreto = (name = 'Obra visible para el tecnico') =>
+      crear({
+        ...ENCABEZADO,
+        name,
+        clientName: 'CLIENTE-SECRETO',
+        contractNumber: '345599',
+        oaNumber: 'OA-SECRETO',
+        contractValue: 4150000.5,
+        currencyCode: CUR_TEST,
+        normalHours: 9,
+      });
+
+    it('un Tecnico recibe 200 y EXACTAMENTE las claves id, machines y name', async () => {
+      const p = await crearSecreto();
+      await conMaquinas(p.id, [MAQ_TEST]);
+
+      const filas = await listarTec();
+
+      expect(filas).toHaveLength(1);
+      // Conjunto EXACTO, no «contractValue es undefined»: una errata en el nombre del
+      // campo pasaria esa comprobacion sin enterarse de que el dato viaja igual.
+      expect(Object.keys(filas[0]).sort()).toEqual(['id', 'machines', 'name']);
+      expect(filas[0]).toMatchObject({ id: p.id, name: 'Obra visible para el tecnico' });
+    });
+
+    it('ningun dato comercial aparece en el JSON serializado, ni anidado', async () => {
+      const p = await crearSecreto();
+      await conMaquinas(p.id, [MAQ_TEST]);
+
+      const crudo = JSON.stringify(await listarTec());
+
+      // Como LISTA de lo que se filtro, no como booleano: el mensaje del fallo tiene
+      // que nombrar el campo (mismo criterio que la introspeccion de 02-02).
+      expect(SECRETOS.filter((s) => crudo.includes(s))).toEqual([]);
+    });
+
+    it('cada maquina llega con machineModelId, code y description, y nada mas', async () => {
+      const p = await crearSecreto();
+      await conMaquinas(p.id, [MAQ_TEST]);
+
+      const [fila] = await listarTec();
+      expect(fila.machines).toHaveLength(1);
+      // `machineModelId` es lo que la bitacora escribe en daily_entries.machine_model_id.
+      expect(Object.keys(fila.machines[0]).sort()).toEqual([
+        'code',
+        'description',
+        'machineModelId',
+      ]);
+      expect(fila.machines[0]).toEqual({
+        machineModelId: MAQ_TEST,
+        code: 'TEST-MAQ',
+        description: 'Modelo de prueba',
+      });
+    });
+
+    it('un Admin y un Super Admin siguen recibiendo la forma ANTERIOR', async () => {
+      const p = await crearSecreto();
+      await conMaquinas(p.id, [MAQ_TEST]);
+
+      for (const token of [tokenAdmin, tokenSuper]) {
+        const [fila] = await listar(token);
+        expect(fila).toMatchObject({
+          id: p.id,
+          clientName: 'CLIENTE-SECRETO',
+          oaNumber: 'OA-SECRETO',
+          machineCodes: ['TEST-MAQ'],
+        });
+        expect(typeof fila.contractValue).toBe('number');
+      }
+    });
   });
 });
