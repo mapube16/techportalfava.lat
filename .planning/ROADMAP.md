@@ -168,7 +168,7 @@ Las fases se ejecutan en orden numérico. Phase 6 (migración) puede adelantarse
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fundación segura y desplegada | 0/6 | Not started | - |
-| 2. Maestros y catálogos | 0/6 | Planned    |  |
+| 2. Maestros y catálogos | 1/6 | In Progress|  |
 | 3. Bitácora diaria | 0/TBD | Not started | - |
 | 4. Flujo de aprobación y auditoría | 0/TBD | Not started | - |
 | 5. Nota Semanal PDF y firma | 0/TBD | Not started | - |
