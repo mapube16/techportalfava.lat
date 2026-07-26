@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completado 03-03-PLAN.md (GET /api/projects abierto al Tecnico con proyeccion propia)
-last_updated: "2026-07-26T20:25:00.000Z"
-last_activity: "2026-07-26 — 03-03 completado: un Tecnico lista los proyectos ACTIVOS y recibe exactamente {id, name, machines}; las otras 6 rutas de /api/projects siguen en 403, asertadas una a una. Cuatro verificaciones en rojo (2, 2, 1 y 6 casos caidos); projects 52/52"
+stopped_at: Completado 03-01-PLAN.md (motor de la bitacora + contrato de fecha del servidor) — wave 1 de la fase 3 cerrada
+last_updated: "2026-07-26T20:40:00.000Z"
+last_activity: "2026-07-26 — 03-01 completado: migracion 20260726150806_bitacora (columna description + CHECK de_proyecto_por_concepto + GRANT), fecha.ts con aDate/aTexto/ventana y check:fecha-servidor dentro de npm run build. Descubierto que dentro de jest process.env.TZ NO cambia el huso: la suite de 4 husos habria medido Bogota cuatro veces"
 progress:
   total_phases: 8
   completed_phases: 1
   total_plans: 19
-  completed_plans: 13
-  percent: 68
+  completed_plans: 14
+  percent: 74
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 3 of 8 (Bitácora diaria)
-Plan: wave 1 en curso — 03-01, 03-02 y 03-03 en paralelo; **03-02 y 03-03 completados**
+Plan: **wave 1 completada** — 03-01, 03-02 y 03-03 ejecutados. Siguiente: wave 2 (03-04, endpoints de la bitácora)
 Status: Executing
-Last activity: 2026-07-26 — 03-03 completado: un Tecnico lista los proyectos ACTIVOS y recibe exactamente {id, name, machines} (ni contrato, ni OA, ni cliente, ni horas); las otras 6 rutas de /api/projects siguen en 403, asertadas una a una. Cuatro verificaciones en rojo; projects 52/52
+Last activity: 2026-07-26 — 03-01 completado: la migración `20260726150806_bitacora` (columna `description` + CHECK `de_proyecto_por_concepto` + GRANT), `fecha.ts` con `aDate`/`aTexto`/`ventana` medido en 4 husos reales, y `check:fecha-servidor` enganchado a `npm run build`. Tres verificaciones en rojo (2/6, 14/60 con Roma+Kiritimati aislados, 3×exit 1); 14 suites e2e / 278 casos verdes
 
-Progress: [███████░░░] 68%
+Progress: [███████░░░] 74%
 
 ## Performance Metrics
 
@@ -56,9 +56,10 @@ Progress: [███████░░░] 68%
 | Phase 02 P06 | 1 | 62 min | 62 min (3 tasks, 23 files) |
 | Phase 03 P02 | 1 | 34 min | 34 min (2 tasks, 5 files) |
 | Phase 03 P03 | 1 | 13 min | 13 min (2 tasks, 3 files) |
+| Phase 03 P01 | 1 | 42 min | 42 min (3 tasks, 11 files) |
 
 **Recent Trend:**
-- Last 5 plans: 02-06 (62 min), 02-05 (35 min), 02-03 (42 min), 02-04 (21 min), 02-02 (24 min)
+- Last 5 plans: 03-01 (42 min), 03-03 (13 min), 03-02 (34 min), 02-06 (62 min), 02-05 (35 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -122,6 +123,12 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 03]: [03-03]: El reparto por rol del GET /api/projects va en el CONTROLADOR y por roles, no por RLS: proj_read es USING (TRUE) y el motor no oculta ni una columna. Un usuario con ['T','A'] es admin y ve la forma completa
 - [Phase 03]: [03-03]: Un aislamiento de datos se prueba con DOS aserciones: conjunto EXACTO de claves + sonda sobre JSON.stringify. Verificado en rojo que la fuga ANIDADA (dentro de machines) deja verde a la primera y solo la caza la segunda
 - [Phase 03]: [03-03]: El it.each de los 403 se conserva ruta por ruta: mover el @Roles('T','A','S') del @Get() a la clase tumba los 6 casos con el nombre de cada ruta abierta en el mensaje
+- [Phase 03]: [03-01]: DENTRO de jest process.env.TZ NO cambia el huso: jest sustituye global.process por una copia con su propio env y Node resetea la cache de zona de V8 desde el setter del env REAL. Medido: los 4 husos daban offset 300 (Bogota). Las medidas se toman en un proceso hijo de Node (fecha.probe.ts) y las aserciones se quedan en jest — OJO 03-04 T3
+- [Phase 03]: [03-01]: La asercion del offset va PRIMERO y DENTRO de cada bloque de huso, sobre un instante FIJO (2026-07-14T12:00:00Z): es lo unico que distingue «4 husos» de «4 veces Bogota», y con new Date() la suite seria estacional (Roma cambia de -120 a -60)
+- [Phase 03]: [03-01]: aDate valida el round-trip toISOString().slice(0,10) === entrada. Medido: new Date('2026-02-30') NO da Invalid Date, da el 2 de marzo, y Prisma lo escribiria en la columna sin un solo error
+- [Phase 03]: [03-01]: ventana() = techo dia de (ahora+14h), suelo dia 1 del mes anterior al dia de (ahora-12h). El 1 de septiembre a las 00:00 UTC el suelo es 2026-07-01, NO 2026-08-01: un tecnico en UTC-12 sigue a 31 de agosto y su mes anterior es julio
+- [Phase 03]: [03-01]: El CHECK de_proyecto_por_concepto queda ESTRICTO y NO menciona phase (todo el historico del Excel entra con phase NULL). La salida de la Fase 6 para las 1.438 filas «Sin Proyecto» es la CUARENTENA, no relajar el CHECK — ver deferred-items.md
+- [Phase 03]: [03-01]: Los fixtures compartidos codifican las reglas del motor: crearJornadaAprobada emitia DC sin proyecto (fila que el CHECK rechaza con 23514) y ahora el concepto lo decide el proyecto (DC con, LR sin)
 
 ### Pending Todos
 
@@ -153,6 +160,6 @@ Nota de inventario:
 
 ## Session Continuity
 
-Last session: 2026-07-26T20:25:00.000Z
-Stopped at: Completado 03-03-PLAN.md (GET /api/projects abierto al Tecnico con proyeccion propia)
+Last session: 2026-07-26T20:40:00.000Z
+Stopped at: Completado 03-01-PLAN.md (motor de la bitácora + contrato de fecha del servidor) — wave 1 de la fase 3 cerrada, siguiente wave 2 (03-04)
 Resume file: None
