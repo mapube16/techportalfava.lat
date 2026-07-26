@@ -25,14 +25,26 @@ const CAMPOS = {
 
 const esAdmin = (roles: Role[]) => roles.some((r) => r === 'A' || r === 'S');
 
+/** Los dos unicos @unique que una escritura de usuario puede violar. */
+type Conflicto = 'EMAIL_YA_REGISTRADO' | 'TECNICO_YA_VINCULADO';
+
 /** Codigo de error de Prisma sin depender de `instanceof` (el adapter puede duplicar la clase). */
 const codigoPrisma = (e: unknown): string =>
   typeof e === 'object' && e !== null && 'code' in e ? String((e as { code: unknown }).code) : '';
 
-const objetivoPrisma = (e: unknown): string =>
-  typeof e === 'object' && e !== null && 'meta' in e
-    ? String((e as { meta?: { target?: unknown } }).meta?.target ?? '')
-    : '';
+/**
+ * Nombre de la restriccion violada. Prisma 7 con driver adapter NO rellena
+ * `meta.target` (verificado contra el motor): el unico sitio donde viaja es
+ * `meta.driverAdapterError.cause.originalMessage`, y ese mensaje viene TRADUCIDO
+ * por el cluster. Lo que se busca dentro es el identificador
+ * (`users_technician_id_key` / `users_email_key`), que no se traduce nunca.
+ */
+const restriccionViolada = (e: unknown): string => {
+  const meta = (
+    e as { meta?: { driverAdapterError?: { cause?: { originalMessage?: unknown } } } } | null
+  )?.meta;
+  return String(meta?.driverAdapterError?.cause?.originalMessage ?? '');
+};
 
 @Injectable()
 export class UsersService {
@@ -73,7 +85,7 @@ export class UsersService {
         select: CAMPOS,
       });
     } catch (e) {
-      this.traducirConflicto(e);
+      this.traducirConflicto(e, 'EMAIL_YA_REGISTRADO');
     }
   }
 
@@ -94,7 +106,7 @@ export class UsersService {
         select: CAMPOS,
       });
     } catch (e) {
-      this.traducirConflicto(e);
+      this.traducirConflicto(e, 'TECNICO_YA_VINCULADO');
     }
   }
 
@@ -167,12 +179,19 @@ export class UsersService {
    * Los dos unicos conflictos que el motor puede devolver al escribir un usuario.
    * Sin esta traduccion son 500: `email` @unique, `technician_id` @unique y su FK.
    */
-  private traducirConflicto(e: unknown): never {
+  private traducirConflicto(e: unknown, porDefecto: Conflicto): never {
     const codigo = codigoPrisma(e);
-    if (codigo === 'P2002')
-      throw objetivoPrisma(e).includes('technician')
-        ? new ConflictException('TECNICO_YA_VINCULADO')
-        : new ConflictException('EMAIL_YA_REGISTRADO');
+    if (codigo === 'P2002') {
+      const clave = restriccionViolada(e);
+      // `porDefecto` cubre el dia en que Prisma cambie donde esconde el nombre de la
+      // restriccion: cada llamador sabe cual de los dos @unique puede chocar en su caso.
+      const cual = clave.includes('technician_id')
+        ? 'TECNICO_YA_VINCULADO'
+        : clave.includes('email')
+          ? 'EMAIL_YA_REGISTRADO'
+          : porDefecto;
+      throw new ConflictException(cual);
+    }
     // P2003 = FK: el tecnico no existe. 400 y no 404 porque el recurso pedido (el
     // usuario) si existe; lo invalido es el cuerpo.
     if (codigo === 'P2003') throw new BadRequestException('TECNICO_INEXISTENTE');

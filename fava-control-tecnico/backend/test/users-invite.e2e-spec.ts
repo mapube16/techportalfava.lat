@@ -6,27 +6,73 @@
  * `users-roles.e2e-spec.ts`, AUTH-02): lo que se prueba es que POST /api/users
  * pasa por la MISMA regla y no por una copia relajada.
  */
-import type { INestApplication } from '@nestjs/common';
+import { Controller, Get, type INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { createTestApp, crearUsuario } from './helpers/app';
-import { disconnectAll, ownerClient, truncateAll } from './helpers/db';
-import { signTestToken } from './helpers/tokens';
+import { AppModule } from '../src/app.module';
+import { JWKS } from '../src/common/auth/jwks.provider';
+import { PrismaService } from '../src/common/prisma/prisma.service';
+import { EnvService, env } from '../src/config/env';
+import { crearUsuario } from './helpers/app';
+import { TEC_A, TEC_B, disconnectAll, ownerClient, truncateAll } from './helpers/db';
+import { API_AUDIENCE, SCOPE, TENANT_A, localJwks, signTestToken } from './helpers/tokens';
 
 const OID_SUPER = 'oid-inv-super';
 const OID_ADMIN = 'oid-inv-admin';
 const OID_TEC = 'oid-inv-tec';
+const TEC_FANTASMA = '99999999-9999-4999-8999-999999999999';
 
-describe('users: invitacion (CAT-05)', () => {
+/**
+ * Sonda SOLO de test: la unica forma de comprobar el camino completo
+ * endpoint → columna → guard → interceptor → politica antes de que la Fase 3
+ * estrene los endpoints de bitacora. No se registra en `app.module.ts` y no
+ * existe en produccion; lee por `prisma.client`, es decir por la transaccion con
+ * las GUCs que abre RlsInterceptor. Sin @Roles: entra cualquier usuario activo.
+ */
+@Controller('api/_sonda-bitacora')
+class SondaBitacoraController {
+  constructor(private readonly prisma: PrismaService) {}
+
+  @Get()
+  mias() {
+    return this.prisma.client.dailyEntry.findMany({ select: { technicianId: true } });
+  }
+}
+
+/** Copia de `createTestApp()` con la sonda. No se toca helpers/app.ts: es de la Fase 1. */
+async function appConSonda(): Promise<INestApplication> {
+  const moduleRef = await Test.createTestingModule({
+    imports: [AppModule],
+    controllers: [SondaBitacoraController],
+  })
+    .overrideProvider(JWKS)
+    .useValue(await localJwks())
+    .overrideProvider(EnvService)
+    .useValue({
+      ...env,
+      ENTRA_TENANT_ID: TENANT_A,
+      ENTRA_API_CLIENT_ID: API_AUDIENCE,
+      ENTRA_REQUIRED_SCOPE: SCOPE,
+    })
+    .compile();
+
+  const app = moduleRef.createNestApplication({ logger: false });
+  await app.init();
+  return app;
+}
+
+describe('users: invitacion y vinculo con tecnico (CAT-05)', () => {
   let app: INestApplication;
   let tokenSuper: string;
   let tokenAdmin: string;
   let tokenTec: string;
+  let ids: { super: string; admin: string; tec: string };
 
   const http = () => request(app.getHttpServer());
   const auth = (token: string) => ({ authorization: `Bearer ${token}` });
 
   beforeAll(async () => {
-    app = await createTestApp();
+    app = await appConSonda();
     tokenSuper = await signTestToken({ oid: OID_SUPER, email: 'super@fava.local' });
     tokenAdmin = await signTestToken({ oid: OID_ADMIN, email: 'admin@fava.local' });
     tokenTec = await signTestToken({ oid: OID_TEC, email: 'tec@fava.local' });
@@ -39,11 +85,12 @@ describe('users: invitacion (CAT-05)', () => {
 
   beforeEach(async () => {
     await truncateAll();
-    await Promise.all([
+    const [s, a, t] = await Promise.all([
       crearUsuario({ email: 'super@fava.local', entraOid: OID_SUPER, roles: ['T', 'A', 'S'] }),
       crearUsuario({ email: 'admin@fava.local', entraOid: OID_ADMIN, roles: ['A'] }),
       crearUsuario({ email: 'tec@fava.local', entraOid: OID_TEC, roles: ['T'] }),
     ]);
+    ids = { super: s.id, admin: a.id, tec: t.id };
   });
 
   const enBd = (email: string) => ownerClient.user.findUnique({ where: { email } });
@@ -163,5 +210,114 @@ describe('users: invitacion (CAT-05)', () => {
 
     // La invitacion no fija identidad; el login si, y ya es definitiva.
     expect((await enBd('invitado@fava.local'))?.entraOid).toBe('oid-recien-llegado');
+  });
+
+  // ─── PATCH /api/users/:id/technician ───────────────────────────────────────
+  // De `users.technician_id` sale la GUC `app.technician_id`. Hasta este plan la
+  // columna existia y nadie la escribia: la Fase 3 habria arrancado con todos los
+  // tecnicos viendo cero registros propios.
+
+  const vincular = (id: string, technicianId: string | null, token = tokenAdmin) =>
+    http().patch(`/api/users/${id}/technician`).set(auth(token)).send({ technicianId });
+
+  it('un Admin vincula un usuario a un tecnico → 200 y GET /api/users lo devuelve', async () => {
+    const res = await vincular(ids.tec, TEC_A).expect(200);
+    expect(res.body.technicianId).toBe(TEC_A);
+
+    const lista = await http().get('/api/users').set(auth(tokenAdmin)).expect(200);
+    expect(lista.body.find((u: { id: string }) => u.id === ids.tec).technicianId).toBe(TEC_A);
+  });
+
+  it('el usuario vinculado ve su technicianId en GET /api/me (precondicion de la Fase 3)', async () => {
+    await vincular(ids.tec, TEC_A).expect(200);
+
+    const yo = await http().get('/api/me').set(auth(tokenTec)).expect(200);
+    expect(yo.body.user.technicianId).toBe(TEC_A);
+  });
+
+  it('technicianId null desvincula → 200', async () => {
+    await vincular(ids.tec, TEC_A).expect(200);
+
+    const res = await vincular(ids.tec, null).expect(200);
+    expect(res.body.technicianId).toBeNull();
+    expect((await ownerClient.user.findUnique({ where: { id: ids.tec } }))?.technicianId).toBeNull();
+  });
+
+  it('un tecnico ya vinculado a otro usuario → 409, no un 500 del @unique', async () => {
+    await vincular(ids.tec, TEC_A).expect(200);
+
+    const res = await vincular(ids.admin, TEC_A).expect(409);
+    expect(res.body.message).toBe('TECNICO_YA_VINCULADO');
+
+    // Desvincular primero si es lo que se quiere: el vinculo es 1-a-1 por motor.
+    await vincular(ids.tec, null).expect(200);
+    await vincular(ids.admin, TEC_A).expect(200);
+  });
+
+  it('un technicianId inexistente → 400 con codigo propio, no un 500 de FK', async () => {
+    const res = await vincular(ids.tec, TEC_FANTASMA).expect(400);
+    expect(res.body.message).toBe('TECNICO_INEXISTENTE');
+  });
+
+  it('un technicianId que no es uuid → 400 (nunca un 22P02)', async () => {
+    await vincular(ids.tec, 'no-es-un-uuid').expect(400);
+    await http().patch(`/api/users/${ids.tec}/technician`).set(auth(tokenAdmin)).send({}).expect(400);
+  });
+
+  it('un tecnico raso no vincula a nadie → 403', async () => {
+    await vincular(ids.super, TEC_A, tokenTec).expect(403);
+  });
+
+  it('el POST comparte el traductor: invitar con un tecnico ya vinculado → 409', async () => {
+    await vincular(ids.tec, TEC_A).expect(200);
+
+    const res = await http()
+      .post('/api/users')
+      .set(auth(tokenAdmin))
+      .send({ email: 'conflicto@fava.local', displayName: 'Conflicto', technicianId: TEC_A })
+      .expect(409);
+
+    expect(res.body.message).toBe('TECNICO_YA_VINCULADO');
+    expect(await enBd('conflicto@fava.local')).toBeNull();
+  });
+
+  it('invitar con technicianId deja el vinculo hecho de una sola peticion', async () => {
+    const res = await http()
+      .post('/api/users')
+      .set(auth(tokenAdmin))
+      .send({ email: 'conmi@fava.local', displayName: 'Con Tecnico', technicianId: TEC_B })
+      .expect(201);
+
+    expect(res.body.technicianId).toBe(TEC_B);
+  });
+
+  /**
+   * El caso que justifica todo el plan. No basta con que la columna se escriba: hay
+   * que ver la GUC actuando. Antes de vincular, la peticion del tecnico corre con
+   * `app.technician_id` vacio y la politica `de_self` no le deja ver NADA; despues,
+   * ve exactamente sus 5 jornadas y ninguna de las 3 del otro tecnico.
+   */
+  it('tras vincular, la peticion del usuario corre con app.technician_id fijado', async () => {
+    const dia = (n: number) => new Date(Date.UTC(2026, 2, n));
+    await ownerClient.dailyEntry.createMany({
+      data: [
+        ...[1, 2, 3, 4, 5].map((n) => ({ technicianId: TEC_A, date: dia(n) })),
+        ...[1, 2, 3].map((n) => ({ technicianId: TEC_B, date: dia(n) })),
+      ],
+    });
+
+    const sinVinculo = await http().get('/api/_sonda-bitacora').set(auth(tokenTec)).expect(200);
+    expect(sinVinculo.body).toEqual([]);
+
+    await vincular(ids.tec, TEC_A).expect(200);
+
+    const conVinculo = await http().get('/api/_sonda-bitacora').set(auth(tokenTec)).expect(200);
+    expect(conVinculo.body).toHaveLength(5);
+    expect(conVinculo.body.every((e: { technicianId: string }) => e.technicianId === TEC_A)).toBe(
+      true,
+    );
+    // El conteo se compara con el del owner y no con «> 0»: es la unica forma de
+    // detectar el fallo silencioso de la lista vacia (patron de 01-02).
+    expect(await ownerClient.dailyEntry.count()).toBe(8);
   });
 });
