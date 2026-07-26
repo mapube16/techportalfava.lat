@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { svg, ICON, hi } from '../icons';
-import { Card, CardHead, filterBy, gbtn, pbtn } from '../ui';
+import { ApiState, Card, CardHead, filterBy, gbtn, initials, inputStyle, pbtn } from '../ui';
 import { useApp } from '../state';
 import { dismissAccessRequest, listAccessRequests } from '../lib/api/client';
 import type { AccessRequest } from '../lib/api/client';
-import { initials } from '../data';
+import { codigo, useApiData } from '../lib/api/useApiData';
+import { linkTechnician, listUsers } from '../lib/api/users';
+import type { UserRow } from '../lib/api/users';
+import { listTechnicians } from '../lib/api/technicians';
 import type { Role } from '../types';
 
 // Solicitudes creadas desde la pantalla «sin acceso», vía GET/PATCH /api/access-requests.
@@ -71,13 +74,36 @@ function AccessRequests() {
 
 export default function Users() {
   const { state, t, patch } = useApp();
+  const [errLink, setErrLink] = useState<string | null>(null);
   const rmap: Record<Role, [string, string, string]> = {
     T: [t.role_t, 'var(--sent)', 'var(--sent-tint)'],
     A: [t.role_a, 'var(--accent)', 'var(--accent-tint)'],
     S: [t.role_s, 'var(--primary)', 'var(--primary-tint)'],
   };
   const isSuper = state.role === 'S';
-  const rows = filterBy(state.users, state.search, (u) => u.n + ' ' + u.mail);
+
+  // Usuarios y técnicos: el selector del vínculo necesita las dos listas.
+  const { data, setData, error } = useApiData(async () => {
+    const [users, techs] = await Promise.all([listUsers(), listTechnicians()]);
+    return { users, techs };
+  }, [state.dataVersion]);
+
+  if (error) return <ApiState error={error} label={t.err_load} />;
+  if (!data) return <ApiState error={null} label={t.loading} />;
+
+  const rows = filterBy(data.users, state.search, (u) => u.displayName + ' ' + u.email);
+
+  /**
+   * El vínculo es 1-a-1 por motor: si el técnico ya está tomado el servidor responde
+   * 409 y hay que desvincular al otro usuario primero. El código se muestra tal cual
+   * porque nombra exactamente eso.
+   */
+  const vincular = (u: UserRow, technicianId: string | null) => {
+    setErrLink(null);
+    linkTechnician(u.id, technicianId)
+      .then((actualizado) => setData({ ...data, users: data.users.map((x) => (x.id === u.id ? actualizado : x)) }))
+      .catch((e: unknown) => setErrLink(codigo(e)));
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -96,13 +122,31 @@ export default function Users() {
             </button>
           }
         />
+        {errLink ? <div style={{ padding: '8px 18px', fontSize: 12, color: 'var(--warn)' }}>{t.err_save}: {errLink}</div> : null}
         <div>
           {rows.map((u, i) => (
-            <div key={u.mail} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'var(--row-pad)', borderTop: i ? '1px solid var(--border)' : 'none', flexWrap: 'wrap' }}>
-              <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surface-3)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>{initials(u.n)}</div>
+            <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'var(--row-pad)', borderTop: i ? '1px solid var(--border)' : 'none', flexWrap: 'wrap', opacity: u.isActive ? 1 : 0.55 }}>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surface-3)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>{initials(u.displayName)}</div>
               <div style={{ flex: 1, minWidth: 160 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 600 }}>{u.n}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{u.mail}</div>
+                <div style={{ fontSize: 13.5, fontWeight: 600 }}>{u.displayName}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{u.email}</div>
+              </div>
+              {/* El vínculo con el maestro de técnicos: de esta columna sale la GUC
+                  app.technician_id, que es lo que aísla la bitácora de la Fase 3. */}
+              <div style={{ minWidth: 190 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>{t.user_tech_link}</div>
+                <select
+                  value={u.technicianId ?? ''}
+                  onChange={(e) => vincular(u, e.target.value || null)}
+                  style={{ ...inputStyle, padding: '7px 9px', fontSize: 13 }}
+                >
+                  <option value="">{t.user_no_link}</option>
+                  {data.techs
+                    .filter((tc) => tc.isActive || tc.id === u.technicianId)
+                    .map((tc) => (
+                      <option key={tc.id} value={tc.id}>{tc.fullName}</option>
+                    ))}
+                </select>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {(['T', 'A', 'S'] as Role[]).map((rc) => {

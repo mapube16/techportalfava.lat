@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useApp } from '../state';
 import { requestAccess } from '../lib/api/client';
-import { initials } from '../data';
 import { FavaLogo, svg, ICON } from '../icons';
-import { gbtn, pbtn, ghostBtn, ghostIconBtn } from '../ui';
+import { gbtn, pbtn, ghostBtn, ghostIconBtn, initials } from '../ui';
 
 /**
  * Dos pantallas de una: cuenta MS válida sin invitación (con «solicitar acceso»)

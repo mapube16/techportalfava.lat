@@ -1,8 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { svg, ICON, hi, FavaLogo } from './icons';
-import { ghostBtn, ghostIconBtn } from './ui';
+import { ghostBtn, ghostIconBtn, initials } from './ui';
 import { useApp } from './state';
-import { initials } from './data';
 import type { Role, Route } from './types';
 import Home from './screens/Home';
 import Week from './screens/Week';

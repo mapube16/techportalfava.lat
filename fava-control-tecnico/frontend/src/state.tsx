@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { AUDIT, EXPENSES, NOTES, PROJECTS, USERS, WEEK } from './data';
+import { AUDIT, EXPENSES, NOTES, PROJECTS, WEEK } from './data';
 import { D } from './i18n';
 import type { Dict } from './i18n';
 import { initAuth, login as msalLogin, logout as msalLogout } from './lib/auth/msal';
@@ -8,7 +8,7 @@ import { devLogin as devSignIn, devLogout, getDevToken } from './lib/auth/dev';
 import { getMe, setUnauthorizedHandler } from './lib/api/client';
 import type { MeResponse } from './lib/api/client';
 import type {
-  AuditRow, DayEntry, Density, Expense, Lang, Note, Project, Role, Route, Theme, ToastData, User,
+  AuditRow, DayEntry, Density, Expense, Lang, Note, Project, Role, Route, Theme, ToastData,
 } from './types';
 
 export type KpiSeg = 'project' | 'tech' | 'phase';
@@ -44,7 +44,12 @@ export interface AppState {
   onboard: boolean;
   onboardStep: number;
   selProject: string;
-  users: User[];
+  /**
+   * Contador que las pantallas cableadas al API llevan en las deps de su carga.
+   * Un modal que crea algo lo incrementa (`refresh()`) y la lista de detrás se
+   * recarga. Es lo que sustituye a los arrays de mocks que vivían aquí.
+   */
+  dataVersion: number;
   projects: Project[];
   notes: Note[];
   week: DayEntry[];
@@ -75,8 +80,8 @@ const initialState: AppState = {
   search: '',
   onboard: false,
   onboardStep: 0,
-  selProject: 'p2',
-  users: USERS.map((u) => ({ ...u })),
+  selProject: '',
+  dataVersion: 0,
   projects: PROJECTS.map((p) => ({ ...p })),
   notes: NOTES.map((n) => ({ ...n })),
   week: WEEK,
@@ -90,6 +95,8 @@ export interface AppCtx {
   patch: (p: Partial<AppState>) => void;
   go: (r: Route) => void;
   showToast: (kind: string) => void;
+  /** Recargar las listas que leen del API (ver `dataVersion`). */
+  refresh: () => void;
   inboxCount: () => number;
   login: () => void;
   /** Solo con VITE_DEV_AUTH=true; ver lib/auth/dev.ts. */
@@ -102,7 +109,6 @@ export interface AppCtx {
   approve: (id: string) => void;
   returnNote: (id: string, comment: string) => void;
   resend: (id: string) => void;
-  addUser: (u: User) => void;
   addProject: (p: Project) => void;
   closeOnboard: () => void;
 }
@@ -186,6 +192,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     toastTimer.current = window.setTimeout(() => patch({ toast: null }), 3200);
   };
 
+  const refresh = () => setState((s) => ({ ...s, dataVersion: s.dataVersion + 1 }));
+
   const go = (r: Route) => {
     if (r === stateRef.current.route) return;
     patch({ loading: true });
@@ -262,11 +270,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     showToast('submitted');
   };
 
-  const addUser = (u: User) => {
-    setState((s) => ({ ...s, users: [...s.users, u], inviteOpen: false }));
-    showToast('invite');
-  };
-
   const addProject = (p: Project) => {
     setState((s) => ({ ...s, projects: [...s.projects, p], projOpen: false, selProject: p.id }));
     showToast('proj');
@@ -283,8 +286,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const value: AppCtx = {
-    state, t, patch, go, showToast, inboxCount, login, devLogin, logout, switchRole, goInbox,
-    toggleTheme, toggleLang, approve, returnNote, resend, addUser, addProject, closeOnboard,
+    state, t, patch, go, showToast, refresh, inboxCount, login, devLogin, logout, switchRole, goInbox,
+    toggleTheme, toggleLang, approve, returnNote, resend, addProject, closeOnboard,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

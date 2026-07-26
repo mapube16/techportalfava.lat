@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
-import { Card, CardHead, td, th } from '../ui';
+import { Card, CardHead, nf, td, th } from '../ui';
 import { useApp } from '../state';
-import { STD_HOURS_PER_DAY as STD, TECHS, nf } from '../data';
+import { STD_HOURS_PER_DAY as STD, TECHS } from '../data';
 import type { KpiSeg } from '../state';
 import type { PhaseMatrix, Project, RoleType } from '../types';
 

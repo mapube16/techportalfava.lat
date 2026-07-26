@@ -101,6 +101,24 @@ export function FieldError({ msg }: { msg: string }) {
   );
 }
 
+/** Estado de carga / error de una pantalla cableada al API. */
+export function ApiState({ error, label }: { error: string | null; label: string }) {
+  return (
+    <Card>
+      <div style={{ padding: 'var(--row-pad)', fontSize: 13, color: error ? 'var(--warn)' : 'var(--text-3)' }}>
+        {error ? `${label}: ${error}` : label}
+      </div>
+    </Card>
+  );
+}
+
+// ---- formateadores
+// Viven aquí y no en data.ts desde el cutover de la Fase 2: data.ts es el cajón de
+// los mocks y estas tres funciones no son datos, son presentación.
+export const money = (v: number, cur: string) => (cur === 'USD' ? 'US$ ' : cur ? cur + ' ' : '') + v.toLocaleString('es-CL');
+export const nf = (v: number) => v.toLocaleString('es-CL');
+export const initials = (n: string) => n.split(' ').map((w) => w[0]).join('');
+
 export const filterBy = <T,>(list: T[], q: string, keyFn: (it: T) => string): T[] => {
   const query = (q || '').trim().toLowerCase();
   if (!query) return list;

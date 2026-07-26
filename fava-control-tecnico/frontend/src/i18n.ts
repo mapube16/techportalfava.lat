@@ -18,6 +18,15 @@ export const CONCEPTS: Concept[] = [
   { c: 'IL', es: 'Incapacidad', it: 'Malattia', color: '#d64545' },
 ];
 
+/**
+ * Color por código: DECORACIÓN, no dato. Los 8 códigos son fijos por enum de Postgres,
+ * así que este mapa no se puede desincronizar. Las ETIQUETAS, en cambio, las edita el
+ * Super Admin y vienen del API (`GET /api/catalogs`) desde el cutover de la Fase 2.
+ */
+export const CONCEPT_COLOR: Record<string, string> = Object.fromEntries(
+  CONCEPTS.map((c) => [c.c, c.color]),
+);
+
 const es = {
   brand_sub: 'Control Técnico', search: 'Buscar…', loading: 'Cargando…',
   login_head: 'Una jornada, una captura.',
@@ -116,6 +125,27 @@ const es = {
   gen_pdf_note: 'Se generará un PDF con los 7 días, gastos y la firma capturada.',
   config_cat: 'Catálogos', config_concepts: 'Conceptos de jornada', config_currency: 'Monedas', config_general: 'General',
   sign_here: 'Firme aquí', sign_captured: 'Firma capturada', lang_label: 'Español', theme_dark: 'Oscuro', theme_light: 'Claro', lang_row: 'Idioma / Lingua', theme_row: 'Tema',
+  // --- cutover de la Fase 2
+  config_roles: 'Roles técnicos', config_machines: 'Modelos de máquina',
+  cat_add: 'Añadir', cat_edit: 'Editar', cat_activate: 'Reactivar', cat_deactivate: 'Desactivar',
+  cat_role_ph: 'Ej.: Mecánico', cat_code_ph: 'Ej.: USD', cat_symbol_ph: 'Ej.: US$',
+  cat_machine_ph: 'Ej.: CTA1000', cat_desc_ph: 'Descripción (opcional)',
+  cat_label_es: 'Etiqueta ES', cat_label_it: 'Etiqueta IT',
+  cat_only_super: 'Solo el Super Admin edita los catálogos.',
+  err_load: 'No se pudo cargar', err_save: 'No se pudo guardar', empty_list: 'Sin registros.',
+  tech_name: 'Nombre completo', tech_name_ph: 'Ej.: Ivan Cortés', tech_employment: 'Contratación',
+  tech_no_util: 'La utilización se calcula desde la bitácora (Fase 7).',
+  user_tech_link: 'Técnico vinculado', user_no_link: 'Sin vincular',
+  invite_tech: 'Vincular a un técnico (opcional)',
+  proj_nit: 'NIT / ID fiscal', proj_nit_ph: 'Opcional',
+  proj_locality: 'Localidad', proj_locality_ph: 'Ej.: Santiago',
+  proj_supply: 'Suministro', proj_supply_ph: 'Ej.: Línea de pasta corta',
+  proj_contract_no: 'N° de contrato', proj_contract_no_ph: 'Ej.: 2451-RD',
+  proj_none: 'Aún no hay proyectos. Crea el primero.',
+  proj_pick: 'Elige un proyecto en la lista.',
+  matrix_no_phase: 'Sin fase (histórico)',
+  machine_entries_warn: 'Esta máquina ya tiene jornadas registradas en el proyecto. Se quitará de las capturas nuevas; las jornadas históricas la conservan. ¿Continuar?',
+  toast_error: 'No se pudo guardar', toast_error_b: 'El valor volvió al anterior.',
 };
 
 export type Dict = typeof es;
@@ -218,6 +248,27 @@ const it: Dict = {
   gen_pdf_note: 'Verrà generato un PDF con i 7 giorni, le spese e la firma acquisita.',
   config_cat: 'Cataloghi', config_concepts: 'Concetti di giornata', config_currency: 'Valute', config_general: 'Generale',
   sign_here: 'Firma qui', sign_captured: 'Firma acquisita', lang_label: 'Italiano', theme_dark: 'Scuro', theme_light: 'Chiaro', lang_row: 'Idioma / Lingua', theme_row: 'Tema',
+  // --- cutover della Fase 2
+  config_roles: 'Ruoli tecnici', config_machines: 'Modelli di macchina',
+  cat_add: 'Aggiungi', cat_edit: 'Modifica', cat_activate: 'Riattiva', cat_deactivate: 'Disattiva',
+  cat_role_ph: 'Es.: Meccanico', cat_code_ph: 'Es.: USD', cat_symbol_ph: 'Es.: US$',
+  cat_machine_ph: 'Es.: CTA1000', cat_desc_ph: 'Descrizione (opzionale)',
+  cat_label_es: 'Etichetta ES', cat_label_it: 'Etichetta IT',
+  cat_only_super: 'Solo il Super Admin modifica i cataloghi.',
+  err_load: 'Impossibile caricare', err_save: 'Impossibile salvare', empty_list: 'Nessun record.',
+  tech_name: 'Nome completo', tech_name_ph: 'Es.: Ivan Cortés', tech_employment: 'Contratto',
+  tech_no_util: 'L’utilizzo si calcola dal diario di bordo (Fase 7).',
+  user_tech_link: 'Tecnico collegato', user_no_link: 'Non collegato',
+  invite_tech: 'Collega a un tecnico (opzionale)',
+  proj_nit: 'NIT / ID fiscale', proj_nit_ph: 'Opzionale',
+  proj_locality: 'Località', proj_locality_ph: 'Es.: Santiago',
+  proj_supply: 'Fornitura', proj_supply_ph: 'Es.: Linea pasta corta',
+  proj_contract_no: 'N° di contratto', proj_contract_no_ph: 'Es.: 2451-RD',
+  proj_none: 'Non ci sono ancora progetti. Crea il primo.',
+  proj_pick: 'Scegli un progetto nella lista.',
+  matrix_no_phase: 'Senza fase (storico)',
+  machine_entries_warn: 'Questa macchina ha già giornate registrate nel progetto. Sparirà dalle nuove registrazioni; le giornate storiche la conservano. Continuare?',
+  toast_error: 'Impossibile salvare', toast_error_b: 'Il valore è tornato al precedente.',
 };
 
 export const D: Record<Lang, Dict> = { es, it };

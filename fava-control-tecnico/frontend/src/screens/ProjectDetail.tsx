@@ -1,6 +1,5 @@
-import { Card, CardHead, gbtn, pbtn, td, th } from '../ui';
+import { Card, CardHead, gbtn, money, nf, pbtn, td, th } from '../ui';
 import { useApp } from '../state';
-import { money, nf } from '../data';
 import type { Phase, RoleType } from '../types';
 
 const ROLES: RoleType[] = ['Mecánico', 'Meccatronico', 'Eléctrico'];

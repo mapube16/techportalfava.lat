@@ -62,11 +62,33 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   });
   if (!res.ok) {
     if (res.status === 401) onUnauthorized?.();
-    throw new ApiError(res.status, (await res.text()) || res.statusText);
+    throw new ApiError(res.status, await codigoDeError(res));
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+/**
+ * El backend responde `{ statusCode, message: 'YA_EXISTE', error }`: lo que la UI
+ * necesita mostrar (y ramificar) es ese `message`, no el JSON entero. Se desenvuelve
+ * aquí y no en cada llamante porque el formato es del servidor, no de la pantalla.
+ */
+async function codigoDeError(res: Response): Promise<string> {
+  const texto = await res.text();
+  try {
+    const cuerpo: unknown = JSON.parse(texto);
+    const msg = (cuerpo as { message?: unknown })?.message;
+    if (typeof msg === 'string') return msg;
+    if (Array.isArray(msg)) return msg.join(', ');
+  } catch {
+    /* no era JSON: se devuelve tal cual */
+  }
+  return texto || res.statusText;
+}
+
+/** POST/PATCH/PUT con cuerpo JSON: el `JSON.stringify` estaba copiado en cada llamada. */
+export const apiSend = <T>(path: string, method: 'POST' | 'PATCH' | 'PUT', body: unknown) =>
+  apiFetch<T>(path, { method, body: JSON.stringify(body) });
 
 export const getMe = () => apiFetch<MeResponse>('/me');
 export const requestAccess = () => apiFetch<void>('/access-requests', { method: 'POST' });

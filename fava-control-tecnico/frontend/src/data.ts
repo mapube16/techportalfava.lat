@@ -82,6 +82,3 @@ export const AUDIT: AuditRow[] = [
   { actor: 'Marco Ferro', act: 'create', ent: 'Jornada 21/07', before: '—', after: 'DC', when: '21/07 18:22' },
 ];
 
-export const money = (v: number, cur: string) => (cur === 'USD' ? 'US$ ' : '') + v.toLocaleString('es-CL');
-export const nf = (v: number) => v.toLocaleString('es-CL');
-export const initials = (n: string) => n.split(' ').map((w) => w[0]).join('');

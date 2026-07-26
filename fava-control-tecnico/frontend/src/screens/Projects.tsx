@@ -1,7 +1,6 @@
 import { hi } from '../icons';
-import { Card, CardHead, chip, filterBy, pbtn, td, th } from '../ui';
+import { Card, CardHead, chip, filterBy, money, nf, pbtn, td, th } from '../ui';
 import { useApp } from '../state';
-import { money, nf } from '../data';
 
 export default function Projects() {
   const { state, t, go, patch } = useApp();

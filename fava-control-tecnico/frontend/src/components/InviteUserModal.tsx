@@ -2,15 +2,25 @@ import { useState } from 'react';
 import { hi } from '../icons';
 import { FieldError, gbtn, inputError, inputStyle, pbtn } from '../ui';
 import { useApp } from '../state';
+import { codigo, useApiData } from '../lib/api/useApiData';
+import { inviteUser } from '../lib/api/users';
+import { activos } from '../lib/api/catalogs';
+import { listTechnicians } from '../lib/api/technicians';
 import type { Role } from '../types';
 
 export default function InviteUserModal() {
-  const { state, t, patch, addUser } = useApp();
+  const { state, t, patch, refresh, showToast } = useApp();
   const [name, setName] = useState('');
   const [mail, setMail] = useState('');
   const [roles, setRoles] = useState<Role[]>(['T']);
+  const [techId, setTechId] = useState('');
   const [errors, setErrors] = useState<{ name?: boolean; mail?: boolean; mailFmt?: boolean }>({});
+  const [errApi, setErrApi] = useState<string | null>(null);
   const isSuper = state.role === 'S';
+
+  // Vincular al invitar ahorra el segundo paso desde la pantalla de Usuarios; el
+  // servidor aplica la misma validación que el PATCH del vínculo.
+  const { data: techs } = useApiData(listTechnicians, []);
 
   const rmap: Record<Role, [string, string, string]> = {
     T: [t.role_t, 'var(--sent)', 'var(--sent-tint)'],
@@ -33,7 +43,20 @@ export default function InviteUserModal() {
       setErrors(errs);
       return;
     }
-    addUser({ n: name.trim(), mail: mail.trim(), roles: roles.slice() });
+    setErrApi(null);
+    // No manda correo (V1X-01, diferido): crea la fila que el primer login reclama.
+    inviteUser({
+      email: mail.trim(),
+      displayName: name.trim(),
+      roles: roles.slice(),
+      technicianId: techId || null,
+    })
+      .then(() => {
+        patch({ inviteOpen: false });
+        refresh();
+        showToast('invite');
+      })
+      .catch((e: unknown) => setErrApi(codigo(e)));
   };
 
   return (
@@ -81,6 +104,16 @@ export default function InviteUserModal() {
             </div>
             {isSuper ? null : <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 6 }}>{t.only_super}</div>}
           </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{t.invite_tech}</label>
+            <select value={techId} onChange={(e) => setTechId(e.target.value)} style={inputStyle}>
+              <option value="">{t.user_no_link}</option>
+              {activos(techs ?? []).map((tc) => (
+                <option key={tc.id} value={tc.id}>{tc.fullName}</option>
+              ))}
+            </select>
+          </div>
+          {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
             <button onClick={close} style={gbtn}>{t.btn_cancel}</button>
             <button onClick={create} style={pbtn}>
