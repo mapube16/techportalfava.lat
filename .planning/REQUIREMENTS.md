@@ -17,11 +17,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Catálogos y maestros
 
-- [ ] **CAT-01**: Catálogos cerrados: 8 conceptos de jornada, roles técnicos, monedas — sin texto libre
-- [ ] **CAT-02**: Admin puede crear/editar técnicos (tipo interno/externo, activo) sin requerir cuenta Entra (técnicos históricos)
-- [ ] **CAT-03**: Admin puede crear/editar proyectos con datos comerciales y de encabezado de Nota (cliente, NIT, localidad, suministro, n° contrato, país) y máquinas asociadas
-- [ ] **CAT-04**: Admin carga días vendidos por rol×fase al proyecto; el delta nunca se digita
-- [ ] **CAT-05**: Admin gestiona usuarios (invitar, asignar roles, activar/desactivar)
+- [x] **CAT-01**: Catálogos cerrados: 8 conceptos de jornada, roles técnicos, monedas — sin texto libre
+- [x] **CAT-02**: Admin puede crear/editar técnicos (tipo interno/externo, activo) sin requerir cuenta Entra (técnicos históricos)
+- [x] **CAT-03**: Admin puede crear/editar proyectos con datos comerciales y de encabezado de Nota (cliente, NIT, localidad, suministro, n° contrato, país) y máquinas asociadas
+- [x] **CAT-04**: Admin carga días vendidos por rol×fase al proyecto; el delta nunca se digita
+- [x] **CAT-05**: Admin gestiona usuarios (invitar, asignar roles, activar/desactivar)
 - [ ] **CAT-06**: Baja de técnico conserva toda la historia; el diálogo avisa notas pendientes y permite "aprobar en nombre de" con rastro en auditoría
 
 ### Bitácora diaria
@@ -128,11 +128,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-02 | Phase 1 — Fundación segura y desplegada | Complete |
 | AUTH-03 | Phase 1 — Fundación segura y desplegada | Complete |
 | AUTH-04 | Phase 1 — Fundación segura y desplegada | Complete |
-| CAT-01 | Phase 2 — Maestros y catálogos | Pending |
-| CAT-02 | Phase 2 — Maestros y catálogos | Pending |
-| CAT-03 | Phase 2 — Maestros y catálogos | Pending |
-| CAT-04 | Phase 2 — Maestros y catálogos | Pending |
-| CAT-05 | Phase 2 — Maestros y catálogos | Pending |
+| CAT-01 | Phase 2 — Maestros y catálogos | Complete |
+| CAT-02 | Phase 2 — Maestros y catálogos | Complete |
+| CAT-03 | Phase 2 — Maestros y catálogos | Complete |
+| CAT-04 | Phase 2 — Maestros y catálogos | Complete |
+| CAT-05 | Phase 2 — Maestros y catálogos | Complete |
 | CAT-06 | Phase 4 — Flujo de aprobación y auditoría | Pending |
 | BIT-01 | Phase 3 — Bitácora diaria | Pending |
 | BIT-02 | Phase 3 — Bitácora diaria | Pending |

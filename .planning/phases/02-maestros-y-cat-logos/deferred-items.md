@@ -41,3 +41,27 @@ Hallazgos fuera del alcance del plan que los encontró. No se arreglan donde se 
 - **`npm audit`: 31 vulnerabilidades en dependencias transitivas del toolchain de build**
   (heredado del Plan 01-01, sin cambios: esta fase no añadió ni una dependencia).
   Dueño: revisión previa al deploy de producción.
+
+## Cerrados por el plan 02-06 (cutover de frontend)
+
+- ~~`Kpis.tsx` va a romper el build~~ — **cerrado**: la pantalla lleva su propio mock, con la
+  forma NUEVA (filas rol × fase) y sin tocar el API. Cambiar el origen en la Fase 7 no obliga
+  a reescribir las agregaciones.
+- ~~`ProjectDetail.tsx:35` calcula el delta al revés~~ — **cerrado**: la resta del cliente se
+  borró; el `delta` llega de la matriz del servidor.
+- ~~El botón «Guardar» de la matriz~~ — **cerrado**: retirado; el autoguardado es por celda.
+- ~~`check:no-free-text` sin enganchar al build~~ — **cerrado**: `npm run build` (raíz) lo
+  ejecuta primero, así que la regla del criterio 4 rompe el build (y el deploy) si se rompe.
+
+## Del plan 02-06 (cutover de frontend)
+
+- **La UI no traduce los ~30 códigos de error del API**: los muestra tal cual
+  (`TECNICO_YA_VINCULADO`, `MONEDA_INEXISTENTE`…) tras un «No se pudo guardar». Son
+  autoexplicativos en español y cambiarían cada vez que el backend añada uno; la tabla de
+  traducción se escribe cuando FAVA diga cuáles ve de verdad.
+- **`LogDayDrawer` sigue con `LOG_PROJECTS` y `MACHINES` de `data.ts`.** No es olvido:
+  `GET /api/projects` está cerrado a `A · S` y esa pantalla la usa un Técnico. La Fase 3 tiene
+  que **relajar ese `@Roles`** (como hizo 02-03 con `/api/catalogs`) y entonces el selector sale
+  del API y las máquinas, de las del proyecto elegido.
+- **La utilización por técnico se muestra como `—`** en la pantalla Técnicos: no hay dato hasta
+  la Fase 7. La columna se conservó para no tocar el diseño aprobado.

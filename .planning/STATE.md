@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completado 02-03-PLAN.md (catalogos + maestro de tecnicos: wave 2 cerrada)"
-last_updated: "2026-07-26T13:20:26.575Z"
-last_activity: "2026-07-26 — 02-03 completado: wave 2 cerrada. `GET /api/catalogs` (4 catálogos, abierto a T/A/S) y el maestro de técnicos (alta sin cuenta Entra, baja no destructiva); 12 rutas y ni un DELETE"
+stopped_at: "Completado 02-06-PLAN.md (cutover de frontend: fase 2 con sus 6 planes ejecutados)"
+last_updated: "2026-07-26T18:09:43.084Z"
+last_activity: "2026-07-26 — 02-06 completado: las 5 pantallas de administración leen del API real. Delta invertido borrado (el servidor lo calcula), matriz derivada del catálogo de roles, autoguardado por celda y check:no-free-text en verde y enganchado al build"
 progress:
   total_phases: 8
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 13
-  completed_plans: 9
-  percent: 69
+  completed_plans: 11
+  percent: 85
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 2 of 8 (Maestros y catálogos)
-Plan: 5 of 6
+Plan: 6 of 6 (los 6 ejecutados — pendiente la verificación de fase)
 Status: Executing
-Last activity: 2026-07-26 — 02-03 completado: wave 2 cerrada. `GET /api/catalogs` (4 catálogos, abierto a T/A/S) y el maestro de técnicos (alta sin cuenta Entra, baja no destructiva); 12 rutas y ni un DELETE
+Last activity: 2026-07-26 — 02-06 completado: las 5 pantallas de administración leen del API real. Delta invertido borrado (el servidor lo calcula), matriz derivada del catálogo de roles, autoguardado por celda y check:no-free-text en verde y enganchado al build
 
-Progress: [███████░░░] 69%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -52,9 +52,11 @@ Progress: [███████░░░] 69%
 | Phase 02 P02 | 1 | 24 min | 24 min (2 tasks, 3 files) |
 | Phase 02 P04 | 1 | 21 min | 21 min (2 tasks, 4 files) |
 | Phase 02 P03 | 1 | 42 min | 42 min (2 tasks, 9 files) |
+| Phase 02 P05 | 1 | 35 min | 35 min (3 tasks, 8 files) |
+| Phase 02 P06 | 1 | 62 min | 62 min (3 tasks, 23 files) |
 
 **Recent Trend:**
-- Last 5 plans: 02-03 (42 min), 02-04 (21 min), 02-02 (24 min), 02-01 (33 min), 01-07 (50 min)
+- Last 5 plans: 02-06 (62 min), 02-05 (35 min), 02-03 (42 min), 02-04 (21 min), 02-02 (24 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -105,6 +107,11 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 02]: [02-03]: Traduccion Prisma->HTTP obligatoria en todo servicio nuevo (P2002->409, P2003->400, P2025->404): sin ella un id inexistente o un FK roto salen como 500
 - [Phase 02]: [02-03]: GET /api/catalogs es el contrato cerrado que consume la Fase 3 y 02-06; los listados NO filtran por isActive (filtran los selectores del cliente)
 - [Phase 02]: [02-03]: Las suites e2e de la fase NO se pueden correr en paralelo contra el mismo Postgres: truncateAll() es global y sin aislamiento por suite; ante un fallo asi se reejecuta, no se edita el test
+- [Phase 02]: [02-06]: El delta invertido del prototipo se BORRA, no se corrige de signo: el servidor manda delta en cada fila y en la respuesta del PUT, asi que la unica resta del repo sigue en sold-days.service.ts
+- [Phase 02]: [02-06]: Ninguna lista de dominio se carga en el arranque de la sesion: GET /api/projects es A·S y un tecnico habria recibido 403 al entrar. Cada pantalla carga lo suyo (state.dataVersion + refresh())
+- [Phase 02]: [02-06]: Los tipos del API viven junto a su cliente en lib/api/*.ts, que es donde esta el contrato; types.ts se queda con los tipos de interfaz
+- [Phase 02]: [02-06]: check:no-free-text esta enganchado a npm run build (raiz): un input de concepto/rol/moneda o un mock de vuelta tumban el deploy de Railway en el primer paso
+- [Phase 02]: [02-06]: LogDayDrawer sigue con mock a proposito: la Fase 3 tiene que RELAJAR el @Roles del GET /api/projects a T, no crear un endpoint nuevo
 
 ### Pending Todos
 
@@ -124,7 +131,7 @@ Riesgo técnico:
 - ~~[Phase 1] Prisma 7 + RLS + `$transaction()` interactivo~~ — **cerrado por 01-02**: 200 transiciones multi-tabla concurrentes sobre un pool de 10, sin P2028 ni fuga de GUC (`test/rls-transaction.e2e-spec.ts`). Pendiente repetir una version reducida ya desplegado (Plan 01-06).
 - [Phase 1] Railway no debe entregar al runtime una `DATABASE_URL` de superusuario: un superusuario se salta RLS **incluso con FORCE** y sin ningún síntoma. Verificar en el Plan 01-06.
 - [Phase 2] **Pitfall 7 mitigado, no cerrado.** El `GRANT` dentro de `20260726123024_rls_maestros` cubre el caso en que `db:bootstrap` y `migrate deploy` los corra un rol distinto (las 8 tablas nuevas nacerían sin permisos y la app daría `permission denied for table projects` justo tras un deploy exitoso). Confirmarlo en Railway exige un `GET /api/projects` autenticado en el smoke — dueño: el plan que amplíe `scripts/smoke.ts`.
-- [Phase 2] `frontend/src/screens/Kpis.tsx` romperá el build (`tsc && vite build`) cuando `types.ts` deje de ser el contrato del API. Salida de una línea documentada en `.planning/phases/02-maestros-y-cat-logos/deferred-items.md` — dueño: plan 02-06.
+- ~~[Phase 2] `frontend/src/screens/Kpis.tsx` romperá el build cuando `types.ts` deje de ser el contrato~~ — **cerrado por 02-06**: la pantalla lleva su propio mock con la forma nueva (filas rol × fase) y `npm run build` es verde.
 - [Phase 2] **Las suites e2e no están aisladas entre procesos.** `truncateAll()` vacía `users` global, así que dos agentes (o un CI con `--maxWorkers>1`) sobre la misma base se tumban tests mutuamente: en 02-03 pasó tres veces (7 fallos en `catalogs`, 2 en `users-invite`, 1 build sin error de tsc) y las tres se resolvieron re-ejecutando, sin tocar código. Dentro de un proceso `--runInBand` ya lo cubre; entre procesos hace falta base por worker — dueño: el plan que monte el CI de la fase.
 - [Phase 2] `gsd-tools roadmap update-plan-progress` responde `updated: true` pero **no escribe** la fila de la tabla de progreso (verificado dos veces en 02-03: `summary_count: 4`, fila intacta en `2/6`), y `state advance-plan` falla siempre en este repo porque busca los campos `Current Plan` / `Total Plans in Phase` y el STATE.md usa `Plan: N of M`. Los dos se están supliendo a mano en cada plan.
 
@@ -134,6 +141,6 @@ Nota de inventario:
 
 ## Session Continuity
 
-Last session: 2026-07-26T13:20:25.960Z
-Stopped at: Completado 02-03-PLAN.md (catalogos + maestro de tecnicos: wave 2 cerrada)
-Resume file: .planning/phases/02-maestros-y-cat-logos/02-05-PLAN.md
+Last session: 2026-07-26T18:09:28.489Z
+Stopped at: Completado 02-06-PLAN.md (cutover de frontend: fase 2 con sus 6 planes ejecutados)
+Resume file: None
