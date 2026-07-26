@@ -75,6 +75,7 @@ Plans:
 - [ ] 03-04-PLAN.md — API de la bitácora: GET de la semana, PUT/DELETE del día, idempotencia por clave natural y la suite de 4 husos (Wave 2)
 - [ ] 03-05-PLAN.md — Cliente tipado + `Week.tsx`: grilla de 7 días, navegación, ventana temporal y borrador local (Wave 3)
 - [ ] 03-06-PLAN.md — `LogDayDrawer.tsx` contra el API, retirada de `MACHINES`/`LOG_PROJECTS` y guarda-rail ampliado a 9 archivos (Wave 4)
+- [x] 03-07-PLAN.md — Fundación móvil: `useIsMobile`, primeras media queries, barra lateral colapsable, 44px táctiles y contraste 4.5:1 (Wave 2)
 
 ### Phase 4: Flujo de aprobación y auditoría
 **Goal**: La semana enviada se convierte sola en una nota por proyecto que el admin aprueba o devuelve, y ningún movimiento ocurre sin dejar rastro.
@@ -178,7 +179,7 @@ Las fases se ejecutan en orden numérico. Phase 6 (migración) puede adelantarse
 |-------|----------------|--------|-----------|
 | 1. Fundación segura y desplegada | 0/6 | Not started | - |
 | 2. Maestros y catálogos | 6/6 | Complete    | 2026-07-26 |
-| 3. Bitácora diaria | 3/6 | In Progress | - |
+| 3. Bitácora diaria | 4/7 | In Progress | - |
 | 4. Flujo de aprobación y auditoría | 0/TBD | Not started | - |
 | 5. Nota Semanal PDF y firma | 0/TBD | Not started | - |
 | 6. Migración del histórico | 0/TBD | Not started | - |

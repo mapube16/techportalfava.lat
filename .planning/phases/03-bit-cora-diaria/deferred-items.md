@@ -114,3 +114,47 @@ un concepto **sin proyecto** (`LR`/`NR`/`IL`), que es lo que el CHECK permite.
 **03-03 no lo toca a propósito:** `fixtures.ts` es contrato cerrado (02-01) y las dos
 suites son de otros planes. Se deja escrito aquí para que quien cierre la wave no lo lea
 como flakiness de `truncateAll()`.
+
+---
+
+## 6. Móvil: lo que 03-07 midió y NO arregló — dueños repartidos
+
+**Encontrado en:** 03-07 (fundación móvil), sonda estática sobre las 12 pantallas.
+
+03-07 arregla los **primitivos compartidos** (`ui.tsx`), los tokens (`index.css`), la
+barra lateral, `Login.tsx` y las 6 pantallas de admin que ya traían rama de tarjetas.
+Estas tres cosas quedan fuera **a propósito** — ninguna se arregla con un token:
+
+### 6.1 `screens/Inbox.tsx` desborda a 390px — dueño: el plan que reescriba la bandeja
+
+La bandeja es un maestro-detalle de dos paneles y el maestro es `width: 340, flex: 'none'`
+(`Inbox.tsx:13`). A 390px de viewport quedan **362px útiles** (390 − 28 de `--gap-page`),
+así que el panel de detalle se queda con 22px y la página desborda en horizontal.
+
+No se arregla desde 03-07: pasar de dos paneles a uno exige decidir la **navegación**
+(lista → detalle con botón de volver), que es diseño, no un breakpoint. Inbox no está
+entre las 6 pantallas que el plan nombra y no tiene rama de tarjetas que activar.
+
+### 6.2 Tres inputs se saltan `inputStyle` y siguen por debajo de 16px
+
+`inputStyle` ya consume `var(--fs-input)` (16px en móvil), pero estos tres lo pisan con un
+literal y **seguirán provocando zoom al enfocar en iOS**:
+
+| Fichero | Línea aprox. | Qué hace |
+|---|---|---|
+| `screens/Users.tsx` | 151 | `{ ...inputStyle, padding: '7px 9px', fontSize: 13 }` |
+| `screens/ProjectDetail.tsx` | 89 | input numérico propio, `fontSize: 13`, `width: 44` |
+| `components/ReturnModal.tsx` | 21 | `<textarea>` con estilo propio, `fontSize: 14` |
+
+Los tres son de otros planes. El arreglo es una línea en cada uno (`fontSize:
+'var(--fs-input)'`), pero el de `ProjectDetail` además es una celda de tabla de 44px de
+ancho: subirle la fuente cambia el ancho de la columna y eso ya es decisión de esa
+pantalla.
+
+### 6.3 `--text-3` sobre `--surface-3` se queda en 4.20:1 (claro) y 4.30:1 (oscuro)
+
+Los valores nuevos pasan 4.5:1 sobre `--surface` y `--surface-2`, que son los fondos
+sobre los que `--text-3` hace de **texto**. Sobre `--surface-3` no llega, y se deja así:
+esa pareja aparece en un solo sitio, el icono de 64px de `Empty` (`ui.tsx`), que es
+gráfico y su umbral es 3:1. Si algún día alguien pinta texto normal sobre `--surface-3`,
+hay que volver aquí — el test de contraste cubre `surface` y `surface-2`, no este.

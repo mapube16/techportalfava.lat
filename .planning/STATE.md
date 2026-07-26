@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completado 03-01-PLAN.md (motor de la bitacora + contrato de fecha del servidor) — wave 1 de la fase 3 cerrada
-last_updated: "2026-07-26T20:40:00.000Z"
-last_activity: "2026-07-26 — 03-01 completado: migracion 20260726150806_bitacora (columna description + CHECK de_proyecto_por_concepto + GRANT), fecha.ts con aDate/aTexto/ventana y check:fecha-servidor dentro de npm run build. Descubierto que dentro de jest process.env.TZ NO cambia el huso: la suite de 4 husos habria medido Bogota cuatro veces"
+stopped_at: Completado 03-07-PLAN.md (fundación móvil: primeras media queries del frontend) — wave 2 en curso junto a 03-04
+last_updated: "2026-07-26T21:55:00.000Z"
+last_activity: "2026-07-26 — 03-07 completado: `useIsMobile` sobre `matchMedia` real, las 3 primeras media queries del frontend (antes: cero), barra lateral colapsable con Escape/foco devuelto/`visibility`, 44px táctiles y 16px de fuente en los primitivos, y `--text-3` de 3.12:1 a 4.95:1 (claro) y de 4.19:1 a 5.38:1 (oscuro). El toggle falso de vista móvil murió: las 6 pantallas de admin ya tenían rama de tarjetas escrita e inalcanzable. Adición de alcance del orquestador: `Login.tsx`, inusable a 390px. 49 casos verdes"
 progress:
   total_phases: 8
   completed_phases: 1
-  total_plans: 19
-  completed_plans: 14
-  percent: 74
+  total_plans: 20
+  completed_plans: 15
+  percent: 75
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 3 of 8 (Bitácora diaria)
-Plan: **wave 1 completada** — 03-01, 03-02 y 03-03 ejecutados. Siguiente: wave 2 (03-04, endpoints de la bitácora)
+Plan: **wave 2 en curso** — 03-07 (fundación móvil) cerrado; 03-04 (endpoints de la bitácora) corre en paralelo. Siguiente: wave 3 (03-05)
 Status: Executing
-Last activity: 2026-07-26 — 03-01 completado: la migración `20260726150806_bitacora` (columna `description` + CHECK `de_proyecto_por_concepto` + GRANT), `fecha.ts` con `aDate`/`aTexto`/`ventana` medido en 4 husos reales, y `check:fecha-servidor` enganchado a `npm run build`. Tres verificaciones en rojo (2/6, 14/60 con Roma+Kiritimati aislados, 3×exit 1); 14 suites e2e / 278 casos verdes
+Last activity: 2026-07-26 — 03-07 completado: `useIsMobile` sobre `matchMedia` real y las **3 primeras media queries del frontend** (antes: cero en todo el proyecto). La barra lateral de 246px (63% de un teléfono de 390px) es panel deslizante con `aria-expanded`/`aria-controls`, Escape, foco devuelto y `visibility` para que no se tabule por detrás. 44px táctiles y 16px de fuente en los primitivos; `--text-3` de 3.12:1 a 4.95:1 (claro) y de 4.19:1 a 5.38:1 (oscuro), con 4 casos que lo recalculan desde `index.css` en cada build. El toggle falso de vista móvil murió: las 6 pantallas de admin ya tenían la rama de tarjetas escrita e inalcanzable. Adición de alcance del orquestador a mitad de ejecución: `Login.tsx`, que a 390px daba dos columnas de ~195px con 96 de padding. 49 casos verdes, cero dependencias nuevas
 
-Progress: [███████░░░] 74%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -57,9 +57,10 @@ Progress: [███████░░░] 74%
 | Phase 03 P02 | 1 | 34 min | 34 min (2 tasks, 5 files) |
 | Phase 03 P03 | 1 | 13 min | 13 min (2 tasks, 3 files) |
 | Phase 03 P01 | 1 | 42 min | 42 min (3 tasks, 11 files) |
+| Phase 03 P07 | 1 | 47 min | 47 min (3 tasks + 1 adición de alcance, 16 files) |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (42 min), 03-03 (13 min), 03-02 (34 min), 02-06 (62 min), 02-05 (35 min)
+- Last 5 plans: 03-07 (47 min), 03-01 (42 min), 03-03 (13 min), 03-02 (34 min), 02-06 (62 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -129,6 +130,12 @@ Decisiones completas en PROJECT.md (Key Decisions). Las que afectan el trabajo a
 - [Phase 03]: [03-01]: ventana() = techo dia de (ahora+14h), suelo dia 1 del mes anterior al dia de (ahora-12h). El 1 de septiembre a las 00:00 UTC el suelo es 2026-07-01, NO 2026-08-01: un tecnico en UTC-12 sigue a 31 de agosto y su mes anterior es julio
 - [Phase 03]: [03-01]: El CHECK de_proyecto_por_concepto queda ESTRICTO y NO menciona phase (todo el historico del Excel entra con phase NULL). La salida de la Fase 6 para las 1.438 filas «Sin Proyecto» es la CUARENTENA, no relajar el CHECK — ver deferred-items.md
 - [Phase 03]: [03-01]: Los fixtures compartidos codifican las reglas del motor: crearJornadaAprobada emitia DC sin proyecto (fila que el CHECK rechaza con 23514) y ahora el concepto lo decide el proyecto (DC con, LR sin)
+- [Phase 03]: [03-07]: El punto de ruptura (899px) esta escrito en TS y en CSS porque una media query no puede importar un modulo; lo que impide que se separen NO es la disciplina sino un caso de test que lee index.css. Verificado por mutacion: sin el, cambiar 899 en un solo lado deja la suite verde y 768-899px (buena parte de las tablets) con layout de escritorio y tarjetas de movil a la vez
+- [Phase 03]: [03-07]: El contraste se deja como TEST sobre index.css, no como comentario: un comentario no se entera de que alguien retoco la paleta, que es justo como --text-3 llego a 3.12:1 sin que nadie lo notara
+- [Phase 03]: [03-07]: Token responsivo = la media query cambia la VARIABLE y el estilo inline consume var(--...). Una sola clase estructural (.fava-aside) para lo que una variable no puede expresar (position/transform), y va comentada
+- [Phase 03]: [03-07]: El panel movil usa visibility ademas de transform: un panel solo desplazado sigue siendo tabulable y el foco se iria detras del fondo oscurecido
+- [Phase 03]: [03-07]: --text-3 se elige por --surface-2 (fondo de th), no solo por --surface: la cabecera de tabla es texto de 11px en mayusculas y es el fondo mas exigente donde ese color hace de texto
+- [Phase 03]: [03-07]: BIT-01 NO se marca completo: este plan es precondicion de usabilidad, no el entregable (la captura la construyen 03-04 y 03-05)
 
 ### Pending Todos
 
@@ -157,9 +164,12 @@ Nota de inventario:
 - REQUIREMENTS.md declaraba 38 requisitos v1; el conteo real por ID es 41. Corregido en la sección Traceability.
 - [Phase 1] Mientras DEV_AUTH_ENABLED este encendido, quien conozca la contrasena compartida entra como CUALQUIER email dado de alta (incluido el Super Admin): no meter datos reales hasta el cutover al tenant de FAVA (docs/ENV.md)
 - [Phase 3] gsd-tools roadmap update-plan-progress N corrompe el mapa de cutover de ROADMAP.md: busca la fila de la fase y acierta en la tabla equivocada, borrando la fila de la fase siguiente (verificado y revertido a mano en 03-02; la fila de la Phase 1 sigue corrupta y commiteada). 03-01 y 03-03 ejecutan el mismo comando en esta wave: revisar esa tabla en la puerta de fase
+- [Phase 3] `state advance-plan` sigue fallando en este repo (busca `Current Plan`/`Total Plans in Phase` y el STATE.md usa `Plan: N of M`), y `state update-progress` REESCRIBE `stopped_at`/`last_activity` con el texto del cuerpo (o sea, con los del plan ANTERIOR) y deja `percent` desincronizado con `completed_plans`: en 03-07 escribio 15/20 y dejo el 74%. Los dos se corrigen a mano en cada plan
+- [Phase 3] `screens/Inbox.tsx` desborda a 390px: maestro-detalle con `width: 340, flex:'none'` y solo 362px utiles. No lo arregla un token (exige decidir la navegacion lista->detalle) y no es fichero de 03-07 — deferred-items.md §6.1
+- [Phase 3] Tres inputs pisan el `fontSize` de `inputStyle` con un literal y seguiran provocando zoom al enfocar en iOS: `Users.tsx`, `ProjectDetail.tsx` y `ReturnModal.tsx` — deferred-items.md §6.2
 
 ## Session Continuity
 
-Last session: 2026-07-26T20:40:00.000Z
-Stopped at: Completado 03-01-PLAN.md (motor de la bitácora + contrato de fecha del servidor) — wave 1 de la fase 3 cerrada, siguiente wave 2 (03-04)
+Last session: 2026-07-26T21:55:00.000Z
+Stopped at: Completado 03-07-PLAN.md (fundación móvil: primeras media queries del frontend) — wave 2 en curso junto a 03-04
 Resume file: None
