@@ -65,7 +65,7 @@ interface NavItem {
  * repartido por el JSX.
  */
 export default function Layout() {
-  const { state, t, go, logout, switchRole, goInbox, toggleTheme, toggleLang, patch, inboxCount } = useApp();
+  const { state, t, go, logout, goInbox, toggleTheme, toggleLang, patch, inboxCount } = useApp();
   const tr = t as unknown as Record<string, string>;
   const movil = useIsMobile();
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -146,23 +146,11 @@ export default function Layout() {
         />
       </div>
 
-      {/* Selector de rol — solo si el usuario tiene más de uno. */}
-      {state.myRoles.length > 1 ? (
-        <div className="flex bg-muted border border-border rounded-md p-0.5">
-          {state.myRoles.map((code) => (
-            <button
-              key={code}
-              onClick={() => switchRole(code)}
-              title={roleLabel[code]}
-              className={`px-3 min-h-10 md:min-h-8 rounded font-mono text-xs font-bold cursor-pointer transition-colors ${
-                state.role === code ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {code}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      {/* El selector T·A·S se retiró: cada persona entra con SU cuenta y ve SU rol.
+          Servía para enseñar la app desde una sola sesión, pero no para probarla — con
+          un usuario que tiene los tres roles ningún 403 salta nunca y un endpoint mal
+          protegido pasa desapercibido. Si alguien conserva varios roles, manda el más
+          alto (ROLE_RANK en state.tsx) y no hay nada que conmutar. */}
 
       <Button variant="outline" size="sm" onClick={toggleLang} className="min-h-11 md:min-h-9">
         <Globe className="size-4" />

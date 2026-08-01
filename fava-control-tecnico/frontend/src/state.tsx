@@ -110,7 +110,6 @@ export interface AppCtx {
   /** Solo con VITE_DEV_AUTH=true; ver lib/auth/dev.ts. */
   devLogin: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  switchRole: (role: Role) => void;
   goInbox: () => void;
   toggleTheme: () => void;
   toggleLang: () => void;
@@ -238,13 +237,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void msalLogout();
   };
 
-  // Cambiar de rol cambia navegación y filtros, NUNCA permisos: los permisos son
-  // del servidor. Solo se permiten los roles que el API asignó a este usuario.
-  const switchRole = (role: Role) => {
-    if (!stateRef.current.myRoles.includes(role)) return;
-    patch({ role });
-    go(FIRST_ROUTE[role]);
-  };
+  // `switchRole` se retiró con el selector T·A·S: cada persona entra con SU cuenta.
+  // `state.role` sigue existiendo porque gobierna la navegación, pero ya no se conmuta
+  // desde la interfaz — lo fija `applyMe` con el rol más alto que trae /api/me.
 
   const goInbox = () => {
     const { role, myRoles } = stateRef.current;
@@ -288,7 +283,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const value: AppCtx = {
-    state, t, patch, go, showToast, refresh, inboxCount, login, devLogin, logout, switchRole, goInbox,
+    state, t, patch, go, showToast, refresh, inboxCount, login, devLogin, logout, goInbox,
     toggleTheme, toggleLang, approve, returnNote, resend, closeOnboard,
   };
 
