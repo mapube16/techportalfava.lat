@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
-import { Card, CardHead, nf, td, th } from '../ui';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { nf, td, th } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import DayGrid from '../components/DayGrid';
@@ -210,12 +211,18 @@ export default function Kpis() {
     };
   }, []);
 
+  // El color es un dato (positivo/negativo/neutro), no una paleta finita: se queda en
+  // `style` porque Tailwind no puede generar una clase por valor en tiempo de ejecución.
   const kcard = (label: string, val: string, sub: string, color?: string) => (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: '15px 17px' }}>
-      <div style={{ fontSize: 11.5, color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>{label}</div>
-      <div style={{ fontSize: 27, fontWeight: 700, fontFamily: 'Roboto Condensed', color: color || 'var(--text)', marginTop: 4, lineHeight: 1.1 }}>{val}</div>
-      <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 2 }}>{sub}</div>
-    </div>
+    <Card>
+      <CardContent>
+        <div className="text-[11.5px] text-muted-foreground font-semibold uppercase tracking-wide">{label}</div>
+        <div className="text-[27px] font-bold font-cond mt-1 leading-tight" style={{ color: color || 'var(--text)' }}>
+          {val}
+        </div>
+        <div className="text-[11.5px] text-muted-foreground mt-0.5">{sub}</div>
+      </CardContent>
+    </Card>
   );
 
   const chartTitle = { project: t.chart_main_project, tech: t.chart_main_tech, phase: t.chart_main_phase }[state.kpiSeg];
@@ -225,7 +232,9 @@ export default function Kpis() {
       <button
         key={k}
         onClick={() => patch({ kpiSeg: k })}
-        style={{ padding: '6px 13px', border: 0, borderRadius: 6, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: on ? 'var(--primary)' : 'transparent', color: on ? '#fff' : 'var(--text-2)' }}
+        className={`px-3 py-1.5 rounded-md text-[12.5px] font-semibold cursor-pointer transition-colors ${
+          on ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+        }`}
       >
         {l}
       </button>
@@ -240,39 +249,47 @@ export default function Kpis() {
   });
 
   const byPhase = movil ? (
-    <Card>
-      <CardHead title={t.by_phase} />
-      <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <Card className="p-0 gap-0 overflow-hidden">
+      <CardHeader className="border-b p-4">
+        <CardTitle>{t.by_phase}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-3 flex flex-col gap-2.5">
         {phaseRows.map((r) => {
+          // El azul de MONTAJE y el naranja de MARCA de COLLAUDO son datos del dominio
+          // (dos fases fijas), no una paleta que Tailwind pueda generar como clase.
           const pair = (lbl: string, sold: number, done: number, color: string) => (
-            <div style={{ flex: 1, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 9, padding: '9px 11px' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', color }}>{lbl}</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4, fontFamily: 'Roboto Mono' }}>
-                <span style={{ fontSize: 18, fontWeight: 700 }}>{done}</span>
-                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>/ {sold}</span>
+            <div className="flex-1 bg-muted border border-border rounded-lg px-2.5 py-2">
+              <div className="text-[10.5px] font-bold tracking-wide uppercase" style={{ color }}>{lbl}</div>
+              <div className="flex items-baseline gap-1.5 mt-1 font-mono">
+                <span className="text-lg font-bold">{done}</span>
+                <span className="text-xs text-muted-foreground">/ {sold}</span>
               </div>
             </div>
           );
           return (
-            <div key={r.name} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 }}>
-                <span style={{ fontSize: 13.5, fontWeight: 700 }}>{r.name}</span>
-                <span style={{ fontFamily: 'Roboto Mono', fontWeight: 700, fontSize: 13, color: r.dl < 0 ? 'var(--warn)' : 'var(--ok)' }}>{(r.dl > 0 ? '+' : '') + r.dl}</span>
+            <div key={r.name} className="border border-border rounded-card p-3">
+              <div className="flex justify-between items-center mb-2.5">
+                <span className="text-[13.5px] font-bold">{r.name}</span>
+                <span className={`font-mono font-bold text-[13px] ${r.dl < 0 ? 'text-warn' : 'text-ok'}`}>
+                  {(r.dl > 0 ? '+' : '') + r.dl}
+                </span>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div className="flex gap-2">
                 {pair(t.montaje, r.mS, r.mD, 'var(--primary)')}
                 {pair(t.colaudo, r.cS, r.cD, 'var(--accent)')}
               </div>
             </div>
           );
         })}
-      </div>
+      </CardContent>
     </Card>
   ) : (
-    <Card>
-      <CardHead title={t.by_phase} />
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+    <Card className="p-0 gap-0 overflow-hidden">
+      <CardHeader className="border-b p-4">
+        <CardTitle>{t.by_phase}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-0 overflow-x-auto">
+        <table className="w-full border-collapse text-[13px]">
           <thead>
             <tr>
               {[t.col_project, t.montaje + ' ' + t.kpi_sold, t.montaje + ' ' + t.kpi_done, t.colaudo + ' ' + t.kpi_sold, t.colaudo + ' ' + t.kpi_done, 'Delta'].map((c, i) => (
@@ -282,56 +299,66 @@ export default function Kpis() {
           </thead>
           <tbody>
             {phaseRows.map((r) => (
-              <tr key={r.name} style={{ borderTop: '1px solid var(--border)' }}>
+              <tr key={r.name} className="border-t border-border">
                 <td className={`${td} font-semibold`}>{r.name}</td>
                 {[r.mS, r.mD, r.cS, r.cD].map((v, j) => (
                   <td key={j} className={`${td} text-center font-mono`}>{v}</td>
                 ))}
-                <td className={`${td} text-center font-mono font-bold ${r.dl < 0 ? 'text-warn' : 'text-ok'}`}>{(r.dl > 0 ? '+' : '') + r.dl}</td>
+                <td className={`${td} text-center font-mono font-bold ${r.dl < 0 ? 'text-warn' : 'text-ok'}`}>
+                  {(r.dl > 0 ? '+' : '') + r.dl}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </CardContent>
     </Card>
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="flex flex-col gap-4">
       {/* KPI-07 va PRIMERO y contra el API real. Lo de abajo sigue siendo el mock del
           prototipo (datos inventados) hasta que la Fase 7 lo conecte. */}
       <DayGrid />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(148px,1fr))', gap: 13 }}>
+
+      <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(148px,1fr))' }}>
         {kcard(t.k_hours_norm, nf(tot.nh) + ' h', t.of_contract, 'var(--info)')}
         {kcard(t.k_hours_exec, nf(tot.exec) + ' h', overtime > 0 ? '+' + nf(overtime) + ' ' + t.k_overtime.toLowerCase() : '—', 'var(--accent)')}
         {kcard(t.kpi_sold + ' / ' + t.kpi_done, tot.sold + ' / ' + tot.done, t.days_unit, 'var(--primary)')}
         {kcard(t.k_progress, avgProg + '%', tot.done + ' / ' + tot.sold + ' ' + t.days_unit, avgProg >= 100 ? 'var(--ok)' : 'var(--text)')}
         {kcard(t.k_util_avg, avgUtil + '%', act.length + ' ' + t.nav_techs.toLowerCase(), avgUtil > 85 ? 'var(--warn)' : 'var(--ok)')}
       </div>
-      <Card>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', gap: 10 }}>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>{chartTitle}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{t.seg_by}</span>
-            <div style={{ display: 'flex', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: 2 }}>
+
+      <Card className="p-0 gap-0 overflow-hidden">
+        <div className="flex items-center justify-between px-4.5 py-3.5 border-b border-border flex-wrap gap-2.5">
+          <div className="text-sm font-bold">{chartTitle}</div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{t.seg_by}</span>
+            <div className="flex bg-muted border border-border rounded-lg p-0.5">
               {segBtn('project', t.seg_project)}
               {segBtn('tech', t.seg_tech)}
               {segBtn('phase', t.seg_phase)}
             </div>
           </div>
         </div>
-        <div ref={mainRef} style={{ height: 352, width: '100%' }} />
+        <div ref={mainRef} className="h-[352px] w-full" />
       </Card>
-      <div style={{ display: 'grid', gridTemplateColumns: movil ? '1fr' : '1.35fr 1fr', gap: 16 }}>
-        <Card>
-          <CardHead title={t.chart_hours} />
-          <div ref={hoursRef} style={{ height: 300, width: '100%' }} />
+
+      <div className={`grid gap-4 ${movil ? 'grid-cols-1' : 'grid-cols-[1.35fr_1fr]'}`}>
+        <Card className="p-0 gap-0 overflow-hidden">
+          <CardHeader className="border-b p-4">
+            <CardTitle>{t.chart_hours}</CardTitle>
+          </CardHeader>
+          <div ref={hoursRef} className="h-[300px] w-full" />
         </Card>
-        <Card>
-          <CardHead title={t.chart_roles} />
-          <div ref={rolesRef} style={{ height: 300, width: '100%' }} />
+        <Card className="p-0 gap-0 overflow-hidden">
+          <CardHeader className="border-b p-4">
+            <CardTitle>{t.chart_roles}</CardTitle>
+          </CardHeader>
+          <div ref={rolesRef} className="h-[300px] w-full" />
         </Card>
       </div>
+
       {byPhase}
     </div>
   );
