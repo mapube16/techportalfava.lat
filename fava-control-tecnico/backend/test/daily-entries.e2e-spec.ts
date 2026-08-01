@@ -15,7 +15,7 @@ import request from 'supertest';
 import { ventana } from '../src/modules/daily-entries/fecha';
 import { createTestApp, crearUsuario } from './helpers/app';
 import { MAQ_TEST, TEC_A, TEC_B, disconnectAll, ownerClient, truncateAll } from './helpers/db';
-import { crearProyecto } from './helpers/fixtures';
+import { crearOrden, crearProyecto } from './helpers/fixtures';
 import { signTestToken } from './helpers/tokens';
 
 const OID_A = 'oid-bitacora-tec-a';
@@ -59,6 +59,7 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
   let tokenHuerfano: string;
   let tokenAdmin: string;
   let proyectoId: string;
+  let ordenId: string;
 
   const http = () => request(app.getHttpServer());
   const auth = (token: string) => ({ authorization: `Bearer ${token}` });
@@ -66,7 +67,9 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
   /** Los 5 campos que BIT-01 captura. Se afirman UNO A UNO, nunca con un toEqual. */
   const datos = () => ({
     projectId: proyectoId,
-    machineModelId: MAQ_TEST,
+    // La maquina se elige por ORDEN desde la Fase 2.1: `machineModelId` ya no se
+    // captura, solo lo trae el historico migrado del Excel.
+    orderId: ordenId,
     conceptCode: 'DC',
     phase: 'MONTAJE',
     description: 'Montaje bancada linea 3',
@@ -80,13 +83,15 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
       .get(`/api/daily-entries?from=${rango.from}&to=${rango.to}`)
       .set(auth(token));
 
-  /** Proyecto con la maquina de prueba ASOCIADA: la maquina sale de las del proyecto. */
+  /**
+   * Proyecto con su ORDEN. Desde la Fase 2.1 el tecnico no elige un modelo de maquina
+   * sino la maquina contratada, que es lo unico que distingue dos PL 6000 del mismo
+   * proyecto. Se devuelven las dos porque el PUT del dia manda projectId y orderId.
+   */
   const proyectoConMaquina = async (d: Parameters<typeof crearProyecto>[0] = {}) => {
     const p = await crearProyecto(d);
-    await ownerClient.projectMachine.create({
-      data: { projectId: p.id, machineModelId: MAQ_TEST },
-    });
-    return p;
+    const orden = await crearOrden(p.id, { machineModelId: MAQ_TEST });
+    return Object.assign(p, { orderId: orden.id });
   };
 
   const filas = () => ownerClient.dailyEntry.count();
@@ -123,7 +128,9 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
       crearUsuario({ email: 'huerfano@fava.local', entraOid: OID_HUERFANO, roles: ['T'] }),
       crearUsuario({ email: 'admin-bitacora@fava.local', entraOid: OID_ADMIN, roles: ['A'] }),
     ]);
-    proyectoId = (await proyectoConMaquina()).id;
+    const proyecto = await proyectoConMaquina();
+    proyectoId = proyecto.id;
+    ordenId = proyecto.orderId;
   });
 
   // ── BIT-01: el dia entra y sale identico ──
@@ -136,7 +143,7 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
     // del fallo tiene que nombrarla.
     expect(body.date).toBe(DIA);
     expect(body.projectId).toBe(enviado.projectId);
-    expect(body.machineModelId).toBe(enviado.machineModelId);
+    expect(body.orderId).toBe(enviado.orderId);
     expect(body.conceptCode).toBe(enviado.conceptCode);
     expect(body.phase).toBe(enviado.phase);
     expect(body.description).toBe(enviado.description);
@@ -153,7 +160,7 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
 
     expect(fila.date).toBe(DIA);
     expect(fila.projectId).toBe(enviado.projectId);
-    expect(fila.machineModelId).toBe(enviado.machineModelId);
+    expect(fila.orderId).toBe(enviado.orderId);
     expect(fila.conceptCode).toBe(enviado.conceptCode);
     expect(fila.phase).toBe(enviado.phase);
     expect(fila.description).toBe(enviado.description);
@@ -169,16 +176,24 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
 
   it('cada fila lleva projectName y machineCode denormalizados', async () => {
     const p = await proyectoConMaquina({ name: 'Obra Cibao 2026' });
-    await guardar(DIA, { ...datos(), projectId: p.id }).expect(200);
+    await guardar(DIA, { ...datos(), projectId: p.id, orderId: p.orderId }).expect(200);
 
     const { body } = await semana().expect(200);
     expect(body.entries[0].projectName).toBe('Obra Cibao 2026');
-    expect(body.entries[0].machineCode).toBe('TEST-MAQ');
+    // La etiqueta de la ORDEN, que es lo que distingue dos PL 6000 del mismo proyecto.
+    expect(body.entries[0].machineCode).toBe(body.entries[0].orderLabel);
+    expect(body.entries[0].orderLabel).toEqual(expect.any(String));
+  });
+
+  it('una orden de OTRO proyecto → 400: el FK solo dice que existe, no que sea de aqui', async () => {
+    const ajeno = await proyectoConMaquina({ name: 'Obra ajena' });
+    const { body } = await guardar(DIA, { ...datos(), orderId: ajeno.orderId }).expect(400);
+    expect(body.message).toBe('ORDEN_DE_OTRO_PROYECTO');
   });
 
   it('un dia contra un proyecto CERRADO se sigue viendo con su nombre (para eso esta denormalizado)', async () => {
     const p = await proyectoConMaquina({ name: 'Obra Cerrada' });
-    await guardar(DIA, { ...datos(), projectId: p.id }).expect(200);
+    await guardar(DIA, { ...datos(), projectId: p.id, orderId: p.orderId }).expect(200);
     await ownerClient.project.update({ where: { id: p.id }, data: { isActive: false } });
 
     const { body } = await semana().expect(200);

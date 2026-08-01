@@ -24,7 +24,7 @@
  * `['technicians','full_name','employment_type']` a COLUMNAS_ENUM, anadir `'XX'` a
  * CONCEPTOS y anadir `'phase'` a COLUMNAS_PROHIBIDAS. El ultimo es el que mas dice:
  * con `'phase'` en la lista, la consulta devuelve `daily_entries.phase` y
- * `project_sold_days.phase`, o sea que encontraria un `delta` si alguien lo creara.
+ * `order_sold_days.phase`, o sea que encontraria un `delta` si alguien lo creara.
  */
 import { disconnectAll, ownerClient } from './helpers/db';
 
@@ -35,10 +35,14 @@ import { disconnectAll, ownerClient } from './helpers/db';
  */
 const FKS_EXIGIDAS: [tabla: string, columna: string, referencia: string][] = [
   ['technicians', 'role_type_id', 'role_types'],
-  ['projects', 'currency_code', 'currencies'],
-  ['project_sold_days', 'project_id', 'projects'],
-  ['project_sold_days', 'role_type_id', 'role_types'],
+  // La moneda y el importe se fueron de `projects` a `orders` en la Fase 2.1.
+  ['orders', 'project_id', 'projects'],
+  ['orders', 'machine_model_id', 'machine_models'],
+  ['orders', 'currency_code', 'currencies'],
+  ['order_sold_days', 'order_id', 'orders'],
+  ['order_sold_days', 'role_type_id', 'role_types'],
   ['daily_entries', 'project_id', 'projects'],
+  ['daily_entries', 'order_id', 'orders'],
   ['daily_entries', 'machine_model_id', 'machine_models'],
   ['daily_entries', 'role_type_id', 'role_types'],
 ];
@@ -51,7 +55,7 @@ const FKS_EXIGIDAS: [tabla: string, columna: string, referencia: string][] = [
 const COLUMNAS_ENUM: [tabla: string, columna: string, enumEsperado: string][] = [
   ['daily_entries', 'concept_code', 'concept_code'],
   ['daily_entries', 'phase', 'phase'],
-  ['project_sold_days', 'phase', 'phase'],
+  ['order_sold_days', 'phase', 'phase'],
   ['technicians', 'employment_type', 'employment_type'],
 ];
 

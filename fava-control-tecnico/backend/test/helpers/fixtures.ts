@@ -44,7 +44,6 @@ export function crearProyecto(
     country: string;
     supply: string;
     contractNumber: string;
-    currencyCode: string | null;
   }> = {},
 ) {
   n += 1;
@@ -56,7 +55,42 @@ export function crearProyecto(
       country: d.country ?? 'Republica Dominicana',
       supply: d.supply ?? 'Instalación Eléctrica',
       contractNumber: d.contractNumber ?? `34550${n}`,
+    },
+  });
+}
+
+/**
+ * La maquina contratada. Desde la Fase 2.1 es la dueña del contrato y el ancla de los
+ * dias vendidos, asi que casi ningun test de proyecto puede prescindir de ella.
+ *
+ * `commessa` lleva el contador porque es @unique en TODO el sistema: identifica la
+ * maquina en la casa matriz, y dos tests creando «342898» chocarian.
+ */
+export function crearOrden(
+  projectId: string,
+  d: Partial<{
+    label: string;
+    machineModelId: string | null;
+    commessa: string | null;
+    commessaShort: string | null;
+    oaNumber: string | null;
+    contractValue: number | null;
+    currencyCode: string | null;
+    isActive: boolean;
+  }> = {},
+) {
+  n += 1;
+  return ownerClient.order.create({
+    data: {
+      projectId,
+      label: d.label ?? `PL 6000 KG - ${n}`,
+      machineModelId: d.machineModelId === undefined ? MAQ_TEST : d.machineModelId,
+      commessa: d.commessa === undefined ? `3428${n}` : d.commessa,
+      commessaShort: d.commessaShort ?? null,
+      oaNumber: d.oaNumber ?? null,
+      contractValue: d.contractValue ?? null,
       currencyCode: d.currencyCode === undefined ? CUR_TEST : d.currencyCode,
+      isActive: d.isActive ?? true,
     },
   });
 }
@@ -78,6 +112,12 @@ export function crearProyecto(
 export function crearJornadaAprobada(d: {
   technicianId: string;
   projectId?: string;
+  /**
+   * A que maquina contratada fue el dia. Omitirlo NO es un descuido: reproduce el
+   * historico del Excel, donde de las 536 filas de JAV cero traen maquina, y esas
+   * jornadas tienen que caer en el bucket «sin orden» en vez de desaparecer.
+   */
+  orderId?: string | null;
   roleTypeId?: string;
   phase?: 'MONTAJE' | 'COLLAUDO' | null;
   date: Date;
@@ -88,6 +128,7 @@ export function crearJornadaAprobada(d: {
       date: d.date,
       status: 'approved',
       projectId: d.projectId ?? null,
+      orderId: d.orderId ?? null,
       roleTypeId: d.roleTypeId ?? ROL_TEST,
       phase: d.phase ?? null,
       conceptCode: d.projectId ? 'DC' : 'LR',

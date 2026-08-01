@@ -13,8 +13,9 @@
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { createTestApp, crearUsuario } from './helpers/app';
-import { CUR_TEST, MAQ_TEST, TEC_A, TEC_B, disconnectAll, ownerClient, truncateAll } from './helpers/db';
-import { crearJornadaAprobada, crearProyecto } from './helpers/fixtures';
+import { CUR_TEST, MAQ_TEST,
+  ROL_TEST, TEC_A, TEC_B, disconnectAll, ownerClient, truncateAll } from './helpers/db';
+import { crearJornadaAprobada, crearOrden, crearProyecto } from './helpers/fixtures';
 import { signTestToken } from './helpers/tokens';
 
 const OID_SUPER = 'oid-proj-super';
@@ -35,10 +36,12 @@ const ENCABEZADO = {
   contractNumber: '345500',
 };
 
+/**
+ * Desde la Fase 2.1 lo unico comercial que queda EN EL PROYECTO es `normalHours`. El
+ * OA, el importe y la moneda viven en la orden: JAV tiene tres importes distintos, uno
+ * por maquina, y J Macedo ninguno a nivel de proyecto.
+ */
 const COMERCIAL = {
-  oaNumber: 'OA0163864',
-  contractValue: 4150000.75,
-  currencyCode: CUR_TEST,
   normalHours: 8,
 };
 
@@ -115,52 +118,59 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
     expect(fila.createdById).toBe(actor.id);
   });
 
-  it('clientNit, oaNumber, contractValue, currencyCode y normalHours son opcionales', async () => {
+  it('clientNit y normalHours son opcionales', async () => {
     const p = await crear({ ...ENCABEZADO, clientNit: undefined });
     const leido = await detalle(p.id);
 
-    expect(leido).toMatchObject({
-      clientNit: null,
-      oaNumber: null,
-      contractValue: null,
-      currencyCode: null,
-      normalHours: null,
-    });
+    expect(leido).toMatchObject({ clientNit: null, normalHours: null });
   });
 
   // ── Decimal (Pitfall 5) ──
 
-  it('contractValue es un number en el detalle, no el string de Decimal.toJSON', async () => {
-    const p = await crear({ ...ENCABEZADO, ...COMERCIAL });
-    const leido = await detalle(p.id);
+  it('contractValue es un number en la orden, no el string de Decimal.toJSON', async () => {
+    const p = await crear({ ...ENCABEZADO });
+    const o = await crearOrden(p.id, { contractValue: 4150000.75 });
+    const [leida] = (await detalle(p.id)).orders;
 
-    expect(typeof leido.contractValue).toBe('number');
-    expect(leido.contractValue).toBe(4150000.75);
+    expect(leida.id).toBe(o.id);
+    expect(typeof leida.contractValue).toBe('number');
+    expect(leida.contractValue).toBe(4150000.75);
   });
 
-  it('contractValue es un number tambien en el listado', async () => {
-    await crear({ ...ENCABEZADO, ...COMERCIAL });
+  it('el importe del listado es la SUMA de las ordenes, no una columna del proyecto', async () => {
+    const p = await crear({ ...ENCABEZADO });
+    // Es el caso de JAV: tres maquinas, tres importes.
+    await crearOrden(p.id, { contractValue: 182500 });
+    await crearOrden(p.id, { contractValue: 130000 });
     const [fila] = await listar();
 
     expect(typeof fila.contractValue).toBe('number');
-    expect(fila.contractValue).toBe(4150000.75);
+    expect(fila.contractValue).toBe(312500);
+    expect(fila.currencyCode).toBe(CUR_TEST);
   });
 
-  it('contractValue nulo viaja como null, no como "null" ni como 0', async () => {
+  it('con ordenes en monedas distintas el listado no inventa una: currencyCode null', async () => {
     const p = await crear({ ...ENCABEZADO });
-    const leido = await detalle(p.id);
+    await ownerClient.currency.upsert({
+      where: { code: 'USD' },
+      update: {},
+      create: { code: 'USD', symbol: 'US$' },
+    });
+    await crearOrden(p.id, { contractValue: 100, currencyCode: CUR_TEST });
+    await crearOrden(p.id, { contractValue: 200, currencyCode: 'USD' });
     const [fila] = await listar();
 
-    expect(leido.contractValue).toBeNull();
-    expect(fila.contractValue).toBeNull();
+    // Sumar dos monedas y ponerle una etiqueta seria una cifra falsa.
+    expect(fila.contractValue).toBe(300);
+    expect(fila.currencyCode).toBeNull();
   });
 
-  it('un contractValue que no es numero → 400', async () => {
-    await http()
-      .post('/api/projects')
-      .set(auth(tokenAdmin))
-      .send({ ...ENCABEZADO, contractValue: '4.150.000' })
-      .expect(400);
+  it('un proyecto sin ordenes vale 0 y no null: el total es una suma, no un dato ausente', async () => {
+    await crear({ ...ENCABEZADO });
+    const [fila] = await listar();
+
+    expect(fila.contractValue).toBe(0);
+    expect(fila.currencyCode).toBeNull();
   });
 
   // ── Contrato del listado ──
@@ -180,7 +190,6 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
       'machineCodes',
       'name',
       'normalHours',
-      'oaNumber',
     ]);
     expect(fila.machineCodes).toEqual([]);
   });
@@ -196,15 +205,29 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
     },
   );
 
-  it('una moneda inexistente → 400 con codigo propio, nunca un 500 de FK', async () => {
+  it('la moneda ya no se acepta en el proyecto: es un recurso aparte → 400', async () => {
     const res = await http()
       .post('/api/projects')
       .set(auth(tokenAdmin))
       .send({ ...ENCABEZADO, currencyCode: 'ZZZ' })
       .expect(400);
 
-    expect(res.body.message).toBe('MONEDA_INEXISTENTE');
+    // 400 explicito y no un descarte en silencio: aceptarlo dejaria creer al cliente
+    // que la moneda quedo guardada en algun sitio.
+    expect(res.body.message).toBe('RECURSO_APARTE');
     expect(await ownerClient.project.count({ where: { name: ENCABEZADO.name } })).toBe(0);
+  });
+
+  it('una moneda inexistente en la ORDEN → 400 con codigo propio, nunca un 500 de FK', async () => {
+    const p = await crear({ ...ENCABEZADO });
+    const res = await http()
+      .post(`/api/projects/${p.id}/orders`)
+      .set(auth(tokenAdmin))
+      .send({ label: 'PL 6000 KG - 1-3428', currencyCode: 'ZZZ' })
+      .expect(400);
+
+    expect(res.body.message).toBe('MAQUINA_O_MONEDA_INEXISTENTE');
+    expect(await ownerClient.order.count({ where: { projectId: p.id } })).toBe(0);
   });
 
   // ── PATCH: encabezado y comercial, nada mas ──
@@ -215,15 +238,13 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
     const res = await http()
       .patch(`/api/projects/${p.id}`)
       .set(auth(tokenAdmin))
-      .send({ clientName: 'OTRO CLIENTE', contractValue: 999.99, normalHours: 10 })
+      .send({ clientName: 'OTRO CLIENTE', normalHours: 10 })
       .expect(200);
 
     expect(res.body).toMatchObject({ clientName: 'OTRO CLIENTE', normalHours: 10 });
-    expect(typeof res.body.contractValue).toBe('number');
-    expect(res.body.contractValue).toBe(999.99);
   });
 
-  it.each(['machines', 'machineModelIds', 'soldDays'])(
+  it.each(['orders', 'oaNumber', 'contractValue', 'currencyCode', 'machineModelIds', 'soldDays'])(
     'PATCH con %s en el body → 400: son recursos aparte',
     async (campo) => {
       const p = await crearProyecto();
@@ -289,10 +310,10 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
     await crear({ ...ENCABEZADO, contractNumber: '345501' }, tokenSuper);
   });
 
-  // ── Seleccion de maquinas: recurso aparte, y quitar una NUNCA toca la bitacora ──
+  // ── Las ordenes: la maquina contratada, con su commessa y su importe ──
 
-  describe('PUT /api/projects/:id/machines', () => {
-    /** Un segundo modelo del catalogo de arranque: la seleccion es de dos o mas. */
+  describe('CRUD de ordenes', () => {
+    /** Un segundo modelo del catalogo de arranque: un proyecto tiene varias maquinas. */
     let otra: { id: string; code: string };
 
     beforeEach(async () => {
@@ -302,174 +323,193 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
       });
     });
 
-    const fijar = async (id: string, machineModelIds: string[], token = tokenAdmin) =>
+    const crearOrdenApi = async (projectId: string, body: object, esperado = 201) =>
       (
         await http()
-          .put(`/api/projects/${id}/machines`)
-          .set(auth(token))
-          .send({ machineModelIds })
-          .expect(200)
+          .post(`/api/projects/${projectId}/orders`)
+          .set(auth(tokenAdmin))
+          .send(body)
+          .expect(esperado)
       ).body;
 
-    const maquinasDe = async (id: string) => (await detalle(id)).machines;
+    const ordenesDe = async (id: string) => (await detalle(id)).orders;
 
-    it('reemplaza la seleccion completa, y repetir el mismo PUT deja el mismo estado', async () => {
+    it('dos maquinas del MISMO modelo conviven si su commessa las distingue', async () => {
       const p = await crearProyecto();
+      // El caso literal de JAV Marata: dos `PL 6000 KG` que solo se diferencian por la
+      // commessa. Con la PK (proyecto, modelo) de `project_machines` esto era imposible.
+      await crearOrdenApi(p.id, {
+        label: 'PL 6000 KG - 1-3428',
+        machineModelId: MAQ_TEST,
+        commessa: '342898',
+        commessaShort: '3428',
+        contractValue: 182500,
+      });
+      await crearOrdenApi(p.id, {
+        label: 'PL 6000 KG - 2-3429',
+        machineModelId: MAQ_TEST,
+        commessa: '342998',
+        commessaShort: '3429',
+        contractValue: 182500,
+      });
 
-      const primera = await fijar(p.id, [MAQ_TEST, otra.id]);
-      expect(primera.map((m: { machineModelId: string }) => m.machineModelId).sort()).toEqual(
-        [MAQ_TEST, otra.id].sort(),
-      );
-
-      // Idempotente: el mismo PUT otra vez no duplica ni pierde nada.
-      const segunda = await fijar(p.id, [MAQ_TEST, otra.id]);
-      expect(segunda).toEqual(primera);
-
-      // «Reemplaza», no «añade»: la que no viene en el body se va.
-      const tercera = await fijar(p.id, [otra.id]);
-      expect(tercera).toHaveLength(1);
-      expect(tercera[0].machineModelId).toBe(otra.id);
-    });
-
-    it('el contrato de cada maquina seleccionada es machineModelId, code, description y entryCount', async () => {
-      const p = await crearProyecto();
-      await fijar(p.id, [MAQ_TEST]);
-
-      const [m] = await maquinasDe(p.id);
-      expect(Object.keys(m).sort()).toEqual([
-        'code',
-        'description',
-        'entryCount',
-        'machineModelId',
+      const ordenes = await ordenesDe(p.id);
+      expect(ordenes).toHaveLength(2);
+      expect(ordenes.map((o: { commessaShort: string }) => o.commessaShort)).toEqual([
+        '3428',
+        '3429',
       ]);
-      expect(m).toMatchObject({ machineModelId: MAQ_TEST, code: 'TEST-MAQ', entryCount: 0 });
+      // Y cada una con su propia matriz vendido/ejecutado, como las hojas del Excel.
+      expect(ordenes.every((o: { matrix: unknown[] }) => Array.isArray(o.matrix))).toBe(true);
     });
 
-    it('entryCount cuenta las jornadas de ESE proyecto con ese modelo, no las de otro', async () => {
+    it('el contrato de una orden es label, commessa, OA, importe, moneda, modelo y matriz', async () => {
       const p = await crearProyecto();
-      const otroProyecto = await crearProyecto();
+      await crearOrdenApi(p.id, { label: 'PC 4000 -3430 + 4 SILOS', machineModelId: MAQ_TEST });
 
-      // Dos jornadas del proyecto (tecnicos distintos: @@unique(tecnico, fecha)).
-      await crearJornadaAprobada({
-        technicianId: TEC_A,
-        projectId: p.id,
-        date: new Date('2026-03-02T00:00:00Z'),
-      });
-      await crearJornadaAprobada({
-        technicianId: TEC_B,
-        projectId: p.id,
-        date: new Date('2026-03-02T00:00:00Z'),
-      });
-      // Y una del OTRO proyecto con la misma maquina: no debe sumar aqui.
-      await crearJornadaAprobada({
-        technicianId: TEC_A,
-        projectId: otroProyecto.id,
-        date: new Date('2026-03-03T00:00:00Z'),
-      });
-
-      await fijar(p.id, [MAQ_TEST, otra.id]);
-      const maquinas = await maquinasDe(p.id);
-      const buscar = (idMaquina: string) =>
-        maquinas.find((m: { machineModelId: string }) => m.machineModelId === idMaquina);
-
-      expect(buscar(MAQ_TEST).entryCount).toBe(2);
-      expect(buscar(otra.id).entryCount).toBe(0);
+      const [o] = await ordenesDe(p.id);
+      expect(Object.keys(o).sort()).toEqual([
+        'commessa',
+        'commessaShort',
+        'contractValue',
+        'currencyCode',
+        'id',
+        'isActive',
+        'label',
+        'machineModelId',
+        'matrix',
+        'oaNumber',
+      ]);
+      expect(o).toMatchObject({ label: 'PC 4000 -3430 + 4 SILOS', machineModelId: MAQ_TEST });
     });
 
-    it('quitar una maquina con jornadas → 200, y la jornada CONSERVA su modelo', async () => {
+    it('la etiqueta es lo unico obligatorio: la commessa llega cuando se firma', async () => {
       const p = await crearProyecto();
-      await fijar(p.id, [MAQ_TEST]);
-      const jornada = await crearJornadaAprobada({
-        technicianId: TEC_A,
-        projectId: p.id,
-        date: new Date('2026-03-04T00:00:00Z'),
-      });
+      const o = await crearOrdenApi(p.id, { label: 'Por definir' });
 
-      // Decision bloqueada: «se avisa y se permite». El aviso lo da la UI con el
-      // entryCount; el servidor permite. La jornada apunta al modelo GLOBAL.
-      expect(await fijar(p.id, [])).toEqual([]);
-
-      const relectura = await ownerClient.dailyEntry.findUniqueOrThrow({
-        where: { id: jornada.id },
-      });
-      expect(relectura.machineModelId).toBe(MAQ_TEST);
-      expect(relectura.projectId).toBe(p.id);
-      expect(await ownerClient.machineModel.count({ where: { id: MAQ_TEST } })).toBe(1);
+      expect(o).toMatchObject({ commessa: null, oaNumber: null, contractValue: null });
     });
 
-    it('machineModelIds vacio → 200 y proyecto sin maquinas', async () => {
+    it('sin etiqueta → 400', async () => {
       const p = await crearProyecto();
-      await fijar(p.id, [MAQ_TEST]);
-
-      expect(await fijar(p.id, [])).toEqual([]);
-      expect(await maquinasDe(p.id)).toEqual([]);
+      await crearOrdenApi(p.id, { machineModelId: MAQ_TEST }, 400);
     });
 
-    it('un machineModelId inexistente → 400 y la seleccion previa NO se toca', async () => {
+    it('una orden sin modelo de maquina es valida: hay alcances que no son un modelo', async () => {
       const p = await crearProyecto();
-      await fijar(p.id, [MAQ_TEST]);
+      // «PC 4000 -3430 + 4 SILOS» no es un modelo del catalogo, es alcance contratado.
+      const o = await crearOrdenApi(p.id, { label: 'PC 4000 + 4 SILOS', machineModelId: null });
+
+      expect(o.machineModelId).toBeNull();
+    });
+
+    it('la commessa es unica en TODO el sistema, no por proyecto → 400', async () => {
+      const a = await crearProyecto();
+      const b = await crearProyecto();
+      await crearOrdenApi(a.id, { label: 'PL 6000', commessa: '342898' });
+
+      // Identifica la maquina en la casa matriz: dos proyectos no pueden reclamarla.
+      const res = await crearOrdenApi(b.id, { label: 'Otra', commessa: '342898' }, 400);
+      expect(res.message).toBe('COMMESSA_DUPLICADA');
+    });
+
+    it('un modelo de maquina inexistente → 400, no un 500 de FK', async () => {
+      const p = await crearProyecto();
+      const res = await crearOrdenApi(p.id, { label: 'X', machineModelId: FANTASMA }, 400);
+      expect(res.message).toBe('MAQUINA_O_MONEDA_INEXISTENTE');
+    });
+
+    it('POST sobre un proyecto que no existe → 404', async () => {
+      await crearOrdenApi(FANTASMA, { label: 'X' }, 404);
+    });
+
+    it('el PATCH edita la orden sin tocar lo que no viene en el body', async () => {
+      const p = await crearProyecto();
+      const o = await crearOrdenApi(p.id, { label: 'PL 6000', commessa: '342898' });
 
       const res = await http()
-        .put(`/api/projects/${p.id}/machines`)
+        .patch(`/api/orders/${o.id}`)
         .set(auth(tokenAdmin))
-        .send({ machineModelIds: [otra.id, '77777777-7777-4777-8777-777777777777'] })
-        .expect(400);
+        .send({ oaNumber: 'OA0159105' })
+        .expect(200);
 
-      expect(res.body.message).toBe('MAQUINA_INEXISTENTE');
-      // Todo o nada: sigue exactamente la seleccion anterior.
-      const maquinas = await maquinasDe(p.id);
-      expect(maquinas.map((m: { machineModelId: string }) => m.machineModelId)).toEqual([MAQ_TEST]);
+      expect(res.body).toMatchObject({
+        oaNumber: 'OA0159105',
+        label: 'PL 6000',
+        commessa: '342898',
+      });
     });
 
-    it('ids repetidos no revientan la clave primaria compuesta', async () => {
+    it('un PATCH sin ningun campo reconocido → 400 (no mover updated_at por nada)', async () => {
       const p = await crearProyecto();
-      expect(await fijar(p.id, [MAQ_TEST, MAQ_TEST])).toHaveLength(1);
+      const o = await crearOrdenApi(p.id, { label: 'PL 6000' });
+
+      await http().patch(`/api/orders/${o.id}`).set(auth(tokenAdmin)).send({ foo: 1 }).expect(400);
     });
 
-    it.each([
-      ['machineModelIds que no es un array', { machineModelIds: MAQ_TEST }],
-      ['machineModelIds ausente', {}],
-      ['un id que no es UUID', { machineModelIds: ['no-soy-uuid'] }],
-    ])('%s → 400', async (_caso, body) => {
+    it('se borra si nadie la referencia', async () => {
       const p = await crearProyecto();
+      const o = await crearOrdenApi(p.id, { label: 'Creada por error' });
+
+      await http().delete(`/api/orders/${o.id}`).set(auth(tokenAdmin)).expect(200);
+      expect(await ordenesDe(p.id)).toEqual([]);
+    });
+
+    it('NO se borra si tiene bitacora: el dia registrado manda sobre el borrado', async () => {
+      const p = await crearProyecto();
+      const o = await crearOrden(p.id);
+      await crearJornadaAprobada({
+        technicianId: TEC_A,
+        projectId: p.id,
+        orderId: o.id,
+        date: new Date('2026-03-02T00:00:00Z'),
+      });
+
+      const res = await http().delete(`/api/orders/${o.id}`).set(auth(tokenAdmin)).expect(400);
+      expect(res.body.message).toBe('ORDEN_CON_BITACORA');
+      expect(await ordenesDe(p.id)).toHaveLength(1);
+    });
+
+    it('NO se borra si tiene dias vendidos', async () => {
+      const p = await crearProyecto();
+      const o = await crearOrden(p.id);
       await http()
-        .put(`/api/projects/${p.id}/machines`)
+        .put(`/api/orders/${o.id}/sold-days`)
         .set(auth(tokenAdmin))
-        .send(body)
-        .expect(400);
+        .send({ roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 })
+        .expect(200);
+
+      const res = await http().delete(`/api/orders/${o.id}`).set(auth(tokenAdmin)).expect(400);
+      expect(res.body.message).toBe('ORDEN_CON_DIAS_VENDIDOS');
     });
 
-    it('PUT de maquinas sobre un proyecto que no existe → 404', async () => {
-      await http()
-        .put(`/api/projects/${FANTASMA}/machines`)
-        .set(auth(tokenAdmin))
-        .send({ machineModelIds: [] })
-        .expect(404);
-    });
-
-    it('machineCodes del listado refleja la seleccion (son los chips de Projects.tsx)', async () => {
+    it('machineCodes del listado son las etiquetas de las ordenes (los chips de Projects.tsx)', async () => {
       const p = await crearProyecto();
-      await fijar(p.id, [MAQ_TEST, otra.id]);
+      await crearOrden(p.id, { label: 'PL 6000 KG - 1-3428', machineModelId: MAQ_TEST });
+      await crearOrden(p.id, { label: 'PC 4000 -3430', machineModelId: otra.id });
 
       const fila = (await listar()).find((f: { id: string }) => f.id === p.id);
-      expect(fila.machineCodes).toEqual(['TEST-MAQ', otra.code].sort());
+      expect(fila.machineCodes).toEqual(['PC 4000 -3430', 'PL 6000 KG - 1-3428']);
     });
   });
 
   /**
    * `['get', '/api/projects']` YA NO esta en esta lista: 03-03 relajo ese metodo a
-   * `T` con una proyeccion propia (ver el describe de abajo). Las SEIS rutas que
-   * quedan son la prueba de que se relajo UN metodo y no la clase: si alguien mueve
-   * el `@Roles('T','A','S')` al `@Controller`, caen las seis y el mensaje nombra
-   * cual quedo abierta.
+   * `T` con una proyeccion propia (ver el describe de abajo). Las rutas que quedan
+   * son la prueba de que se relajo UN metodo y no la clase: si alguien mueve el
+   * `@Roles('T','A','S')` al `@Controller`, caen todas y el mensaje nombra cual
+   * quedo abierta. Incluye las de `/api/orders`, que es otro controlador con su
+   * propio `@Roles` y podria quedarse suelto sin que se notase.
    */
   it.each([
     ['post', '/api/projects'],
     ['get', `/api/projects/${FANTASMA}`],
     ['patch', `/api/projects/${FANTASMA}`],
     ['patch', `/api/projects/${FANTASMA}/active`],
-    ['put', `/api/projects/${FANTASMA}/machines`],
-    ['put', `/api/projects/${FANTASMA}/sold-days`],
+    ['post', `/api/projects/${FANTASMA}/orders`],
+    ['patch', `/api/orders/${FANTASMA}`],
+    ['delete', `/api/orders/${FANTASMA}`],
+    ['put', `/api/orders/${FANTASMA}/sold-days`],
   ])('un Tecnico raso en %s %s → 403', async (metodo, ruta) => {
     await (http() as unknown as Record<string, (r: string) => request.Test>)
       [metodo](ruta)
@@ -538,40 +578,50 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
 
     const listarTec = () => listar(tokenTec);
 
-    const conMaquinas = (projectId: string, ids: string[]) =>
-      ownerClient.projectMachine.createMany({
-        data: ids.map((machineModelId) => ({ projectId, machineModelId })),
-      });
+    /** Una orden por maquina: es lo que el tecnico ve al registrar el dia. */
+    const conMaquinas = async (projectId: string, ids: string[]) => {
+      for (const machineModelId of ids)
+        await crearOrden(projectId, { machineModelId, label: `Orden ${machineModelId.slice(-4)}` });
+    };
 
-    /** Proyecto con TODO el dato comercial relleno: si algo se filtra, se filtra aqui. */
-    const crearSecreto = (name = 'Obra visible para el tecnico') =>
-      crear({
+    /**
+     * Proyecto con TODO el dato comercial relleno: si algo se filtra, se filtra aqui.
+     * Desde la Fase 2.1 el importe y el OA viven en la ORDEN, que es justo lo que el
+     * tecnico SI recibe (necesita elegirla), asi que la fuga es ahora mas facil.
+     */
+    const crearSecreto = async (name = 'Obra visible para el tecnico') => {
+      const p = await crear({
         ...ENCABEZADO,
         name,
         clientName: 'CLIENTE-SECRETO',
         contractNumber: '345599',
+        normalHours: 9,
+      });
+      await crearOrden(p.id, {
+        label: 'PL 6000 KG - 1-3428',
+        machineModelId: MAQ_TEST,
+        commessaShort: '3428',
         oaNumber: 'OA-SECRETO',
         contractValue: 4150000.5,
         currencyCode: CUR_TEST,
-        normalHours: 9,
       });
+      return p;
+    };
 
-    it('un Tecnico recibe 200 y EXACTAMENTE las claves id, machines y name', async () => {
+    it('un Tecnico recibe 200 y EXACTAMENTE las claves id, name y orders', async () => {
       const p = await crearSecreto();
-      await conMaquinas(p.id, [MAQ_TEST]);
 
       const filas = await listarTec();
 
       expect(filas).toHaveLength(1);
       // Conjunto EXACTO, no «contractValue es undefined»: una errata en el nombre del
       // campo pasaria esa comprobacion sin enterarse de que el dato viaja igual.
-      expect(Object.keys(filas[0]).sort()).toEqual(['id', 'machines', 'name']);
+      expect(Object.keys(filas[0]).sort()).toEqual(['id', 'name', 'orders']);
       expect(filas[0]).toMatchObject({ id: p.id, name: 'Obra visible para el tecnico' });
     });
 
-    it('ningun dato comercial aparece en el JSON serializado, ni anidado', async () => {
-      const p = await crearSecreto();
-      await conMaquinas(p.id, [MAQ_TEST]);
+    it('ningun dato comercial aparece en el JSON serializado, ni anidado en orders', async () => {
+      await crearSecreto();
 
       const crudo = JSON.stringify(await listarTec());
 
@@ -580,22 +630,23 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
       expect(SECRETOS.filter((s) => crudo.includes(s))).toEqual([]);
     });
 
-    it('cada maquina llega con machineModelId, code y description, y nada mas', async () => {
-      const p = await crearSecreto();
-      await conMaquinas(p.id, [MAQ_TEST]);
+    it('cada orden llega con id, label, commessaShort y machineModelId, y nada mas', async () => {
+      await crearSecreto();
 
       const [fila] = await listarTec();
-      expect(fila.machines).toHaveLength(1);
-      // `machineModelId` es lo que la bitacora escribe en daily_entries.machine_model_id.
-      expect(Object.keys(fila.machines[0]).sort()).toEqual([
-        'code',
-        'description',
+      expect(fila.orders).toHaveLength(1);
+      // `id` es lo que la bitacora escribe en daily_entries.order_id; `commessaShort`
+      // es como la maquina se nombra en obra y lo que distingue dos PL 6000 iguales.
+      expect(Object.keys(fila.orders[0]).sort()).toEqual([
+        'commessaShort',
+        'id',
+        'label',
         'machineModelId',
       ]);
-      expect(fila.machines[0]).toEqual({
+      expect(fila.orders[0]).toMatchObject({
         machineModelId: MAQ_TEST,
-        code: 'TEST-MAQ',
-        description: 'Modelo de prueba',
+        label: 'PL 6000 KG - 1-3428',
+        commessaShort: '3428',
       });
     });
 
@@ -614,24 +665,34 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
       expect(await listar(tokenAdmin)).toHaveLength(total);
     });
 
-    it('un proyecto sin maquinas llega con machines vacio, no se omite ni revienta', async () => {
+    it('un proyecto sin ordenes llega con orders vacio, no se omite ni revienta', async () => {
       const p = await crearProyecto({ name: 'Obra sin maquinas' });
 
       const filas = await listarTec();
       expect(filas).toHaveLength(1);
-      expect(filas[0]).toEqual({ id: p.id, name: 'Obra sin maquinas', machines: [] });
+      expect(filas[0]).toEqual({ id: p.id, name: 'Obra sin maquinas', orders: [] });
     });
 
-    it('las maquinas llegan ordenadas por code, no por orden de insercion', async () => {
+    it('las ordenes llegan ordenadas por label, no por orden de insercion', async () => {
       const p = await crearProyecto({ name: 'Obra con dos maquinas' });
       // Sembradas al reves de como deben salir.
-      await conMaquinas(p.id, [MAQ_Z, MAQ_M]);
+      await crearOrden(p.id, { label: 'ZZZ ultima', machineModelId: MAQ_Z });
+      await crearOrden(p.id, { label: 'AAA primera', machineModelId: MAQ_M });
 
       const [fila] = await listarTec();
-      expect(fila.machines.map((m: { code: string }) => m.code)).toEqual([
-        'MMM-0303-M',
-        'ZZZ-0303-Z',
+      expect(fila.orders.map((o: { label: string }) => o.label)).toEqual([
+        'AAA primera',
+        'ZZZ ultima',
       ]);
+    });
+
+    it('una orden DESACTIVADA no se le ofrece al tecnico', async () => {
+      const p = await crearProyecto({ name: 'Obra con una orden cerrada' });
+      await crearOrden(p.id, { label: 'Viva', machineModelId: MAQ_M });
+      await crearOrden(p.id, { label: 'Cerrada', machineModelId: MAQ_Z, isActive: false });
+
+      const [fila] = await listarTec();
+      expect(fila.orders.map((o: { label: string }) => o.label)).toEqual(['Viva']);
     });
 
     it('los proyectos llegan ordenados por name ascendente', async () => {
@@ -646,17 +707,17 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
 
     it('un Admin y un Super Admin siguen recibiendo la forma ANTERIOR', async () => {
       const p = await crearSecreto();
-      await conMaquinas(p.id, [MAQ_TEST]);
 
       for (const token of [tokenAdmin, tokenSuper]) {
         const [fila] = await listar(token);
+        // El OA ya no esta en el listado: vive en la orden. Lo que si sigue viendo el
+        // admin es el cliente, los chips y el importe total sumado de sus ordenes.
         expect(fila).toMatchObject({
           id: p.id,
           clientName: 'CLIENTE-SECRETO',
-          oaNumber: 'OA-SECRETO',
-          machineCodes: ['TEST-MAQ'],
+          machineCodes: ['PL 6000 KG - 1-3428'],
         });
-        expect(typeof fila.contractValue).toBe('number');
+        expect(fila.contractValue).toBe(4150000.5);
       }
     });
   });

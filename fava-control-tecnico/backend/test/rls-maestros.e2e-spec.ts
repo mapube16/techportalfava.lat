@@ -22,9 +22,9 @@ import {
   ownerClient,
   truncateAll,
 } from './helpers/db';
-import { crearProyecto } from './helpers/fixtures';
+import { crearOrden, crearProyecto } from './helpers/fixtures';
 
-/** Segundo modelo de maquina, para que el INSERT en project_machines no choque con la siembra. */
+/** Segundo modelo de maquina, para que el INSERT en orders no choque con la siembra. */
 const MAQ_EXTRA = '55555555-5555-4555-8555-555555555555';
 
 /** Lo que hace RlsInterceptor en cada peticion de un tecnico, reducido a lo esencial. */
@@ -81,8 +81,8 @@ const TABLAS = [
   'machine_models',
   'technicians',
   'projects',
-  'project_machines',
-  'project_sold_days',
+  'orders',
+  'order_sold_days',
 ] as const;
 
 type Tabla = (typeof TABLAS)[number];
@@ -136,16 +136,16 @@ const SQL: Record<Tabla, { insert: string; update: string; borrar: string }> = {
     update: `UPDATE "projects" SET "supply" = 'editado' WHERE "name" <> 'Colado'`,
     borrar: `DELETE FROM "projects" WHERE "name" = 'Colado'`,
   },
-  project_machines: {
+  orders: {
     // Se rellena en beforeEach con el id del proyecto sembrado.
     insert: '',
     update: '',
-    borrar: `DELETE FROM "project_machines" WHERE "machine_model_id" = '${MAQ_EXTRA}'`,
+    borrar: `DELETE FROM "orders" WHERE "machine_model_id" = '${MAQ_EXTRA}'`,
   },
-  project_sold_days: {
+  order_sold_days: {
     insert: '',
     update: '',
-    borrar: `DELETE FROM "project_sold_days" WHERE "phase" = 'COLLAUDO'`,
+    borrar: `DELETE FROM "order_sold_days" WHERE "phase" = 'COLLAUDO'`,
   },
 };
 
@@ -162,22 +162,20 @@ describe('RLS: maestros y catalogos leidos por todos, escritos solo por admin', 
     });
 
     const proyecto = await crearProyecto();
-    await ownerClient.projectMachine.create({
-      data: { projectId: proyecto.id, machineModelId: MAQ_TEST },
-    });
-    await ownerClient.projectSoldDays.create({
-      data: { projectId: proyecto.id, roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 },
+    const orden = await crearOrden(proyecto.id, { machineModelId: MAQ_TEST });
+    await ownerClient.orderSoldDays.create({
+      data: { orderId: orden.id, roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 },
     });
 
-    SQL.project_machines.insert = `INSERT INTO "project_machines" ("project_id","machine_model_id")
-      VALUES ('${proyecto.id}','${MAQ_EXTRA}')`;
-    SQL.project_machines.update = `UPDATE "project_machines" SET "machine_model_id" = "machine_model_id"
+    SQL.orders.insert = `INSERT INTO "orders" ("id","project_id","label","machine_model_id","updated_at")
+      VALUES (gen_random_uuid(),'${proyecto.id}','RLS PL 6000','${MAQ_EXTRA}',now())`;
+    SQL.orders.update = `UPDATE "orders" SET "label" = "label"
       WHERE "project_id" = '${proyecto.id}'`;
-    SQL.project_sold_days.insert = `INSERT INTO "project_sold_days"
-        ("id","project_id","role_type_id","phase","sold_days","updated_at")
-      VALUES (gen_random_uuid(),'${proyecto.id}','${ROL_TEST}','COLLAUDO',7,now())`;
-    SQL.project_sold_days.update = `UPDATE "project_sold_days" SET "sold_days" = 99
-      WHERE "project_id" = '${proyecto.id}'`;
+    SQL.order_sold_days.insert = `INSERT INTO "order_sold_days"
+        ("id","order_id","role_type_id","phase","sold_days","updated_at")
+      VALUES (gen_random_uuid(),'${orden.id}','${ROL_TEST}','COLLAUDO',7,now())`;
+    SQL.order_sold_days.update = `UPDATE "order_sold_days" SET "sold_days" = 99
+      WHERE "order_id" = '${orden.id}'`;
   });
 
   afterAll(async () => {

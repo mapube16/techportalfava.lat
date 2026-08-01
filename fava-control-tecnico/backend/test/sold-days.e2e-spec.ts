@@ -19,7 +19,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { createTestApp, crearUsuario } from './helpers/app';
 import { MAQ_TEST, ROL_TEST, TEC_A, TEC_B, disconnectAll, ownerClient, truncateAll } from './helpers/db';
-import { crearJornadaAprobada, crearProyecto, crearTecnico } from './helpers/fixtures';
+import { crearJornadaAprobada, crearOrden, crearProyecto, crearTecnico } from './helpers/fixtures';
 import { signTestToken } from './helpers/tokens';
 
 const OID_ADMIN = 'oid-sold-admin';
@@ -81,19 +81,31 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   const detalle = async (id: string) =>
     (await http().get(`/api/projects/${id}`).set(auth(tokenAdmin)).expect(200)).body;
 
-  const matrizDe = async (id: string): Promise<Fila[]> => (await detalle(id)).matrix;
+  /**
+   * Proyecto CON su orden. Desde la Fase 2.1 los dias vendidos cuelgan de la maquina
+   * contratada, asi que un proyecto sin orden no tiene donde vender: cada test que
+   * mide vendido/ejecutado necesita las dos cosas.
+   */
+  const proyectoConOrden = async () => {
+    const p = await crearProyecto();
+    const o = await crearOrden(p.id);
+    return { p, o };
+  };
+
+  /** La matriz de la PRIMERA orden, que es la unica que crean estos tests. */
+  const matrizDe = async (id: string): Promise<Fila[]> => (await detalle(id)).orders[0].matrix;
 
   const celda = (matrix: Fila[], roleTypeId: string, phase: Fila['phase']) =>
     matrix.find((f) => f.roleTypeId === roleTypeId && f.phase === phase) as Fila;
 
   const vender = (
-    projectId: string,
+    orderId: string,
     body: Record<string, unknown>,
     esperado = 200,
     token = tokenAdmin,
   ) =>
     http()
-      .put(`/api/projects/${projectId}/sold-days`)
+      .put(`/api/orders/${orderId}/sold-days`)
       .set(auth(token))
       .send(body)
       .expect(esperado);
@@ -102,6 +114,8 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   const jornada = (d: {
     technicianId: string;
     projectId: string;
+    /** Sin orden la jornada cae en el bucket «sin orden», que se prueba aparte. */
+    orderId?: string | null;
     date: Date;
     phase?: 'MONTAJE' | 'COLLAUDO' | null;
     roleTypeId?: string | null;
@@ -111,6 +125,7 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
       data: {
         technicianId: d.technicianId,
         projectId: d.projectId,
+        orderId: d.orderId ?? null,
         date: d.date,
         phase: d.phase ?? null,
         roleTypeId: d.roleTypeId ?? null,
@@ -123,7 +138,7 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   // ── Las filas salen del catalogo, nunca de una lista cableada ──
 
   it('crear un rol en el catalogo anade sus dos filas a la matriz sin tocar codigo', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
     const antes = await matrizDe(p.id);
 
     const nuevo = await ownerClient.roleType.create({ data: { name: `${PREFIJO} recien creado` } });
@@ -137,7 +152,7 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   });
 
   it('hay exactamente una fila por rol ACTIVO x fase, y las vacias valen 0', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
     const activos = await ownerClient.roleType.count({ where: { isActive: true } });
 
     const matrix = await matrizDe(p.id);
@@ -154,7 +169,7 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   });
 
   it('el contrato de la fila es el que consume ProjectDetail.tsx', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
     const [fila] = await matrizDe(p.id);
 
     expect(Object.keys(fila).sort()).toEqual([
@@ -168,34 +183,33 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
     ]);
   });
 
-  it('el contrato del detalle completo es encabezado + comercial + machines + matrix', async () => {
-    const p = await crearProyecto();
+  it('el contrato del detalle es encabezado + ordenes con su matriz + lo no atribuido', async () => {
+    const { p } = await proyectoConOrden();
 
+    // Sin `oaNumber`, `contractValue` ni `currencyCode`: se fueron a la orden en la
+    // Fase 2.1 porque JAV tiene tres importes distintos y J Macedo ninguno.
     expect(Object.keys(await detalle(p.id)).sort()).toEqual([
       'clientName',
       'clientNit',
       'contractNumber',
-      'contractValue',
       'country',
-      'currencyCode',
       'id',
       'isActive',
       'locality',
-      'machines',
-      'matrix',
       'name',
       'normalHours',
-      'oaNumber',
+      'orders',
       'supply',
+      'unassigned',
     ]);
   });
 
   it('un rol desactivado no aparece... salvo que tenga vendido, y entonces con roleTypeActive false', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
 
     expect(celda(await matrizDe(p.id), rolOff.id, 'MONTAJE')).toBeUndefined();
 
-    await vender(p.id, { roleTypeId: rolOff.id, phase: 'MONTAJE', soldDays: 30 });
+    await vender(o.id, { roleTypeId: rolOff.id, phase: 'MONTAJE', soldDays: 30 });
 
     // Si desapareciera, el total del proyecto cambiaria solo y el KPI se
     // descuadraria en silencio.
@@ -207,11 +221,12 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   });
 
   it('un rol desactivado con solo EJECUTADO tambien aparece', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
     const tec = await crearTecnico({ roleTypeId: rolOff.id });
     await jornada({
       technicianId: tec.id,
       projectId: p.id,
+      orderId: o.id,
       date: new Date('2026-03-09T00:00:00Z'),
       phase: 'COLLAUDO',
       roleTypeId: rolOff.id,
@@ -228,9 +243,9 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   // ── El delta: sold − executed, en el servidor ──
 
   it('PUT de una celda → 200 y el GET devuelve sold', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
 
-    await vender(p.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 });
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 });
 
     expect(celda(await matrizDe(p.id), ROL_TEST, 'MONTAJE')).toMatchObject({
       sold: 10,
@@ -240,11 +255,12 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   });
 
   it('con sold 10 y UNA jornada aprobada de ese rol y fase: executed 1, delta 9', async () => {
-    const p = await crearProyecto();
-    await vender(p.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 });
+    const { p, o } = await proyectoConOrden();
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 });
     await crearJornadaAprobada({
       technicianId: TEC_A,
       projectId: p.id,
+      orderId: o.id,
       roleTypeId: ROL_TEST,
       phase: 'MONTAJE',
       date: new Date('2026-03-02T00:00:00Z'),
@@ -258,10 +274,11 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   });
 
   it('con sold 0 y esa misma jornada el delta sale NEGATIVO: -1 (no +1)', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
     await crearJornadaAprobada({
       technicianId: TEC_A,
       projectId: p.id,
+      orderId: o.id,
       roleTypeId: ROL_TEST,
       phase: 'MONTAJE',
       date: new Date('2026-03-02T00:00:00Z'),
@@ -274,12 +291,13 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   });
 
   it('bajar sold por debajo de executed esta PERMITIDO: 1 vendido, 3 ejecutados → -2', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
     const tecC = await crearTecnico();
     for (const [i, tec] of [TEC_A, TEC_B, tecC.id].entries()) {
       await crearJornadaAprobada({
         technicianId: tec,
         projectId: p.id,
+      orderId: o.id,
         roleTypeId: ROL_TEST,
         phase: 'COLLAUDO',
         date: new Date(`2026-03-0${i + 1}T00:00:00Z`),
@@ -287,7 +305,7 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
     }
 
     // Nada de CHECK (sold >= executed): el negativo es un hecho real del negocio.
-    await vender(p.id, { roleTypeId: ROL_TEST, phase: 'COLLAUDO', soldDays: 1 });
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'COLLAUDO', soldDays: 1 });
 
     expect(celda(await matrizDe(p.id), ROL_TEST, 'COLLAUDO')).toMatchObject({
       sold: 1,
@@ -299,8 +317,8 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   // ── Nada de campos calculados en el body ──
 
   it.each(['delta', 'executed'])('un body con %s → 400 CAMPO_CALCULADO_NO_ADMITIDO', async (campo) => {
-    const p = await crearProyecto();
-    const res = await vender(p.id, {
+    const { p, o } = await proyectoConOrden();
+    const res = await vender(o.id, {
       roleTypeId: ROL_TEST,
       phase: 'MONTAJE',
       soldDays: 5,
@@ -309,7 +327,7 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
 
     expect(res.body.message).toBe('CAMPO_CALCULADO_NO_ADMITIDO');
     // Y no se ha escrito nada de paso.
-    expect(await ownerClient.projectSoldDays.count({ where: { projectId: p.id } })).toBe(0);
+    expect(await ownerClient.orderSoldDays.count({ where: { orderId: o.id } })).toBe(0);
   });
 
   it.each([
@@ -319,64 +337,65 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
     ['un string', '10'],
     ['nulo', null],
   ])('soldDays %s → 400', async (_caso, soldDays) => {
-    const p = await crearProyecto();
-    await vender(p.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays }, 400);
+    const { p, o } = await proyectoConOrden();
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays }, 400);
   });
 
   it('una phase fuera del enum → 400 (nada de texto libre)', async () => {
-    const p = await crearProyecto();
-    await vender(p.id, { roleTypeId: ROL_TEST, phase: 'MONTAGGIO', soldDays: 5 }, 400);
+    const { p, o } = await proyectoConOrden();
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAGGIO', soldDays: 5 }, 400);
   });
 
   it('un roleTypeId inexistente → 400, nunca un 500 de FK', async () => {
-    const p = await crearProyecto();
-    await vender(p.id, { roleTypeId: ROL_FANTASMA, phase: 'MONTAJE', soldDays: 5 }, 400);
+    const { p, o } = await proyectoConOrden();
+    await vender(o.id, { roleTypeId: ROL_FANTASMA, phase: 'MONTAJE', soldDays: 5 }, 400);
   });
 
   it('un roleTypeId que no es UUID → 400', async () => {
-    const p = await crearProyecto();
-    await vender(p.id, { roleTypeId: 'no-soy-uuid', phase: 'MONTAJE', soldDays: 5 }, 400);
+    const { p, o } = await proyectoConOrden();
+    await vender(o.id, { roleTypeId: 'no-soy-uuid', phase: 'MONTAJE', soldDays: 5 }, 400);
   });
 
   // ── Idempotencia: no envenenar el audit_log que llega en la Fase 4 ──
 
   it('el segundo PUT con el MISMO valor no escribe: updated_at no se mueve', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
     const leer = async () =>
-      ownerClient.projectSoldDays.findFirstOrThrow({ where: { projectId: p.id } });
+      ownerClient.orderSoldDays.findFirstOrThrow({ where: { orderId: o.id } });
 
-    await vender(p.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 });
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 });
     const primera = await leer();
 
-    await vender(p.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 });
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 });
     const segunda = await leer();
     expect(segunda.updatedAt).toEqual(primera.updatedAt);
 
     // Control: sin esto, la asercion de arriba podria pasar por resolucion del
     // reloj y no porque no se escriba. Un valor distinto SI mueve updated_at.
-    await vender(p.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 11 });
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 11 });
     const tercera = await leer();
     expect(tercera.soldDays).toBe(11);
     expect(tercera.updatedAt.getTime()).toBeGreaterThan(primera.updatedAt.getTime());
   });
 
   it('el PUT es un valor absoluto sobre la clave natural: una sola fila por celda', async () => {
-    const p = await crearProyecto();
-    await vender(p.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 4 });
-    await vender(p.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 7 });
+    const { p, o } = await proyectoConOrden();
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 4 });
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 7 });
 
-    expect(await ownerClient.projectSoldDays.count({ where: { projectId: p.id } })).toBe(1);
+    expect(await ownerClient.orderSoldDays.count({ where: { orderId: o.id } })).toBe(1);
     expect(celda(await matrizDe(p.id), ROL_TEST, 'MONTAJE').sold).toBe(7);
   });
 
   // ── La agregacion de ejecutados ──
 
   it('las jornadas con phase NULL aparecen en un bucket «sin fase», no se pierden', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
     // Todo el historico del Excel entra asi: las hojas diarias no traen fase.
     await crearJornadaAprobada({
       technicianId: TEC_A,
       projectId: p.id,
+      orderId: o.id,
       roleTypeId: ROL_TEST,
       phase: null,
       date: new Date('2026-03-02T00:00:00Z'),
@@ -390,10 +409,11 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   });
 
   it('una jornada en draft no mueve executed (solo cuentan las aprobadas, como KPI-01)', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
     await jornada({
       technicianId: TEC_A,
       projectId: p.id,
+      orderId: o.id,
       date: new Date('2026-03-02T00:00:00Z'),
       phase: 'MONTAJE',
       roleTypeId: ROL_TEST,
@@ -404,11 +424,12 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   });
 
   it('una jornada con role_type_id NULL cuenta bajo el rol del maestro del tecnico (COALESCE)', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
     const tec = await crearTecnico({ roleTypeId: rolB.id });
     await jornada({
       technicianId: tec.id,
       projectId: p.id,
+      orderId: o.id,
       date: new Date('2026-03-02T00:00:00Z'),
       phase: 'MONTAJE',
       roleTypeId: null,
@@ -420,12 +441,13 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   });
 
   it('el rol de la JORNADA manda sobre el del maestro', async () => {
-    const p = await crearProyecto();
+    const { p, o } = await proyectoConOrden();
     // Ivan Cortes cuenta como Software unos dias y como Capo Elettricista otros.
     const tec = await crearTecnico({ roleTypeId: ROL_TEST });
     await jornada({
       technicianId: tec.id,
       projectId: p.id,
+      orderId: o.id,
       date: new Date('2026-03-02T00:00:00Z'),
       phase: 'MONTAJE',
       roleTypeId: rolB.id,
@@ -437,11 +459,13 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
   });
 
   it('la matriz no cuenta las jornadas de otro proyecto ni las de ninguno', async () => {
-    const p = await crearProyecto();
+    const { p } = await proyectoConOrden();
     const otro = await crearProyecto();
+    const ordenOtra = await crearOrden(otro.id);
     await crearJornadaAprobada({
       technicianId: TEC_A,
       projectId: otro.id,
+      orderId: ordenOtra.id,
       roleTypeId: ROL_TEST,
       phase: 'MONTAJE',
       date: new Date('2026-03-02T00:00:00Z'),
@@ -459,8 +483,50 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
     expect(celda(await matrizDe(otro.id), ROL_TEST, 'MONTAJE').executed).toBe(1);
   });
 
+  // ── El bucket «sin orden»: el estado en el que entra TODO el historico del Excel ──
+
+  it('una jornada aprobada SIN orden no se pierde ni se reparte: sale en unassigned', async () => {
+    const { p, o } = await proyectoConOrden();
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 10 });
+    // Es el caso real de JAV: 536 jornadas y cero dicen a que maquina fueron.
+    await jornada({
+      technicianId: TEC_A,
+      projectId: p.id,
+      orderId: null,
+      phase: 'MONTAJE',
+      roleTypeId: ROL_TEST,
+      date: new Date('2026-03-02T00:00:00Z'),
+    });
+
+    const d = await detalle(p.id);
+    // NO se atribuye a la unica orden del proyecto: adivinar el reparto es justo el
+    // trabajo manual que la app existe para eliminar.
+    expect(celda(d.orders[0].matrix, ROL_TEST, 'MONTAJE')).toMatchObject({
+      sold: 10,
+      executed: 0,
+      delta: 10,
+    });
+    expect(d.unassigned).toEqual([
+      { roleTypeId: ROL_TEST, roleTypeName: expect.any(String), phase: 'MONTAJE', executed: 1 },
+    ]);
+  });
+
+  it('un proyecto sin jornadas huerfanas trae unassigned vacio, no ausente', async () => {
+    const { p, o } = await proyectoConOrden();
+    await jornada({
+      technicianId: TEC_A,
+      projectId: p.id,
+      orderId: o.id,
+      phase: 'MONTAJE',
+      roleTypeId: ROL_TEST,
+      date: new Date('2026-03-03T00:00:00Z'),
+    });
+
+    expect((await detalle(p.id)).unassigned).toEqual([]);
+  });
+
   it('los dias vendidos son de A y S: un tecnico raso → 403', async () => {
-    const p = await crearProyecto();
-    await vender(p.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 5 }, 403, tokenTec);
+    const { p, o } = await proyectoConOrden();
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 5 }, 403, tokenTec);
   });
 });

@@ -42,8 +42,8 @@ export const appClient = new PrismaClient({
 const TABLAS_TX = [
   'daily_entries',
   'weekly_notes',
-  'project_sold_days',
-  'project_machines',
+  'order_sold_days',
+  'orders',
   'projects',
   'technicians',
   'access_requests',
