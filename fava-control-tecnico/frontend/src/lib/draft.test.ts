@@ -33,9 +33,10 @@ const sinCuota = (): Storage =>
 const fila = (date: string, description: string): FilaDia => ({
   date,
   projectId: 'p1',
-  machineModelId: 'm1',
+  orderId: 'o1',
   conceptCode: 'DC',
   phase: 'MONTAJE',
+  inFactory: false,
   description,
 });
 

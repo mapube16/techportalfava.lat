@@ -26,7 +26,7 @@ export default function Projects() {
   if (!data) return <ApiState error={null} label={t.loading} />;
 
   const rows = filterBy(data, state.search, (p) =>
-    [p.name, p.clientName, p.oaNumber ?? '', p.country].join(' '));
+    [p.name, p.clientName, p.contractNumber, p.machineCodes.join(' '), p.country].join(' '));
 
   const openProject = (id: string) => {
     patch({ selProject: id });
@@ -55,7 +55,7 @@ export default function Projects() {
                   <span style={{ color: 'var(--primary)', flex: 'none' }}>→</span>
                 </div>
                 <div style={{ display: 'flex', gap: 18, marginTop: 11, flexWrap: 'wrap' }}>
-                  {meta('OA', p.oaNumber ?? '—')}
+                  {meta(t.proj_contract_no, p.contractNumber)}
                   {meta(t.contract, valor(p))}
                   {meta(t.hours_short, nf(p.normalHours || 0) + ' h')}
                 </div>
@@ -81,7 +81,7 @@ export default function Projects() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr>
-              {['#', t.col_project, t.client, 'OA', t.proj_country, t.contract, t.hours_short, t.machines, ''].map((c, i) => (
+              {['#', t.col_project, t.client, t.proj_contract_no, t.proj_country, t.contract, t.hours_short, t.orders, ''].map((c, i) => (
                 <th key={i} style={{ ...th, textAlign: i === 6 ? 'right' : 'left' }}>{c}</th>
               ))}
             </tr>
@@ -93,7 +93,7 @@ export default function Projects() {
                   <td style={td}><span style={{ color: 'var(--text-3)', fontFamily: 'Roboto Mono', fontSize: 12 }}>{i + 1}</span></td>
                   <td style={{ ...td, fontWeight: 600 }}>{p.name}</td>
                   <td style={td}>{p.clientName}</td>
-                  <td style={{ ...td, fontFamily: 'Roboto Mono', fontSize: 12, color: 'var(--text-2)' }}>{p.oaNumber ?? '—'}</td>
+                  <td style={{ ...td, fontFamily: 'Roboto Mono', fontSize: 12, color: 'var(--text-2)' }}>{p.contractNumber}</td>
                   <td style={td}>{p.country}</td>
                   <td style={{ ...td, fontFamily: 'Roboto Mono', fontWeight: 600 }}>{valor(p)}</td>
                   <td style={{ ...td, fontFamily: 'Roboto Mono', fontWeight: 600, textAlign: 'right' }}>{nf(p.normalHours || 0)} h</td>

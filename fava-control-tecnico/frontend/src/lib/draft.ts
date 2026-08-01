@@ -15,9 +15,15 @@
 export interface FilaDia {
   date: string; // 'YYYY-MM-DD'
   projectId: string | null;
-  machineModelId: string | null;
+  /**
+   * La maquina CONTRATADA, no el modelo. Es lo que distingue dos `PL 6000` del mismo
+   * proyecto, y su ausencia es lo que hoy obliga a repartir los dias a mano.
+   */
+  orderId: string | null;
   conceptCode: string | null;
   phase: 'MONTAJE' | 'COLLAUDO' | null;
+  /** «En Fabrica»: modificador de DC y DFD, no un concepto aparte. */
+  inFactory: boolean;
   description: string | null;
 }
 

@@ -145,6 +145,12 @@ const es = {
   proj_pick: 'Elige un proyecto en la lista.',
   matrix_no_phase: 'Sin fase (histórico)',
   machine_entries_warn: 'Esta máquina ya tiene jornadas registradas en el proyecto. Se quitará de las capturas nuevas; las jornadas históricas la conservan. ¿Continuar?',
+  orders: 'Máquinas contratadas', order_add: 'Añadir máquina', order_label: 'Descripción',
+  order_commessa: 'Commessa', order_oa: 'N.º OA', order_none: 'Este proyecto aún no tiene máquinas contratadas.',
+  order_delete: 'Eliminar', order_delete_warn: '¿Eliminar esta máquina contratada?',
+  order_model: 'Modelo', order_no_model: 'Sin modelo',
+  unassigned: 'Jornadas sin máquina asignada',
+  unassigned_hint: 'Días aprobados que no dicen a qué máquina fueron. No se reparten solos: corrígelos en la bitácora.',
   toast_error: 'No se pudo guardar', toast_error_b: 'El valor volvió al anterior.',
 };
 
@@ -268,6 +274,12 @@ const it: Dict = {
   proj_pick: 'Scegli un progetto nella lista.',
   matrix_no_phase: 'Senza fase (storico)',
   machine_entries_warn: 'Questa macchina ha già giornate registrate nel progetto. Sparirà dalle nuove registrazioni; le giornate storiche la conservano. Continuare?',
+  orders: 'Macchine a contratto', order_add: 'Aggiungi macchina', order_label: 'Descrizione',
+  order_commessa: 'Commessa', order_oa: 'N. OA', order_none: 'Questo progetto non ha ancora macchine a contratto.',
+  order_delete: 'Elimina', order_delete_warn: 'Eliminare questa macchina a contratto?',
+  order_model: 'Modello', order_no_model: 'Senza modello',
+  unassigned: 'Giornate senza macchina assegnata',
+  unassigned_hint: 'Giorni approvati che non dicono a quale macchina si riferiscono. Non vengono ripartiti da soli: correggili nel registro.',
   toast_error: 'Impossibile salvare', toast_error_b: 'Il valore è tornato al precedente.',
 };
 

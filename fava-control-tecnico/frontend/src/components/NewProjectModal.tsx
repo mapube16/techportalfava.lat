@@ -5,7 +5,7 @@ import { FieldError, gbtn, inputError, inputStyle, pbtn } from '../ui';
 import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { activos, getCatalogs } from '../lib/api/catalogs';
-import { createProject, setProjectMachines } from '../lib/api/projects';
+import { createOrder, createProject } from '../lib/api/projects';
 
 /**
  * Los campos del encabezado son EXACTAMENTE los que imprimirá la Nota Semanal
@@ -13,6 +13,11 @@ import { createProject, setProjectMachines } from '../lib/api/projects';
  *
  * OJO Fase 5: el «NIT:» del PDF real es el de FAVA (constante del membrete), NO este
  * `clientNit`. Se captura porque CAT-03 lo pide, no para esa casilla.
+ *
+ * Desde la Fase 2.1 el modal crea el proyecto y su PRIMERA máquina contratada. Ya no
+ * hay multiselección de modelos: cada máquina lleva su propia commessa, su OA y su
+ * importe (JAV tiene tres, con tres importes distintos), y repartir un único valor
+ * entre varias sería inventárselo. Las siguientes se añaden desde el detalle.
  */
 interface Errors {
   name?: boolean;
@@ -23,7 +28,7 @@ interface Errors {
   contractNumber?: boolean;
   value?: boolean;
   hours?: boolean;
-  machines?: boolean;
+  machineLabel?: boolean;
 }
 
 export default function NewProjectModal() {
@@ -36,10 +41,12 @@ export default function NewProjectModal() {
   const [supply, setSupply] = useState('');
   const [contractNumber, setContractNumber] = useState('');
   const [oa, setOa] = useState('');
+  const [commessa, setCommessa] = useState('');
+  const [machineLabel, setMachineLabel] = useState('');
+  const [machineModelId, setMachineModelId] = useState('');
   const [valueRaw, setValueRaw] = useState('');
   const [hoursRaw, setHoursRaw] = useState('');
   const [moneda, setMoneda] = useState('');
-  const [machines, setMachines] = useState<string[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [errApi, setErrApi] = useState<string | null>(null);
 
@@ -50,8 +57,6 @@ export default function NewProjectModal() {
   const modelos = activos(cat?.machineModels ?? []);
 
   const close = () => patch({ projOpen: false });
-  const toggleMachine = (m: string) =>
-    setMachines((ms) => (ms.includes(m) ? ms.filter((x) => x !== m) : [...ms, m]));
 
   const create = () => {
     const errs: Errors = {};
@@ -65,14 +70,14 @@ export default function NewProjectModal() {
     const nh = parseInt((hoursRaw || '').replace(/[^0-9]/g, ''), 10);
     if (!value || value <= 0) errs.value = true;
     if (!nh || nh <= 0) errs.hours = true;
-    if (!machines.length) errs.machines = true;
+    if (!machineLabel.trim()) errs.machineLabel = true;
     if (Object.keys(errs).length) {
       setErrors(errs);
       return;
     }
     setErrApi(null);
-    // Dos peticiones porque son dos recursos: el POST rechaza `machines` en el cuerpo
-    // (400 RECURSO_APARTE) y la selección tiene su propio PUT idempotente.
+    // Dos peticiones porque son dos recursos: el POST del proyecto rechaza los campos
+    // comerciales en el cuerpo (400 RECURSO_APARTE) porque viven en la orden.
     createProject({
       name: name.trim(),
       clientName: client.trim(),
@@ -81,13 +86,19 @@ export default function NewProjectModal() {
       country: country.trim(),
       supply: supply.trim(),
       contractNumber: contractNumber.trim(),
-      oaNumber: oa.trim() || null,
-      contractValue: value,
-      currencyCode: monedas.length ? moneda || monedas[0].code : null,
       normalHours: nh,
     })
       .then(async (p) => {
-        await setProjectMachines(p.id, machines);
+        await createOrder(p.id, {
+          label: machineLabel.trim(),
+          machineModelId: machineModelId || null,
+          commessa: commessa.trim() || null,
+          // Los 4 primeros dígitos son como se nombra la máquina en obra («3428»).
+          commessaShort: commessa.trim().slice(0, 4) || null,
+          oaNumber: oa.trim() || null,
+          contractValue: value,
+          currencyCode: monedas.length ? moneda || monedas[0].code : null,
+        });
         patch({ projOpen: false, selProject: p.id });
         refresh();
         showToast('proj');
@@ -137,8 +148,11 @@ export default function NewProjectModal() {
             {field(t.proj_supply, texto(supply, setSupply, t.proj_supply_ph, false, errors.supply), errors.supply)}
             {field(t.proj_contract_no, texto(contractNumber, setContractNumber, t.proj_contract_no_ph, true, errors.contractNumber), errors.contractNumber)}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr .8fr .8fr', gap: 12 }}>
-            {field('OA / Commessa', texto(oa, setOa, t.proj_oa_ph, true))}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {field(t.order_oa, texto(oa, setOa, t.proj_oa_ph, true))}
+            {field(t.order_commessa, texto(commessa, setCommessa, '342898', true))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr .8fr', gap: 12 }}>
             {field(t.proj_value, texto(valueRaw, setValueRaw, '1.240.000', true, errors.value), errors.value, t.val_positive)}
             {field(
               t.proj_cur,
@@ -157,27 +171,29 @@ export default function NewProjectModal() {
             </div>
             {errors.hours ? <FieldError msg={t.val_positive} /> : <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 5 }}>{t.proj_hours_hint}</div>}
           </div>
-          {field(
-            t.machines,
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {modelos.map((m) => {
-                const on = machines.includes(m.id);
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => toggleMachine(m.id)}
-                    title={m.description ?? ''}
-                    style={{ padding: '9px 14px', border: '1px solid ' + (on ? 'var(--primary)' : 'var(--border-2)'), background: on ? 'var(--primary-tint)' : 'var(--surface-2)', color: on ? 'var(--primary)' : 'var(--text-2)', borderRadius: 9, fontWeight: 600, fontSize: 13.5, cursor: 'pointer', fontFamily: 'Roboto Mono', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                  >
-                    {on ? hi('check', { w: 14 }) : null}
-                    {m.code}
-                  </button>
-                );
-              })}
-            </div>,
-            errors.machines,
-            t.pick_machine,
-          )}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12 }}>
+            {field(
+              t.order_label,
+              texto(machineLabel, setMachineLabel, 'PL 6000 KG - 1-3428', false, errors.machineLabel),
+              errors.machineLabel,
+              t.pick_machine,
+            )}
+            {field(
+              t.order_model,
+              <select
+                value={machineModelId}
+                onChange={(e) => setMachineModelId(e.target.value)}
+                style={inputStyle}
+              >
+                {/* Opcional: hay alcances contratados que no son un modelo del
+                    catálogo, como «PC 4000 -3430 + 4 SILOS». */}
+                <option value="">{t.order_no_model}</option>
+                {modelos.map((m) => (
+                  <option key={m.id} value={m.id}>{m.code}</option>
+                ))}
+              </select>,
+            )}
+          </div>
           {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
             <button onClick={close} style={gbtn}>{t.btn_cancel}</button>
