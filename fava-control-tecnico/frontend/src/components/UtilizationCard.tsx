@@ -62,8 +62,11 @@ function Fila({ t }: { t: UtilizationRow }) {
 }
 
 export default function UtilizationCard({ year }: { year: number | null }) {
-  const { t } = useApp();
-  const { data, error } = useApiData(() => getUtilization(year), [year]);
+  const { state, t } = useApp();
+  // `dataVersion` en las deps, igual que la cuadrícula: sin él, aprobar una nota no
+  // repintaba esta tarjeta y el admin veía la utilización de antes de su propia
+  // aprobación hasta recargar la página.
+  const { data, error } = useApiData(() => getUtilization(year), [year, state.dataVersion]);
 
   if (error) return <ApiState error={error} label={t.err_load} />;
   if (!data) return <ApiState error={null} label={t.loading} />;
