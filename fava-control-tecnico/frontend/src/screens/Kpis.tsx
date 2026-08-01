@@ -3,6 +3,7 @@ import * as echarts from 'echarts';
 import { Card, CardHead, nf, td, th } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
+import DayGrid from '../components/DayGrid';
 import type { KpiSeg } from '../state';
 
 /**
@@ -297,6 +298,9 @@ export default function Kpis() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* KPI-07 va PRIMERO y contra el API real. Lo de abajo sigue siendo el mock del
+          prototipo (datos inventados) hasta que la Fase 7 lo conecte. */}
+      <DayGrid />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(148px,1fr))', gap: 13 }}>
         {kcard(t.k_hours_norm, nf(tot.nh) + ' h', t.of_contract, 'var(--info)')}
         {kcard(t.k_hours_exec, nf(tot.exec) + ' h', overtime > 0 ? '+' + nf(overtime) + ' ' + t.k_overtime.toLowerCase() : '—', 'var(--accent)')}
