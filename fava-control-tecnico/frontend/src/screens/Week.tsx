@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { hi } from '../icons';
-import { ApiState, Card, CardHead, ConceptPill, StatusPill, gbtn, pbtn, sbtn } from '../ui';
+import { Button } from '@/components/ui/button';
+import { ApiState, Card, CardHead, ConceptPill, StatusPill } from '../ui';
 import { useApp } from '../state';
 import SignatureBox from '../components/SignatureBox';
 import { codigo, useApiData } from '../lib/api/useApiData';
@@ -67,27 +68,29 @@ export default function Week() {
   const estado = estados.size === 1 ? [...estados][0] : 'draft';
 
   const nav = (dir: -1 | 1, off: boolean) => (
-    <button
+    <Button
+      variant="outline"
+      size="icon"
       onClick={() => mover(dir)}
       disabled={off}
       aria-label={dir < 0 ? t.week_prev : t.week_next}
-      className={`${gbtn} px-3 ${off ? 'opacity-40 cursor-default' : ''}`}
+      className="size-11 md:size-9 shrink-0"
     >
       {dir < 0 ? '←' : '→'}
-    </button>
+    </Button>
   );
 
   return (
-    <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="max-w-[820px] mx-auto flex flex-col gap-4">
       <Card>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+        <div className="flex items-center justify-between gap-2 px-4.5 py-3.5 border-b border-border flex-wrap">
+          <div className="flex items-center gap-2.5 min-w-0">
             {nav(-1, atrasBloqueado)}
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 700 }}>
+            <div className="min-w-0">
+              <div className="text-sm font-bold truncate">
                 {proyectos.length ? proyectos.join(' · ') : t.week_no_project}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+              <div className="text-xs text-muted-foreground truncate">
                 {t.week_of} {rotulo}
                 {maquinas.length ? ` · ${maquinas.join(', ')}` : ''}
               </div>
@@ -96,6 +99,7 @@ export default function Week() {
           </div>
           <StatusPill st={estado as never} t={t} />
         </div>
+
         <div>
           {dias.map((fecha, i) => {
             const e = porFecha.get(fecha);
@@ -103,27 +107,27 @@ export default function Week() {
               <div
                 key={fecha}
                 onClick={() => patch({ logOpen: true, logDate: fecha })}
-                style={{ display: 'flex', gap: 14, padding: 'var(--row-pad)', borderTop: i ? '1px solid var(--border)' : 'none', alignItems: 'flex-start', cursor: 'pointer' }}
+                className={`flex gap-3.5 p-row items-start cursor-pointer hover:bg-muted/50 transition-colors ${
+                  i ? 'border-t border-border' : ''
+                }`}
               >
-                <div style={{ width: 44, flex: 'none' }}>
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{t.days[i]}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'Roboto Condensed' }}>{diaDe(fecha)}</div>
+                <div className="w-11 shrink-0">
+                  <div className="text-[11px] text-muted-foreground font-semibold">{t.days[i]}</div>
+                  <div className="text-base font-bold font-cond">{diaDe(fecha)}</div>
                 </div>
-                <div style={{ flex: 'none', width: 150 }}>
+                <div className="w-[150px] shrink-0">
                   {e?.conceptCode ? (
                     <ConceptPill code={e.conceptCode} lang={state.lang} />
                   ) : (
-                    <span style={{ fontSize: 12.5, color: 'var(--text-3)' }}>{t.week_empty_day}</span>
+                    <span className="text-[12.5px] text-muted-foreground">{t.week_empty_day}</span>
                   )}
                 </div>
-                <div style={{ flex: 1, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5 }}>
+                <div className="flex-1 text-[13px] text-muted-foreground leading-relaxed min-w-0">
                   {e?.description ?? ''}
                   {/* La commessa distingue dos máquinas IGUALES del mismo proyecto: sin
                       ella la fila no dice a cuál de las dos fue el día. */}
                   {e?.commessaShort ? (
-                    <span style={{ marginLeft: 8, fontFamily: 'Roboto Mono', fontSize: 11.5, color: 'var(--primary)' }}>
-                      {e.commessaShort}
-                    </span>
+                    <span className="ml-2 font-mono text-[11.5px] text-primary">{e.commessaShort}</span>
                   ) : null}
                 </div>
               </div>
@@ -136,18 +140,18 @@ export default function Week() {
         <CardHead
           title={t.expenses}
           right={
-            <button onClick={() => showToast('saved')} className={sbtn}>
+            <Button variant="secondary" size="sm" onClick={() => showToast('saved')} className="min-h-11 md:min-h-8">
               {hi('plus', { w: 14 })}
               {t.btn_addexp}
-            </button>
+            </Button>
           }
         />
         <div>
           {state.expenses.map((e, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, padding: 'var(--row-pad)', borderTop: i ? '1px solid var(--border)' : 'none', alignItems: 'center' }}>
-              <div style={{ flex: 1, fontSize: 13.5 }}>{e.desc}</div>
-              <div style={{ fontSize: 12.5, color: 'var(--text-3)', width: 70 }}>{e.date}</div>
-              <div style={{ fontSize: 13.5, fontWeight: 600, fontFamily: 'Roboto Mono' }}>{e.val}</div>
+            <div key={i} className={`flex gap-3 p-row items-center ${i ? 'border-t border-border' : ''}`}>
+              <div className="flex-1 text-[13.5px]">{e.desc}</div>
+              <div className="text-[12.5px] text-muted-foreground w-[70px]">{e.date}</div>
+              <div className="text-[13.5px] font-semibold font-mono">{e.val}</div>
             </div>
           ))}
         </div>
@@ -155,37 +159,39 @@ export default function Week() {
 
       <Card>
         <CardHead title={t.sign} />
-        <div style={{ padding: 18 }}>
-          <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--text-2)' }}>{t.sign_hint}</p>
-          <div style={{ position: 'relative', border: '2px dashed var(--border-2)', borderRadius: 10, background: 'var(--surface-2)', height: 160, overflow: 'hidden' }}>
+        <div className="p-4.5">
+          <p className="text-[12.5px] text-muted-foreground mb-3">{t.sign_hint}</p>
+          <div className="relative border-2 border-dashed border-input rounded-lg bg-muted h-40 overflow-hidden">
             <SignatureBox onSigned={() => setHasSignature(true)} clearToken={clearToken} />
             {!hasSignature ? (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', color: 'var(--text-3)', fontSize: 13 }}>
+              <div className="absolute inset-0 flex gap-2 items-center justify-center pointer-events-none text-muted-foreground text-[13px]">
                 {hi('pencil', { w: 17 })}
                 {t.sign_here}
               </div>
             ) : null}
-            <div style={{ position: 'absolute', bottom: 10, left: 0, right: 40, height: 1, background: 'var(--border-2)', margin: '0 24px', pointerEvents: 'none' }} />
+            <div className="absolute bottom-2.5 left-6 right-16 h-px bg-input pointer-events-none" />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-            <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>{hasSignature ? t.sign_captured : '—'}</div>
-            <button onClick={clearSign} className={gbtn}>{t.btn_clear}</button>
+          <div className="flex justify-between items-center mt-2.5">
+            <div className="text-[11.5px] text-muted-foreground">{hasSignature ? t.sign_captured : '—'}</div>
+            <Button variant="outline" size="sm" onClick={clearSign} className="min-h-11 md:min-h-8">
+              {t.btn_clear}
+            </Button>
           </div>
         </div>
       </Card>
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center' }}>
-        <div style={{ flex: 1, fontSize: 12, color: 'var(--text-3)', minWidth: 200 }}>{t.gen_pdf_note}</div>
-        <button onClick={() => patch({ pdfOpen: true })} className={gbtn}>
+      <div className="flex gap-3 flex-wrap justify-end items-center">
+        <div className="flex-1 text-xs text-muted-foreground min-w-[200px]">{t.gen_pdf_note}</div>
+        <Button variant="outline" onClick={() => patch({ pdfOpen: true })} className="min-h-11 md:min-h-9">
           {hi('eye', { w: 15 })}
           {t.btn_pdf}
-        </button>
+        </Button>
         {errEnvio ? (
-          <div style={{ fontSize: 12, color: 'var(--warn)', width: '100%', textAlign: 'right' }}>
+          <div className="text-xs text-warn w-full text-right">
             {t.err_save}: {errEnvio}
           </div>
         ) : null}
-        <button
+        <Button
           onClick={() => {
             // NOTA-01: el servidor deriva UNA NOTA POR PROYECTO. El técnico no elige
             // ninguna, solo manda su semana.
@@ -200,10 +206,10 @@ export default function Week() {
               .finally(() => setEnviando(false));
           }}
           disabled={enviando}
-          className={`${pbtn} min-h-11 ${enviando ? 'opacity-60' : ''}`}
+          className="min-h-11 md:min-h-9"
         >
           {t.btn_submit} →
-        </button>
+        </Button>
       </div>
     </div>
   );

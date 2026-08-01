@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
-import { hi } from '../icons';
+import type { ReactNode } from 'react';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { CONCEPT_COLOR } from '../i18n';
-import { FieldError, gbtn, pbtn } from '../ui';
+import { FieldError, inputStyle, inputError } from '../ui';
 import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getCatalogs } from '../lib/api/catalogs';
@@ -10,9 +11,6 @@ import { listProjects } from '../lib/api/projects';
 import { getWeek, putEntry } from '../lib/api/dailyEntries';
 import type { ConceptCode } from '../lib/api/dailyEntries';
 import { hoyLocal } from '../lib/fecha';
-
-const inp: CSSProperties = { width: '100%', padding: '12px 13px', minHeight: 'var(--tap)', border: '1px solid var(--border-2)', borderRadius: 10, background: 'var(--surface-2)', color: 'var(--text)', fontSize: 'max(15px, var(--fs-input))', fontFamily: 'inherit', outline: 'none' };
-const errInp: CSSProperties = { ...inp, border: '1px solid var(--warn)', background: 'var(--warn-tint)' };
 
 /**
  * Los conceptos que la CHECK `de_proyecto_por_concepto` deja ir SIN proyecto. Es la
@@ -102,41 +100,55 @@ export default function LogDayDrawer() {
   };
 
   const field = (label: string, el: ReactNode, err?: boolean) => (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{label}</label>
+    <div className="mb-3.5">
+      <label className="block text-[12.5px] font-semibold text-muted-foreground mb-1.5">{label}</label>
       {el}
       {err ? <FieldError msg={t.field_req} /> : null}
     </div>
   );
 
   return (
-    <div onClick={close} style={{ position: 'fixed', inset: 0, background: 'rgba(8,16,24,.5)', zIndex: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'favaIn .2s ease' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 440, background: 'var(--surface)', borderRadius: '20px 20px 0 0', boxShadow: 'var(--shadow-lg)', maxHeight: '92vh', overflowY: 'auto', animation: 'favaIn .28s ease both' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
-          <div style={{ width: 38, height: 4, borderRadius: 3, background: 'var(--border-2)' }} />
+    <div onClick={close} className="fixed inset-0 z-60 bg-black/50 flex items-end justify-center fava-anim">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[440px] bg-card rounded-t-[20px] shadow-pop max-h-[92vh] overflow-y-auto fava-anim"
+      >
+        <div className="flex justify-center pt-2.5 pb-1">
+          <div className="w-9.5 h-1 rounded-sm bg-input" />
         </div>
-        <div style={{ padding: '6px 22px 22px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div className="px-5.5 pb-5.5 pt-1.5">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>{t.log_title}</div>
+              <div className="text-lg font-bold">{t.log_title}</div>
               {existente ? (
-                <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600 }}>{t.log_editing}</div>
+                <div className="text-xs text-muted-foreground font-semibold">{t.log_editing}</div>
               ) : null}
             </div>
-            <button onClick={close} className={`${gbtn} px-2.5`}>{hi('x', { w: 15 })}</button>
+            <Button variant="outline" size="icon" onClick={close} className="size-11 md:size-9">
+              <X className="size-4" />
+            </Button>
           </div>
 
           {field(
             t.log_date,
-            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} style={inp} />,
+            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={inputStyle} />,
           )}
 
           {field(
             t.log_project,
-            <select value={projectId} onChange={(e) => { setProjectId(e.target.value); setOrderId(''); }} style={inp}>
+            <select
+              value={projectId}
+              onChange={(e) => {
+                setProjectId(e.target.value);
+                setOrderId('');
+              }}
+              className={inputStyle}
+            >
               <option value="">{exigeProyecto ? t.log_pick_project : t.log_no_project}</option>
               {(proyectos ?? []).map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>,
           )}
@@ -148,32 +160,36 @@ export default function LogDayDrawer() {
             field(
               t.log_machine,
               ordenes.length ? (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <div className="flex gap-2 flex-wrap">
                   {ordenes.map((o) => {
                     const on = orderId === o.id;
                     return (
                       <button
                         key={o.id}
                         onClick={() => setOrderId(on ? '' : o.id)}
-                        style={{ flex: '1 1 120px', padding: 11, minHeight: 'var(--tap)', border: '1px solid ' + (on ? 'var(--primary)' : 'var(--border-2)'), background: on ? 'var(--primary-tint)' : 'var(--surface-2)', color: on ? 'var(--primary)' : 'var(--text-2)', borderRadius: 10, fontWeight: 600, fontSize: 13.5, cursor: 'pointer', fontFamily: 'Roboto Mono' }}
+                        className={`flex-1 basis-[120px] min-h-11 p-2.5 rounded-lg font-mono font-semibold text-[13.5px] cursor-pointer border transition-colors ${
+                          on
+                            ? 'border-primary bg-primary-tint text-primary'
+                            : 'border-input bg-muted text-muted-foreground hover:bg-accent'
+                        }`}
                       >
                         {o.label}
                         {o.commessaShort ? (
-                          <span style={{ display: 'block', fontSize: 11, opacity: 0.75 }}>{o.commessaShort}</span>
+                          <span className="block text-[11px] opacity-75">{o.commessaShort}</span>
                         ) : null}
                       </button>
                     );
                   })}
                 </div>
               ) : (
-                <div style={{ fontSize: 12.5, color: 'var(--text-3)' }}>{t.log_no_machines}</div>
+                <div className="text-[12.5px] text-muted-foreground">{t.log_no_machines}</div>
               ),
             )
           ) : null}
 
           {field(
             t.log_concept,
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 7 }}>
+            <div className="grid grid-cols-4 gap-1.5">
               {conceptos.map((c) => {
                 const on = concept === c.code;
                 const color = CONCEPT_COLOR[c.code] ?? 'var(--primary)';
@@ -182,7 +198,17 @@ export default function LogDayDrawer() {
                     key={c.code}
                     onClick={() => setConcept(c.code as ConceptCode)}
                     title={state.lang === 'it' ? c.labelIt : c.labelEs}
-                    style={{ padding: '10px 4px', minHeight: 'var(--tap)', border: '1px solid ' + (on ? color : 'var(--border-2)'), background: on ? color : 'var(--surface-2)', color: on ? '#fff' : 'var(--text-2)', borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Roboto Mono' }}
+                    // El color viene del catálogo (una fila por concepto), no de una
+                    // paleta finita: no hay clase de Tailwind posible para eso, va en
+                    // `style` a propósito.
+                    style={{
+                      borderColor: on ? color : undefined,
+                      background: on ? color : undefined,
+                      color: on ? '#fff' : undefined,
+                    }}
+                    className={`min-h-11 px-1 py-2.5 rounded-md font-mono font-bold text-[13px] cursor-pointer border transition-colors ${
+                      on ? '' : 'border-input bg-muted text-muted-foreground hover:bg-accent'
+                    }`}
                   >
                     {c.code}
                   </button>
@@ -190,7 +216,7 @@ export default function LogDayDrawer() {
               })}
             </div>,
           )}
-          <div style={{ fontSize: 11.5, color: 'var(--text-3)', margin: '-6px 0 14px' }}>
+          <div className="text-[11.5px] text-muted-foreground -mt-1.5 mb-3.5">
             {(() => {
               const c = conceptos.find((x) => x.code === concept);
               return c ? (state.lang === 'it' ? c.labelIt : c.labelEs) : '';
@@ -200,9 +226,14 @@ export default function LogDayDrawer() {
           {/* Modificador, no concepto: el catálogo cerrado son 8 y «En Fabrica» duplicaría
               DC y DFD si fuese uno más. */}
           {ADMITE_FABRICA.includes(concept) ? (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14, minHeight: 'var(--tap)', cursor: 'pointer' }}>
-              <input type="checkbox" checked={inFactory} onChange={(e) => setInFactory(e.target.checked)} style={{ width: 18, height: 18 }} />
-              <span style={{ fontSize: 13.5 }}>{t.log_in_factory}</span>
+            <label className="flex items-center gap-2.5 mb-3.5 min-h-11 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={inFactory}
+                onChange={(e) => setInFactory(e.target.checked)}
+                className="size-4.5 accent-primary"
+              />
+              <span className="text-[13.5px]">{t.log_in_factory}</span>
             </label>
           ) : null}
 
@@ -215,20 +246,20 @@ export default function LogDayDrawer() {
                 if (descError && e.target.value.trim()) setDescError(false);
               }}
               placeholder={t.log_desc_ph}
-              style={{ ...(descError ? errInp : inp), minHeight: 96, resize: 'vertical' }}
+              className={`${descError ? inputError : inputStyle} min-h-24 resize-y`}
             />,
             descError,
           )}
 
           {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
 
-          <button
+          <Button
             onClick={save}
             disabled={guardando}
-            className={`${pbtn} w-full py-3.5 text-[15px] justify-center ${guardando ? 'opacity-60' : ''}`}
+            className="w-full py-6 text-[15px] justify-center min-h-11 mt-1"
           >
             {guardando ? t.loading : t.btn_saveday}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

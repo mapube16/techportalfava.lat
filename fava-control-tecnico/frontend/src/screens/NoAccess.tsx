@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { useApp } from '../state';
 import { requestAccess } from '../lib/api/client';
 import { FavaLogo, svg, ICON } from '../icons';
-import { gbtn, pbtn, ghostBtn, ghostIconBtn, initials } from '../ui';
+import { initials } from '../ui';
 
 /**
  * Dos pantallas de una: cuenta MS válida sin invitación (con «solicitar acceso»)
@@ -35,61 +36,71 @@ export default function NoAccess() {
   const themeIcon = state.theme === 'dark' ? svg(ICON.sun, { w: 17 }) : svg(ICON.moon, { w: 17 });
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24, background: 'var(--bg)', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 22, right: 24, display: 'flex', gap: 8 }}>
-        <button onClick={toggleLang} className={ghostBtn}>{state.lang.toUpperCase()}</button>
-        <button onClick={toggleTheme} aria-label="theme" className={ghostIconBtn}>{themeIcon}</button>
+    <div className="min-h-screen grid place-items-center p-6 bg-background relative">
+      <div className="absolute top-5.5 right-6 flex gap-2">
+        <Button variant="outline" size="sm" onClick={toggleLang} className="min-h-11 md:min-h-9">
+          {state.lang.toUpperCase()}
+        </Button>
+        <Button variant="outline" size="icon" onClick={toggleTheme} aria-label="theme" className="size-11 md:size-9">
+          {themeIcon}
+        </Button>
       </div>
 
-      <div style={{ width: '100%', maxWidth: 430, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', animation: 'favaIn .35s ease both' }}>
-        <div style={{ height: 108, background: 'linear-gradient(140deg,var(--primary-700),var(--primary))', display: 'grid', placeItems: 'center' }}>
+      <div className="w-full max-w-[430px] bg-card border border-border rounded-card shadow-pop overflow-hidden fava-anim">
+        <div className="h-[108px] bg-gradient-to-br from-primary-700 to-primary grid place-items-center">
           <FavaLogo height={56} onDark />
         </div>
 
-        <div style={{ padding: 24 }}>
-          {/* Identidad de la cuenta Microsoft con la que entró */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 10, marginBottom: 18 }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--primary-700)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 700, flex: 'none' }}>
+        <div className="p-6">
+          {/* Identidad de la cuenta Microsoft con la que entró. */}
+          <div className="flex items-center gap-3 px-3 py-2.5 bg-muted border border-border rounded-lg mb-4.5">
+            <div className="size-9.5 rounded-full bg-primary-700 text-white grid place-items-center text-[13px] font-bold shrink-0">
               {initials(entra?.displayName || '?')}
             </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entra?.displayName}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entra?.email}</div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold truncate">{entra?.displayName}</div>
+              <div className="text-xs text-muted-foreground truncate">{entra?.email}</div>
             </div>
           </div>
 
-          <h1 style={{ fontSize: 19, fontWeight: 700, color: 'var(--text)', margin: '0 0 8px' }}>
-            {deactivated ? t.deactivated_title : t.no_access_title}
-          </h1>
-          <p style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--text-2)', margin: '0 0 20px' }}>
+          <h1 className="text-lg font-bold mb-2">{deactivated ? t.deactivated_title : t.no_access_title}</h1>
+          <p className="text-[13.5px] leading-relaxed text-muted-foreground mb-5">
             {deactivated ? t.deactivated_body : t.no_access_body}
           </p>
 
           {!deactivated && sent ? (
-            <div style={{ fontSize: 12.5, lineHeight: 1.6, color: 'var(--text-2)', background: 'var(--ok-tint)', border: '1px solid var(--ok)', borderRadius: 10, padding: '12px 14px', marginBottom: 18 }}>
-              <div style={{ fontWeight: 700, color: 'var(--ok)', marginBottom: 3 }}>{t.no_access_sent}</div>
+            <div className="text-[12.5px] leading-relaxed text-muted-foreground bg-ok-tint border border-ok rounded-lg px-3.5 py-3 mb-4.5">
+              <div className="font-bold text-ok mb-0.5">{t.no_access_sent}</div>
               {t.no_access_sent_body}
             </div>
           ) : null}
 
           {failed ? (
-            <div style={{ fontSize: 12.5, color: 'var(--warn)', background: 'var(--warn-tint)', border: '1px solid var(--warn)', borderRadius: 10, padding: '10px 14px', marginBottom: 18 }}>
+            <div className="text-[12.5px] text-warn bg-warn-tint border border-warn rounded-lg px-3.5 py-2.5 mb-4.5">
               {t.no_access_error}
             </div>
           ) : null}
 
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div className="flex gap-2.5">
             {!deactivated ? (
-              <button onClick={send} disabled={sent || busy} className={`${pbtn} flex-1 justify-center ${sent || busy ? 'opacity-55 cursor-not-allowed' : ''}`}>
+              <Button
+                onClick={send}
+                disabled={sent || busy}
+                className="flex-1 justify-center min-h-11 md:min-h-9"
+              >
                 {sent ? t.no_access_sent : t.no_access_request}
-              </button>
+              </Button>
             ) : null}
-            <button onClick={logout} className={`${gbtn} justify-center ${deactivated ? 'flex-1' : 'flex-none'}`}>
+            <Button
+              variant="outline"
+              onClick={logout}
+              className={`justify-center min-h-11 md:min-h-9 ${deactivated ? 'flex-1' : 'flex-none'}`}
+            >
               {t.btn_signout}
-            </button>
+            </Button>
           </div>
 
-          <p style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--text-3)', margin: '22px 0 0' }}>{t.login_foot}</p>
+          <p className="text-center text-[11.5px] text-muted-foreground mt-5.5">{t.login_foot}</p>
         </div>
       </div>
     </div>
