@@ -212,13 +212,46 @@ async function main() {
     const sinHoja = await prisma.project.count({ where: { orders: { none: {} } } });
     log(`  y ${sinHoja - (dry ? nombres.length : 0)} proyectos más sin hoja de proyecto en el Excel.`);
 
+    // ── Atribuir las jornadas que NO admiten discusión ──
+    //
+    // Si un proyecto tiene UNA sola orden, todas sus jornadas son de esa orden: no hay
+    // nada que decidir, es la única máquina contratada. Donde hay varias (JAV tiene 3)
+    // NO se toca: repartir esos días es exactamente la decisión manual que Andrea hace
+    // hoy («yo decido agotar mis horas en la 3428 o en la 3429»), y adivinarla sería
+    // inventar a qué máquina fue cada día.
+    log('\n— atribuyendo jornadas de proyectos con UNA sola orden —');
+
+    const conUna = await prisma.project.findMany({
+      where: { orders: { some: {} } },
+      select: { id: true, name: true, orders: { select: { id: true, label: true } } },
+    });
+
+    let atribuidas = 0;
+    for (const p of conUna) {
+      if (p.orders.length !== 1) {
+        const jornadas = await prisma.dailyEntry.count({ where: { projectId: p.id } });
+        log(`  omite    ${p.name}: ${p.orders.length} órdenes, ${jornadas} jornadas — reparto manual`);
+        continue;
+      }
+      const orden = p.orders[0];
+      const r = dry
+        ? { count: await prisma.dailyEntry.count({ where: { projectId: p.id, orderId: null } }) }
+        : await prisma.dailyEntry.updateMany({
+            where: { projectId: p.id, orderId: null },
+            data: { orderId: orden.id },
+          });
+      atribuidas += r.count;
+      log(`  atribuye ${p.name}: ${r.count} jornadas -> ${orden.label}`);
+    }
+    log(`\n${atribuidas} jornadas atribuidas.`);
+
     log('\n— lo que sigue faltando —');
     log('  · la matriz de días VENDIDOS: exige decidir el mapeo del vocabulario');
     log('    comercial (Supervisore/Test/Elettricista) contra role_types. Ver la');
     log('    cabecera de este archivo.');
-    log('  · las jornadas siguen con order_id NULL: atribuir 6.573 filas a una');
-    log('    máquina es otro problema (solo 1.013 traen texto de máquina, y con');
-    log('    dos y tres máquinas en la misma celda).');
+    log('  · las jornadas de JAV (3 órdenes) y las de los proyectos sin orden');
+    log('    siguen con order_id NULL, que es el dato honesto mientras nadie');
+    log('    decida a qué máquina fue cada día.');
   } finally {
     await prisma.$disconnect();
   }
