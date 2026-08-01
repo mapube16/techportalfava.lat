@@ -27,6 +27,11 @@ const ARCHIVOS = [
   'screens/Config.tsx',
   'components/NewProjectModal.tsx',
   'components/InviteUserModal.tsx',
+  // Anadidas en 03-05/03-06: son las dos pantallas de la captura, donde el tecnico
+  // elige proyecto, maquina y concepto. Si alguna vuelve a una lista cableada, el
+  // «sin texto libre» del criterio 4 se rompe justo por donde entran los datos.
+  'screens/Week.tsx',
+  'components/LogDayDrawer.tsx',
 ];
 
 /**

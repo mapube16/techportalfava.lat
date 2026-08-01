@@ -9,29 +9,15 @@ import type { AuditRow, DayEntry, Expense, Note } from './types';
  * | Mock                            | Lo retira                                  |
  * |---------------------------------|--------------------------------------------|
  * | `CURRENT_TECH`                  | Fase 3 — el técnico sale de `/api/me`      |
- * | `MACHINES`, `LOG_PROJECTS`      | Fase 3 — captura de bitácora (LogDayDrawer)|
- * | `WEEK`                          | Fase 3 — bitácora diaria real              |
+ * | ~~`MACHINES`, `LOG_PROJECTS`~~  | RETIRADOS en 03-06: el drawer usa el API   |
+ * | `WEEK`                          | Fase 4/5 — `Week.tsx` ya NO lo usa (03-05),|
+ * |                                 | pero siguen `Inbox.tsx` y `PdfPreview.tsx` |
  * | `NOTES`                         | Fase 4 — notas semanales y aprobación      |
  * | `EXPENSES`                      | Fase 4 — gastos de la nota                 |
  * | `AUDIT`                         | Fase 4 — `audit_log` append-only (AUD-01)  |
  */
 
 export const CURRENT_TECH = 'Ivan Cortés';
-
-/** Máquinas del selector de captura. Fase 3: saldrán de las del proyecto elegido. */
-export const MACHINES = ['CTA1000', 'PC4500', 'PL6000'];
-
-/**
- * Proyectos del selector de captura. NO viene del API a propósito: `GET /api/projects`
- * está cerrado a `A · S` (02-05) y esta pantalla la usa un Técnico — pedirlo hoy sería
- * un 403. La Fase 3 relaja ese `@Roles` y este mock desaparece.
- */
-export const LOG_PROJECTS = [
-  { id: 'p1', name: 'Molino Cibao Bocel — RD' },
-  { id: 'p2', name: 'Lucchetti Chile' },
-  { id: 'p3', name: 'Pastificio Bariloche — AR' },
-  { id: 'p4', name: 'Barilla USA — Ames' },
-];
 
 export const NOTES: Note[] = [
   { id: 'n1', tech: 'Leomar Klein', ini: 'LK', project: 'Lucchetti Chile', week: '20–26 Jul 2026', status: 'sent', days: 7, expenses: 2, comment: '' },

@@ -34,6 +34,8 @@ export interface AppState {
   toast: ToastData | null;
   kpiSeg: KpiSeg;
   logOpen: boolean;
+  /** Fecha 'YYYY-MM-DD' que abre el drawer. `null` = hoy. Sale de la fila de la semana. */
+  logDate: string | null;
   returnOpen: boolean;
   returnId: string | null;
   projOpen: boolean;
@@ -69,6 +71,7 @@ const initialState: AppState = {
   toast: null,
   kpiSeg: 'project',
   logOpen: false,
+  logDate: null,
   returnOpen: false,
   returnId: null,
   projOpen: false,
