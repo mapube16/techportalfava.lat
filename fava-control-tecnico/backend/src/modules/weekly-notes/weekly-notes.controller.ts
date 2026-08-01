@@ -8,7 +8,9 @@ import {
   Post,
   Put,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { Roles } from '../../common/auth/roles.decorator';
 import type { UserModel } from '../../generated/prisma/models';
@@ -65,6 +67,19 @@ export class WeeklyNotesController {
   @Get(':id')
   detalle(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.detalle(id);
+  }
+
+  /**
+   * Fase 5 — la vista previa de antes de firmar. Se sirve inline (no como adjunto):
+   * es para pintarla en la app, no para descargarla. `@Res()` porque Nest no sabe mandar
+   * un `Buffer` como cuerpo por su cuenta.
+   */
+  @Get(':id/pdf/preview')
+  async previsualizarPdf(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
+    const bytes = await this.service.previsualizarPdf(id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="nota-preview.pdf"');
+    res.send(bytes);
   }
 
   /**

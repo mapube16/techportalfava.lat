@@ -3,6 +3,8 @@ import { AuditService } from '../../common/audit/audit.service';
 import { EDITABLES } from '../../common/estados';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { aDate, aTexto } from '../daily-entries/fecha';
+import { renderizarNota } from './nota-pdf';
+import type { DatosNota, FilaNota as FilaPdfDia } from './nota-pdf';
 
 /**
  * Los estados de la nota y las transiciones LEGÍTIMAS desde cada uno. Es una tabla y no
@@ -167,6 +169,87 @@ export class WeeklyNotesService {
   }
 
   /**
+   * Fase 5 — arma el `DatosNota` que pide `nota-pdf.ts` a partir de la nota: técnico,
+   * proyecto, los 7 días de SU semana y SU proyecto (no toda la semana del técnico, que
+   * puede tener días de otro) y la máquina, tomada de las órdenes que esos días usaron.
+   *
+   * `firmas` es opcional a propósito: la vista previa (antes de firmar) llama esto sin
+   * firmas y `nota-pdf.ts` ya sabe pintar la casilla vacía.
+   */
+  private async datosParaPdf(
+    noteId: string,
+    firmas?: { tecnico?: string; cliente?: string; fecha?: string },
+  ): Promise<DatosNota> {
+    const c = this.prisma.client;
+    const nota = await c.weeklyNote.findUnique({
+      where: { id: noteId },
+      select: {
+        weekStart: true,
+        projectId: true,
+        technicianId: true,
+        roleType: { select: { name: true } },
+        technician: { select: { fullName: true } },
+        project: { select: { clientName: true, locality: true, country: true, supply: true, contractNumber: true } },
+      },
+    });
+    if (!nota) throw new NotFoundException('NOTA_NO_ENCONTRADA');
+
+    const semana = Array.from({ length: 7 }, (_, i) => aTexto(new Date(nota.weekStart.getTime() + i * 86_400_000)));
+    const fin = new Date(nota.weekStart.getTime() + 6 * 86_400_000);
+
+    const [entradas, conceptos] = await Promise.all([
+      c.dailyEntry.findMany({
+        where: { technicianId: nota.technicianId, projectId: nota.projectId, date: { gte: nota.weekStart, lte: fin } },
+        select: { date: true, description: true, conceptCode: true, order: { select: { label: true } } },
+      }),
+      c.concept.findMany({ select: { code: true, labelEs: true } }),
+    ]);
+
+    const porFecha = new Map(entradas.map((e) => [aTexto(e.date), e]));
+    const etiquetaDe = new Map(conceptos.map((x) => [x.code as string, x.labelEs]));
+
+    // Siempre SIETE filas — un día de otro proyecto o sin registrar va en blanco, no se
+    // omite (ver el comentario de `definicionNota` sobre por qué).
+    const filas: FilaPdfDia[] = semana.map((fecha) => {
+      const e = porFecha.get(fecha);
+      return {
+        date: fecha,
+        description: e?.description ?? null,
+        categoria: e?.conceptCode ? (etiquetaDe.get(e.conceptCode) ?? null) : null,
+      };
+    });
+
+    const maquinaria = [...new Set(entradas.map((e) => e.order?.label).filter((x): x is string => Boolean(x)))].join(', ');
+
+    return {
+      clientName: nota.project.clientName,
+      locality: nota.project.locality,
+      country: nota.project.country,
+      supply: nota.project.supply,
+      contractNumber: nota.project.contractNumber,
+      maquinaria,
+      cargoSemana: nota.roleType?.name ?? '',
+      technicianName: nota.technician.fullName,
+      filas,
+      // NOTA-08: informativos, sin flujo de reembolso — no hay de dónde leerlos todavía.
+      gastosTecnico: [],
+      anticiposCliente: [],
+      firmaTecnico: firmas?.tecnico,
+      firmaCliente: firmas?.cliente,
+      fechaFirma: firmas?.fecha,
+    };
+  }
+
+  /**
+   * La vista previa de antes de firmar: renderiza al vuelo y no toca `note_pdfs`. Cada
+   * llamada es un PDF nuevo en memoria — es lo correcto para un borrador que todavía
+   * puede cambiar en el próximo tecleo.
+   */
+  async previsualizarPdf(id: string): Promise<Buffer> {
+    return renderizarNota(await this.datosParaPdf(id));
+  }
+
+  /**
    * El único sitio que cambia el estado de una nota.
    *
    * `expectedUpdatedAt` es bloqueo optimista: dos admins que aprueban a la vez leen el
@@ -201,6 +284,10 @@ export class WeeklyNotesService {
         // El comentario se guarda al devolver y se limpia en cualquier otra transición:
         // dejarlo pegado haría creer al técnico que la nota sigue devuelta.
         returnComment: destino === 'returned' ? (opciones.reason ?? null) : null,
+        // NOTA-07: reabrir sube la versión. El PDF y las firmas de la versión anterior
+        // no se tocan (viven en filas propias por versión) — esto es lo que hace que la
+        // próxima firma escriba en una fila nueva en vez de chocar con el unique existente.
+        ...(action === 'reopen' ? { version: { increment: 1 } } : {}),
       },
       select: NOTA,
     });
