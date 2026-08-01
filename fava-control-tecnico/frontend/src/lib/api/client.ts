@@ -90,6 +90,21 @@ async function codigoDeError(res: Response): Promise<string> {
 export const apiSend = <T>(path: string, method: 'POST' | 'PATCH' | 'PUT', body: unknown) =>
   apiFetch<T>(path, { method, body: JSON.stringify(body) });
 
+/**
+ * Como `apiFetch` pero devuelve los bytes: el PDF de la Nota no es JSON y pasarlo por
+ * `res.json()` lo rompería. Repite el manejo de token y de error a propósito — es más
+ * corto que parametrizar `apiFetch` con un modo de respuesta que solo usa el PDF.
+ */
+export async function apiBlob(path: string): Promise<Blob> {
+  const token = getDevToken() ?? (await getToken());
+  const res = await fetch(`/api${path}`, { headers: { authorization: `Bearer ${token}` } });
+  if (!res.ok) {
+    if (res.status === 401) onUnauthorized?.();
+    throw new ApiError(res.status, await codigoDeError(res));
+  }
+  return res.blob();
+}
+
 export const getMe = () => apiFetch<MeResponse>('/me');
 export const requestAccess = () => apiFetch<void>('/access-requests', { method: 'POST' });
 export const listAccessRequests = () => apiFetch<AccessRequest[]>('/access-requests');

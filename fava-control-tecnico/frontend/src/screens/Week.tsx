@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { hi } from '../icons';
 import { Button } from '@/components/ui/button';
-import { ApiState, Card, CardHead, ConceptPill, StatusPill } from '../ui';
+import { ApiState, Card, ConceptPill, StatusPill } from '../ui';
 import { useApp } from '../state';
-import SignatureBox from '../components/SignatureBox';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getWeek } from '../lib/api/dailyEntries';
 import { submitWeek } from '../lib/api/weeklyNotes';
@@ -26,17 +24,10 @@ const MES_IT = ['', 'gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set
 
 export default function Week() {
   const { state, t, go, patch, showToast } = useApp();
-  const [hasSignature, setHasSignature] = useState(false);
-  const [clearToken, setClearToken] = useState(0);
   /** Lunes de la semana visible. `null` = la de hoy, que se resuelve al renderizar. */
   const [lunes, setLunes] = useState<string | null>(null);
   const [errEnvio, setErrEnvio] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
-
-  const clearSign = () => {
-    setClearToken((v) => v + 1);
-    setHasSignature(false);
-  };
 
   const semana = lunes ?? lunesDe(hoyLocal());
   const dias = diasDeSemana(semana);
@@ -136,56 +127,13 @@ export default function Week() {
         </div>
       </Card>
 
-      <Card>
-        <CardHead
-          title={t.expenses}
-          right={
-            <Button variant="secondary" size="sm" onClick={() => showToast('saved')} className="min-h-11 md:min-h-8">
-              {hi('plus', { w: 14 })}
-              {t.btn_addexp}
-            </Button>
-          }
-        />
-        <div>
-          {state.expenses.map((e, i) => (
-            <div key={i} className={`flex gap-3 p-row items-center ${i ? 'border-t border-border' : ''}`}>
-              <div className="flex-1 text-[13.5px]">{e.desc}</div>
-              <div className="text-[12.5px] text-muted-foreground w-[70px]">{e.date}</div>
-              <div className="text-[13.5px] font-semibold font-mono">{e.val}</div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card>
-        <CardHead title={t.sign} />
-        <div className="p-4.5">
-          <p className="text-[12.5px] text-muted-foreground mb-3">{t.sign_hint}</p>
-          <div className="relative border-2 border-dashed border-input rounded-lg bg-muted h-40 overflow-hidden">
-            <SignatureBox onSigned={() => setHasSignature(true)} clearToken={clearToken} />
-            {!hasSignature ? (
-              <div className="absolute inset-0 flex gap-2 items-center justify-center pointer-events-none text-muted-foreground text-[13px]">
-                {hi('pencil', { w: 17 })}
-                {t.sign_here}
-              </div>
-            ) : null}
-            <div className="absolute bottom-2.5 left-6 right-16 h-px bg-input pointer-events-none" />
-          </div>
-          <div className="flex justify-between items-center mt-2.5">
-            <div className="text-[11.5px] text-muted-foreground">{hasSignature ? t.sign_captured : '—'}</div>
-            <Button variant="outline" size="sm" onClick={clearSign} className="min-h-11 md:min-h-8">
-              {t.btn_clear}
-            </Button>
-          </div>
-        </div>
-      </Card>
+      {/* Los gastos y la FIRMA ya no viven aquí: son de la NOTA, no de la semana. Una
+          semana con dos proyectos produce dos notas con dos clientes distintos, y aquí
+          no hay forma de decir cuál de los dos está firmando. Se hacen en «Mis notas»,
+          sobre la nota concreta, después de enviar. */}
 
       <div className="flex gap-3 flex-wrap justify-end items-center">
         <div className="flex-1 text-xs text-muted-foreground min-w-[200px]">{t.gen_pdf_note}</div>
-        <Button variant="outline" onClick={() => patch({ pdfOpen: true })} className="min-h-11 md:min-h-9">
-          {hi('eye', { w: 15 })}
-          {t.btn_pdf}
-        </Button>
         {errEnvio ? (
           <div className="text-xs text-warn w-full text-right">
             {t.err_save}: {errEnvio}

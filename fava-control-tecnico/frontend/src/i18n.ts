@@ -122,7 +122,7 @@ const es = {
   col_actor: 'Actor', col_action: 'Acción', col_entity: 'Entidad', col_before: 'Antes', col_after: 'Después', col_when: 'Fecha',
   role_type: 'Tipo', mechanic: 'Mecánico', mecatronic: 'Meccatronico', electric: 'Eléctrico',
   export: 'Exportar', filter: 'Filtrar',
-  gen_pdf_note: 'Se generará un PDF con los 7 días, gastos y la firma capturada.',
+  gen_pdf_note: 'Al enviar se crea una nota por proyecto. La firmas con el cliente desde «Mis notas».',
   config_cat: 'Catálogos', config_concepts: 'Conceptos de jornada', config_currency: 'Monedas', config_general: 'General',
   sign_here: 'Firme aquí', sign_captured: 'Firma capturada', lang_label: 'Español', theme_dark: 'Oscuro', theme_light: 'Claro', lang_row: 'Idioma / Lingua', theme_row: 'Tema',
   // --- cutover de la Fase 2
@@ -167,6 +167,17 @@ const es = {
   unassigned: 'Jornadas sin máquina asignada',
   unassigned_hint: 'Días aprobados que no dicen a qué máquina fueron. No se reparten solos: corrígelos en la bitácora.',
   toast_error: 'No se pudo guardar', toast_error_b: 'El valor volvió al anterior.',
+  // --- Fase 5: firma por nota
+  sign_modal_title: 'Firmar nota', sign_modal_sub: 'El técnico firma y, presente en el sitio, el cliente. Las dos firmas se guardan juntas y el PDF queda congelado.',
+  sign_technician: 'Firma del técnico', sign_name: 'Nombre completo', sign_name_ph: 'Ej.: Ivan Cortés',
+  sign_document: 'Documento de identidad', sign_document_ph: 'Opcional', sign_role: 'Cargo', sign_role_ph: 'Ej.: Gerente de planta',
+  sign_declaration: 'El cliente declara que el trabajo efectuado es satisfactorio y conforme a lo descrito.',
+  sign_declaration_accept: 'Confirmo que ambas partes aceptan lo anterior antes de firmar.',
+  advances: 'Anticipo del cliente', btn_signnote: 'Firmar', btn_signing: 'Firmando…',
+  sign_missing: 'Falta la firma', note_signed: 'Firmada',
+  sign_frozen_note: 'Esta nota ya está firmada: el PDF quedó congelado y no se puede editar.',
+  toast_signed: 'Nota firmada', toast_signed_b: 'El PDF quedó congelado con las dos firmas.',
+  pdf_loading: 'Generando el PDF…', pdf_error: 'No se pudo generar el PDF',
 };
 
 export type Dict = typeof es;
@@ -266,7 +277,7 @@ const it: Dict = {
   col_actor: 'Attore', col_action: 'Azione', col_entity: 'Entità', col_before: 'Prima', col_after: 'Dopo', col_when: 'Data',
   role_type: 'Tipo', mechanic: 'Meccanico', mecatronic: 'Meccatronico', electric: 'Elettrico',
   export: 'Esporta', filter: 'Filtra',
-  gen_pdf_note: 'Verrà generato un PDF con i 7 giorni, le spese e la firma acquisita.',
+  gen_pdf_note: 'Inviando si crea una nota per progetto. La firmi con il cliente da «Le mie note».',
   config_cat: 'Cataloghi', config_concepts: 'Concetti di giornata', config_currency: 'Valute', config_general: 'Generale',
   sign_here: 'Firma qui', sign_captured: 'Firma acquisita', lang_label: 'Italiano', theme_dark: 'Scuro', theme_light: 'Chiaro', lang_row: 'Idioma / Lingua', theme_row: 'Tema',
   // --- cutover della Fase 2
@@ -311,6 +322,17 @@ const it: Dict = {
   unassigned: 'Giornate senza macchina assegnata',
   unassigned_hint: 'Giorni approvati che non dicono a quale macchina si riferiscono. Non vengono ripartiti da soli: correggili nel registro.',
   toast_error: 'Impossibile salvare', toast_error_b: 'Il valore è tornato al precedente.',
+  // --- Fase 5: firma per nota
+  sign_modal_title: 'Firmare la nota', sign_modal_sub: 'Firma il tecnico e, presente in cantiere, il cliente. Le due firme si salvano insieme e il PDF resta congelato.',
+  sign_technician: 'Firma del tecnico', sign_name: 'Nome completo', sign_name_ph: 'Es.: Ivan Cortés',
+  sign_document: 'Documento d’identità', sign_document_ph: 'Opzionale', sign_role: 'Ruolo', sign_role_ph: 'Es.: Direttore di stabilimento',
+  sign_declaration: 'Il cliente dichiara che il lavoro effettuato è soddisfacente e conforme a quanto descritto.',
+  sign_declaration_accept: 'Confermo che entrambe le parti accettano quanto sopra prima di firmare.',
+  advances: 'Anticipo del cliente', btn_signnote: 'Firma', btn_signing: 'Firma in corso…',
+  sign_missing: 'Manca la firma', note_signed: 'Firmata',
+  sign_frozen_note: 'Questa nota è già firmata: il PDF è congelato e non si può modificare.',
+  toast_signed: 'Nota firmata', toast_signed_b: 'Il PDF è stato congelato con entrambe le firme.',
+  pdf_loading: 'Generazione del PDF…', pdf_error: 'Impossibile generare il PDF',
 };
 
 export const D: Record<Lang, Dict> = { es, it };

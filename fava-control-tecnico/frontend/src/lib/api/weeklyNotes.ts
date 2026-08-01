@@ -1,8 +1,14 @@
-import { apiFetch, apiSend } from './client';
+import { apiBlob, apiFetch, apiSend } from './client';
 
 // NOTA-01/02/03, CAT-06 y AUD-02.
 
 export type NoteStatus = 'draft' | 'submitted' | 'approved' | 'returned';
+
+/** NOTA-08. Máximo 4 de cada uno: son las filas fijas que imprime la Nota. */
+export interface Gasto {
+  descripcion: string;
+  valor: string;
+}
 
 export interface WeeklyNote {
   id: string;
@@ -25,6 +31,12 @@ export interface WeeklyNote {
    * más tarde.
    */
   updatedAt: string;
+  /** NOTA-07: sube con cada reapertura. El PDF de cada versión se conserva aparte. */
+  version: number;
+  /** Hay firma para la versión actual. El hash en sí no se expone al cliente. */
+  signed: boolean;
+  gastosTecnico: Gasto[];
+  anticiposCliente: Gasto[];
 }
 
 /**
@@ -50,6 +62,38 @@ export const reopenNote = (id: string, reason: string, expectedUpdatedAt: string
 
 export const setNoteRole = (id: string, roleTypeId: string | null) =>
   apiSend<WeeklyNote>(`/weekly-notes/${id}/role`, 'PUT', { roleTypeId });
+
+// ── Fase 5: gastos, firma y PDF ──
+
+export const setNoteExpenses = (id: string, gastosTecnico: Gasto[], anticiposCliente: Gasto[]) =>
+  apiSend<WeeklyNote>(`/weekly-notes/${id}/expenses`, 'PUT', { gastosTecnico, anticiposCliente });
+
+/** Una de las dos firmas del `POST /sign`. `imagePng` va en base64, sin el `data:`. */
+export interface FirmaEntrada {
+  signerName: string;
+  signerDocument?: string;
+  signerRole?: string;
+  declarationAccepted: true;
+  imagePng: string;
+}
+
+/**
+ * Las dos firmas viajan JUNTAS porque el PDF se renderiza una sola vez con ambas
+ * casillas estampadas: firmar es atómico o no es. El servidor congela los bytes y
+ * devuelve la nota ya marcada como firmada.
+ */
+export const signNote = (
+  id: string,
+  technician: FirmaEntrada,
+  client: FirmaEntrada,
+  expectedUpdatedAt: string,
+) => apiSend<WeeklyNote>(`/weekly-notes/${id}/sign`, 'POST', { technician, client, expectedUpdatedAt });
+
+/** Se renderiza al vuelo y no congela nada: es el borrador de antes de firmar. */
+export const previewNotePdf = (id: string) => apiBlob(`/weekly-notes/${id}/pdf/preview`);
+
+/** Los bytes YA firmados. 404 mientras la nota no tenga firma. */
+export const downloadNotePdf = (id: string) => apiBlob(`/weekly-notes/${id}/pdf`);
 
 /** CAT-06: lo que el diálogo de baja necesita ANTES de desactivar a nadie. */
 export const pendingNotes = (technicianId: string) =>

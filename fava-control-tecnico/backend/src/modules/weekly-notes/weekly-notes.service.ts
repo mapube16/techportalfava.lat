@@ -44,6 +44,10 @@ const NOTA = {
   roleTypeId: true,
   returnComment: true,
   updatedAt: true,
+  version: true,
+  signedContentHash: true,
+  gastosTecnico: true,
+  anticiposCliente: true,
   technician: { select: { fullName: true } },
   project: { select: { name: true, clientName: true } },
   roleType: { select: { name: true } },
@@ -58,6 +62,10 @@ interface FilaNota {
   roleTypeId: string | null;
   returnComment: string | null;
   updatedAt: Date;
+  version: number;
+  signedContentHash: string | null;
+  gastosTecnico: unknown;
+  anticiposCliente: unknown;
   technician: { fullName: string };
   project: { name: string; clientName: string };
   roleType: { name: string } | null;
@@ -77,6 +85,12 @@ const plana = (n: FilaNota) => ({
   returnComment: n.returnComment,
   /** Lo que el cliente devuelve en la siguiente transición para detectar conflicto. */
   updatedAt: n.updatedAt.toISOString(),
+  version: n.version,
+  /** El hash NO se expone: al cliente solo le importa si hay firma o no, y publicarlo
+      invitaría a compararlo desde el navegador contra un PDF que él mismo generó. */
+  signed: n.signedContentHash !== null,
+  gastosTecnico: (n.gastosTecnico as Gasto[] | null) ?? [],
+  anticiposCliente: (n.anticiposCliente as Gasto[] | null) ?? [],
 });
 
 /**

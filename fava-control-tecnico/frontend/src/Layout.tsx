@@ -320,7 +320,7 @@ export default function Layout() {
       {state.returnOpen ? <ReturnModal /> : null}
       {state.projOpen ? <NewProjectModal /> : null}
       {state.inviteOpen ? <InviteUserModal /> : null}
-      {state.pdfOpen ? <PdfPreview /> : null}
+      {state.pdfOpen && state.pdfNoteId ? <PdfPreview noteId={state.pdfNoteId} firmado={state.pdfSigned} /> : null}
       {state.onboard ? <Onboarding /> : null}
       {state.toast ? <Toast /> : null}
     </>

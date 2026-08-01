@@ -42,7 +42,11 @@ export interface AppState {
   returnUpdatedAt: string | null;
   projOpen: boolean;
   inviteOpen: boolean;
+  /** La vista previa del PDF es SIEMPRE de una nota concreta: sin id no hay qué pintar. */
   pdfOpen: boolean;
+  pdfNoteId: string | null;
+  /** Firmada = se piden los bytes congelados; si no, el borrador renderizado al vuelo. */
+  pdfSigned: boolean;
   search: string;
   onboard: boolean;
   onboardStep: number;
@@ -80,6 +84,8 @@ const initialState: AppState = {
   projOpen: false,
   inviteOpen: false,
   pdfOpen: false,
+  pdfNoteId: null,
+  pdfSigned: false,
   search: '',
   onboard: false,
   onboardStep: 0,

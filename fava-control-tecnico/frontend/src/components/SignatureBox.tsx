@@ -1,18 +1,44 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useImperativeHandle, useRef } from 'react';
+import type { Ref } from 'react';
 
-// Canvas de firma: dibujo con mouse/touch, escala 2x para nitidez.
+/**
+ * Canvas de firma: dibujo con mouse/touch, escala 2x para nitidez.
+ *
+ * `ref` expone el trazo como PNG en base64 (sin el `data:`), que es lo que el servidor
+ * guarda como evidencia y estampa en el PDF. Va por ref y no por `onChange` a propósito:
+ * el trazo cambia en cada `mousemove` y subir un base64 de ~20 KB al estado en cada
+ * movimiento repintaría el formulario entero mientras alguien está firmando.
+ */
+export interface SignatureHandle {
+  /** `null` si el lienzo está en blanco. */
+  toPng(): string | null;
+}
+
 export default function SignatureBox({
   onSigned,
   clearToken,
+  ref,
 }: {
   onSigned: () => void;
   clearToken: number;
+  ref?: Ref<SignatureHandle>;
 }) {
-  const ref = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const trazado = useRef(false);
+
+  useImperativeHandle(ref, () => ({
+    toPng: () => {
+      const c = canvasRef.current;
+      if (!c || !trazado.current) return null;
+      // El canvas es transparente y el PDF lo estampa sobre papel blanco, así que el
+      // PNG con alfa va bien tal cual: pintarle fondo taparía la línea de la casilla.
+      return c.toDataURL('image/png').split(',')[1] ?? null;
+    },
+  }));
 
   useEffect(() => {
-    const c = ref.current;
+    const c = canvasRef.current;
     if (!c) return;
     const ctx = c.getContext('2d');
     if (!ctx) return;
@@ -47,6 +73,7 @@ export default function SignatureBox({
       ctx.lineTo(p.x, p.y);
       ctx.stroke();
       last = p;
+      trazado.current = true;
       onSigned();
       e.preventDefault();
     };
@@ -71,10 +98,13 @@ export default function SignatureBox({
   }, []);
 
   useEffect(() => {
-    const c = ref.current;
+    const c = canvasRef.current;
     const ctx = ctxRef.current;
-    if (c && ctx && clearToken > 0) ctx.clearRect(0, 0, c.width, c.height);
+    if (c && ctx && clearToken > 0) {
+      ctx.clearRect(0, 0, c.width, c.height);
+      trazado.current = false;
+    }
   }, [clearToken]);
 
-  return <canvas ref={ref} className="w-full h-full touch-none cursor-crosshair" />;
+  return <canvas ref={canvasRef} className="w-full h-full touch-none cursor-crosshair" />;
 }
