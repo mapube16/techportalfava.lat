@@ -45,3 +45,36 @@ export const getGridYears = () => apiFetch<number[]>('/kpis/years');
 /** Sin `year`, todo el histórico junto. Los totales los calcula el servidor. */
 export const getDayGrid = (year: number | null) =>
   apiFetch<DayGrid>(`/kpis/day-grid${year ? `?year=${year}` : ''}`);
+
+// ── KPI-02: utilización por técnico ──
+
+export interface UtilizationRow {
+  technicianId: string;
+  technicianName: string;
+  technicianActive: boolean;
+  counts: Counts;
+  productive: number;
+  nonProductive: number;
+  excluded: number;
+  /** Productivos + no productivos. Varía entre técnicos: no todos tienen el mismo
+      tramo registrado, y por eso se muestra al lado del porcentaje. */
+  denominator: number;
+  /** `null` = sin días disponibles. No es 0 %: es que no hay porcentaje que dar. */
+  utilizationPct: number | null;
+}
+
+export interface Utilization {
+  year: number | null;
+  /** La regla con la que se calculó, para poder imprimirla y no suponerla. */
+  rule: { productive: ConceptCode[]; nonProductive: ConceptCode[]; excluded: ConceptCode[] };
+  technicians: UtilizationRow[];
+  productive: number;
+  excluded: number;
+  /** Días futuros pre-rellenados en el Excel que el servidor dejó fuera. */
+  futureExcluded: number;
+  denominator: number;
+  utilizationPct: number | null;
+}
+
+export const getUtilization = (year: number | null) =>
+  apiFetch<Utilization>(`/kpis/utilization${year ? `?year=${year}` : ''}`);

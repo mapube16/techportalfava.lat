@@ -17,17 +17,28 @@ export class KpisController {
     return this.service.anios();
   }
 
-  /**
-   * KPI-07. `year` opcional: sin el, todo el historico junto.
-   *
-   * Se valida a mano en vez de con un ParseIntPipe para poder distinguir «ausente»
-   * (todos los anios) de «basura» (400): el pipe convierte las dos cosas en NaN.
-   */
+  /** KPI-07. */
   @Get('day-grid')
   cuadricula(@Query('year') year?: string) {
-    if (year === undefined || year === '') return this.service.cuadricula(null);
-    const n = Number(year);
-    if (!Number.isInteger(n) || n < 2000 || n > 2100) throw new BadRequestException('ANIO_INVALIDO');
-    return this.service.cuadricula(n);
+    return this.service.cuadricula(anio(year));
   }
+
+  /** KPI-02. Mismo criterio de `year` que la cuadrícula. */
+  @Get('utilization')
+  utilizacion(@Query('year') year?: string) {
+    return this.service.utilizacion(anio(year));
+  }
+}
+
+/**
+ * `year` opcional: ausente = todo el histórico junto.
+ *
+ * Se valida a mano en vez de con un ParseIntPipe para poder distinguir «ausente»
+ * (todos los años) de «basura» (400): el pipe convierte las dos cosas en NaN.
+ */
+function anio(year?: string): number | null {
+  if (year === undefined || year === '') return null;
+  const n = Number(year);
+  if (!Number.isInteger(n) || n < 2000 || n > 2100) throw new BadRequestException('ANIO_INVALIDO');
+  return n;
 }

@@ -5,6 +5,7 @@ import { nf, td, th } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import DayGrid from '../components/DayGrid';
+import UtilizationCard from '../components/UtilizationCard';
 import type { KpiSeg } from '../state';
 
 /**
@@ -95,8 +96,9 @@ export default function Kpis() {
     { sold: 0, done: 0, nh: 0, exec: 0 },
   );
   const overtime = Math.max(0, tot.exec - tot.nh);
+  // `act` sigue alimentando las gráficas mock de abajo; el promedio de utilización que
+  // salía de aquí murió con la tarjeta que lo mostraba: ahora lo calcula el servidor.
   const act = TECHS;
-  const avgUtil = act.length ? Math.round(act.reduce((a, x) => a + x.util, 0) / act.length) : 0;
   const avgProg = tot.sold ? Math.round((tot.done / tot.sold) * 100) : 0;
 
   useEffect(() => {
@@ -317,16 +319,20 @@ export default function Kpis() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* KPI-07 va PRIMERO y contra el API real. Lo de abajo sigue siendo el mock del
-          prototipo (datos inventados) hasta que la Fase 7 lo conecte. */}
+      {/* KPI-07 y KPI-02 van PRIMERO y contra el API real. Lo de abajo sigue siendo el
+          mock del prototipo (datos inventados): son KPI-01 y KPI-08, que necesitan la
+          matriz de días VENDIDOS, y esa no se puede cargar hasta decidir el mapeo del
+          vocabulario comercial del Excel (ver `prisma/migrate-ordenes.ts`). */}
       <DayGrid />
+
+      {/* Sin año: todo el histórico, igual que la cuadrícula al abrir. */}
+      <UtilizationCard year={null} />
 
       <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(148px,1fr))' }}>
         {kcard(t.k_hours_norm, nf(tot.nh) + ' h', t.of_contract, 'var(--info)')}
         {kcard(t.k_hours_exec, nf(tot.exec) + ' h', overtime > 0 ? '+' + nf(overtime) + ' ' + t.k_overtime.toLowerCase() : '—', 'var(--accent)')}
         {kcard(t.kpi_sold + ' / ' + t.kpi_done, tot.sold + ' / ' + tot.done, t.days_unit, 'var(--primary)')}
         {kcard(t.k_progress, avgProg + '%', tot.done + ' / ' + tot.sold + ' ' + t.days_unit, avgProg >= 100 ? 'var(--ok)' : 'var(--text)')}
-        {kcard(t.k_util_avg, avgUtil + '%', act.length + ' ' + t.nav_techs.toLowerCase(), avgUtil > 85 ? 'var(--warn)' : 'var(--ok)')}
       </div>
 
       <Card className="p-0 gap-0 overflow-hidden">

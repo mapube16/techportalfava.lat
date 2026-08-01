@@ -47,6 +47,59 @@ interface FilaCruda {
   days: number;
 }
 
+// ── KPI-02: la definición del denominador, en UN solo sitio ──
+//
+// Es la parte discutible del indicador y por eso está aquí arriba, nombrada y
+// exportada, en vez de repartida por la consulta: cambiar la regla es editar estas
+// tres listas, y la respuesta del endpoint las lleva para que la pantalla imprima con
+// qué criterio se calculó.
+
+/** Días que cuentan como trabajo. El medio día cuenta 1, igual que en el Excel. */
+export const PRODUCTIVOS: ConceptCode[] = ['DC', 'MD', 'DFD', 'DVSF', 'DVRC'];
+
+/** No productivos, pero SÍ en el denominador: el técnico estaba disponible y no produjo. */
+export const NO_PRODUCTIVOS: ConceptCode[] = ['LR', 'NR'];
+
+/**
+ * Fuera del denominador ENTERO. Una incapacidad no es tiempo disponible que se
+ * desaprovechó: es tiempo que no existió. Dejarla dentro castigaría al técnico que
+ * se enfermó, que es justo lo que hace que un indicador así deje de usarse.
+ */
+export const FUERA_DEL_DENOMINADOR: ConceptCode[] = ['IL'];
+
+export interface FilaUtilizacion {
+  technicianId: string;
+  technicianName: string;
+  technicianActive: boolean;
+  counts: Conteos;
+  productive: number;
+  nonProductive: number;
+  excluded: number;
+  denominator: number;
+  /** `null` cuando el denominador es 0: sin días disponibles no hay porcentaje. */
+  utilizationPct: number | null;
+}
+
+export interface Utilizacion {
+  year: number | null;
+  rule: { productive: ConceptCode[]; nonProductive: ConceptCode[]; excluded: ConceptCode[] };
+  technicians: FilaUtilizacion[];
+  productive: number;
+  excluded: number;
+  /** Días futuros que el Excel dejó pre-rellenados y que NO entran. Se muestra en pantalla. */
+  futureExcluded: number;
+  denominator: number;
+  utilizationPct: number | null;
+}
+
+interface FilaUtil {
+  technician_id: string;
+  technician_name: string;
+  technician_active: boolean;
+  concept_code: ConceptCode;
+  days: number;
+}
+
 /** Suma `n` en la clave `code` de un acumulador de conteos. */
 const sumar = (c: Conteos, code: ConceptCode, n: number) => {
   c[code] = (c[code] ?? 0) + n;
@@ -168,6 +221,102 @@ export class KpisService {
     }
 
     return { year, concepts: conceptos, projects: proyectos, counts: raiz, total: granTotal };
+  }
+
+  /**
+   * KPI-02 — utilización por técnico.
+   *
+   * El denominador es lo que hace que este número sea defendible o no, así que la
+   * definición vive en UN sitio (`PRODUCTIVOS` / `FUERA_DEL_DENOMINADOR`, arriba) y
+   * viaja en la respuesta: la pantalla imprime con qué regla se calculó, en vez de que
+   * cada lector suponga la suya.
+   *
+   * Cada jornada vale 1, incluido el medio día. No es un descuido: es la misma regla
+   * con la que el Excel cuenta el ejecutado (verificado celda a celda contra
+   * `Dettaglio anno 2026`), y usar 0,5 aquí y 1 allí daría dos utilizaciones distintas
+   * para los mismos días. Si algún día se pondera, se pondera en los dos sitios.
+   */
+  async utilizacion(year: number | null): Promise<Utilizacion> {
+    // `date <= CURRENT_DATE` NO es una precaución de estilo: el Excel pre-rellena el
+    // AÑO ENTERO y marca como LR/NR los días que aún no han ocurrido. En producción son
+    // 1.220 filas futuras (911 LR + 309 NR) de 8 técnicos con calendario hasta el 31 de
+    // diciembre. Contarlas hunde el denominador de todos y da 36,8 % donde la cifra real
+    // es 54,6 % — y la segunda es la que cuadra con los ~210 días/año con los que Andrea
+    // costea. Un día que no ha pasado no es tiempo disponible desaprovechado.
+    const filas = await this.prisma.client.$queryRaw<FilaUtil[]>`
+      SELECT de.technician_id,
+             t.full_name    AS technician_name,
+             t.is_active    AS technician_active,
+             de.concept_code,
+             COUNT(*)::int  AS days
+        FROM daily_entries de
+        JOIN technicians t ON t.id = de.technician_id
+       WHERE de.status = 'approved'
+         AND de.concept_code IS NOT NULL
+         AND de.date <= CURRENT_DATE
+         AND (${year}::int IS NULL OR EXTRACT(YEAR FROM de.date)::int = ${year}::int)
+       GROUP BY 1, 2, 3, 4
+    `;
+
+    // Se cuentan aparte y se devuelven: descartarlas en silencio dejaría al lector sin
+    // saber por qué la cuadrícula (KPI-07, que sí las muestra porque reproduce el pivot
+    // de Andrea) y esta pantalla no dan el mismo total de días.
+    const [{ n: futuras }] = await this.prisma.client.$queryRaw<{ n: number }[]>`
+      SELECT COUNT(*)::int AS n
+        FROM daily_entries
+       WHERE status = 'approved'
+         AND concept_code IS NOT NULL
+         AND date > CURRENT_DATE
+         AND (${year}::int IS NULL OR EXTRACT(YEAR FROM date)::int = ${year}::int)
+    `;
+
+    const por = new Map<string, FilaUtilizacion>();
+    for (const f of filas) {
+      let t = por.get(f.technician_id);
+      if (!t) {
+        t = {
+          technicianId: f.technician_id,
+          technicianName: f.technician_name,
+          technicianActive: f.technician_active,
+          counts: {},
+          productive: 0,
+          nonProductive: 0,
+          excluded: 0,
+          denominator: 0,
+          utilizationPct: null,
+        };
+        por.set(f.technician_id, t);
+      }
+      sumar(t.counts, f.concept_code, f.days);
+      if (FUERA_DEL_DENOMINADOR.includes(f.concept_code)) t.excluded += f.days;
+      else if (PRODUCTIVOS.includes(f.concept_code)) t.productive += f.days;
+      else t.nonProductive += f.days;
+    }
+
+    const tecnicos = [...por.values()];
+    for (const t of tecnicos) {
+      t.denominator = t.productive + t.nonProductive;
+      // `null`, no 0: un técnico cuyos días son TODOS incapacidad no tiene una
+      // utilización del 0 %, no tiene utilización. Pintar 0 % lo acusaría de algo que
+      // el dato no dice.
+      t.utilizationPct = t.denominator ? Math.round((t.productive / t.denominator) * 1000) / 10 : null;
+    }
+    tecnicos.sort((a, b) => (b.utilizationPct ?? -1) - (a.utilizationPct ?? -1));
+
+    const productive = tecnicos.reduce((s, t) => s + t.productive, 0);
+    const denominator = tecnicos.reduce((s, t) => s + t.denominator, 0);
+
+    return {
+      year,
+      // La regla, explícita y en la respuesta: la pantalla la imprime.
+      rule: { productive: PRODUCTIVOS, nonProductive: NO_PRODUCTIVOS, excluded: FUERA_DEL_DENOMINADOR },
+      technicians: tecnicos,
+      productive,
+      excluded: tecnicos.reduce((s, t) => s + t.excluded, 0),
+      futureExcluded: futuras,
+      denominator,
+      utilizationPct: denominator ? Math.round((productive / denominator) * 1000) / 10 : null,
+    };
   }
 
   /** Los años con datos, para el selector. Descendente: se mira el actual primero. */

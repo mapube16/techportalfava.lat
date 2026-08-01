@@ -178,6 +178,11 @@ const es = {
   sign_frozen_note: 'Esta nota ya está firmada: el PDF quedó congelado y no se puede editar.',
   toast_signed: 'Nota firmada', toast_signed_b: 'El PDF quedó congelado con las dos firmas.',
   pdf_loading: 'Generando el PDF…', pdf_error: 'No se pudo generar el PDF',
+  // --- Fase 7: KPI-02, utilización
+  util_productive: 'Productivos', util_available: 'Disponibles', util_excluded: 'Excluidos',
+  util_rule_prod: 'Cuentan como productivos', util_rule_nonprod: 'Disponibles y no productivos',
+  util_rule_excl: 'Fuera del denominador',
+  util_future: 'No se cuentan {n} días futuros que el Excel dejó pre-rellenados.',
 };
 
 export type Dict = typeof es;
@@ -333,6 +338,11 @@ const it: Dict = {
   sign_frozen_note: 'Questa nota è già firmata: il PDF è congelato e non si può modificare.',
   toast_signed: 'Nota firmata', toast_signed_b: 'Il PDF è stato congelato con entrambe le firme.',
   pdf_loading: 'Generazione del PDF…', pdf_error: 'Impossibile generare il PDF',
+  // --- Fase 7: KPI-02, utilizzo
+  util_productive: 'Produttivi', util_available: 'Disponibili', util_excluded: 'Esclusi',
+  util_rule_prod: 'Contano come produttivi', util_rule_nonprod: 'Disponibili e non produttivi',
+  util_rule_excl: 'Fuori dal denominatore',
+  util_future: 'Non si contano {n} giorni futuri già precompilati nell’Excel.',
 };
 
 export const D: Record<Lang, Dict> = { es, it };
