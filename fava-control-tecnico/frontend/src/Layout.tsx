@@ -6,6 +6,8 @@ import { svg, ICON, FavaLogo } from './icons';
 import { initials } from './ui';
 import { useApp } from './state';
 import { useIsMobile } from './lib/useIsMobile';
+import { useApiData } from './lib/api/useApiData';
+import { listNotes } from './lib/api/weeklyNotes';
 import type { Role, Route } from './types';
 import Home from './screens/Home';
 import Week from './screens/Week';
@@ -65,11 +67,22 @@ interface NavItem {
  * repartido por el JSX.
  */
 export default function Layout() {
-  const { state, t, go, logout, goInbox, toggleTheme, toggleLang, patch, inboxCount } = useApp();
+  const { state, t, go, logout, goInbox, toggleTheme, toggleLang, patch } = useApp();
   const tr = t as unknown as Record<string, string>;
   const movil = useIsMobile();
   const [menuAbierto, setMenuAbierto] = useState(false);
   const btnMenu = useRef<HTMLButtonElement>(null);
+
+  // El contador de la bandeja sale del API, no del mock del prototipo: hasta ahora
+  // pintaba un 3 fijo que venía de `data.ts` y no se movía por mucho que se aprobaran
+  // notas. Solo lo pide quien tiene bandeja — a un técnico el endpoint le devolvería
+  // sus propias notas (RLS) y el número no significaría lo mismo.
+  const esAdmin = state.role === 'A' || state.role === 'S';
+  const { data: porAprobar } = useApiData(
+    () => (esAdmin ? listNotes('submitted') : Promise.resolve([])),
+    [esAdmin, state.dataVersion],
+  );
+  const count = porAprobar?.length ?? 0;
 
   // Si la ventana crece con el panel abierto, la barra vuelve a ser fija y el estado
   // «abierto» quedaria sin boton con el que cerrarlo.
@@ -110,7 +123,7 @@ export default function Layout() {
   if (state.role === 'A' || state.role === 'S') {
     groups.push({
       title: t.grp_admin,
-      items: [mk('inbox', 'inbox', 'inbox', inboxCount()), mk('projects', 'projects', 'folder'), mk('techs', 'techs', 'users'), mk('users', 'users', 'users'), mk('kpis', 'kpis', 'chart')],
+      items: [mk('inbox', 'inbox', 'inbox', count), mk('projects', 'projects', 'folder'), mk('techs', 'techs', 'users'), mk('users', 'users', 'users'), mk('kpis', 'kpis', 'chart')],
     });
   }
   if (state.role === 'S') {
@@ -124,14 +137,13 @@ export default function Layout() {
 
   const themeIcon = state.theme === 'dark' ? svg(ICON.sun, { w: 17 }) : svg(ICON.moon, { w: 17 });
   const roleLabel: Record<Role, string> = { T: t.role_t, A: t.role_a, S: t.role_s };
-  const count = inboxCount();
 
-  // Identidad real de /api/me. El switcher T·A·S solo existe para multi-rol y
-  // solo con los roles del propio usuario (cambia navegación, nunca permisos).
+  // Identidad real de /api/me. `roleList` es informativo: dice qué rol tiene esta
+  // cuenta, no ofrece cambiarlo.
   const me = state.me?.status === 'ok' ? state.me.user : null;
   const roleList = state.myRoles.map((r) => roleLabel[r]).join(' · ');
 
-  // Buscador, selector de rol, idioma y tema. En escritorio van en el encabezado; en
+  // Buscador, idioma y tema. En escritorio van en el encabezado; en
   // movil no caben (el buscador solo ya son 220px de los 390 del telefono) y bajan al
   // panel. Declarados una vez para que no haya dos copias que se desincronicen.
   const controles = (
