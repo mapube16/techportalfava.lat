@@ -65,6 +65,89 @@
   --animate-in-up: favaIn 0.28s ease both;
 }
 
+/*
+ * ── Puente Tremor → Tailwind v4 ──
+ *
+ * `@tremor/react` 3.x se construyo para Tailwind v3: sus componentes traen clases como
+ * `bg-tremor-background` o `text-tremor-content-strong`, y en v3 esos tokens los
+ * inyectaba su preset de `tailwind.config.js`. En v4 ese archivo ya no existe, asi que
+ * los tokens se declaran aqui.
+ *
+ * DOS DECISIONES QUE IMPORTAN:
+ *
+ * 1. Cada token de Tremor apunta a una variable NUESTRA, no a un color suyo. Asi los
+ *    componentes de Tremor heredan la identidad FAVA y el tema claro/oscuro sin
+ *    tocarlos, y cambiar la paleta sigue siendo cambiar `.fava`.
+ *
+ * 2. Tremor pinta el modo oscuro con una escala APARTE (`dark:bg-dark-tremor-*`). Como
+ *    nuestras variables ya cambian de valor dentro de `[data-theme='dark']`, las dos
+ *    escalas apuntan a la MISMA variable: el color correcto sale por el cambio de
+ *    variable, no por el prefijo. Es lo que evita mantener dos paletas.
+ */
+@source '../node_modules/@tremor/react/dist';
+
+@theme inline {
+  /* Marca */
+  --color-tremor-brand: var(--primary);
+  --color-tremor-brand-muted: var(--primary-tint);
+  --color-tremor-brand-subtle: var(--primary-600);
+  --color-tremor-brand-faint: var(--surface-2);
+  --color-tremor-brand-emphasis: var(--primary-700);
+  --color-tremor-brand-inverted: #ffffff;
+
+  /* Fondos */
+  --color-tremor-background: var(--surface);
+  --color-tremor-background-muted: var(--surface-2);
+  --color-tremor-background-subtle: var(--surface-3);
+  --color-tremor-background-emphasis: var(--text-2);
+
+  --color-tremor-border: var(--border);
+  --color-tremor-ring: var(--border-2);
+
+  /* Texto */
+  --color-tremor-content: var(--text-2);
+  --color-tremor-content-subtle: var(--text-3);
+  --color-tremor-content-emphasis: var(--text);
+  --color-tremor-content-strong: var(--text);
+  --color-tremor-content-inverted: #ffffff;
+
+  /* La escala oscura de Tremor apunta a las MISMAS variables: ver la nota 2 de arriba. */
+  --color-dark-tremor-brand: var(--primary);
+  --color-dark-tremor-brand-muted: var(--primary-tint);
+  --color-dark-tremor-brand-subtle: var(--primary-600);
+  --color-dark-tremor-brand-faint: var(--surface-2);
+  --color-dark-tremor-brand-emphasis: var(--primary-700);
+  --color-dark-tremor-brand-inverted: #ffffff;
+  --color-dark-tremor-background: var(--surface);
+  --color-dark-tremor-background-muted: var(--surface-2);
+  --color-dark-tremor-background-subtle: var(--surface-3);
+  --color-dark-tremor-background-emphasis: var(--text-2);
+  --color-dark-tremor-border: var(--border);
+  --color-dark-tremor-ring: var(--border-2);
+  --color-dark-tremor-content: var(--text-2);
+  --color-dark-tremor-content-subtle: var(--text-3);
+  --color-dark-tremor-content-emphasis: var(--text);
+  --color-dark-tremor-content-strong: var(--text);
+  --color-dark-tremor-content-inverted: #ffffff;
+
+  /* Radios, sombras y tamanos de texto que Tremor da por hechos. */
+  --radius-tremor-small: 0.375rem;
+  --radius-tremor-default: var(--radius);
+  --radius-tremor-full: 9999px;
+
+  --shadow-tremor-input: var(--shadow);
+  --shadow-tremor-card: var(--shadow);
+  --shadow-tremor-dropdown: var(--shadow-lg);
+  --shadow-dark-tremor-input: var(--shadow);
+  --shadow-dark-tremor-card: var(--shadow);
+  --shadow-dark-tremor-dropdown: var(--shadow-lg);
+
+  --text-tremor-label: 0.75rem;
+  --text-tremor-default: 0.875rem;
+  --text-tremor-title: 1.125rem;
+  --text-tremor-metric: 1.875rem;
+}
+
 @layer base {
   * {
     box-sizing: border-box;
