@@ -55,6 +55,17 @@ Plans:
 **Frontend cutover**: `Projects.tsx`, `ProjectDetail.tsx`, `Techs.tsx`, `Users.tsx`, `Config.tsx`, `NewProjectModal.tsx`, `InviteUserModal.tsx`
 **Plans**: 6 (4/6 complete)
 
+### Phase 2.1: La orden como dueña del contrato
+**Goal**: Corregir el modelo de la Fase 2 con lo que demostró la relectura del Excel: el contrato y los días vendidos cuelgan de la máquina contratada, y la jornada dice a cuál fue.
+**Depends on**: Phase 2
+**Requirements**: CAT-03, CAT-04, BIT-01 (correcciones)
+**Success Criteria** (what must be TRUE):
+  1. Un proyecto tiene dos máquinas del mismo modelo distinguidas por su commessa, cada una con su OA e importe propios.
+  2. Una jornada con proyecto registra su orden; el histórico sin orden aparece en un bucket propio y no se reparte solo.
+  3. El vendido/ejecutado/delta se calcula por (orden, fase, rol).
+**Frontend cutover**: `ProjectDetail.tsx`, `NewProjectModal.tsx`, `Projects.tsx`
+**Plans**: 4 (4/4 complete)
+
 ### Phase 3: Bitácora diaria
 **Goal**: El técnico registra su semana una sola vez desde el móvil en planta, y el dato sobrevive a la conectividad mala y al doble toque.
 **Depends on**: Phase 2
@@ -177,8 +188,9 @@ Las fases se ejecutan en orden numérico. Phase 6 (migración) puede adelantarse
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundación segura y desplegada | 0/6 | Not started | - |
+| 1. Fundación segura y desplegada | 6/6 | Complete    | 2026-07-25 |
 | 2. Maestros y catálogos | 6/6 | Complete    | 2026-07-26 |
+| 2.1 La orden como dueña del contrato | 4/4 | Complete    | 2026-08-01 |
 | 3. Bitácora diaria | 4/7 | In Progress | - |
 | 4. Flujo de aprobación y auditoría | 0/TBD | Not started | - |
 | 5. Nota Semanal PDF y firma | 0/TBD | Not started | - |
