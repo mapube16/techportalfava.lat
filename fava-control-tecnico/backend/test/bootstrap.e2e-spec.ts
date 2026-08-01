@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { TEC_A, TEC_B, appClient, disconnectAll, ownerClient, truncateAll } from './helpers/db';
+import { crearProyecto } from './helpers/fixtures';
 
 describe('bootstrap', () => {
   afterAll(async () => {
@@ -64,8 +65,10 @@ describe('bootstrap', () => {
           { technicianId: TEC_B, date: new Date('2026-01-05') },
         ],
       });
+      // Desde la Fase 4 la nota cuelga de un PROYECTO: la firma el cliente.
+      const proyecto = await crearProyecto();
       await ownerClient.weeklyNote.create({
-        data: { technicianId: TEC_A, weekStart: new Date('2026-01-05') },
+        data: { technicianId: TEC_A, weekStart: new Date('2026-01-05'), projectId: proyecto.id },
       });
       await ownerClient.user.create({
         data: { email: 'truncate@fava.local', displayName: 'Truncate', roles: ['T'] },

@@ -15,6 +15,7 @@ import { from, lastValueFrom } from 'rxjs';
 import { PrismaService } from '../src/common/prisma/prisma.service';
 import { RlsInterceptor } from '../src/common/prisma/rls.interceptor';
 import { TEC_A, TEC_B, disconnectAll, ownerClient, truncateAll } from './helpers/db';
+import { crearProyecto } from './helpers/fixtures';
 
 const prisma = new PrismaService();
 const interceptor = new RlsInterceptor(prisma);
@@ -41,9 +42,15 @@ const DIAS = [5, 6, 7, 8, 9, 10, 11].map((n) => new Date(Date.UTC(2026, 0, n)));
 /**
  * La transicion multi-tabla de la Fase 4 (approve toca nota + 7 entradas + auditoria),
  * en su forma minima: dos tablas y una lectura de verificacion, todo en la tx de la
- * peticion. El sufijo por tecnico deja rastro de quien escribio cada fila.
+ * peticion. La MARCA por tecnico deja rastro de quien escribio cada fila.
+ *
+ * La marca va en un campo de texto libre y NO en `status`, como estaba antes: desde la
+ * Fase 4 el estado tiene un CHECK con los cuatro valores validos, asi que un
+ * `submitted-A` ya no entra. Es la restriccion correcta —un estado con un typo
+ * desaparece de todas las bandejas sin que nada falle— y el rastro cabe igual de bien
+ * en `description` y `return_comment`.
  */
-async function transicion(technicianId: string, estado: string) {
+async function transicion(technicianId: string, estado: string, marca: string) {
   const db = prisma.client;
 
   // findFirstOrThrow sin where: RLS ya garantiza que la unica nota visible es la suya.
@@ -52,11 +59,11 @@ async function transicion(technicianId: string, estado: string) {
   const propia = await db.weeklyNote.findFirstOrThrow();
   const nota = await db.weeklyNote.update({
     where: { id: propia.id },
-    data: { status: estado },
+    data: { status: estado, returnComment: marca },
   });
   const { count } = await db.dailyEntry.updateMany({
     where: { date: { in: DIAS } },
-    data: { status: estado },
+    data: { status: estado, description: marca },
   });
 
   // Lectura de verificacion DENTRO de la tx: si el contexto RLS se hubiera filtrado
@@ -65,6 +72,7 @@ async function transicion(technicianId: string, estado: string) {
 
   return {
     estado: nota.status,
+    marca: nota.returnComment,
     actualizadas: count,
     propias: vistas.filter((e) => e.technicianId === technicianId).length,
     ajenas: vistas.filter((e) => e.technicianId !== technicianId).length,
@@ -73,10 +81,12 @@ async function transicion(technicianId: string, estado: string) {
 
 async function sembrar(): Promise<void> {
   await truncateAll();
+  // Desde la Fase 4 la nota cuelga de un PROYECTO: la firma el cliente.
+  const proyecto = await crearProyecto();
   await ownerClient.weeklyNote.createMany({
     data: [
-      { technicianId: TEC_A, weekStart: SEMANA },
-      { technicianId: TEC_B, weekStart: SEMANA },
+      { technicianId: TEC_A, weekStart: SEMANA, projectId: proyecto.id },
+      { technicianId: TEC_B, weekStart: SEMANA, projectId: proyecto.id },
     ],
   });
   await ownerClient.dailyEntry.createMany({
@@ -131,12 +141,12 @@ describe('RLS + $transaction: transicion multi-tabla y concurrencia', () => {
     });
 
     it('mueve nota + 7 entradas de draft a submitted en la misma tx, con RLS activo', async () => {
-      const r = await comoPeticion(USUARIOS.A, () => transicion(TEC_A, 'submitted-A'));
+      const r = await comoPeticion(USUARIOS.A, () => transicion(TEC_A, 'submitted', 'marca-A'));
 
-      expect(r).toEqual({ estado: 'submitted-A', actualizadas: 7, propias: 7, ajenas: 0 });
+      expect(r).toEqual({ estado: 'submitted', marca: 'marca-A', actualizadas: 7, propias: 7, ajenas: 0 });
       // Persistio de verdad (la lectura de control la hace el owner, fuera de RLS):
       const deA = await ownerClient.dailyEntry.findMany({ where: { technicianId: TEC_A } });
-      expect(deA.every((e) => e.status === 'submitted-A')).toBe(true);
+      expect(deA.every((e) => e.status === 'submitted' && e.description === 'marca-A')).toBe(true);
       const deB = await ownerClient.dailyEntry.findMany({ where: { technicianId: TEC_B } });
       expect(deB.every((e) => e.status === 'draft')).toBe(true);
     });
@@ -158,8 +168,9 @@ describe('RLS + $transaction: transicion multi-tabla y concurrencia', () => {
             const esA = i % 2 === 0;
             const user = esA ? USUARIOS.A : USUARIOS.B;
             const accion = Math.floor(i / 2) % 2 === 0 ? 'submitted' : 'returned';
-            const estado = `${accion}-${esA ? 'A' : 'B'}`;
-            return comoPeticion(user, () => transicion(user.technicianId, estado));
+            return comoPeticion(user, () =>
+              transicion(user.technicianId, accion, `${accion}-${esA ? 'A' : 'B'}`),
+            );
           });
           resultados.push(...(await Promise.allSettled(peticiones)));
         }
@@ -210,10 +221,10 @@ describe('RLS + $transaction: transicion multi-tabla y concurrencia', () => {
 
       expect(deA).toHaveLength(7);
       expect(deB).toHaveLength(7);
-      expect(deA.every((e) => e.status.endsWith('-A'))).toBe(true);
-      expect(deB.every((e) => e.status.endsWith('-B'))).toBe(true);
+      expect(deA.every((e) => e.description?.endsWith('-A'))).toBe(true);
+      expect(deB.every((e) => e.description?.endsWith('-B'))).toBe(true);
       for (const nota of notas) {
-        expect(nota.status.endsWith(nota.technicianId === TEC_A ? '-A' : '-B')).toBe(true);
+        expect(nota.returnComment?.endsWith(nota.technicianId === TEC_A ? '-A' : '-B')).toBe(true);
       }
     });
   });

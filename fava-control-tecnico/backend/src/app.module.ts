@@ -18,6 +18,8 @@ import { AccessRequestsModule } from './modules/access-requests/access-requests.
 import { CatalogsModule } from './modules/catalogs/catalogs.module';
 import { DailyEntriesModule } from './modules/daily-entries/daily-entries.module';
 import { MeModule } from './modules/me/me.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { WeeklyNotesModule } from './modules/weekly-notes/weekly-notes.module';
 import { KpisModule } from './modules/kpis/kpis.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { TechniciansModule } from './modules/technicians/technicians.module';
@@ -56,6 +58,8 @@ const staticRoot =
     TechniciansModule,
     ProjectsModule,
     KpisModule,
+    WeeklyNotesModule,
+    AuditModule,
     DailyEntriesModule,
     // Login de desarrollo temporal: se REGISTRA o no. Sin el flag la ruta no
     // existe (404, no 401) y el keyset local no se carga (jwks.provider.ts).

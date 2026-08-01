@@ -188,13 +188,30 @@ model DailyEntry {
   @@map("daily_entries")
 }
 
+/// NOTA-01. El tecnico NUNCA crea ni elige notas: al enviar la semana, el servidor
+/// deriva UNA POR PROYECTO agrupando sus jornadas. Si trabajo en dos proyectos, salen
+/// dos notas y el las ve ya hechas.
 model WeeklyNote {
   id           String   @id @default(uuid()) @db.Uuid
   technicianId String   @map("technician_id") @db.Uuid
+  /// Lunes de la semana ISO. DATE, nunca timestamptz (misma regla que daily_entries).
   weekStart    DateTime @map("week_start") @db.Date
+
+  /// NOT NULL: una nota la firma el CLIENTE de un proyecto. Las jornadas sin proyecto
+  /// (libres, no remunerados) no pertenecen a ninguna nota — nadie las firma.
+  projectId String @map("project_id") @db.Uuid
 
   /// draft | submitted | approved | returned
   status String @default("draft")
+
+  /// NOTA-09: el cargo puede variar por SEMANA. Nace con el del maestro del tecnico y
+  /// es editable, porque el mismo Ivan es electricista una semana y softwerista otra
+  /// —lo pidio Andrea explicitamente— y la Nota impresa lleva el de ESA semana.
+  roleTypeId String? @map("role_type_id") @db.Uuid
+
+  /// NOTA-03: obligatorio al devolver, y por eso vive aqui y no solo en el audit_log:
+  /// es lo que el tecnico LEE para saber que corregir.
+  returnComment String? @map("return_comment")
 
   sourceYear  Int?    @map("source_year")
   sourceSheet String? @map("source_sheet")
@@ -204,9 +221,54 @@ model WeeklyNote {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   technician Technician @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  roleType   RoleType?  @relation(fields: [roleTypeId], references: [id], onDelete: Restrict)
 
-  @@index([technicianId])
+  /// La clave natural de la derivacion: reenviar la misma semana NO duplica notas.
+  @@unique([technicianId, weekStart, projectId])
+  @@index([status])
   @@map("weekly_notes")
+}
+
+/// AUD-01. Append-only POR MOTOR, no por convencion: la migracion le da politica de
+/// SELECT e INSERT y NINGUNA de UPDATE ni DELETE, asi que el default-deny de Postgres
+/// bloquea reescribir la historia incluso desde SQL suelto y siendo admin.
+///
+/// No tiene FK a `users`: un Restrict impediria dar de baja al usuario que hizo la
+/// transicion y un SetNull/Cascade falsearia el rastro. Mismo criterio que
+/// `projects.created_by_id`.
+model AuditLog {
+  id String @id @default(uuid()) @db.Uuid
+
+  /// Quien. Se guarda ademas el nombre porque el rastro tiene que seguir siendo legible
+  /// aunque el usuario se borre o se renombre.
+  actorId   String @map("actor_id") @db.Uuid
+  actorName String @map("actor_name")
+
+  /// CAT-06: aprobar en nombre de un tecnico dado de baja. NULL en el caso normal.
+  onBehalfOfId String? @map("on_behalf_of_id") @db.Uuid
+
+  /// Que se toco: 'weekly_note' | 'daily_entry' | 'project' | ...
+  entity   String
+  entityId String @map("entity_id") @db.Uuid
+
+  /// La transicion: 'submit' | 'approve' | 'return' | 'reopen' | 'update' | ...
+  action String
+
+  /// El antes y el despues, como JSON. Solo los campos que cambiaron: guardar la fila
+  /// entera haria el log ilegible y multiplicaria su tamano por nada.
+  before Json?
+  after  Json?
+
+  /// Obligatorio en `return` y `reopen` (lo exige el servicio, no el motor: el motor no
+  /// sabe que acciones lo necesitan).
+  reason String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_log")
 }
 
 // ─────────────────────────── Fase 2: maestros y catalogos ───────────────────────────
@@ -236,6 +298,7 @@ model RoleType {
   technicians  Technician[]
   soldDays     OrderSoldDays[]
   dailyEntries DailyEntry[]
+  weeklyNotes  WeeklyNote[]
 
   @@map("role_types")
 }
@@ -350,6 +413,7 @@ model Project {
 
   orders       Order[]
   dailyEntries DailyEntry[]
+  weeklyNotes  WeeklyNote[]
 
   @@index([isActive])
   @@map("projects")

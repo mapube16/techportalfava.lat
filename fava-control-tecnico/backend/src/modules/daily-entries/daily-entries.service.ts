@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { ConceptCode, Phase } from '../../generated/prisma/enums';
 import type { UserModel } from '../../generated/prisma/models';
+import { EDITABLES } from '../../common/estados';
 import { aDate, aTexto, ventana } from './fecha';
 
 /**
@@ -145,6 +146,17 @@ export class DailyEntriesService {
    */
   async guardar(technicianId: string, fecha: string, datos: Jornada) {
     const date = aDate(fecha);
+
+    // BIT-05: enviado = solo lectura. Se comprueba el estado ACTUAL de la fila, no el
+    // de su nota: son el mismo dato (`weekly-notes.service.ts` propaga uno al otro) y
+    // preguntarle a la nota exigiria derivar su semana aqui, que es donde empiezan las
+    // dos verdades sobre si un dia se puede tocar.
+    const actual = await this.prisma.client.dailyEntry.findUnique({
+      where: { technicianId_date: { technicianId, date } },
+      select: { status: true },
+    });
+    if (actual && !EDITABLES.includes(actual.status))
+      throw new ConflictException('JORNADA_BLOQUEADA');
 
     // La orden tiene que ser DEL proyecto que se declara. El FK solo garantiza que
     // existe, no que sea de este proyecto: sin esta comprobacion un dia de JAV podria

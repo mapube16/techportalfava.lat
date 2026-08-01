@@ -8,6 +8,7 @@
  * `ownerClient` solo siembra, limpia y hace de control anti-mentira.
  */
 import { TEC_A, TEC_B, appClient, disconnectAll, ownerClient, truncateAll } from './helpers/db';
+import { crearProyecto } from './helpers/fixtures';
 
 /** Lo que hace RlsInterceptor en cada peticion, reducido a lo esencial. */
 function comoTecnico<T>(technicianId: string, fn: (tx: typeof appClient) => Promise<T>): Promise<T> {
@@ -40,11 +41,14 @@ describe('RLS: aislamiento por tecnico con el rol de aplicacion', () => {
         ...[1, 2, 3].map((n) => ({ technicianId: TEC_B, date: dia(n) })),
       ],
     });
+    // Desde la Fase 4 la nota cuelga de un PROYECTO. Dos semanas distintas del mismo
+    // tecnico y proyecto: la unique es (tecnico, semana, proyecto).
+    const proyecto = await crearProyecto();
     await ownerClient.weeklyNote.createMany({
       data: [
-        { technicianId: TEC_A, weekStart: dia(5) },
-        { technicianId: TEC_A, weekStart: dia(12) },
-        { technicianId: TEC_B, weekStart: dia(5) },
+        { technicianId: TEC_A, weekStart: dia(5), projectId: proyecto.id },
+        { technicianId: TEC_A, weekStart: dia(12), projectId: proyecto.id },
+        { technicianId: TEC_B, weekStart: dia(5), projectId: proyecto.id },
       ],
     });
   });

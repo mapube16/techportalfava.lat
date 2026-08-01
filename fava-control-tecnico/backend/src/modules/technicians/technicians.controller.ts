@@ -8,8 +8,12 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { AuditService } from '../../common/audit/audit.service';
+import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { Roles } from '../../common/auth/roles.decorator';
 import { EmploymentType } from '../../generated/prisma/enums';
+import type { UserModel } from '../../generated/prisma/models';
+import { WeeklyNotesService } from '../weekly-notes/weekly-notes.service';
 import { type DatosTecnico, TechniciansService } from './technicians.service';
 
 const TIPOS: string[] = Object.values(EmploymentType);
@@ -46,7 +50,11 @@ function tipo(valor: unknown): EmploymentType {
 @Controller('api/technicians')
 @Roles('A', 'S')
 export class TechniciansController {
-  constructor(private readonly service: TechniciansService) {}
+  constructor(
+    private readonly service: TechniciansService,
+    private readonly notes: WeeklyNotesService,
+    private readonly audit: AuditService,
+  ) {}
 
   @Get()
   listar() {
@@ -72,10 +80,35 @@ export class TechniciansController {
     return this.service.editar(id, data);
   }
 
+  /**
+   * CAT-06. Lo que el dialogo de baja necesita ANTES de desactivar: cuantas notas
+   * quedan sin cerrar. No bloquea la baja —el requisito dice «avisa y permite»— pero
+   * sin el dato la UI no puede avisar de nada.
+   */
+  @Get(':id/pending-notes')
+  pendientes(@Param('id', ParseUUIDPipe) id: string) {
+    return this.notes.pendientesDe(id).then((count) => ({ count }));
+  }
+
   /** Endpoint propio para la baja, igual que `users`: es la unica «eliminacion» que hay. */
   @Patch(':id/active')
-  cambiarActivo(@Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo) {
+  async cambiarActivo(
+    @CurrentUser() actor: UserModel,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: Cuerpo,
+  ) {
     if (typeof body?.isActive !== 'boolean') throw new BadRequestException('IS_ACTIVE_INVALIDO');
-    return this.service.editar(id, { isActive: body.isActive });
+    const tecnico = await this.service.editar(id, { isActive: body.isActive });
+    // La baja de una persona con historia SI deja rastro (AUD-01): es de las cosas que
+    // alguien pregunta meses despues, y el nombre del actor tiene que estar escrito.
+    await this.audit.registrar({
+      actorId: actor.id,
+      actorName: actor.displayName,
+      entity: 'technician',
+      entityId: id,
+      action: body.isActive ? 'update' : 'deactivate',
+      after: { isActive: body.isActive },
+    });
+    return tecnico;
   }
 }
