@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Dots } from '../icons';
-import { ApiState, Card, CardHead, gbtn, inputStyle, pbtn } from '../ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ApiState, inputStyle } from '../ui';
 import { CONCEPT_COLOR } from '../i18n';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
@@ -93,27 +95,38 @@ function CatalogCard(p: CatalogCardProps) {
   );
 
   return (
-    <Card>
-      <CardHead title={p.title} />
-      <div style={{ padding: '8px 18px' }}>
+    <Card className="p-0 gap-0 overflow-hidden">
+      <CardHeader className="border-b p-4">
+        <CardTitle>{p.title}</CardTitle>
+      </CardHeader>
+      <CardContent className="px-4.5 py-2">
         {p.filas.map((f, i) => (
-          <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderTop: i ? '1px solid var(--border)' : 'none', flexWrap: 'wrap', opacity: f.isActive ? 1 : 0.5 }}>
+          <div
+            key={f.id}
+            className={`flex items-center gap-2.5 py-2.5 flex-wrap ${i ? 'border-t border-border' : ''} ${f.isActive ? '' : 'opacity-50'}`}
+          >
             {editando === f.id ? (
               <>
                 {campos(!!f.fijo)}
-                <button onClick={() => lanzar(p.onEdit(f.id, uno.trim(), dos.trim()))} className={pbtn}>{t.btn_save}</button>
-                <button onClick={limpiar} className={gbtn}>{t.btn_cancel}</button>
+                <Button size="sm" onClick={() => lanzar(p.onEdit(f.id, uno.trim(), dos.trim()))} className="min-h-11 md:min-h-8">
+                  {t.btn_save}
+                </Button>
+                <Button variant="outline" size="sm" onClick={limpiar} className="min-h-11 md:min-h-8">
+                  {t.btn_cancel}
+                </Button>
               </>
             ) : (
               <>
-                <span style={{ fontFamily: 'Roboto Mono', fontSize: 12.5, fontWeight: 600, minWidth: 78 }}>{f.principal}</span>
-                <span style={{ flex: 1, fontSize: 13, color: 'var(--text-2)', minWidth: 90 }}>{f.secundario}</span>
+                <span className="font-mono text-[12.5px] font-semibold min-w-[78px]">{f.principal}</span>
+                <span className="flex-1 text-[13px] text-muted-foreground min-w-[90px]">{f.secundario}</span>
                 {p.canEdit ? (
                   <>
-                    <button onClick={() => editar(f)} className={gbtn}>{t.cat_edit}</button>
-                    <button onClick={() => lanzar(p.onToggle(f.id, !f.isActive))} className={gbtn}>
+                    <Button variant="outline" size="sm" onClick={() => editar(f)} className="min-h-11 md:min-h-8">
+                      {t.cat_edit}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => lanzar(p.onToggle(f.id, !f.isActive))} className="min-h-11 md:min-h-8">
                       {f.isActive ? t.cat_deactivate : t.cat_activate}
-                    </button>
+                    </Button>
                   </>
                 ) : null}
               </>
@@ -121,17 +134,19 @@ function CatalogCard(p: CatalogCardProps) {
           </div>
         ))}
         {p.canEdit ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0 4px', borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
+          <div className="flex items-center gap-2.5 pt-3 pb-1 border-t border-border flex-wrap">
             {editando === null ? (
               <>
                 {campos(false)}
-                <button onClick={() => lanzar(p.onCreate(uno.trim(), dos.trim()))} className={pbtn}>{t.cat_add}</button>
+                <Button size="sm" onClick={() => lanzar(p.onCreate(uno.trim(), dos.trim()))} className="min-h-11 md:min-h-8">
+                  {t.cat_add}
+                </Button>
               </>
             ) : null}
           </div>
         ) : null}
-        {err ? <div style={{ fontSize: 12, color: 'var(--warn)', paddingBottom: 8 }}>{t.err_save}: {err}</div> : null}
-      </div>
+        {err ? <div className="text-xs text-warn pb-2">{t.err_save}: {err}</div> : null}
+      </CardContent>
     </Card>
   );
 }
@@ -172,55 +187,75 @@ export default function Config() {
   ];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: movil ? '1fr' : '1fr 1fr', gap: 16, maxWidth: 900 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Card>
-          <CardHead title={t.config_concepts} right={isSuper ? null : <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{t.cat_only_super}</span>} />
-          <div style={{ padding: '8px 18px' }}>
+    <div className={`grid gap-4 max-w-[900px] ${movil ? 'grid-cols-1' : 'grid-cols-2'}`}>
+      <div className="flex flex-col gap-4">
+        <Card className="p-0 gap-0 overflow-hidden">
+          <CardHeader className="flex-row items-center justify-between border-b p-4">
+            <CardTitle>{t.config_concepts}</CardTitle>
+            {isSuper ? null : <span className="text-xs text-muted-foreground">{t.cat_only_super}</span>}
+          </CardHeader>
+          <CardContent className="px-4.5 py-2">
             {/* Los 8 códigos son fijos por enum de Postgres: aquí solo se editan las
                 etiquetas ES/IT, que es lo único que CAT-01 deja tocar. */}
             {cat.concepts.map((c, i) => (
-              <div key={c.code} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: i ? '1px solid var(--border)' : 'none', flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: 'Roboto Mono', fontSize: 12, fontWeight: 600, color: '#fff', background: CONCEPT_COLOR[c.code] || 'var(--text-3)', padding: '3px 7px', borderRadius: 5, minWidth: 44, textAlign: 'center' }}>{c.code}</span>
+              <div key={c.code} className={`flex items-center gap-3 py-2.5 flex-wrap ${i ? 'border-t border-border' : ''}`}>
+                {/* El color del concepto sale del CATÁLOGO, una fila por código: no es
+                    una paleta que Tailwind pueda generar como clase en compilación. */}
+                <span
+                  className="font-mono text-xs font-semibold text-white px-1.5 py-1 rounded min-w-11 text-center"
+                  style={{ background: CONCEPT_COLOR[c.code] || 'var(--text-3)' }}
+                >
+                  {c.code}
+                </span>
                 {edit === c.code ? (
                   <>
                     <input value={labelEs} onChange={(e) => setLabelEs(e.target.value)} placeholder={t.cat_label_es} className={`${inputStyle} w-[150px]`} />
                     <input value={labelIt} onChange={(e) => setLabelIt(e.target.value)} placeholder={t.cat_label_it} className={`${inputStyle} w-[150px]`} />
-                    <button onClick={() => guardarConcepto(c.code)} className={pbtn}>{t.btn_save}</button>
-                    <button onClick={() => setEdit(null)} className={gbtn}>{t.btn_cancel}</button>
+                    <Button size="sm" onClick={() => guardarConcepto(c.code)} className="min-h-11 md:min-h-8">
+                      {t.btn_save}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setEdit(null)} className="min-h-11 md:min-h-8">
+                      {t.btn_cancel}
+                    </Button>
                   </>
                 ) : (
                   <>
-                    <span style={{ flex: 1, fontSize: 13.5 }}>{state.lang === 'es' ? c.labelEs : c.labelIt}</span>
+                    <span className="flex-1 text-[13.5px]">{state.lang === 'es' ? c.labelEs : c.labelIt}</span>
                     {isSuper ? (
-                      <button
+                      <Button
+                        variant="outline"
+                        size="icon"
                         onClick={() => { setEdit(c.code); setLabelEs(c.labelEs); setLabelIt(c.labelIt); setErr(null); }}
                         title={t.cat_edit}
-                        className={`${gbtn} px-2 py-1.5`}
+                        className="size-11 md:size-8"
                       >
                         <Dots w={16} />
-                      </button>
+                      </Button>
                     ) : null}
                   </>
                 )}
               </div>
             ))}
-            {err ? <div style={{ fontSize: 12, color: 'var(--warn)', paddingBottom: 8 }}>{t.err_save}: {err}</div> : null}
-          </div>
+            {err ? <div className="text-xs text-warn pb-2">{t.err_save}: {err}</div> : null}
+          </CardContent>
         </Card>
-        <Card>
-          <CardHead title={t.config_general} />
-          <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+        <Card className="p-0 gap-0 overflow-hidden">
+          <CardHeader className="border-b p-4">
+            <CardTitle>{t.config_general}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
             {generales.map((r) => (
-              <div key={r[0]} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5 }}>
-                <span style={{ color: 'var(--text-2)' }}>{r[0]}</span>
+              <div key={r[0]} className="flex justify-between text-[13.5px]">
+                <span className="text-muted-foreground">{r[0]}</span>
                 <b>{r[1]}</b>
               </div>
             ))}
-          </div>
+          </CardContent>
         </Card>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      <div className="flex flex-col gap-4">
         <CatalogCard
           title={t.config_roles}
           filas={cat.roleTypes.map((r) => ({ id: r.id, principal: r.name, secundario: '', isActive: r.isActive }))}
