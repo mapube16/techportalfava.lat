@@ -14,7 +14,8 @@
     "db:seed": "prisma db seed",
     "smoke": "tsx scripts/smoke.ts",
     "migrate:excel": "tsx prisma/migrate-excel.ts",
-    "migrate:ordenes": "tsx prisma/migrate-ordenes.ts"
+    "migrate:ordenes": "tsx prisma/migrate-ordenes.ts",
+    "informe": "tsx scripts/informe-excel.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",
