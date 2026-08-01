@@ -1,21 +1,23 @@
 import { useState } from 'react';
+import { CalendarDays, Download, ListTree } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Button,
-  Card,
-  Metric,
   Select,
+  SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
-  TableFoot,
-  TableFooterCell,
+  TableFooter,
   TableHead,
-  TableHeaderCell,
+  TableHeader,
   TableRow,
-  Text,
-  Title,
-} from '@tremor/react';
+} from '@/components/ui/table';
 import { ApiState } from '../ui';
 import { useApp } from '../state';
 import { useApiData } from '../lib/api/useApiData';
@@ -34,32 +36,15 @@ import type { Counts, DayGrid as Datos, GridProject } from '../lib/api/kpis';
  * Las filas siguen siendo pulsables para abrir UNA rama concreta por encima del nivel
  * elegido, que es lo que se hace cuando algo no cuadra en un proyecto en particular.
  *
+ * Construida con shadcn/ui. Sus tokens (`bg-card`, `text-muted-foreground`, …) están
+ * conectados a las variables de FAVA en `index.css`, así que hereda la identidad y el
+ * tema oscuro sin configurar nada componente a componente.
+ *
  * Los totales llegan calculados del servidor; aquí no se suma nada.
  */
 
 const MESES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const MESI = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-
-/**
- * Los iconos de los controles. Van como COMPONENTES porque `Select` y `Button` de
- * Tremor esperan un tipo de componente, no un elemento ya renderizado.
- */
-const IconoDesglose = () => (
-  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
-    <path d="M4 6h16M8 12h12M12 18h8" />
-  </svg>
-);
-const IconoAnio = () => (
-  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
-    <rect x="3" y="5" width="18" height="16" rx="2" />
-    <path d="M8 3v4M16 3v4M3 11h18" />
-  </svg>
-);
-const IconoExportar = () => (
-  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-  </svg>
-);
 
 /** Hasta dónde se despliega la tabla. */
 const PROYECTO = 0;
@@ -70,7 +55,19 @@ const MES = 2;
  * La primera columna se queda fija al desplazar en horizontal: sin ella no se sabe qué
  * fila se está mirando. `sticky` necesita fondo opaco o el contenido se transparenta.
  */
-const FIJA = 'sticky left-0 z-10 min-w-[230px]';
+const FIJA = 'sticky left-0 z-10 bg-card min-w-[230px]';
+
+/** Una tarjeta de métrica. Tres arriba, como en el planner. */
+function Metrica({ etiqueta, valor }: { etiqueta: string; valor: string }) {
+  return (
+    <Card>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">{etiqueta}</p>
+        <p className="text-3xl font-semibold tabular-nums mt-1">{valor}</p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function DayGrid() {
   const { t, state } = useApp();
@@ -113,12 +110,9 @@ export default function DayGrid() {
   /**
    * Exporta lo que se está viendo a CSV, con el mismo desglose elegido.
    *
-   * Existe porque el destino natural de esta tabla sigue siendo Excel: Andrea y Luca
-   * trabajan ahí, y una cuadrícula que no se puede sacar obliga a volver al fichero
+   * Existe porque el destino natural de esta cuadrícula sigue siendo Excel: Andrea y
+   * Luca trabajan ahí, y una tabla que no se puede sacar obliga a volver al fichero
    * original — que es justo lo que la app viene a sustituir.
-   *
-   * Punto y coma como separador: es lo que espera un Excel en configuración regional
-   * española, donde la coma es el separador decimal.
    */
   const exportar = () => {
     const filas: string[][] = [[t.grid_rows, ...g.concepts.map((c) => c.code), t.grid_total]];
@@ -134,9 +128,11 @@ export default function DayGrid() {
     }
     filas.push([t.grid_total, ...num(g.counts), String(g.total)]);
 
-    // El BOM es lo que hace que Excel lea los acentos: sin él, «Día» sale «DÃ­a».
+    // Punto y coma: es lo que espera un Excel en configuración regional española, donde
+    // la coma es el separador decimal. Y el BOM es lo que hace que lea los acentos —
+    // sin él, «Día» sale «DÃ­a».
     const csv =
-      '\uFEFF' +
+      '﻿' +
       filas.map((f) => f.map((v) => '"' + v.replace(/"/g, '""') + '"').join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
@@ -148,7 +144,7 @@ export default function DayGrid() {
 
   /** El triángulo de desplegar. Vacío si la rama no tiene nada dentro. */
   const flecha = (abierto: boolean, hayHijos: boolean) => (
-    <span className="inline-block w-3 shrink-0 text-tremor-content-subtle select-none">
+    <span className="inline-block w-3 shrink-0 text-muted-foreground select-none">
       {hayHijos ? (abierto ? '▾' : '▸') : ''}
     </span>
   );
@@ -158,18 +154,14 @@ export default function DayGrid() {
     const verTecnicos = nivel >= TECNICO || abiertos[kp];
 
     const filas = [
-      <TableRow
-        key={kp}
-        onClick={() => alternar(kp)}
-        className="cursor-pointer group"
-      >
+      <TableRow key={kp} onClick={() => alternar(kp)} className="cursor-pointer">
         {/* Cabecera de grupo al estilo del planner: nombre en negrita y el conteo
-            apagado al lado, sin fondo ni pastilla. El peso lo da la tipografia. */}
-        <TableCell className={`${FIJA} bg-tremor-background py-4`}>
+            apagado justo al lado, sin fondo ni pastilla. El peso lo da la tipografía. */}
+        <TableCell className={`${FIJA} py-4`}>
           <span className="inline-flex items-baseline gap-2">
             {flecha(!!verTecnicos, p.technicians.length > 0)}
-            <span className="font-semibold text-tremor-content-strong">{p.projectName}</span>
-            <span className="text-tremor-content-subtle tabular-nums">{p.total}</span>
+            <span className="font-semibold">{p.projectName}</span>
+            <span className="text-muted-foreground tabular-nums">{p.total}</span>
           </span>
         </TableCell>
         {cifras(p.counts, true)}
@@ -182,17 +174,13 @@ export default function DayGrid() {
       const kt = `${kp}|${tec.technicianId}`;
       const verMeses = nivel >= MES || abiertos[kt];
       filas.push(
-        <TableRow
-          key={kt}
-          onClick={() => alternar(kt)}
-          className="cursor-pointer hover:bg-tremor-background-muted"
-        >
-          {/* El nombre en color de marca, como las empresas del planner: ademas de
-              verse mejor, es la senal de que la fila se puede abrir. */}
-          <TableCell className={`${FIJA} bg-tremor-background py-3.5 pl-8`}>
+        <TableRow key={kt} onClick={() => alternar(kt)} className="cursor-pointer">
+          {/* El nombre en color de marca, como las empresas del planner: además de
+              verse mejor, es la señal de que la fila se puede abrir. */}
+          <TableCell className={`${FIJA} py-3.5 pl-8`}>
             <span className="inline-flex items-center gap-2">
               {flecha(!!verMeses, tec.months.length > 0)}
-              <span className="text-tremor-brand">{tec.technicianName}</span>
+              <span className="text-primary">{tec.technicianName}</span>
             </span>
           </TableCell>
           {cifras(tec.counts)}
@@ -203,11 +191,9 @@ export default function DayGrid() {
       for (const m of tec.months) {
         filas.push(
           <TableRow key={`${kt}|${m.month}`}>
-            <TableCell className={`${FIJA} bg-tremor-background py-3 pl-16 text-tremor-content-subtle`}>
-              {mes(m.month)}
-            </TableCell>
+            <TableCell className={`${FIJA} py-3 pl-16 text-muted-foreground`}>{mes(m.month)}</TableCell>
             {cifras(m.counts)}
-            <TableCell className="text-right tabular-nums py-3 text-tremor-content">{m.total}</TableCell>
+            <TableCell className="text-right tabular-nums py-3 text-muted-foreground">{m.total}</TableCell>
           </TableRow>,
         );
       }
@@ -217,105 +203,97 @@ export default function DayGrid() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Métricas arriba: lo que se mira antes de entrar al detalle. */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card decoration="top" decorationColor="blue">
-          <Text>{t.grid_kpi_days}</Text>
-          <Metric className="tabular-nums">{g.total.toLocaleString('es-CL')}</Metric>
-        </Card>
-        <Card decoration="top" decorationColor="blue">
-          <Text>{t.grid_kpi_projects}</Text>
-          <Metric className="tabular-nums">{g.projects.filter((p) => p.projectId).length}</Metric>
-        </Card>
-        <Card decoration="top" decorationColor="blue">
-          <Text>{t.grid_kpi_techs}</Text>
-          <Metric className="tabular-nums">{tecnicos}</Metric>
-        </Card>
+        <Metrica etiqueta={t.grid_kpi_days} valor={g.total.toLocaleString('es-CL')} />
+        <Metrica
+          etiqueta={t.grid_kpi_projects}
+          valor={String(g.projects.filter((p) => p.projectId).length)}
+        />
+        <Metrica etiqueta={t.grid_kpi_techs} valor={String(tecnicos)} />
       </div>
 
-      <Card className="p-0">
-        {/* Barra de la tabla, como la del planner: el título a la izquierda y los
-            controles a la derecha. Sin textos de ayuda: lo que hace cada control lo
-            dice el propio control. */}
-        <div className="flex items-center justify-between gap-3 flex-wrap p-4 border-b border-tremor-border">
-          <Title className="min-w-0">{t.grid_title}</Title>
+      <Card className="p-0 gap-0 overflow-hidden">
+        {/* Barra de la tabla: el título a la izquierda y los controles a la derecha.
+            Sin textos de ayuda — lo que hace cada control lo dice el propio control. */}
+        <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap border-b p-4">
+          <CardTitle className="min-w-0">{t.grid_title}</CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
-            <Select
-              value={String(nivel)}
-              onValueChange={(v) => cambiarNivel(Number(v))}
-              className="w-[170px] min-h-11 md:min-h-0"
-              enableClear={false}
-              icon={IconoDesglose}
-            >
-              <SelectItem value="0">{t.grid_level_project}</SelectItem>
-              <SelectItem value="1">{t.grid_level_tech}</SelectItem>
-              <SelectItem value="2">{t.grid_level_month}</SelectItem>
+            <Select value={String(nivel)} onValueChange={(v) => cambiarNivel(Number(v))}>
+              <SelectTrigger className="w-[175px] min-h-11 md:min-h-9">
+                <ListTree className="size-4 opacity-60" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">{t.grid_level_project}</SelectItem>
+                <SelectItem value="1">{t.grid_level_tech}</SelectItem>
+                <SelectItem value="2">{t.grid_level_month}</SelectItem>
+              </SelectContent>
             </Select>
+
+            {/* `SelectItem` de Radix no admite valor vacío, así que «todos» va con un
+                centinela y se traduce a `null` al salir. */}
             <Select
-              value={String(data.elegido ?? '')}
-              onValueChange={(v) => setAnio(v ? Number(v) : null)}
-              className="w-[130px] min-h-11 md:min-h-0"
-              enableClear={false}
-              icon={IconoAnio}
+              value={data.elegido === null ? 'todos' : String(data.elegido)}
+              onValueChange={(v) => setAnio(v === 'todos' ? null : Number(v))}
             >
-              <SelectItem value="">{t.grid_all_years}</SelectItem>
-              {data.anios.map((a) => (
-                <SelectItem key={a} value={String(a)}>
-                  {String(a)}
-                </SelectItem>
-              ))}
+              <SelectTrigger className="w-[135px] min-h-11 md:min-h-9">
+                <CalendarDays className="size-4 opacity-60" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">{t.grid_all_years}</SelectItem>
+                {data.anios.map((a) => (
+                  <SelectItem key={a} value={String(a)}>
+                    {String(a)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
-            <Button variant="secondary" icon={IconoExportar} onClick={exportar} className="min-h-11 md:min-h-0">
+
+            <Button variant="outline" onClick={exportar} className="min-h-11 md:min-h-9">
+              <Download className="size-4" />
               {t.grid_export}
             </Button>
           </div>
-        </div>
+        </CardHeader>
 
         {/* El scroll horizontal vive AQUÍ dentro: 10 columnas no caben en un móvil y el
             body de la página nunca debe desplazarse en horizontal. */}
-        <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
+        <CardContent className="p-0 overflow-x-auto max-h-[70vh] overflow-y-auto">
           {g.projects.length ? (
             <Table>
-              <TableHead className="sticky top-0 z-20 bg-tremor-background-muted">
+              <TableHeader className="sticky top-0 z-20 bg-muted">
                 <TableRow>
-                  <TableHeaderCell className={`${FIJA} z-30 bg-tremor-background-muted`}>
-                    {t.grid_rows}
-                  </TableHeaderCell>
+                  <TableHead className={`${FIJA} z-30 bg-muted`}>{t.grid_rows}</TableHead>
                   {g.concepts.map((c) => (
-                    <TableHeaderCell
+                    <TableHead
                       key={c.code}
                       className="text-right"
                       title={state.lang === 'it' ? c.labelIt : c.labelEs}
                     >
                       {c.code}
-                    </TableHeaderCell>
+                    </TableHead>
                   ))}
-                  <TableHeaderCell className="text-right text-tremor-content-strong">
-                    {t.grid_total}
-                  </TableHeaderCell>
+                  <TableHead className="text-right text-foreground">{t.grid_total}</TableHead>
                 </TableRow>
-              </TableHead>
+              </TableHeader>
               <TableBody>{g.projects.flatMap(filasDe)}</TableBody>
-              <TableFoot>
+              <TableFooter>
                 <TableRow>
-                  <TableFooterCell className={`${FIJA} bg-tremor-background-muted`}>
-                    {t.grid_total}
-                  </TableFooterCell>
+                  <TableCell className={`${FIJA} bg-muted font-semibold`}>{t.grid_total}</TableCell>
                   {g.concepts.map((k) => (
-                    <TableFooterCell key={k.code} className="text-right tabular-nums">
+                    <TableCell key={k.code} className="text-right tabular-nums font-semibold">
                       {g.counts[k.code] ?? ''}
-                    </TableFooterCell>
+                    </TableCell>
                   ))}
-                  <TableFooterCell className="text-right tabular-nums">{g.total}</TableFooterCell>
+                  <TableCell className="text-right tabular-nums font-semibold">{g.total}</TableCell>
                 </TableRow>
-              </TableFoot>
+              </TableFooter>
             </Table>
           ) : (
-            <div className="p-10 text-center">
-              <Text>{t.grid_empty}</Text>
-            </div>
+            <div className="p-10 text-center text-muted-foreground text-sm">{t.grid_empty}</div>
           )}
-        </div>
+        </CardContent>
       </Card>
     </div>
   );

@@ -5,6 +5,9 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // El mismo alias que en tsconfig: TypeScript lo resuelve para el tipado y Vite
+  // para el bundle. Si solo estuviera en uno, compilaria y reventaria en runtime.
+  resolve: { alias: { '@': resolve(__dirname, 'src') } },
   build: {
     rollupOptions: {
       input: {

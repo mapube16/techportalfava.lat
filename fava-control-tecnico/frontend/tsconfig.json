@@ -11,7 +11,12 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "noUnusedLocals": false,
-    "useDefineForClassFields": true
+    "useDefineForClassFields": true,
+    // El alias que shadcn da por hecho: sus componentes se copian con imports
+    // `@/components/ui/...` y `@/lib/utils`. Sin esto, cada `add` habria que
+    // reescribirlo a mano y dejaria de ser copiar-pegar.
+    "baseUrl": ".",
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src"]
 }
