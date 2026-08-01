@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import {
+  Button,
   Card,
   Metric,
   Select,
   SelectItem,
-  Tab,
-  TabGroup,
-  TabList,
   Table,
   TableBody,
   TableCell,
@@ -42,7 +40,28 @@ import type { Counts, DayGrid as Datos, GridProject } from '../lib/api/kpis';
 const MESES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const MESI = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
-/** Hasta dónde se despliega la tabla. El índice es el de las pestañas. */
+/**
+ * Los iconos de los controles. Van como COMPONENTES porque `Select` y `Button` de
+ * Tremor esperan un tipo de componente, no un elemento ya renderizado.
+ */
+const IconoDesglose = () => (
+  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+    <path d="M4 6h16M8 12h12M12 18h8" />
+  </svg>
+);
+const IconoAnio = () => (
+  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M8 3v4M16 3v4M3 11h18" />
+  </svg>
+);
+const IconoExportar = () => (
+  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+  </svg>
+);
+
+/** Hasta dónde se despliega la tabla. */
 const PROYECTO = 0;
 const TECNICO = 1;
 const MES = 2;
@@ -90,6 +109,42 @@ export default function DayGrid() {
     ));
 
   const tecnicos = g.projects.reduce((n, p) => n + p.technicians.length, 0);
+
+  /**
+   * Exporta lo que se está viendo a CSV, con el mismo desglose elegido.
+   *
+   * Existe porque el destino natural de esta tabla sigue siendo Excel: Andrea y Luca
+   * trabajan ahí, y una cuadrícula que no se puede sacar obliga a volver al fichero
+   * original — que es justo lo que la app viene a sustituir.
+   *
+   * Punto y coma como separador: es lo que espera un Excel en configuración regional
+   * española, donde la coma es el separador decimal.
+   */
+  const exportar = () => {
+    const filas: string[][] = [[t.grid_rows, ...g.concepts.map((c) => c.code), t.grid_total]];
+    const num = (c: Counts) => g.concepts.map((k) => String(c[k.code] ?? ''));
+    for (const p of g.projects) {
+      filas.push([p.projectName, ...num(p.counts), String(p.total)]);
+      if (nivel < TECNICO && !abiertos[p.projectId ?? 'sin']) continue;
+      for (const tec of p.technicians) {
+        filas.push(['  ' + tec.technicianName, ...num(tec.counts), String(tec.total)]);
+        if (nivel < MES && !abiertos[(p.projectId ?? 'sin') + '|' + tec.technicianId]) continue;
+        for (const m of tec.months) filas.push(['    ' + mes(m.month), ...num(m.counts), String(m.total)]);
+      }
+    }
+    filas.push([t.grid_total, ...num(g.counts), String(g.total)]);
+
+    // El BOM es lo que hace que Excel lea los acentos: sin él, «Día» sale «DÃ­a».
+    const csv =
+      '\uFEFF' +
+      filas.map((f) => f.map((v) => '"' + v.replace(/"/g, '""') + '"').join(';')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'fava-dias-' + (data.elegido ?? 'todos') + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   /** El triángulo de desplegar. Vacío si la rama no tiene nada dentro. */
   const flecha = (abierto: boolean, hayHijos: boolean) => (
@@ -179,39 +234,40 @@ export default function DayGrid() {
       </div>
 
       <Card className="p-0">
-        <div className="flex items-start justify-between gap-3 flex-wrap p-4 border-b border-tremor-border">
-          <div className="min-w-0">
-            <Title>{t.grid_title}</Title>
-            <Text className="mt-0.5">{t.grid_hint}</Text>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* EL control que faltaba: hasta qué nivel se despliega TODA la tabla. */}
-            <div>
-              <Text className="text-[11px] uppercase tracking-wide mb-1">{t.grid_level}</Text>
-              <TabGroup index={nivel} onIndexChange={cambiarNivel}>
-                <TabList variant="solid">
-                  <Tab className="min-h-11 md:min-h-0">{t.grid_level_project}</Tab>
-                  <Tab className="min-h-11 md:min-h-0">{t.grid_level_tech}</Tab>
-                  <Tab className="min-h-11 md:min-h-0">{t.grid_level_month}</Tab>
-                </TabList>
-              </TabGroup>
-            </div>
-            <div>
-              <Text className="text-[11px] uppercase tracking-wide mb-1">{t.grid_year}</Text>
-              <Select
-                value={String(data.elegido ?? '')}
-                onValueChange={(v) => setAnio(v ? Number(v) : null)}
-                className="w-[150px] min-h-11 md:min-h-0"
-                enableClear={false}
-              >
-                <SelectItem value="">{t.grid_all_years}</SelectItem>
-                {data.anios.map((a) => (
-                  <SelectItem key={a} value={String(a)}>
-                    {String(a)}
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
+        {/* Barra de la tabla, como la del planner: el título a la izquierda y los
+            controles a la derecha. Sin textos de ayuda: lo que hace cada control lo
+            dice el propio control. */}
+        <div className="flex items-center justify-between gap-3 flex-wrap p-4 border-b border-tremor-border">
+          <Title className="min-w-0">{t.grid_title}</Title>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select
+              value={String(nivel)}
+              onValueChange={(v) => cambiarNivel(Number(v))}
+              className="w-[170px] min-h-11 md:min-h-0"
+              enableClear={false}
+              icon={IconoDesglose}
+            >
+              <SelectItem value="0">{t.grid_level_project}</SelectItem>
+              <SelectItem value="1">{t.grid_level_tech}</SelectItem>
+              <SelectItem value="2">{t.grid_level_month}</SelectItem>
+            </Select>
+            <Select
+              value={String(data.elegido ?? '')}
+              onValueChange={(v) => setAnio(v ? Number(v) : null)}
+              className="w-[130px] min-h-11 md:min-h-0"
+              enableClear={false}
+              icon={IconoAnio}
+            >
+              <SelectItem value="">{t.grid_all_years}</SelectItem>
+              {data.anios.map((a) => (
+                <SelectItem key={a} value={String(a)}>
+                  {String(a)}
+                </SelectItem>
+              ))}
+            </Select>
+            <Button variant="secondary" icon={IconoExportar} onClick={exportar} className="min-h-11 md:min-h-0">
+              {t.grid_export}
+            </Button>
           </div>
         </div>
 
