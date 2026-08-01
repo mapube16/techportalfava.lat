@@ -16,8 +16,8 @@ export default function PdfPreview() {
   return (
     <div onClick={close} style={{ position: 'fixed', inset: 0, background: 'rgba(8,16,24,.62)', zIndex: 65, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 22, overflowY: 'auto', animation: 'favaIn .2s ease' }}>
       <div style={{ display: 'flex', gap: 10, alignSelf: 'center', marginBottom: 16 }}>
-        <button onClick={(e) => { e.stopPropagation(); download(); }} style={pbtn}>{t.pdf_download}</button>
-        <button onClick={(e) => { e.stopPropagation(); close(); }} style={btnGhostLight}>{t.pdf_close}</button>
+        <button onClick={(e) => { e.stopPropagation(); download(); }} className={pbtn}>{t.pdf_download}</button>
+        <button onClick={(e) => { e.stopPropagation(); close(); }} className={btnGhostLight}>{t.pdf_close}</button>
       </div>
       <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 720, animation: 'favaIn .28s ease both' }}>
         <div style={{ background: '#fff', color: '#1a1a1a', width: '100%', boxShadow: '0 2px 10px rgba(0,0,0,.15)' }}>

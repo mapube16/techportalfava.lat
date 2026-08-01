@@ -276,18 +276,18 @@ export default function Kpis() {
           <thead>
             <tr>
               {[t.col_project, t.montaje + ' ' + t.kpi_sold, t.montaje + ' ' + t.kpi_done, t.colaudo + ' ' + t.kpi_sold, t.colaudo + ' ' + t.kpi_done, 'Delta'].map((c, i) => (
-                <th key={i} style={{ ...th, textAlign: i ? 'center' : 'left' }}>{c}</th>
+                <th key={i} className={`${th} ${i ? 'text-center' : 'text-left'}`}>{c}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {phaseRows.map((r) => (
               <tr key={r.name} style={{ borderTop: '1px solid var(--border)' }}>
-                <td style={{ ...td, fontWeight: 600 }}>{r.name}</td>
+                <td className={`${td} font-semibold`}>{r.name}</td>
                 {[r.mS, r.mD, r.cS, r.cD].map((v, j) => (
-                  <td key={j} style={{ ...td, textAlign: 'center', fontFamily: 'Roboto Mono' }}>{v}</td>
+                  <td key={j} className={`${td} text-center font-mono`}>{v}</td>
                 ))}
-                <td style={{ ...td, textAlign: 'center', fontFamily: 'Roboto Mono', fontWeight: 700, color: r.dl < 0 ? 'var(--warn)' : 'var(--ok)' }}>{(r.dl > 0 ? '+' : '') + r.dl}</td>
+                <td className={`${td} text-center font-mono font-bold ${r.dl < 0 ? 'text-warn' : 'text-ok'}`}>{(r.dl > 0 ? '+' : '') + r.dl}</td>
               </tr>
             ))}
           </tbody>

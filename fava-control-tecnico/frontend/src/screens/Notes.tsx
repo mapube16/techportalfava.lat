@@ -46,7 +46,7 @@ export default function Notes() {
               {/* «Reenviar» NO es un boton propio: se corrige el dia en la semana y se
                   vuelve a enviar desde alli. Un boton aqui sugeriria que la nota se
                   puede reenviar sin tocar lo que la hizo volver. */}
-              <button onClick={() => go('week')} style={{ ...gbtn, minHeight: 'var(--tap)' }}>
+              <button onClick={() => go('week')} className={`${gbtn} min-h-11`}>
                 {t.btn_open}
               </button>
             </div>

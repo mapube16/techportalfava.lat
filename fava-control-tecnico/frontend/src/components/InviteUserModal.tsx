@@ -67,17 +67,17 @@ export default function InviteUserModal() {
             <div style={{ fontSize: 18, fontWeight: 700 }}>{t.invite_title}</div>
             <div style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 3, maxWidth: 320 }}>{t.invite_sub}</div>
           </div>
-          <button onClick={close} style={{ ...gbtn, padding: '8px 10px' }}>{hi('x', { w: 15 })}</button>
+          <button onClick={close} className={`${gbtn} px-2.5`}>{hi('x', { w: 15 })}</button>
         </div>
         <div style={{ padding: '14px 22px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{t.invite_name}</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.invite_name_ph} style={errors.name ? inputError : inputStyle} />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.invite_name_ph} className={errors.name ? inputError : inputStyle} />
             {errors.name ? <FieldError msg={t.field_req} /> : null}
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{t.invite_email}</label>
-            <input value={mail} onChange={(e) => setMail(e.target.value)} placeholder={t.invite_email_ph} style={errors.mail || errors.mailFmt ? inputError : inputStyle} />
+            <input value={mail} onChange={(e) => setMail(e.target.value)} placeholder={t.invite_email_ph} className={errors.mail || errors.mailFmt ? inputError : inputStyle} />
             {errors.mail ? <FieldError msg={t.field_req} /> : errors.mailFmt ? <FieldError msg={t.email_invalid} /> : null}
           </div>
           <div>
@@ -106,7 +106,7 @@ export default function InviteUserModal() {
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{t.invite_tech}</label>
-            <select value={techId} onChange={(e) => setTechId(e.target.value)} style={inputStyle}>
+            <select value={techId} onChange={(e) => setTechId(e.target.value)} className={inputStyle}>
               <option value="">{t.user_no_link}</option>
               {activos(techs ?? []).map((tc) => (
                 <option key={tc.id} value={tc.id}>{tc.fullName}</option>
@@ -115,8 +115,8 @@ export default function InviteUserModal() {
           </div>
           {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
-            <button onClick={close} style={gbtn}>{t.btn_cancel}</button>
-            <button onClick={create} style={pbtn}>
+            <button onClick={close} className={gbtn}>{t.btn_cancel}</button>
+            <button onClick={create} className={pbtn}>
               {hi('up', { w: 15 })}
               {t.btn_invite}
             </button>

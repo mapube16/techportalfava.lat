@@ -120,7 +120,7 @@ export default function NewProjectModal() {
       value={v}
       onChange={(e) => set(e.target.value)}
       placeholder={ph}
-      style={{ ...(err ? inputError : inputStyle), ...(mono ? { fontFamily: 'Roboto Mono' } : null) }}
+      className={`${err ? inputError : inputStyle} ${mono ? 'font-mono' : ''}`}
     />
   );
 
@@ -132,7 +132,7 @@ export default function NewProjectModal() {
             <div style={{ fontSize: 18, fontWeight: 700 }}>{t.proj_new}</div>
             <div style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 3, maxWidth: 340 }}>{t.proj_new_sub}</div>
           </div>
-          <button onClick={close} style={{ ...gbtn, padding: '8px 10px' }}>{hi('x', { w: 15 })}</button>
+          <button onClick={close} className={`${gbtn} px-2.5`}>{hi('x', { w: 15 })}</button>
         </div>
         <div style={{ padding: '14px 22px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {field(t.proj_name, texto(name, setName, t.proj_name_ph, false, errors.name), errors.name)}
@@ -156,7 +156,7 @@ export default function NewProjectModal() {
             {field(t.proj_value, texto(valueRaw, setValueRaw, '1.240.000', true, errors.value), errors.value, t.val_positive)}
             {field(
               t.proj_cur,
-              <select value={moneda || monedas[0]?.code || ''} onChange={(e) => setMoneda(e.target.value)} style={inputStyle}>
+              <select value={moneda || monedas[0]?.code || ''} onChange={(e) => setMoneda(e.target.value)} className={inputStyle}>
                 {monedas.map((c) => (
                   <option key={c.code} value={c.code}>{c.code}</option>
                 ))}
@@ -166,7 +166,7 @@ export default function NewProjectModal() {
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{t.proj_hours}</label>
             <div style={{ position: 'relative' }}>
-              <input value={hoursRaw} onChange={(e) => setHoursRaw(e.target.value)} placeholder="1.120" style={{ ...(errors.hours ? inputError : inputStyle), fontFamily: 'Roboto Mono', paddingRight: 38 }} />
+              <input value={hoursRaw} onChange={(e) => setHoursRaw(e.target.value)} placeholder="1.120" className={`${errors.hours ? inputError : inputStyle} font-mono pr-10`} />
               <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--text-3)', fontWeight: 600 }}>h</span>
             </div>
             {errors.hours ? <FieldError msg={t.val_positive} /> : <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 5 }}>{t.proj_hours_hint}</div>}
@@ -183,7 +183,7 @@ export default function NewProjectModal() {
               <select
                 value={machineModelId}
                 onChange={(e) => setMachineModelId(e.target.value)}
-                style={inputStyle}
+                className={inputStyle}
               >
                 {/* Opcional: hay alcances contratados que no son un modelo del
                     catálogo, como «PC 4000 -3430 + 4 SILOS». */}
@@ -196,8 +196,8 @@ export default function NewProjectModal() {
           </div>
           {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
-            <button onClick={close} style={gbtn}>{t.btn_cancel}</button>
-            <button onClick={create} style={pbtn}>
+            <button onClick={close} className={gbtn}>{t.btn_cancel}</button>
+            <button onClick={create} className={pbtn}>
               {hi('plus', { w: 15 })}
               {t.btn_newproj}
             </button>

@@ -84,9 +84,17 @@ const contraste = (a: string, b: string): number => {
 
 describe('contraste del texto secundario', () => {
   const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
-  /** El valor de una variable en el bloque del tema pedido (el oscuro va despues). */
+  /**
+   * El valor de una variable en el bloque del tema pedido (el oscuro va despues).
+   *
+   * El corte admite comilla SIMPLE y DOBLE en el selector. Antes solo aceptaba la
+   * doble y un formateo del CSS lo cambio: el test no encontraba el bloque oscuro y
+   * fallaba por una comilla, no por un color. Un guarda-rail que se rompe con el
+   * formato acaba desactivado, que es peor que no tenerlo.
+   */
   const token = (nombre: string, tema: 'claro' | 'oscuro'): string => {
-    const bloque = css.split('.fava[data-theme="dark"]');
+    const bloque = css.split(/\.fava\[data-theme=['"]dark['"]\]/);
+    assert.equal(bloque.length, 2, 'index.css tiene que traer exactamente un bloque de tema oscuro');
     const trozo = tema === 'claro' ? bloque[0] : bloque[1];
     const m = trozo.match(new RegExp(`--${nombre}:\\s*(#[0-9a-f]{6})`, 'i'));
     assert.ok(m, `no se encuentra --${nombre} en el tema ${tema}`);

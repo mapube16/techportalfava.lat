@@ -1,35 +1,64 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { CONCEPTS } from './i18n';
 import type { Dict } from './i18n';
 import type { Lang, NoteStatus } from './types';
 
-// ---- estilos compartidos de botones / tablas / chips
-// `--tap` vale 44px por debajo de 900px y `auto` por encima (index.css): en movil
-// sube el alto al minimo tactil y en escritorio los botones siguen compactos.
-// Medidas de partida, todas por debajo de 44: pbtn ~34, gbtn ~32, sbtn ~27,
-// ghostBtn ~30, ghostIconBtn 34x34, btnGhostLight ~34.
-export const pbtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 16px', minHeight: 'var(--tap)', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
-export const gbtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 14px', minHeight: 'var(--tap)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border-2)', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
-export const wbtn: CSSProperties = { ...pbtn, background: 'var(--warn)' };
-export const sbtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '6px 12px', minHeight: 'var(--tap)', background: 'var(--accent-tint)', color: 'var(--accent)', border: 0, borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
-export const ghostBtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '7px 11px', minHeight: 'var(--tap)', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
-export const ghostIconBtn: CSSProperties = { display: 'inline-grid', placeItems: 'center', width: 34, height: 34, minWidth: 'var(--tap)', minHeight: 'var(--tap)', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer' };
-export const btnGhostLight: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 16px', minHeight: 'var(--tap)', background: 'rgba(255,255,255,.14)', color: '#fff', border: '1px solid rgba(255,255,255,.35)', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
+/**
+ * Las primitivas de la interfaz, en Tailwind.
+ *
+ * Los botones se exportan como CADENAS de clases y no como componentes: los usan ~40
+ * sitios que ya pasan `onClick`, `disabled` y a veces un estilo puntual, y envolverlos
+ * en componentes obligaría a reenviar props por gusto. `className={pbtn}` se lee igual
+ * de bien y es un cambio mecánico desde `className={pbtn}`.
+ *
+ * MÓVIL PRIMERO, que es el orden de Tailwind y el correcto aquí: los técnicos capturan
+ * desde el teléfono. `md:` significa ≥900px, o sea escritorio.
+ *
+ * Dos reglas de accesibilidad viajan dentro de estas cadenas y NO deben quitarse:
+ *   · `min-h-11` = 44px, el mínimo táctil. En escritorio se relaja con `md:min-h-0`.
+ *   · `text-base md:text-sm` en los campos: 16px en móvil es el umbral por debajo del
+ *     cual Safari hace zoom al enfocar y descuadra la pantalla.
+ */
 
-export const th: CSSProperties = { textAlign: 'left', padding: '11px 16px', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.5px', background: 'var(--surface-2)', whiteSpace: 'nowrap' };
-export const td: CSSProperties = { padding: 'var(--row-pad)', color: 'var(--text)', verticalAlign: 'middle' };
+/** Base común de todo lo pulsable: alineación, tipografía y el mínimo táctil. */
+const BTN =
+  'inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold ' +
+  'font-sans cursor-pointer min-h-11 md:min-h-0 transition-colors ' +
+  'disabled:cursor-default disabled:opacity-50';
 
-// `chip` NO lleva `--tap`: hoy los 4 usos del repo son <span> de etiqueta, no
-// controles. Si alguna vez cuelga de un onClick, tiene que llevarlo.
-export const chip = (bg?: string, c?: string): CSSProperties => ({ display: 'inline-block', padding: '3px 9px', borderRadius: 6, fontSize: 11.5, fontWeight: 600, fontFamily: 'Roboto Mono', background: bg || 'var(--surface-3)', color: c || 'var(--text-2)' });
+export const pbtn = `${BTN} px-4 py-2 text-[13.5px] bg-primary text-white border-0 hover:bg-primary-600`;
+export const gbtn = `${BTN} px-3.5 py-2 text-[13px] bg-surface-2 text-ink border border-line-2 hover:bg-surface-3`;
+export const wbtn = `${BTN} px-4 py-2 text-[13.5px] bg-warn text-white border-0 hover:opacity-90`;
+export const sbtn = `${BTN} px-3 py-1.5 text-[12.5px] bg-accent-tint text-accent border-0 hover:opacity-90`;
+export const ghostBtn = `${BTN} px-2.5 py-1.5 text-[12.5px] bg-surface-2 text-ink-2 border border-line hover:bg-surface-3`;
+export const ghostIconBtn =
+  'inline-grid place-items-center size-11 md:size-[34px] bg-surface-2 text-ink-2 ' +
+  'border border-line rounded-lg cursor-pointer hover:bg-surface-3';
+/** Sobre el degradado del encabezado: blanco translúcido, no un color del tema. */
+export const btnGhostLight = `${BTN} px-4 py-2 text-[13.5px] bg-white/15 text-white border border-white/35 hover:bg-white/25`;
 
-export const inputStyle: CSSProperties = { width: '100%', padding: '11px 12px', minHeight: 'var(--tap)', border: '1px solid var(--border-2)', borderRadius: 9, background: 'var(--surface-2)', color: 'var(--text)', fontSize: 'var(--fs-input)', fontFamily: 'inherit', outline: 'none' };
-export const inputError: CSSProperties = { ...inputStyle, border: '1px solid var(--warn)', background: 'var(--warn-tint)' };
+export const th =
+  'text-left px-4 py-[11px] text-[11px] font-bold text-ink-3 uppercase tracking-wider ' +
+  'bg-surface-2 whitespace-nowrap';
+/** `p-row` es una utilidad propia: la densidad la elige el usuario en runtime, no un breakpoint. */
+export const td = 'p-row text-ink align-middle';
+
+/**
+ * `chip` NO lleva el mínimo táctil: los usos del repo son `<span>` de etiqueta, no
+ * controles. Si alguno cuelga de un `onClick`, tiene que añadirlo.
+ */
+export const chip = 'inline-block px-2.5 py-[3px] rounded-md text-[11.5px] font-semibold font-mono bg-surface-3 text-ink-2';
+
+export const inputStyle =
+  'w-full px-3 py-2.5 min-h-11 md:min-h-0 border border-line-2 rounded-lg bg-surface-2 ' +
+  'text-ink text-base md:text-sm font-sans outline-none focus:border-primary';
+export const inputError = `${inputStyle.replace('border-line-2', 'border-warn')} bg-warn-tint`;
 
 // ---- contenedores
-export function Card({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+
+export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', ...style }}>
+    <div className={`bg-surface border border-line rounded-card shadow-card ${className}`}>
       {children}
     </div>
   );
@@ -37,26 +66,29 @@ export function Card({ children, style }: { children: ReactNode; style?: CSSProp
 
 export function CardHead({ title, right }: { title: ReactNode; right?: ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
-      <div style={{ fontSize: 14, fontWeight: 700 }}>{title}</div>
+    <div className="flex items-center justify-between gap-3 px-[18px] py-3.5 border-b border-line">
+      <div className="text-sm font-bold min-w-0">{title}</div>
       {right || null}
     </div>
   );
 }
 
 // ---- pills
+
 export function StatusPill({ st, t }: { st: NoteStatus; t: Dict }) {
+  // Tailwind no puede componer `bg-${x}` en tiempo de compilación: no vería la clase
+  // al escanear y la purgaría. Las cuatro parejas van escritas enteras.
   const map: Record<NoteStatus, [string, string]> = {
-    draft: ['--draft', '--draft-tint'],
-    sent: ['--sent', '--sent-tint'],
-    approved: ['--ok', '--ok-tint'],
-    returned: ['--warn', '--warn-tint'],
+    draft: ['text-draft bg-draft-tint', 'bg-draft'],
+    sent: ['text-sent bg-sent-tint', 'bg-sent'],
+    approved: ['text-ok bg-ok-tint', 'bg-ok'],
+    returned: ['text-warn bg-warn-tint', 'bg-warn'],
   };
-  const [c, bg] = map[st];
+  const [pill, punto] = map[st];
   const lbl = { draft: t.st_draft, sent: t.st_sent, approved: t.st_approved, returned: t.st_returned }[st];
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, color: `var(${c})`, background: `var(${bg})` }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: `var(${c})` }} />
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-full text-xs font-semibold ${pill}`}>
+      <span className={`size-1.5 rounded-full ${punto}`} />
       {lbl}
     </span>
   );
@@ -65,9 +97,16 @@ export function StatusPill({ st, t }: { st: NoteStatus; t: Dict }) {
 export function ConceptPill({ code, lang }: { code: string; lang: Lang }) {
   const cc = CONCEPTS.find((x) => x.c === code) || CONCEPTS[0];
   return (
-    <span title={cc[lang]} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>
-      <span style={{ fontFamily: 'Roboto Mono,monospace', fontSize: 11, fontWeight: 600, color: '#fff', background: cc.color, padding: '2px 6px', borderRadius: 5 }}>{code}</span>
-      <span style={{ color: 'var(--text-2)', fontWeight: 400 }}>{cc[lang]}</span>
+    <span title={cc[lang]} className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink">
+      {/* El color del concepto es un dato del catálogo, no una clase: va en `style`
+          porque Tailwind no puede generar una utilidad por cada color en runtime. */}
+      <span
+        className="font-mono text-[11px] font-semibold text-white px-1.5 py-0.5 rounded"
+        style={{ background: cc.color }}
+      >
+        {code}
+      </span>
+      <span className="text-ink-2 font-normal">{cc[lang]}</span>
     </span>
   );
 }
@@ -75,19 +114,27 @@ export function ConceptPill({ code, lang }: { code: string; lang: Lang }) {
 export function ConceptCode({ code }: { code: string }) {
   const cc = CONCEPTS.find((x) => x.c === code) || CONCEPTS[0];
   return (
-    <span style={{ fontFamily: 'Roboto Mono', fontSize: 9.5, fontWeight: 700, color: '#fff', background: cc.color, padding: '2px 6px', borderRadius: 4 }}>{code}</span>
+    <span
+      className="font-mono text-[9.5px] font-bold text-white px-1.5 py-0.5 rounded"
+      style={{ background: cc.color }}
+    >
+      {code}
+    </span>
   );
 }
 
 // ---- estado vacío
+
 export function Empty({ icon, msg, btn, onClick }: { icon: ReactNode; msg: string; btn?: string; onClick?: () => void }) {
   return (
-    <div style={{ display: 'grid', placeItems: 'center', minHeight: '50vh' }}>
-      <div style={{ textAlign: 'center', maxWidth: 340 }}>
-        <div style={{ width: 64, height: 64, borderRadius: 16, background: 'var(--surface-3)', color: 'var(--text-3)', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>{icon}</div>
-        <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.5 }}>{msg}</p>
+    <div className="grid place-items-center min-h-[50vh]">
+      <div className="text-center max-w-[340px]">
+        <div className="size-16 rounded-2xl bg-surface-3 text-ink-3 grid place-items-center mx-auto mb-4">
+          {icon}
+        </div>
+        <p className="text-sm text-ink-2 leading-relaxed">{msg}</p>
         {btn ? (
-          <button onClick={onClick} style={{ ...pbtn, marginTop: 8 }}>
+          <button onClick={onClick} className={`${pbtn} mt-2`}>
             {btn}
           </button>
         ) : null}
@@ -98,7 +145,7 @@ export function Empty({ icon, msg, btn, onClick }: { icon: ReactNode; msg: strin
 
 export function FieldError({ msg }: { msg: string }) {
   return (
-    <div style={{ fontSize: 11.5, color: 'var(--warn)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+    <div className="text-[11.5px] text-warn mt-1.5 flex items-center gap-1">
       <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
       </svg>
@@ -111,7 +158,7 @@ export function FieldError({ msg }: { msg: string }) {
 export function ApiState({ error, label }: { error: string | null; label: string }) {
   return (
     <Card>
-      <div style={{ padding: 'var(--row-pad)', fontSize: 13, color: error ? 'var(--warn)' : 'var(--text-3)' }}>
+      <div className={`p-row text-[13px] ${error ? 'text-warn' : 'text-ink-3'}`}>
         {error ? `${label}: ${error}` : label}
       </div>
     </Card>
@@ -121,7 +168,8 @@ export function ApiState({ error, label }: { error: string | null; label: string
 // ---- formateadores
 // Viven aquí y no en data.ts desde el cutover de la Fase 2: data.ts es el cajón de
 // los mocks y estas tres funciones no son datos, son presentación.
-export const money = (v: number, cur: string) => (cur === 'USD' ? 'US$ ' : cur ? cur + ' ' : '') + v.toLocaleString('es-CL');
+export const money = (v: number, cur: string) =>
+  (cur === 'USD' ? 'US$ ' : cur ? cur + ' ' : '') + v.toLocaleString('es-CL');
 export const nf = (v: number) => v.toLocaleString('es-CL');
 export const initials = (n: string) => n.split(' ').map((w) => w[0]).join('');
 

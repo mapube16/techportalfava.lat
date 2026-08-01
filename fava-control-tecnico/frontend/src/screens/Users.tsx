@@ -61,7 +61,7 @@ function AccessRequests() {
               <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
                 {new Date(r.createdAt).toLocaleDateString(state.lang === 'es' ? 'es-ES' : 'it-IT')}
               </div>
-              <button onClick={() => dismiss(r.id)} style={gbtn}>{t.access_requests_dismiss}</button>
+              <button onClick={() => dismiss(r.id)} className={gbtn}>{t.access_requests_dismiss}</button>
             </div>
           ))}
         </div>
@@ -129,7 +129,7 @@ export default function Users() {
         <CardHead
           title={t.t_users}
           right={
-            <button onClick={() => patch({ inviteOpen: true })} style={pbtn}>
+            <button onClick={() => patch({ inviteOpen: true })} className={pbtn}>
               {hi('plus', { w: 15 })}
               {t.btn_invite}
             </button>
@@ -151,7 +151,7 @@ export default function Users() {
                 <select
                   value={u.technicianId ?? ''}
                   onChange={(e) => vincular(u, e.target.value || null)}
-                  style={{ ...inputStyle, padding: '7px 9px', fontSize: 13 }}
+                  className={`${inputStyle} px-2 py-1.5 text-[13px]`}
                 >
                   <option value="">{t.user_no_link}</option>
                   {data.techs
@@ -181,7 +181,7 @@ export default function Users() {
                   );
                 })}
               </div>
-              <button onClick={() => conmutarActivo(u)} style={gbtn}>
+              <button onClick={() => conmutarActivo(u)} className={gbtn}>
                 {u.isActive ? t.cat_deactivate : t.cat_activate}
               </button>
             </div>

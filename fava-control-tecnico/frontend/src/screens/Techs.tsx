@@ -76,7 +76,7 @@ export default function Techs() {
   };
 
   const addBtn = (
-    <button onClick={abrirAlta} style={pbtn}>
+    <button onClick={abrirAlta} className={pbtn}>
       {hi('plus', { w: 15 })}
       {t.btn_newtech}
     </button>
@@ -95,12 +95,12 @@ export default function Techs() {
         value={form.fullName}
         onChange={(e) => setForm({ ...form, fullName: e.target.value })}
         placeholder={t.tech_name_ph}
-        style={{ ...inputStyle, width: 220 }}
+        className={`${inputStyle} w-[220px]`}
       />
       <select
         value={form.roleTypeId}
         onChange={(e) => setForm({ ...form, roleTypeId: e.target.value })}
-        style={{ ...inputStyle, width: 180 }}
+        className={`${inputStyle} w-[180px]`}
       >
         {rolesElegibles.map((r) => (
           <option key={r.id} value={r.id}>{r.name}</option>
@@ -109,13 +109,13 @@ export default function Techs() {
       <select
         value={form.employmentType}
         onChange={(e) => setForm({ ...form, employmentType: e.target.value as EmploymentType })}
-        style={{ ...inputStyle, width: 140 }}
+        className={`${inputStyle} w-[140px]`}
       >
         <option value="INTERNO">{t.internal}</option>
         <option value="EXTERNO">{t.external}</option>
       </select>
-      <button onClick={enviar} style={pbtn}>{t.btn_save}</button>
-      <button onClick={() => { setForm(null); setErrSave(null); }} style={gbtn}>{t.btn_cancel}</button>
+      <button onClick={enviar} className={pbtn}>{t.btn_save}</button>
+      <button onClick={() => { setForm(null); setErrSave(null); }} className={gbtn}>{t.btn_cancel}</button>
       {errSave ? <span style={{ fontSize: 12, color: 'var(--warn)' }}>{t.err_save}: {errSave}</span> : null}
     </div>
   ) : errSave ? (
@@ -124,8 +124,8 @@ export default function Techs() {
 
   const acciones = (tc: Technician) => (
     <>
-      <button onClick={() => abrirEdicion(tc)} title={t.cat_edit} style={gbtn}><Dots w={16} /></button>
-      <button onClick={() => conmutarActivo(tc)} style={{ ...gbtn, marginLeft: 6 }}>
+      <button onClick={() => abrirEdicion(tc)} title={t.cat_edit} className={gbtn}><Dots w={16} /></button>
+      <button onClick={() => conmutarActivo(tc)} className={`${gbtn} ml-1.5`}>
         {tc.isActive ? t.cat_deactivate : t.cat_activate}
       </button>
     </>
@@ -145,7 +145,7 @@ export default function Techs() {
                   <div style={{ fontSize: 14, fontWeight: 700 }}>{tc.fullName}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{tc.roleTypeName}</div>
                 </div>
-                <span style={chip(tc.employmentType === 'EXTERNO' ? 'var(--accent-tint)' : 'var(--surface-3)', tc.employmentType === 'EXTERNO' ? 'var(--accent)' : 'var(--text-2)')}>
+                <span className={`${chip} ${tc.employmentType === 'EXTERNO' ? 'bg-accent-tint text-accent' : ''}`}>
                   {tc.employmentType === 'EXTERNO' ? t.external : t.internal}
                 </span>
               </div>
@@ -171,30 +171,30 @@ export default function Techs() {
           <thead>
             <tr>
               {[t.col_tech, t.role_type, '', t.util, t.col_status, ''].map((c, i) => (
-                <th key={i} style={th}>{c}</th>
+                <th key={i} className={th}>{c}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((tc) => (
               <tr key={tc.id} style={{ borderTop: '1px solid var(--border)', opacity: tc.isActive ? 1 : 0.55 }}>
-                <td style={td}>
+                <td className={td}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface-3)', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700 }}>{initials(tc.fullName)}</div>
                     <span style={{ fontWeight: 600 }}>{tc.fullName}</span>
                   </div>
                 </td>
-                <td style={td}>{tc.roleTypeName}</td>
-                <td style={td}>
-                  <span style={chip(tc.employmentType === 'EXTERNO' ? 'var(--accent-tint)' : 'var(--surface-3)', tc.employmentType === 'EXTERNO' ? 'var(--accent)' : 'var(--text-2)')}>
+                <td className={td}>{tc.roleTypeName}</td>
+                <td className={td}>
+                  <span className={`${chip} ${tc.employmentType === 'EXTERNO' ? 'bg-accent-tint text-accent' : ''}`}>
                     {tc.employmentType === 'EXTERNO' ? t.external : t.internal}
                   </span>
                 </td>
                 {/* La utilización sale de la bitácora, que llega en la Fase 3 y se agrega
                     en la Fase 7. Una barra al 0 % sería una cifra falsa, no un dato vacío. */}
-                <td style={{ ...td, color: 'var(--text-3)' }} title={t.tech_no_util}>—</td>
-                <td style={td}>{activePill(tc.isActive)}</td>
-                <td style={{ ...td, textAlign: 'right', whiteSpace: 'nowrap' }}>{acciones(tc)}</td>
+                <td className={`${td} text-ink-3`} title={t.tech_no_util}>—</td>
+                <td className={td}>{activePill(tc.isActive)}</td>
+                <td className={`${td} text-right whitespace-nowrap`}>{acciones(tc)}</td>
               </tr>
             ))}
             {rows.length ? null : (

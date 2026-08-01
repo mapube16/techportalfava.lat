@@ -37,8 +37,8 @@ export default function NoAccess() {
   return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24, background: 'var(--bg)', position: 'relative' }}>
       <div style={{ position: 'absolute', top: 22, right: 24, display: 'flex', gap: 8 }}>
-        <button onClick={toggleLang} style={ghostBtn}>{state.lang.toUpperCase()}</button>
-        <button onClick={toggleTheme} aria-label="theme" style={ghostIconBtn}>{themeIcon}</button>
+        <button onClick={toggleLang} className={ghostBtn}>{state.lang.toUpperCase()}</button>
+        <button onClick={toggleTheme} aria-label="theme" className={ghostIconBtn}>{themeIcon}</button>
       </div>
 
       <div style={{ width: '100%', maxWidth: 430, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', animation: 'favaIn .35s ease both' }}>
@@ -80,11 +80,11 @@ export default function NoAccess() {
 
           <div style={{ display: 'flex', gap: 10 }}>
             {!deactivated ? (
-              <button onClick={send} disabled={sent || busy} style={{ ...pbtn, flex: 1, justifyContent: 'center', opacity: sent || busy ? 0.55 : 1, cursor: sent || busy ? 'not-allowed' : 'pointer' }}>
+              <button onClick={send} disabled={sent || busy} className={`${pbtn} flex-1 justify-center ${sent || busy ? 'opacity-55 cursor-not-allowed' : ''}`}>
                 {sent ? t.no_access_sent : t.no_access_request}
               </button>
             ) : null}
-            <button onClick={logout} style={{ ...gbtn, flex: deactivated ? 1 : 'none', justifyContent: 'center' }}>
+            <button onClick={logout} className={`${gbtn} justify-center ${deactivated ? 'flex-1' : 'flex-none'}`}>
               {t.btn_signout}
             </button>
           </div>

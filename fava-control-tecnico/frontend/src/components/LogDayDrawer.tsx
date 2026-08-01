@@ -123,7 +123,7 @@ export default function LogDayDrawer() {
                 <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600 }}>{t.log_editing}</div>
               ) : null}
             </div>
-            <button onClick={close} style={{ ...gbtn, padding: '8px 10px' }}>{hi('x', { w: 15 })}</button>
+            <button onClick={close} className={`${gbtn} px-2.5`}>{hi('x', { w: 15 })}</button>
           </div>
 
           {field(
@@ -225,7 +225,7 @@ export default function LogDayDrawer() {
           <button
             onClick={save}
             disabled={guardando}
-            style={{ ...pbtn, width: '100%', padding: 14, fontSize: 15, justifyContent: 'center', opacity: guardando ? 0.6 : 1 }}
+            className={`${pbtn} w-full py-3.5 text-[15px] justify-center ${guardando ? 'opacity-60' : ''}`}
           >
             {guardando ? t.loading : t.btn_saveday}
           </button>

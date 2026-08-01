@@ -96,7 +96,7 @@ export default function ProjectDetail() {
       <thead>
         <tr>
           {[t.role_type, t.kpi_sold, t.kpi_done, t.kpi_delta].map((c, i) => (
-            <th key={i} style={{ ...th, textAlign: i ? 'center' : 'left' }}>{c}</th>
+            <th key={i} className={`${th} ${i ? 'text-center' : 'text-left'}`}>{c}</th>
           ))}
         </tr>
       </thead>
@@ -106,8 +106,8 @@ export default function ProjectDetail() {
           const estado = celdas[k];
           return (
             <tr key={k} style={{ borderTop: '1px solid var(--border)', opacity: fila.roleTypeActive ? 1 : 0.6 }}>
-              <td style={{ ...td, fontWeight: 600 }}>{fila.roleTypeName}</td>
-              <td style={{ ...td, textAlign: 'center' }}>
+              <td className={`${td} font-semibold`}>{fila.roleTypeName}</td>
+              <td className={`${td} text-center`}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                   <input
                     value={edits[k] ?? String(fila.sold)}
@@ -121,8 +121,8 @@ export default function ProjectDetail() {
                   />
                 </span>
               </td>
-              <td style={{ ...td, textAlign: 'center', fontFamily: 'Roboto Mono', fontWeight: 600 }}>{fila.executed}</td>
-              <td style={{ ...td, textAlign: 'center', fontFamily: 'Roboto Mono', fontWeight: 700, color: fila.delta < 0 ? 'var(--warn)' : 'var(--ok)' }}>
+              <td className={`${td} text-center font-mono font-semibold`}>{fila.executed}</td>
+              <td className={`${td} text-center font-mono font-bold ${fila.delta < 0 ? 'text-warn' : 'text-ok'}`}>
                 {(fila.delta > 0 ? '+' : '') + fila.delta}
               </td>
             </tr>
@@ -195,7 +195,7 @@ export default function ProjectDetail() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1000 }}>
-      <button onClick={() => go('projects')} style={{ ...gbtn, alignSelf: 'flex-start' }}>← {t.t_projects}</button>
+      <button onClick={() => go('projects')} className={`${gbtn} self-start`}>← {t.t_projects}</button>
       <Card>
         <div style={{ padding: '18px 20px', display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ flex: 1, minWidth: 220 }}>
@@ -247,7 +247,7 @@ export default function ProjectDetail() {
           <button
             onClick={anadirOrden}
             disabled={!nueva.label.trim()}
-            style={{ ...gbtn, minHeight: 'var(--tap)', opacity: nueva.label.trim() ? 1 : 0.5 }}
+            className={`${gbtn} min-h-11 ${nueva.label.trim() ? '' : 'opacity-50'}`}
           >
             {hi('plus', { w: 14 })} {t.order_add}
           </button>
@@ -271,7 +271,7 @@ export default function ProjectDetail() {
             <CardHead
               title={cabeceraOrden(o)}
               right={
-                <button onClick={() => quitarOrden(o.id)} style={{ ...gbtn, fontSize: 12.5 }}>
+                <button onClick={() => quitarOrden(o.id)} className={`${gbtn} text-[12.5px]`}>
                   {t.order_delete}
                 </button>
               }
@@ -293,10 +293,10 @@ export default function ProjectDetail() {
                   <tbody>
                     {sinFase.map((fila) => (
                       <tr key={clave(o.id, fila)} style={{ borderTop: '1px solid var(--border)' }}>
-                        <td style={{ ...td, fontWeight: 600 }}>{fila.roleTypeName}</td>
-                        <td style={{ ...td, textAlign: 'center', fontFamily: 'Roboto Mono' }}>{fila.sold}</td>
-                        <td style={{ ...td, textAlign: 'center', fontFamily: 'Roboto Mono', fontWeight: 600 }}>{fila.executed}</td>
-                        <td style={{ ...td, textAlign: 'center', fontFamily: 'Roboto Mono', fontWeight: 700, color: fila.delta < 0 ? 'var(--warn)' : 'var(--ok)' }}>
+                        <td className={`${td} font-semibold`}>{fila.roleTypeName}</td>
+                        <td className={`${td} text-center font-mono`}>{fila.sold}</td>
+                        <td className={`${td} text-center font-mono font-semibold`}>{fila.executed}</td>
+                        <td className={`${td} text-center font-mono font-bold ${fila.delta < 0 ? 'text-warn' : 'text-ok'}`}>
                           {(fila.delta > 0 ? '+' : '') + fila.delta}
                         </td>
                       </tr>
@@ -321,11 +321,11 @@ export default function ProjectDetail() {
             <tbody>
               {p.unassigned.map((f) => (
                 <tr key={`${f.roleTypeId}|${f.phase ?? ''}`} style={{ borderTop: '1px solid var(--border)' }}>
-                  <td style={{ ...td, fontWeight: 600 }}>{f.roleTypeName}</td>
-                  <td style={{ ...td, color: 'var(--text-3)' }}>
+                  <td className={`${td} font-semibold`}>{f.roleTypeName}</td>
+                  <td className={`${td} text-ink-3`}>
                     {f.phase === null ? t.matrix_no_phase : f.phase === 'MONTAJE' ? t.montaje : t.colaudo}
                   </td>
-                  <td style={{ ...td, textAlign: 'center', fontFamily: 'Roboto Mono', fontWeight: 700, color: 'var(--warn)' }}>
+                  <td className={`${td} text-center font-mono font-bold text-warn`}>
                     {f.executed}
                   </td>
                 </tr>

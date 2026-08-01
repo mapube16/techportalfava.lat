@@ -42,8 +42,8 @@ export default function Login() {
         // idioma y tema (posicionados en absoluto) caerían encima del título.
         paddingTop: movil ? 'calc(var(--pad-login) + 44px)' : undefined }}>
         <div style={{ position: 'absolute', top: 'var(--pad-login)', right: 'var(--pad-login)', display: 'flex', gap: 8 }}>
-          <button onClick={toggleLang} style={ghostBtn}>{state.lang.toUpperCase()}</button>
-          <button onClick={toggleTheme} aria-label="theme" style={ghostIconBtn}>{themeIcon}</button>
+          <button onClick={toggleLang} className={ghostBtn}>{state.lang.toUpperCase()}</button>
+          <button onClick={toggleTheme} aria-label="theme" className={ghostIconBtn}>{themeIcon}</button>
         </div>
         <div style={{ width: '100%', maxWidth: 360, animation: 'favaIn .4s ease both' }}>
           <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px', color: 'var(--text)' }}>{t.login_signin}</h2>
@@ -70,14 +70,14 @@ export default function Login() {
               <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--warn)' }}>{t.dev_login_title}</div>
               <input
                 type="email" required autoComplete="username" value={email} placeholder={t.dev_login_email}
-                onChange={(e) => setEmail(e.target.value)} style={inputStyle}
+                onChange={(e) => setEmail(e.target.value)} className={inputStyle}
               />
               <input
                 type="password" required autoComplete="current-password" value={password} placeholder={t.dev_login_password}
-                onChange={(e) => setPassword(e.target.value)} style={inputStyle}
+                onChange={(e) => setPassword(e.target.value)} className={inputStyle}
               />
               {error && <div style={{ fontSize: 12.5, color: 'var(--warn)' }}>{t.dev_login_error}</div>}
-              <button type="submit" style={{ ...pbtn, justifyContent: 'center', padding: '11px 16px', minHeight: 'var(--tap)' }}>
+              <button type="submit" className={`${pbtn} justify-center px-4 py-2.5 min-h-11`}>
                 {t.dev_login_submit}
               </button>
             </form>

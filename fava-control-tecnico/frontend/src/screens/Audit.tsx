@@ -15,13 +15,13 @@ import type { AuditRow } from '../lib/api/weeklyNotes';
  */
 
 /** Icono y color por acción. Decoración: una acción nueva cae en el default. */
-const ACCION: Record<string, [string, string]> = {
-  approve: ['check', 'var(--ok)'],
-  return: ['ureturn', 'var(--warn)'],
-  submit: ['up', 'var(--sent)'],
-  reopen: ['ureturn', 'var(--sent)'],
-  update: ['pencil', 'var(--text-2)'],
-  deactivate: ['x', 'var(--warn)'],
+const ACCION: Record<string, [icono: string, color: string]> = {
+  approve: ['check', 'text-ok'],
+  return: ['ureturn', 'text-warn'],
+  submit: ['up', 'text-sent'],
+  reopen: ['ureturn', 'text-sent'],
+  update: ['pencil', 'text-ink-2'],
+  deactivate: ['x', 'text-warn'],
 };
 
 /**
@@ -61,7 +61,7 @@ export default function Audit() {
     return (
       <Card>
         <CardHead title={t.t_audit} />
-        <div style={{ padding: 30, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>{t.audit_empty}</div>
+        <div className="p-8 text-center text-[13px] text-ink-3">{t.audit_empty}</div>
       </Card>
     );
   }
@@ -70,25 +70,25 @@ export default function Audit() {
     return (
       <Card>
         <CardHead title={t.t_audit} />
-        <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="p-3 flex flex-col gap-2.5">
           {list.map((a) => {
-            const [ic, col] = ACCION[a.action] ?? ['check', 'var(--text-2)'];
+            const [ic, col] = ACCION[a.action] ?? ['check', 'text-ink-2'];
             return (
-              <div key={a.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 13 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ display: 'inline-grid', placeItems: 'center', width: 26, height: 26, borderRadius: 7, color: col, background: 'var(--surface-2)', flex: 'none' }}>
+              <div key={a.id} className="border border-line rounded-card p-3">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-grid place-items-center size-[26px] rounded-md bg-surface-2 shrink-0 ${col}`}>
                     {hi(ic, { w: 14 })}
                   </span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>{a.actorName}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{a.entity} · {a.action}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13.5px] font-bold">{a.actorName}</div>
+                    <div className="text-xs text-ink-3">{a.entity} · {a.action}</div>
                   </div>
-                  <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'Roboto Mono', flex: 'none' }}>{cuando(a.createdAt)}</span>
+                  <span className="text-[11px] text-ink-3 font-mono shrink-0">{cuando(a.createdAt)}</span>
                 </div>
-                <div style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 8 }}>
-                  {resumir(a.before)} → <b style={{ color: 'var(--text)' }}>{resumir(a.after)}</b>
+                <div className="text-[12.5px] text-ink-2 mt-2">
+                  {resumir(a.before)} → <b className="text-ink">{resumir(a.after)}</b>
                 </div>
-                {a.reason ? <div style={{ fontSize: 12.5, color: 'var(--warn)', marginTop: 6 }}>{a.reason}</div> : null}
+                {a.reason ? <div className="text-[12.5px] text-warn mt-1.5">{a.reason}</div> : null}
               </div>
             );
           })}
@@ -100,39 +100,39 @@ export default function Audit() {
   return (
     <Card>
       <CardHead title={t.t_audit} />
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-[13px]">
           <thead>
             <tr>
               {[t.col_actor, t.col_action, t.col_entity, t.col_before, t.col_after, t.audit_reason, t.col_when].map((c, i) => (
-                <th key={i} style={th}>{c}</th>
+                <th key={i} className={th}>{c}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {list.map((a) => {
-              const [ic, col] = ACCION[a.action] ?? ['check', 'var(--text-2)'];
+              const [ic, col] = ACCION[a.action] ?? ['check', 'text-ink-2'];
               return (
-                <tr key={a.id} style={{ borderTop: '1px solid var(--border)' }}>
-                  <td style={{ ...td, fontWeight: 600 }}>
+                <tr key={a.id} className="border-t border-line">
+                  <td className={`${td} font-semibold`}>
                     {a.actorName}
                     {/* CAT-06: quién aprobó en nombre de quién. Es justo el caso que
                         alguien viene a mirar aquí meses después. */}
                     {a.onBehalfOfId ? (
-                      <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{t.audit_on_behalf}</div>
+                      <div className="text-[11px] text-ink-3">{t.audit_on_behalf}</div>
                     ) : null}
                   </td>
-                  <td style={td}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: col, fontWeight: 600 }}>
-                      <span style={{ display: 'inline-flex' }}>{hi(ic, { w: 14 })}</span>
+                  <td className={td}>
+                    <span className={`inline-flex items-center gap-1.5 font-semibold ${col}`}>
+                      <span className="inline-flex">{hi(ic, { w: 14 })}</span>
                       {a.action}
                     </span>
                   </td>
-                  <td style={td}>{a.entity}</td>
-                  <td style={{ ...td, color: 'var(--text-3)' }}>{resumir(a.before)}</td>
-                  <td style={{ ...td, fontWeight: 600 }}>{resumir(a.after)}</td>
-                  <td style={{ ...td, color: 'var(--warn)', maxWidth: 220 }}>{a.reason ?? ''}</td>
-                  <td style={{ ...td, fontFamily: 'Roboto Mono', fontSize: 12, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
+                  <td className={td}>{a.entity}</td>
+                  <td className={`${td} text-ink-3`}>{resumir(a.before)}</td>
+                  <td className={`${td} font-semibold`}>{resumir(a.after)}</td>
+                  <td className={`${td} text-warn max-w-[220px]`}>{a.reason ?? ''}</td>
+                  <td className={`${td} font-mono text-xs text-ink-2 whitespace-nowrap`}>
                     {cuando(a.createdAt)}
                   </td>
                 </tr>

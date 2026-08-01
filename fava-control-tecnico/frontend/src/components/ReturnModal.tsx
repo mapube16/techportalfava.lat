@@ -54,11 +54,11 @@ export default function ReturnModal() {
         />
         {err ? <FieldError msg={`${t.err_save}: ${err}`} /> : null}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
-          <button onClick={close} style={{ ...gbtn, minHeight: 'var(--tap)' }}>{t.btn_cancel}</button>
+          <button onClick={close} className={`${gbtn} min-h-11`}>{t.btn_cancel}</button>
           <button
             onClick={devolver}
             disabled={!comment.trim() || enviando}
-            style={{ ...wbtn, minHeight: 'var(--tap)', opacity: comment.trim() && !enviando ? 1 : 0.5 }}
+            className={`${wbtn} min-h-11 ${comment.trim() && !enviando ? '' : 'opacity-50'}`}
           >
             {t.btn_return}
           </button>

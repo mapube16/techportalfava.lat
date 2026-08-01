@@ -79,14 +79,14 @@ function CatalogCard(p: CatalogCardProps) {
         disabled={soloSecundario}
         onChange={(e) => setUno(e.target.value)}
         placeholder={p.phPrincipal}
-        style={{ ...inputStyle, width: 150, opacity: soloSecundario ? 0.6 : 1 }}
+        className={`${inputStyle} w-[150px] ${soloSecundario ? 'opacity-60' : ''}`}
       />
       {p.phSecundario ? (
         <input
           value={dos}
           onChange={(e) => setDos(e.target.value)}
           placeholder={p.phSecundario}
-          style={{ ...inputStyle, width: 150 }}
+          className={`${inputStyle} w-[150px]`}
         />
       ) : null}
     </>
@@ -101,8 +101,8 @@ function CatalogCard(p: CatalogCardProps) {
             {editando === f.id ? (
               <>
                 {campos(!!f.fijo)}
-                <button onClick={() => lanzar(p.onEdit(f.id, uno.trim(), dos.trim()))} style={pbtn}>{t.btn_save}</button>
-                <button onClick={limpiar} style={gbtn}>{t.btn_cancel}</button>
+                <button onClick={() => lanzar(p.onEdit(f.id, uno.trim(), dos.trim()))} className={pbtn}>{t.btn_save}</button>
+                <button onClick={limpiar} className={gbtn}>{t.btn_cancel}</button>
               </>
             ) : (
               <>
@@ -110,8 +110,8 @@ function CatalogCard(p: CatalogCardProps) {
                 <span style={{ flex: 1, fontSize: 13, color: 'var(--text-2)', minWidth: 90 }}>{f.secundario}</span>
                 {p.canEdit ? (
                   <>
-                    <button onClick={() => editar(f)} style={gbtn}>{t.cat_edit}</button>
-                    <button onClick={() => lanzar(p.onToggle(f.id, !f.isActive))} style={gbtn}>
+                    <button onClick={() => editar(f)} className={gbtn}>{t.cat_edit}</button>
+                    <button onClick={() => lanzar(p.onToggle(f.id, !f.isActive))} className={gbtn}>
                       {f.isActive ? t.cat_deactivate : t.cat_activate}
                     </button>
                   </>
@@ -125,7 +125,7 @@ function CatalogCard(p: CatalogCardProps) {
             {editando === null ? (
               <>
                 {campos(false)}
-                <button onClick={() => lanzar(p.onCreate(uno.trim(), dos.trim()))} style={pbtn}>{t.cat_add}</button>
+                <button onClick={() => lanzar(p.onCreate(uno.trim(), dos.trim()))} className={pbtn}>{t.cat_add}</button>
               </>
             ) : null}
           </div>
@@ -184,10 +184,10 @@ export default function Config() {
                 <span style={{ fontFamily: 'Roboto Mono', fontSize: 12, fontWeight: 600, color: '#fff', background: CONCEPT_COLOR[c.code] || 'var(--text-3)', padding: '3px 7px', borderRadius: 5, minWidth: 44, textAlign: 'center' }}>{c.code}</span>
                 {edit === c.code ? (
                   <>
-                    <input value={labelEs} onChange={(e) => setLabelEs(e.target.value)} placeholder={t.cat_label_es} style={{ ...inputStyle, width: 150 }} />
-                    <input value={labelIt} onChange={(e) => setLabelIt(e.target.value)} placeholder={t.cat_label_it} style={{ ...inputStyle, width: 150 }} />
-                    <button onClick={() => guardarConcepto(c.code)} style={pbtn}>{t.btn_save}</button>
-                    <button onClick={() => setEdit(null)} style={gbtn}>{t.btn_cancel}</button>
+                    <input value={labelEs} onChange={(e) => setLabelEs(e.target.value)} placeholder={t.cat_label_es} className={`${inputStyle} w-[150px]`} />
+                    <input value={labelIt} onChange={(e) => setLabelIt(e.target.value)} placeholder={t.cat_label_it} className={`${inputStyle} w-[150px]`} />
+                    <button onClick={() => guardarConcepto(c.code)} className={pbtn}>{t.btn_save}</button>
+                    <button onClick={() => setEdit(null)} className={gbtn}>{t.btn_cancel}</button>
                   </>
                 ) : (
                   <>
@@ -196,7 +196,7 @@ export default function Config() {
                       <button
                         onClick={() => { setEdit(c.code); setLabelEs(c.labelEs); setLabelIt(c.labelIt); setErr(null); }}
                         title={t.cat_edit}
-                        style={{ ...gbtn, padding: '6px 9px' }}
+                        className={`${gbtn} px-2 py-1.5`}
                       >
                         <Dots w={16} />
                       </button>

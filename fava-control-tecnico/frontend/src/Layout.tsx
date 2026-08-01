@@ -153,14 +153,14 @@ export default function Layout() {
           ))}
         </div>
       ) : null}
-      <button onClick={toggleLang} style={ghostBtn}>
+      <button onClick={toggleLang} className={ghostBtn}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 5 }}>
           <circle cx="12" cy="12" r="9" />
           <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
         </svg>
         {state.lang.toUpperCase()}
       </button>
-      <button onClick={toggleTheme} aria-label="theme" style={ghostIconBtn}>{themeIcon}</button>
+      <button onClick={toggleTheme} aria-label="theme" className={ghostIconBtn}>{themeIcon}</button>
     </>
   );
 
@@ -233,7 +233,7 @@ export default function Layout() {
                 <div style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{me?.email}</div>
                 <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{roleList}</div>
               </div>
-              <button onClick={logout} aria-label="logout" style={ghostIconBtn}>
+              <button onClick={logout} aria-label="logout" className={ghostIconBtn}>
                 {svg(ICON.logout, { w: 16 })}
               </button>
             </div>
@@ -250,7 +250,7 @@ export default function Layout() {
                 aria-label={menuAbierto ? t.menu_close : t.menu_open}
                 aria-expanded={menuAbierto}
                 aria-controls="fava-nav"
-                style={{ ...ghostIconBtn, flex: 'none' }}
+                className={`${ghostIconBtn} shrink-0`}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d={menuAbierto ? 'M6 18 18 6M6 6l12 12' : 'M4 7h16M4 12h16M4 17h16'} />
@@ -264,7 +264,7 @@ export default function Layout() {
                 renderizan en un sitio o en el otro, nunca en los dos. */}
             {movil ? null : controles}
             {state.myRoles.some((r) => r !== 'T') ? (
-              <button onClick={goInbox} aria-label="inbox" style={{ ...ghostIconBtn, position: 'relative', flex: 'none' }}>
+              <button onClick={goInbox} aria-label="inbox" className={`${ghostIconBtn} relative shrink-0`}>
                 {svg(ICON.bell, { w: 17 })}
                 {count ? (
                   <span style={{ position: 'absolute', top: 2, right: 2, background: 'var(--accent)', color: '#fff', fontSize: 9, fontWeight: 700, minWidth: 15, height: 15, padding: '0 3px', borderRadius: 8, display: 'grid', placeItems: 'center' }}>

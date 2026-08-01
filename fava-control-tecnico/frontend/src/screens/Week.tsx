@@ -71,7 +71,7 @@ export default function Week() {
       onClick={() => mover(dir)}
       disabled={off}
       aria-label={dir < 0 ? t.week_prev : t.week_next}
-      style={{ ...gbtn, padding: '8px 12px', minHeight: 'var(--tap)', opacity: off ? 0.4 : 1, cursor: off ? 'default' : 'pointer' }}
+      className={`${gbtn} px-3 ${off ? 'opacity-40 cursor-default' : ''}`}
     >
       {dir < 0 ? '←' : '→'}
     </button>
@@ -136,7 +136,7 @@ export default function Week() {
         <CardHead
           title={t.expenses}
           right={
-            <button onClick={() => showToast('saved')} style={sbtn}>
+            <button onClick={() => showToast('saved')} className={sbtn}>
               {hi('plus', { w: 14 })}
               {t.btn_addexp}
             </button>
@@ -169,14 +169,14 @@ export default function Week() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
             <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>{hasSignature ? t.sign_captured : '—'}</div>
-            <button onClick={clearSign} style={gbtn}>{t.btn_clear}</button>
+            <button onClick={clearSign} className={gbtn}>{t.btn_clear}</button>
           </div>
         </div>
       </Card>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center' }}>
         <div style={{ flex: 1, fontSize: 12, color: 'var(--text-3)', minWidth: 200 }}>{t.gen_pdf_note}</div>
-        <button onClick={() => patch({ pdfOpen: true })} style={gbtn}>
+        <button onClick={() => patch({ pdfOpen: true })} className={gbtn}>
           {hi('eye', { w: 15 })}
           {t.btn_pdf}
         </button>
@@ -200,7 +200,7 @@ export default function Week() {
               .finally(() => setEnviando(false));
           }}
           disabled={enviando}
-          style={{ ...pbtn, minHeight: 'var(--tap)', opacity: enviando ? 0.6 : 1 }}
+          className={`${pbtn} min-h-11 ${enviando ? 'opacity-60' : ''}`}
         >
           {t.btn_submit} →
         </button>

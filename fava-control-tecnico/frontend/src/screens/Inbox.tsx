@@ -125,7 +125,7 @@ export default function Inbox() {
     <Card>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
         {movil ? (
-          <button onClick={() => setSelNote(null)} style={{ ...gbtn, padding: '8px 12px', minHeight: 'var(--tap)' }}>←</button>
+          <button onClick={() => setSelNote(null)} className={`${gbtn} px-3`}>←</button>
         ) : null}
         <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-700)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 700, flex: 'none' }}>
           {iniciales(cur.technicianName)}
@@ -146,12 +146,12 @@ export default function Inbox() {
       <div style={{ display: 'flex', gap: 10, padding: '14px 18px', borderTop: '1px solid var(--border)', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
         <button
           onClick={() => patch({ returnOpen: true, returnId: cur.id, returnUpdatedAt: cur.updatedAt })}
-          style={{ ...wbtn, minHeight: 'var(--tap)' }}
+          className={`${wbtn} min-h-11`}
         >
           {hi('ureturn', { w: 15 })}
           {t.btn_return}
         </button>
-        <button onClick={() => aprobar(cur)} style={{ ...pbtn, background: 'var(--ok)', minHeight: 'var(--tap)' }}>
+        <button onClick={() => aprobar(cur)} className={`${pbtn} min-h-11 bg-ok hover:bg-ok`}>
           {hi('check', { w: 16 })}
           {t.btn_approve}
         </button>

@@ -33,7 +33,7 @@ export default function Onboarding() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button onClick={closeOnboard} style={{ background: 'none', border: 0, color: 'var(--text-3)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{t.ob_skip}</button>
-            <button onClick={next} style={pbtn}>{isLast ? t.ob_done : t.ob_next}</button>
+            <button onClick={next} className={pbtn}>{isLast ? t.ob_done : t.ob_next}</button>
           </div>
         </div>
       </div>

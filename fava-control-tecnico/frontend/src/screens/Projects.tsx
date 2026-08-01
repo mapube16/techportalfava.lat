@@ -16,7 +16,7 @@ export default function Projects() {
   const { data, error } = useApiData(listProjects, [state.dataVersion]);
 
   const addBtn = (
-    <button onClick={() => patch({ projOpen: true })} style={pbtn}>
+    <button onClick={() => patch({ projOpen: true })} className={pbtn}>
       {hi('plus', { w: 15 })}
       {t.btn_newproj}
     </button>
@@ -61,7 +61,7 @@ export default function Projects() {
                 </div>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 11 }}>
                   {p.machineCodes.map((m) => (
-                    <span key={m} style={chip()}>{m}</span>
+                    <span key={m} className={chip}>{m}</span>
                   ))}
                 </div>
               </div>
@@ -82,7 +82,7 @@ export default function Projects() {
           <thead>
             <tr>
               {['#', t.col_project, t.client, t.proj_contract_no, t.proj_country, t.contract, t.hours_short, t.orders, ''].map((c, i) => (
-                <th key={i} style={{ ...th, textAlign: i === 6 ? 'right' : 'left' }}>{c}</th>
+                <th key={i} className={`${th} ${i === 6 ? 'text-right' : 'text-left'}`}>{c}</th>
               ))}
             </tr>
           </thead>
@@ -90,21 +90,21 @@ export default function Projects() {
             {rows.length ? (
               rows.map((p, i) => (
                 <tr key={p.id} onClick={() => openProject(p.id)} style={{ cursor: 'pointer', borderTop: '1px solid var(--border)', opacity: p.isActive ? 1 : 0.55 }}>
-                  <td style={td}><span style={{ color: 'var(--text-3)', fontFamily: 'Roboto Mono', fontSize: 12 }}>{i + 1}</span></td>
-                  <td style={{ ...td, fontWeight: 600 }}>{p.name}</td>
-                  <td style={td}>{p.clientName}</td>
-                  <td style={{ ...td, fontFamily: 'Roboto Mono', fontSize: 12, color: 'var(--text-2)' }}>{p.contractNumber}</td>
-                  <td style={td}>{p.country}</td>
-                  <td style={{ ...td, fontFamily: 'Roboto Mono', fontWeight: 600 }}>{valor(p)}</td>
-                  <td style={{ ...td, fontFamily: 'Roboto Mono', fontWeight: 600, textAlign: 'right' }}>{nf(p.normalHours || 0)} h</td>
-                  <td style={td}>
+                  <td className={td}><span style={{ color: 'var(--text-3)', fontFamily: 'Roboto Mono', fontSize: 12 }}>{i + 1}</span></td>
+                  <td className={`${td} font-semibold`}>{p.name}</td>
+                  <td className={td}>{p.clientName}</td>
+                  <td className={`${td} font-mono text-xs text-ink-2`}>{p.contractNumber}</td>
+                  <td className={td}>{p.country}</td>
+                  <td className={`${td} font-mono font-semibold`}>{valor(p)}</td>
+                  <td className={`${td} font-mono font-semibold text-right`}>{nf(p.normalHours || 0)} h</td>
+                  <td className={td}>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                       {p.machineCodes.map((m) => (
-                        <span key={m} style={chip()}>{m}</span>
+                        <span key={m} className={chip}>{m}</span>
                       ))}
                     </div>
                   </td>
-                  <td style={{ ...td, textAlign: 'right', color: 'var(--primary)' }}>→</td>
+                  <td className={`${td} text-right text-primary`}>→</td>
                 </tr>
               ))
             ) : (
