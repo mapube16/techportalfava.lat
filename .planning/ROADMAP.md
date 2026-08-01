@@ -119,7 +119,7 @@ Plans:
 ### Phase 7: Tableros KPI en vivo
 **Goal**: El admin abre un tablero, ve números que puede defender frente a FAVA porque salen solo de notas aprobadas con histórico completo, y las pantallas se actualizan solas sin recargar.
 **Depends on**: Phase 4 (datos aprobados y eventos) y Phase 6 (histórico)
-**Requirements**: KPI-01, KPI-02, KPI-03, KPI-04, KPI-05, KPI-06, RT-01, RT-02
+**Requirements**: KPI-01, KPI-02, KPI-03, KPI-04, KPI-05, KPI-06, KPI-07, KPI-08, RT-01, RT-02
 **Success Criteria** (what must be TRUE):
   1. Vendido vs. ejecutado por proyecto con desglose rol×fase y delta calculado, contando únicamente notas aprobadas.
   2. Utilización por técnico con denominador que excluye IL, distribución por concepto por técnico y mes, días por cliente y país, y matriz técnico×semana con semáforo (sin registrar / borrador / enviado / aprobado).

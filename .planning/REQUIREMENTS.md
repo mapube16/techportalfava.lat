@@ -52,6 +52,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **KPI-04**: Días por cliente y país
 - [ ] **KPI-05**: Estado de reportes: matriz técnico×semana con semáforo (sin registrar/borrador/enviado/aprobado)
 - [ ] **KPI-06**: Todos los gráficos con Nivo aplicando la paleta FAVA (reemplaza ECharts)
+- [ ] **KPI-07**: Cuadrícula dinámica de días por concepto — filas proyecto → técnico → mes, columnas los 8 conceptos, totales por fila y columna. Reemplaza las tablas dinámicas que hoy se mantienen a mano (Dettaglio)
+- [ ] **KPI-08**: Cuadrícula comercial por línea de máquina — encabezado con OA/commessa/valor y, por fase, las filas rol + técnico titular con vendido, ejecutado y delta más el TOTALE. Reemplaza el Resoconto
 
 ### Tiempo real y notificaciones
 

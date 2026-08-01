@@ -75,6 +75,10 @@ Captura única: el técnico registra el día una vez → Nota Semanal + KPIs + c
 | Días vendidos por rol×fase | Como las hojas de proyecto y el frontend actual | — Pending |
 | SSE (no WebSockets) para tiempo real | Suficiente para ~50 usuarios (CONTEXTO §13) | — Pending |
 | Railway con cuenta personal, migrar a cuenta empresa después | La cuenta de empresa aún no existe; setup 100% reproducible hace la migración trivial | — Pending |
+| Contrato (OA, commessa, valor) vive en la MÁQUINA, no en el proyecto (2026-07-26) | Las hojas del Excel lo demuestran: JAV Marata tiene 3 líneas con 3 OA y 3 valores distintos. Ver HALLAZGOS-EXCEL-HOJAS-PROYECTO.md | — Pending |
+| Días vendidos llevan técnico titular opcional (2026-07-26) | El Excel asigna el vendido a una persona pero el delta agrega por rol; verificado aritméticamente en 4 filas | — Pending |
+| Catálogo de roles amplía a Supervisore, Software y Test (2026-07-26) | Aparecen en las hojas reales; el ABM ya existe | — Pending |
+| KPIs incluyen las dos cuadrículas del Excel (KPI-07 y KPI-08) (2026-07-26) | Reemplazan el Dettaglio y el Resoconto, que hoy se mantienen a mano | — Pending |
 | Login de desarrollo temporal en vez de tenant Entra propio (2026-07-25) | El dev no tiene tenant (lo que ve es el "Microsoft Services tenant" del sistema, sin directorio). Crear uno exige cuenta Azure con tarjeta, y la verificación habría que repetirla con el tenant real de FAVA. El guard de Entra ya está probado con 12 unit + 45 e2e | — Pending |
 
 ---
