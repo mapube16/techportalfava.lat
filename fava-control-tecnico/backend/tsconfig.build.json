@@ -1,4 +1,22 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "dist", "test", "scripts", "prisma/seed.ts", "**/*.spec.ts"]
+  "compilerOptions": {
+    // `rootDir` explicito, y no es cosmetico. Sin el, TypeScript deduce la raiz comun
+    // de los archivos que compila: basta con que UNO quede fuera de `src/` para que la
+    // salida entera se desplace de `dist/main.js` a `dist/src/main.js` — sin error, sin
+    // aviso, y el contenedor muere en produccion con MODULE_NOT_FOUND. Paso de verdad
+    // al anadir `prisma/migrate-excel.ts`. Con esto, el mismo descuido es un error de
+    // compilacion en el sitio y no un deploy roto.
+    "rootDir": "./src",
+    // DENTRO de dist. `nest-cli.json` trae `deleteOutDir: true`, asi que borra dist en
+    // cada build; si el .tsbuildinfo se queda fuera, sobrevive al borrado, tsc lo cree
+    // ("ya emiti todo esto") y NO escribe nada. Resultado: dist vacio, exit code 0 y un
+    // contenedor que muere con MODULE_NOT_FOUND. Con el cache dentro, borrar la salida
+    // borra tambien la memoria de haberla escrito.
+    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
+  },
+  // `prisma` ENTERO, no `prisma/seed.ts` a dedo: los scripts de ahi corren con `tsx` y
+  // ninguno tiene por que acabar en `dist`. Excluirlos uno a uno es una lista que hay
+  // que acordarse de mantener.
+  "exclude": ["node_modules", "dist", "test", "scripts", "prisma", "**/*.spec.ts"]
 }
