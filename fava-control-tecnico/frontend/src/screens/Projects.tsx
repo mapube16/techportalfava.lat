@@ -1,5 +1,15 @@
 import { hi } from '../icons';
-import { ApiState, Card, CardHead, chip, filterBy, money, nf, pbtn, td, th } from '../ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ApiState, chip, filterBy, money, nf } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { useApiData } from '../lib/api/useApiData';
@@ -16,10 +26,10 @@ export default function Projects() {
   const { data, error } = useApiData(listProjects, [state.dataVersion]);
 
   const addBtn = (
-    <button onClick={() => patch({ projOpen: true })} className={pbtn}>
+    <Button onClick={() => patch({ projOpen: true })} className="min-h-11 md:min-h-9">
       {hi('plus', { w: 15 })}
       {t.btn_newproj}
-    </button>
+    </Button>
   );
 
   if (error) return <ApiState error={error} label={t.err_load} />;
@@ -36,30 +46,37 @@ export default function Projects() {
   if (movil) {
     const meta = (a: string, b: string) => (
       <div>
-        <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.5px' }}>{a}</div>
-        <div style={{ fontSize: 13, fontWeight: 600, fontFamily: 'Roboto Mono', marginTop: 1 }}>{b}</div>
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{a}</div>
+        <div className="text-[13px] font-semibold font-mono mt-0.5">{b}</div>
       </div>
     );
     return (
-      <Card>
-        <CardHead title={t.t_projects} right={addBtn} />
-        <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <Card className="p-0 gap-0 overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between border-b p-4">
+          <CardTitle>{t.t_projects}</CardTitle>
+          {addBtn}
+        </CardHeader>
+        <CardContent className="p-3 flex flex-col gap-2.5">
           {rows.length ? (
             rows.map((p) => (
-              <div key={p.id} onClick={() => openProject(p.id)} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 13, cursor: 'pointer', opacity: p.isActive ? 1 : 0.55 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>{p.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 1 }}>{p.clientName} · {p.country}</div>
+              <div
+                key={p.id}
+                onClick={() => openProject(p.id)}
+                className={`border border-border rounded-card p-3.5 cursor-pointer ${p.isActive ? '' : 'opacity-55'}`}
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold">{p.name}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{p.clientName} · {p.country}</div>
                   </div>
-                  <span style={{ color: 'var(--primary)', flex: 'none' }}>→</span>
+                  <span className="text-primary shrink-0">→</span>
                 </div>
-                <div style={{ display: 'flex', gap: 18, marginTop: 11, flexWrap: 'wrap' }}>
+                <div className="flex gap-4.5 mt-2.5 flex-wrap">
                   {meta(t.proj_contract_no, p.contractNumber)}
                   {meta(t.contract, valor(p))}
                   {meta(t.hours_short, nf(p.normalHours || 0) + ' h')}
                 </div>
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 11 }}>
+                <div className="flex gap-1 flex-wrap mt-2.5">
                   {p.machineCodes.map((m) => (
                     <span key={m} className={chip}>{m}</span>
                   ))}
@@ -67,54 +84,71 @@ export default function Projects() {
               </div>
             ))
           ) : (
-            <div style={{ padding: 26, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>{data.length ? t.filter_no : t.proj_none}</div>
+            <div className="p-6.5 text-center text-muted-foreground text-[13px]">
+              {data.length ? t.filter_no : t.proj_none}
+            </div>
           )}
-        </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHead title={t.t_projects} right={addBtn} />
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-          <thead>
-            <tr>
-              {['#', t.col_project, t.client, t.proj_contract_no, t.proj_country, t.contract, t.hours_short, t.orders, ''].map((c, i) => (
-                <th key={i} className={`${th} ${i === 6 ? 'text-right' : 'text-left'}`}>{c}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
+    <Card className="p-0 gap-0 overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between border-b p-4">
+        <CardTitle>{t.t_projects}</CardTitle>
+        {addBtn}
+      </CardHeader>
+      <CardContent className="p-0 overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>#</TableHead>
+              <TableHead>{t.col_project}</TableHead>
+              <TableHead>{t.client}</TableHead>
+              <TableHead>{t.proj_contract_no}</TableHead>
+              <TableHead>{t.proj_country}</TableHead>
+              <TableHead>{t.contract}</TableHead>
+              <TableHead className="text-right">{t.hours_short}</TableHead>
+              <TableHead>{t.orders}</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.length ? (
               rows.map((p, i) => (
-                <tr key={p.id} onClick={() => openProject(p.id)} style={{ cursor: 'pointer', borderTop: '1px solid var(--border)', opacity: p.isActive ? 1 : 0.55 }}>
-                  <td className={td}><span style={{ color: 'var(--text-3)', fontFamily: 'Roboto Mono', fontSize: 12 }}>{i + 1}</span></td>
-                  <td className={`${td} font-semibold`}>{p.name}</td>
-                  <td className={td}>{p.clientName}</td>
-                  <td className={`${td} font-mono text-xs text-ink-2`}>{p.contractNumber}</td>
-                  <td className={td}>{p.country}</td>
-                  <td className={`${td} font-mono font-semibold`}>{valor(p)}</td>
-                  <td className={`${td} font-mono font-semibold text-right`}>{nf(p.normalHours || 0)} h</td>
-                  <td className={td}>
-                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                <TableRow
+                  key={p.id}
+                  onClick={() => openProject(p.id)}
+                  className={`cursor-pointer ${p.isActive ? '' : 'opacity-55'}`}
+                >
+                  <TableCell className="text-muted-foreground font-mono text-xs">{i + 1}</TableCell>
+                  <TableCell className="font-semibold">{p.name}</TableCell>
+                  <TableCell>{p.clientName}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{p.contractNumber}</TableCell>
+                  <TableCell>{p.country}</TableCell>
+                  <TableCell className="font-mono font-semibold">{valor(p)}</TableCell>
+                  <TableCell className="font-mono font-semibold text-right">{nf(p.normalHours || 0)} h</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1 flex-wrap">
                       {p.machineCodes.map((m) => (
                         <span key={m} className={chip}>{m}</span>
                       ))}
                     </div>
-                  </td>
-                  <td className={`${td} text-right text-primary`}>→</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="text-right text-primary">→</TableCell>
+                </TableRow>
               ))
             ) : (
-              <tr>
-                <td colSpan={9} style={{ padding: 34, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>{data.length ? t.filter_no : t.proj_none}</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={9} className="p-8.5 text-center text-muted-foreground text-[13px]">
+                  {data.length ? t.filter_no : t.proj_none}
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </CardContent>
     </Card>
   );
 }

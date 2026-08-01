@@ -29,7 +29,7 @@ const BTN =
 export const pbtn = `${BTN} px-4 py-2 text-[13.5px] bg-primary text-white border-0 hover:bg-primary-600`;
 export const gbtn = `${BTN} px-3.5 py-2 text-[13px] bg-surface-2 text-ink border border-line-2 hover:bg-surface-3`;
 export const wbtn = `${BTN} px-4 py-2 text-[13.5px] bg-warn text-white border-0 hover:opacity-90`;
-export const sbtn = `${BTN} px-3 py-1.5 text-[12.5px] bg-accent-tint text-accent border-0 hover:opacity-90`;
+export const sbtn = `${BTN} px-3 py-1.5 text-[12.5px] bg-accent-tint text-accent-brand border-0 hover:opacity-90`;
 export const ghostBtn = `${BTN} px-2.5 py-1.5 text-[12.5px] bg-surface-2 text-ink-2 border border-line hover:bg-surface-3`;
 export const ghostIconBtn =
   'inline-grid place-items-center size-11 md:size-[34px] bg-surface-2 text-ink-2 ' +

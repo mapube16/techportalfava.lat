@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { hi, Dots } from '../icons';
-import { ApiState, Card, CardHead, chip, filterBy, gbtn, initials, inputStyle, pbtn, td, th } from '../ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ApiState, chip, filterBy, initials, inputStyle } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
@@ -76,21 +86,29 @@ export default function Techs() {
   };
 
   const addBtn = (
-    <button onClick={abrirAlta} className={pbtn}>
+    <Button onClick={abrirAlta} className="min-h-11 md:min-h-9">
       {hi('plus', { w: 15 })}
       {t.btn_newtech}
-    </button>
+    </Button>
   );
 
   const activePill = (active: boolean) => (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: active ? 'var(--ok)' : 'var(--text-3)' }}>
-      <span style={{ width: 7, height: 7, borderRadius: '50%', background: active ? 'var(--ok)' : 'var(--text-3)' }} />
+    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${active ? 'text-ok' : 'text-muted-foreground'}`}>
+      <span className={`size-1.5 rounded-full ${active ? 'bg-ok' : 'bg-muted-foreground'}`} />
       {active ? t.active : t.inactive}
     </span>
   );
 
+  // La etiqueta EXTERNO/INTERNO en el naranja de MARCA, no en el `accent` de hover de
+  // shadcn: son dos colores distintos que comparten nombre (ver el puente en index.css).
+  const empleoChip = (tc: Technician) => (
+    <span className={`${chip} ${tc.employmentType === 'EXTERNO' ? 'bg-accent-tint text-accent-brand' : ''}`}>
+      {tc.employmentType === 'EXTERNO' ? t.external : t.internal}
+    </span>
+  );
+
   const formulario = form ? (
-    <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', background: 'var(--surface-2)' }}>
+    <div className="px-4.5 py-3 border-b border-border flex gap-2.5 flex-wrap items-center bg-muted">
       <input
         value={form.fullName}
         onChange={(e) => setForm({ ...form, fullName: e.target.value })}
@@ -114,95 +132,112 @@ export default function Techs() {
         <option value="INTERNO">{t.internal}</option>
         <option value="EXTERNO">{t.external}</option>
       </select>
-      <button onClick={enviar} className={pbtn}>{t.btn_save}</button>
-      <button onClick={() => { setForm(null); setErrSave(null); }} className={gbtn}>{t.btn_cancel}</button>
-      {errSave ? <span style={{ fontSize: 12, color: 'var(--warn)' }}>{t.err_save}: {errSave}</span> : null}
+      <Button onClick={enviar} className="min-h-11 md:min-h-9">{t.btn_save}</Button>
+      <Button variant="outline" onClick={() => { setForm(null); setErrSave(null); }} className="min-h-11 md:min-h-9">
+        {t.btn_cancel}
+      </Button>
+      {errSave ? <span className="text-xs text-warn">{t.err_save}: {errSave}</span> : null}
     </div>
   ) : errSave ? (
-    <div style={{ padding: '10px 18px', fontSize: 12, color: 'var(--warn)' }}>{t.err_save}: {errSave}</div>
+    <div className="px-4.5 py-2.5 text-xs text-warn">{t.err_save}: {errSave}</div>
   ) : null;
 
   const acciones = (tc: Technician) => (
     <>
-      <button onClick={() => abrirEdicion(tc)} title={t.cat_edit} className={gbtn}><Dots w={16} /></button>
-      <button onClick={() => conmutarActivo(tc)} className={`${gbtn} ml-1.5`}>
+      <Button variant="outline" size="icon" onClick={() => abrirEdicion(tc)} title={t.cat_edit} className="size-11 md:size-9">
+        <Dots w={16} />
+      </Button>
+      <Button variant="outline" size="sm" onClick={() => conmutarActivo(tc)} className="min-h-11 md:min-h-9 ml-1.5">
         {tc.isActive ? t.cat_deactivate : t.cat_activate}
-      </button>
+      </Button>
     </>
   );
 
   if (movil) {
     return (
-      <Card>
-        <CardHead title={t.t_techs} right={addBtn} />
+      <Card className="p-0 gap-0 overflow-hidden">
+        <CardHeader className="flex-row items-center justify-between border-b p-4">
+          <CardTitle>{t.t_techs}</CardTitle>
+          {addBtn}
+        </CardHeader>
         {formulario}
-        <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <CardContent className="p-3 flex flex-col gap-2.5">
           {rows.map((tc) => (
-            <div key={tc.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 13, opacity: tc.isActive ? 1 : 0.55 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surface-3)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>{initials(tc.fullName)}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>{tc.fullName}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{tc.roleTypeName}</div>
+            <div key={tc.id} className={`border border-border rounded-card p-3.5 ${tc.isActive ? '' : 'opacity-55'}`}>
+              <div className="flex items-center gap-2.5">
+                <div className="size-8.5 rounded-full bg-muted grid place-items-center text-xs font-bold shrink-0">
+                  {initials(tc.fullName)}
                 </div>
-                <span className={`${chip} ${tc.employmentType === 'EXTERNO' ? 'bg-accent-tint text-accent' : ''}`}>
-                  {tc.employmentType === 'EXTERNO' ? t.external : t.internal}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold">{tc.fullName}</div>
+                  <div className="text-xs text-muted-foreground">{tc.roleTypeName}</div>
+                </div>
+                {empleoChip(tc)}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 11 }}>
+              <div className="flex items-center gap-2.5 mt-2.5">
                 {activePill(tc.isActive)}
-                <span style={{ flex: 1 }} />
+                <span className="flex-1" />
                 {acciones(tc)}
               </div>
             </div>
           ))}
-          {rows.length ? null : <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>{t.empty_list}</div>}
-        </div>
+          {rows.length ? null : (
+            <div className="p-5 text-center text-muted-foreground text-[13px]">{t.empty_list}</div>
+          )}
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHead title={t.t_techs} right={addBtn} />
+    <Card className="p-0 gap-0 overflow-hidden">
+      <CardHeader className="flex-row items-center justify-between border-b p-4">
+        <CardTitle>{t.t_techs}</CardTitle>
+        {addBtn}
+      </CardHeader>
       {formulario}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-          <thead>
-            <tr>
-              {[t.col_tech, t.role_type, '', t.util, t.col_status, ''].map((c, i) => (
-                <th key={i} className={th}>{c}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
+      <CardContent className="p-0 overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t.col_tech}</TableHead>
+              <TableHead>{t.role_type}</TableHead>
+              <TableHead />
+              <TableHead>{t.util}</TableHead>
+              <TableHead>{t.col_status}</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.map((tc) => (
-              <tr key={tc.id} style={{ borderTop: '1px solid var(--border)', opacity: tc.isActive ? 1 : 0.55 }}>
-                <td className={td}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface-3)', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700 }}>{initials(tc.fullName)}</div>
-                    <span style={{ fontWeight: 600 }}>{tc.fullName}</span>
+              <TableRow key={tc.id} className={tc.isActive ? '' : 'opacity-55'}>
+                <TableCell>
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-7.5 rounded-full bg-muted grid place-items-center text-[11px] font-bold">
+                      {initials(tc.fullName)}
+                    </div>
+                    <span className="font-semibold">{tc.fullName}</span>
                   </div>
-                </td>
-                <td className={td}>{tc.roleTypeName}</td>
-                <td className={td}>
-                  <span className={`${chip} ${tc.employmentType === 'EXTERNO' ? 'bg-accent-tint text-accent' : ''}`}>
-                    {tc.employmentType === 'EXTERNO' ? t.external : t.internal}
-                  </span>
-                </td>
+                </TableCell>
+                <TableCell>{tc.roleTypeName}</TableCell>
+                <TableCell>{empleoChip(tc)}</TableCell>
                 {/* La utilización sale de la bitácora, que llega en la Fase 3 y se agrega
                     en la Fase 7. Una barra al 0 % sería una cifra falsa, no un dato vacío. */}
-                <td className={`${td} text-ink-3`} title={t.tech_no_util}>—</td>
-                <td className={td}>{activePill(tc.isActive)}</td>
-                <td className={`${td} text-right whitespace-nowrap`}>{acciones(tc)}</td>
-              </tr>
+                <TableCell className="text-muted-foreground" title={t.tech_no_util}>—</TableCell>
+                <TableCell>{activePill(tc.isActive)}</TableCell>
+                <TableCell className="text-right whitespace-nowrap">{acciones(tc)}</TableCell>
+              </TableRow>
             ))}
             {rows.length ? null : (
-              <tr><td colSpan={6} style={{ padding: 34, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>{t.empty_list}</td></tr>
+              <TableRow>
+                <TableCell colSpan={6} className="p-8.5 text-center text-muted-foreground text-[13px]">
+                  {t.empty_list}
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </CardContent>
     </Card>
   );
 }

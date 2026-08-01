@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { hi } from '../icons';
-import { ApiState, Card, CardHead, gbtn, money, nf, td, th } from '../ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { ApiState, inputStyle, money, nf, td, th } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
@@ -14,16 +17,6 @@ import type { MatrixRow, Order, Phase } from '../lib/api/projects';
  * el autoguardado de una pisaría la celda equivalente de la otra.
  */
 const clave = (orderId: string, r: MatrixRow) => `${orderId}|${r.roleTypeId}|${r.phase ?? ''}`;
-
-const ENTRADA: React.CSSProperties = {
-  border: '1px solid var(--border-2)',
-  borderRadius: 8,
-  padding: '9px 10px',
-  background: 'var(--surface-2)',
-  color: 'var(--text)',
-  fontSize: 'var(--fs-input)',
-  minHeight: 'var(--tap)',
-};
 
 export default function ProjectDetail() {
   const { state, t, go, showToast } = useApp();
@@ -92,7 +85,7 @@ export default function ProjectDetail() {
   };
 
   const matriz = (orderId: string, filas: MatrixRow[]) => (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginTop: 6 }}>
+    <table className="w-full border-collapse text-[13px] mt-1.5">
       <thead>
         <tr>
           {[t.role_type, t.kpi_sold, t.kpi_done, t.kpi_delta].map((c, i) => (
@@ -105,19 +98,23 @@ export default function ProjectDetail() {
           const k = clave(orderId, fila);
           const estado = celdas[k];
           return (
-            <tr key={k} style={{ borderTop: '1px solid var(--border)', opacity: fila.roleTypeActive ? 1 : 0.6 }}>
+            <tr key={k} className={`border-t border-border ${fila.roleTypeActive ? '' : 'opacity-60'}`}>
               <td className={`${td} font-semibold`}>{fila.roleTypeName}</td>
               <td className={`${td} text-center`}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <span className="inline-flex items-center gap-1.5">
                   <input
                     value={edits[k] ?? String(fila.sold)}
                     onChange={(e) => setEdits({ ...edits, [k]: e.target.value })}
                     onBlur={(e) => guardarCelda(orderId, fila, e.target.value)}
-                    style={{ width: 44, textAlign: 'center', border: '1px solid ' + (estado === 'error' ? 'var(--warn)' : 'var(--border-2)'), borderRadius: 6, padding: '5px 4px', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'Roboto Mono', fontSize: 13, fontWeight: 600 }}
+                    className={`w-11 text-center rounded-md px-1 py-1 bg-muted text-foreground font-mono text-[13px] font-semibold border outline-none focus:border-primary ${
+                      estado === 'error' ? 'border-warn' : 'border-input'
+                    }`}
                   />
                   <span
                     title={estado === 'error' ? t.err_save : ''}
-                    style={{ width: 6, height: 6, borderRadius: '50%', background: estado === 'saving' ? 'var(--info)' : estado === 'error' ? 'var(--warn)' : 'transparent' }}
+                    className={`size-1.5 rounded-full ${
+                      estado === 'saving' ? 'bg-info' : estado === 'error' ? 'bg-warn' : 'bg-transparent'
+                    }`}
                   />
                 </span>
               </td>
@@ -173,69 +170,68 @@ export default function ProjectDetail() {
 
   /** Cabecera de una orden: es la línea que Andrea busca para ubicar el trabajo. */
   const cabeceraOrden = (o: Order) => (
-    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'baseline' }}>
-      <span style={{ fontWeight: 700, fontSize: 15 }}>{o.label}</span>
+    <div className="flex gap-3.5 flex-wrap items-baseline">
+      <span className="font-bold text-[15px]">{o.label}</span>
       {o.commessa ? (
-        <span style={{ fontFamily: 'Roboto Mono', fontSize: 12.5, color: 'var(--primary)' }}>
+        <span className="font-mono text-[12.5px] text-primary">
           {t.order_commessa} {o.commessa}
         </span>
       ) : null}
-      {o.oaNumber ? (
-        <span style={{ fontFamily: 'Roboto Mono', fontSize: 12.5, color: 'var(--text-3)' }}>
-          {o.oaNumber}
-        </span>
-      ) : null}
+      {o.oaNumber ? <span className="font-mono text-[12.5px] text-muted-foreground">{o.oaNumber}</span> : null}
       {o.contractValue != null ? (
-        <span style={{ fontFamily: 'Roboto Mono', fontSize: 12.5, fontWeight: 600 }}>
-          {money(o.contractValue, o.currencyCode ?? '')}
-        </span>
+        <span className="font-mono text-[12.5px] font-semibold">{money(o.contractValue, o.currencyCode ?? '')}</span>
       ) : null}
     </div>
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1000 }}>
-      <button onClick={() => go('projects')} className={`${gbtn} self-start`}>← {t.t_projects}</button>
+    <div className="flex flex-col gap-4 max-w-[1000px]">
+      <Button variant="outline" onClick={() => go('projects')} className="self-start min-h-11 md:min-h-9">
+        ← {t.t_projects}
+      </Button>
+
       <Card>
-        <div style={{ padding: '18px 20px', display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ flex: 1, minWidth: 220 }}>
-            <div style={{ fontSize: 20, fontWeight: 700 }}>{p.name}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>{p.clientName} · {p.country}</div>
+        <CardContent className="flex gap-6 flex-wrap items-center">
+          <div className="flex-1 min-w-[220px]">
+            <div className="text-xl font-bold">{p.name}</div>
+            <div className="text-[13px] text-muted-foreground mt-0.5">{p.clientName} · {p.country}</div>
           </div>
           {metas.map(([a, b], i) => (
             <div key={a}>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{a}</div>
-              <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2, fontFamily: i ? 'Roboto Mono' : 'inherit' }}>{b}</div>
+              <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{a}</div>
+              <div className={`text-sm font-semibold mt-0.5 ${i ? 'font-mono' : ''}`}>{b}</div>
             </div>
           ))}
-        </div>
+        </CardContent>
       </Card>
 
-      <Card>
-        <CardHead title={t.orders} />
-        <div style={{ padding: '12px 18px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Card className="p-0 gap-0 overflow-hidden">
+        <CardHeader className="border-b p-4">
+          <CardTitle>{t.orders}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4.5 flex gap-2 flex-wrap items-center">
           <input
             value={nueva.label}
             onChange={(e) => setNueva({ ...nueva, label: e.target.value })}
             placeholder={t.order_label}
-            style={{ ...ENTRADA, flex: '2 1 200px' }}
+            className={`${inputStyle} flex-[2_1_200px]`}
           />
           <input
             value={nueva.commessa}
             onChange={(e) => setNueva({ ...nueva, commessa: e.target.value })}
             placeholder={t.order_commessa}
-            style={{ ...ENTRADA, flex: '1 1 110px', fontFamily: 'Roboto Mono' }}
+            className={`${inputStyle} flex-[1_1_110px] font-mono`}
           />
           <input
             value={nueva.oaNumber}
             onChange={(e) => setNueva({ ...nueva, oaNumber: e.target.value })}
             placeholder={t.order_oa}
-            style={{ ...ENTRADA, flex: '1 1 110px', fontFamily: 'Roboto Mono' }}
+            className={`${inputStyle} flex-[1_1_110px] font-mono`}
           />
           <select
             value={nueva.machineModelId}
             onChange={(e) => setNueva({ ...nueva, machineModelId: e.target.value })}
-            style={{ ...ENTRADA, flex: '1 1 140px' }}
+            className={`${inputStyle} flex-[1_1_140px]`}
           >
             {/* Hay alcances contratados que no son un modelo del catálogo
                 («PC 4000 + 4 SILOS»), así que el modelo es opcional. */}
@@ -244,20 +240,16 @@ export default function ProjectDetail() {
               <option key={m.id} value={m.id}>{m.code}</option>
             ))}
           </select>
-          <button
-            onClick={anadirOrden}
-            disabled={!nueva.label.trim()}
-            className={`${gbtn} min-h-11 ${nueva.label.trim() ? '' : 'opacity-50'}`}
-          >
+          <Button onClick={anadirOrden} disabled={!nueva.label.trim()} className="min-h-11 md:min-h-9">
             {hi('plus', { w: 14 })} {t.order_add}
-          </button>
-          {errOrden ? <div style={{ fontSize: 12, color: 'var(--warn)', width: '100%' }}>{t.err_save}: {errOrden}</div> : null}
-        </div>
+          </Button>
+          {errOrden ? <div className="text-xs text-warn w-full">{t.err_save}: {errOrden}</div> : null}
+        </CardContent>
       </Card>
 
       {p.orders.length === 0 ? (
         <Card>
-          <div style={{ padding: '18px 20px', fontSize: 13, color: 'var(--text-3)' }}>{t.order_none}</div>
+          <CardContent className="text-[13px] text-muted-foreground">{t.order_none}</CardContent>
         </Card>
       ) : null}
 
@@ -267,32 +259,30 @@ export default function ProjectDetail() {
         const sinFase = o.matrix.filter((r) => r.phase === null);
         const de = (phase: Phase) => o.matrix.filter((r) => r.phase === phase);
         return (
-          <Card key={o.id}>
-            <CardHead
-              title={cabeceraOrden(o)}
-              right={
-                <button onClick={() => quitarOrden(o.id)} className={`${gbtn} text-[12.5px]`}>
-                  {t.order_delete}
-                </button>
-              }
-            />
-            <div style={{ display: 'grid', gridTemplateColumns: movil ? '1fr' : '1fr 1fr', gap: 0 }}>
-              <div style={{ padding: '12px 18px', borderRight: movil ? 'none' : '1px solid var(--border)', borderBottom: movil ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.montaje}</div>
+          <Card key={o.id} className="p-0 gap-0 overflow-hidden">
+            <CardHeader className="flex-row items-center justify-between border-b p-4">
+              <CardTitle>{cabeceraOrden(o)}</CardTitle>
+              <Button variant="outline" size="sm" onClick={() => quitarOrden(o.id)} className="min-h-11 md:min-h-8 text-[12.5px] shrink-0">
+                {t.order_delete}
+              </Button>
+            </CardHeader>
+            <CardContent className={`p-0 grid ${movil ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              <div className={`p-4.5 ${movil ? 'border-b border-border' : 'border-r border-border'}`}>
+                <div className="text-xs font-bold text-primary uppercase tracking-wide">{t.montaje}</div>
                 {matriz(o.id, de('MONTAJE'))}
               </div>
-              <div style={{ padding: '12px 18px' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.colaudo}</div>
+              <div className="p-4.5">
+                <div className="text-xs font-bold text-accent-brand uppercase tracking-wide">{t.colaudo}</div>
                 {matriz(o.id, de('COLLAUDO'))}
               </div>
-            </div>
+            </CardContent>
             {sinFase.length ? (
-              <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border)' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.matrix_no_phase}</div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginTop: 6 }}>
+              <div className="px-4.5 py-3 border-t border-border">
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{t.matrix_no_phase}</div>
+                <table className="w-full border-collapse text-[13px] mt-1.5">
                   <tbody>
                     {sinFase.map((fila) => (
-                      <tr key={clave(o.id, fila)} style={{ borderTop: '1px solid var(--border)' }}>
+                      <tr key={clave(o.id, fila)} className="border-t border-border">
                         <td className={`${td} font-semibold`}>{fila.roleTypeName}</td>
                         <td className={`${td} text-center font-mono`}>{fila.sold}</td>
                         <td className={`${td} text-center font-mono font-semibold`}>{fila.executed}</td>
@@ -312,26 +302,26 @@ export default function ProjectDetail() {
       {/* Los días aprobados que no dicen a qué máquina fueron. Se muestran en vez de
           repartirse: repartir a ojo es el trabajo manual que esta app elimina. */}
       {p.unassigned.length ? (
-        <Card>
-          <CardHead
-            title={t.unassigned}
-            right={<span style={{ fontSize: 12, color: 'var(--text-3)' }}>{t.unassigned_hint}</span>}
-          />
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <tbody>
-              {p.unassigned.map((f) => (
-                <tr key={`${f.roleTypeId}|${f.phase ?? ''}`} style={{ borderTop: '1px solid var(--border)' }}>
-                  <td className={`${td} font-semibold`}>{f.roleTypeName}</td>
-                  <td className={`${td} text-ink-3`}>
-                    {f.phase === null ? t.matrix_no_phase : f.phase === 'MONTAJE' ? t.montaje : t.colaudo}
-                  </td>
-                  <td className={`${td} text-center font-mono font-bold text-warn`}>
-                    {f.executed}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <Card className="p-0 gap-0 overflow-hidden">
+          <CardHeader className="flex-row items-center justify-between border-b p-4">
+            <CardTitle>{t.unassigned}</CardTitle>
+            <span className="text-xs text-muted-foreground">{t.unassigned_hint}</span>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableBody>
+                {p.unassigned.map((f) => (
+                  <TableRow key={`${f.roleTypeId}|${f.phase ?? ''}`}>
+                    <TableCell className="font-semibold">{f.roleTypeName}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {f.phase === null ? t.matrix_no_phase : f.phase === 'MONTAJE' ? t.montaje : t.colaudo}
+                    </TableCell>
+                    <TableCell className="text-center font-mono font-bold text-warn">{f.executed}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
         </Card>
       ) : null}
     </div>
