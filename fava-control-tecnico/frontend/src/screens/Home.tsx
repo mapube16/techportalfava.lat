@@ -51,7 +51,7 @@ export default function Home() {
             <div className="text-xs opacity-80 mt-1">{t.day_registered}</div>
           </div>
           <div>
-            <div className="text-[34px] font-bold font-cond leading-none" style={{ color: '#ffd7b0' }}>
+            <div className="text-[34px] font-bold font-cond leading-none text-[#ffd7b0]">
               {pendientes}
             </div>
             <div className="text-xs opacity-80 mt-1">{t.pending}</div>

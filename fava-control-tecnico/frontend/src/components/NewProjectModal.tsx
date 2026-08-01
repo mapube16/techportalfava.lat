@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { hi } from '../icons';
-import { FieldError, gbtn, inputError, inputStyle, pbtn } from '../ui';
+import { FieldError, inputError, inputStyle } from '../ui';
 import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { activos, getCatalogs } from '../lib/api/catalogs';
@@ -109,7 +111,7 @@ export default function NewProjectModal() {
 
   const field = (label: string, el: ReactNode, e?: boolean, msg?: string) => (
     <div>
-      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{label}</label>
+      <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{label}</label>
       {el}
       {e ? <FieldError msg={msg || t.field_req} /> : null}
     </div>
@@ -125,34 +127,40 @@ export default function NewProjectModal() {
   );
 
   return (
-    <div onClick={close} style={{ position: 'fixed', inset: 0, background: 'rgba(8,16,24,.5)', zIndex: 60, display: 'grid', placeItems: 'center', padding: 20, animation: 'favaIn .2s ease' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, background: 'var(--surface)', borderRadius: 16, boxShadow: 'var(--shadow-lg)', maxHeight: '92vh', overflowY: 'auto', animation: 'favaIn .26s ease both' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '20px 22px 4px' }}>
+    <div onClick={close} className="fixed inset-0 z-60 bg-black/50 grid place-items-center p-5 fava-anim">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[560px] bg-card rounded-2xl shadow-pop max-h-[92vh] overflow-y-auto fava-anim"
+      >
+        <div className="flex items-start justify-between px-5.5 pt-5 pb-1">
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>{t.proj_new}</div>
-            <div style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 3, maxWidth: 340 }}>{t.proj_new_sub}</div>
+            <div className="text-lg font-bold">{t.proj_new}</div>
+            <div className="text-[12.5px] text-muted-foreground mt-0.5 max-w-[340px]">{t.proj_new_sub}</div>
           </div>
-          <button onClick={close} className={`${gbtn} px-2.5`}>{hi('x', { w: 15 })}</button>
+          <Button variant="outline" size="icon" onClick={close} className="size-11 md:size-9">
+            <X className="size-4" />
+          </Button>
         </div>
-        <div style={{ padding: '14px 22px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        <div className="px-5.5 pb-5.5 pt-3.5 flex flex-col gap-3.5">
           {field(t.proj_name, texto(name, setName, t.proj_name_ph, false, errors.name), errors.name)}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-2 gap-3">
             {field(t.client, texto(client, setClient, t.proj_client_ph, false, errors.client), errors.client)}
             {field(t.proj_nit, texto(nit, setNit, t.proj_nit_ph, true))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-2 gap-3">
             {field(t.proj_locality, texto(locality, setLocality, t.proj_locality_ph, false, errors.locality), errors.locality)}
             {field(t.proj_country, texto(country, setCountry, t.proj_country_ph, false, errors.country), errors.country)}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-2 gap-3">
             {field(t.proj_supply, texto(supply, setSupply, t.proj_supply_ph, false, errors.supply), errors.supply)}
             {field(t.proj_contract_no, texto(contractNumber, setContractNumber, t.proj_contract_no_ph, true, errors.contractNumber), errors.contractNumber)}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-2 gap-3">
             {field(t.order_oa, texto(oa, setOa, t.proj_oa_ph, true))}
             {field(t.order_commessa, texto(commessa, setCommessa, '342898', true))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr .8fr', gap: 12 }}>
+          <div className="grid grid-cols-[1.4fr_.8fr] gap-3">
             {field(t.proj_value, texto(valueRaw, setValueRaw, '1.240.000', true, errors.value), errors.value, t.val_positive)}
             {field(
               t.proj_cur,
@@ -164,14 +172,23 @@ export default function NewProjectModal() {
             )}
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{t.proj_hours}</label>
-            <div style={{ position: 'relative' }}>
-              <input value={hoursRaw} onChange={(e) => setHoursRaw(e.target.value)} placeholder="1.120" className={`${errors.hours ? inputError : inputStyle} font-mono pr-10`} />
-              <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--text-3)', fontWeight: 600 }}>h</span>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.proj_hours}</label>
+            <div className="relative">
+              <input
+                value={hoursRaw}
+                onChange={(e) => setHoursRaw(e.target.value)}
+                placeholder="1.120"
+                className={`${errors.hours ? inputError : inputStyle} font-mono pr-10`}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-semibold">h</span>
             </div>
-            {errors.hours ? <FieldError msg={t.val_positive} /> : <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 5 }}>{t.proj_hours_hint}</div>}
+            {errors.hours ? (
+              <FieldError msg={t.val_positive} />
+            ) : (
+              <div className="text-[11.5px] text-muted-foreground mt-1.5">{t.proj_hours_hint}</div>
+            )}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-[1.6fr_1fr] gap-3">
             {field(
               t.order_label,
               texto(machineLabel, setMachineLabel, 'PL 6000 KG - 1-3428', false, errors.machineLabel),
@@ -180,11 +197,7 @@ export default function NewProjectModal() {
             )}
             {field(
               t.order_model,
-              <select
-                value={machineModelId}
-                onChange={(e) => setMachineModelId(e.target.value)}
-                className={inputStyle}
-              >
+              <select value={machineModelId} onChange={(e) => setMachineModelId(e.target.value)} className={inputStyle}>
                 {/* Opcional: hay alcances contratados que no son un modelo del
                     catálogo, como «PC 4000 -3430 + 4 SILOS». */}
                 <option value="">{t.order_no_model}</option>
@@ -194,13 +207,17 @@ export default function NewProjectModal() {
               </select>,
             )}
           </div>
+
           {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
-            <button onClick={close} className={gbtn}>{t.btn_cancel}</button>
-            <button onClick={create} className={pbtn}>
+
+          <div className="flex gap-2.5 justify-end mt-1">
+            <Button variant="outline" onClick={close} className="min-h-11 md:min-h-9">
+              {t.btn_cancel}
+            </Button>
+            <Button onClick={create} className="min-h-11 md:min-h-9">
               {hi('plus', { w: 15 })}
               {t.btn_newproj}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

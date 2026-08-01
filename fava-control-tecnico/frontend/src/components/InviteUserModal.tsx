@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { hi } from '../icons';
-import { FieldError, gbtn, inputError, inputStyle, pbtn } from '../ui';
+import { FieldError, inputError, inputStyle } from '../ui';
 import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { inviteUser } from '../lib/api/users';
@@ -22,10 +24,13 @@ export default function InviteUserModal() {
   // servidor aplica la misma validación que el PATCH del vínculo.
   const { data: techs } = useApiData(listTechnicians, []);
 
-  const rmap: Record<Role, [string, string, string]> = {
-    T: [t.role_t, 'var(--sent)', 'var(--sent-tint)'],
-    A: [t.role_a, 'var(--accent)', 'var(--accent-tint)'],
-    S: [t.role_s, 'var(--primary)', 'var(--primary-tint)'],
+  // El color de cada rol es dato de dominio, no una paleta que Tailwind pueda generar
+  // como clase: el naranja de A es el de MARCA (`accent-brand`), no el `accent` de
+  // hover de shadcn — la colisión de nombres documentada en index.css.
+  const rmap: Record<Role, [label: string, on: string]> = {
+    T: [t.role_t, 'border-sent bg-sent-tint text-sent'],
+    A: [t.role_a, 'border-accent-brand bg-accent-tint text-accent-brand'],
+    S: [t.role_s, 'border-primary bg-primary-tint text-primary'],
   };
 
   const close = () => patch({ inviteOpen: false });
@@ -60,32 +65,50 @@ export default function InviteUserModal() {
   };
 
   return (
-    <div onClick={close} style={{ position: 'fixed', inset: 0, background: 'rgba(8,16,24,.5)', zIndex: 60, display: 'grid', placeItems: 'center', padding: 20, animation: 'favaIn .2s ease' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 460, background: 'var(--surface)', borderRadius: 16, boxShadow: 'var(--shadow-lg)', maxHeight: '92vh', overflowY: 'auto', animation: 'favaIn .26s ease both' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '20px 22px 4px' }}>
+    <div onClick={close} className="fixed inset-0 z-60 bg-black/50 grid place-items-center p-5 fava-anim">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[460px] bg-card rounded-2xl shadow-pop max-h-[92vh] overflow-y-auto fava-anim"
+      >
+        <div className="flex items-start justify-between px-5.5 pt-5 pb-1">
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>{t.invite_title}</div>
-            <div style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 3, maxWidth: 320 }}>{t.invite_sub}</div>
+            <div className="text-lg font-bold">{t.invite_title}</div>
+            <div className="text-[12.5px] text-muted-foreground mt-0.5 max-w-[320px]">{t.invite_sub}</div>
           </div>
-          <button onClick={close} className={`${gbtn} px-2.5`}>{hi('x', { w: 15 })}</button>
+          <Button variant="outline" size="icon" onClick={close} className="size-11 md:size-9">
+            <X className="size-4" />
+          </Button>
         </div>
-        <div style={{ padding: '14px 22px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        <div className="px-5.5 pb-5.5 pt-3.5 flex flex-col gap-3.5">
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{t.invite_name}</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.invite_name_ph} className={errors.name ? inputError : inputStyle} />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_name}</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t.invite_name_ph}
+              className={errors.name ? inputError : inputStyle}
+            />
             {errors.name ? <FieldError msg={t.field_req} /> : null}
           </div>
+
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{t.invite_email}</label>
-            <input value={mail} onChange={(e) => setMail(e.target.value)} placeholder={t.invite_email_ph} className={errors.mail || errors.mailFmt ? inputError : inputStyle} />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_email}</label>
+            <input
+              value={mail}
+              onChange={(e) => setMail(e.target.value)}
+              placeholder={t.invite_email_ph}
+              className={errors.mail || errors.mailFmt ? inputError : inputStyle}
+            />
             {errors.mail ? <FieldError msg={t.field_req} /> : errors.mailFmt ? <FieldError msg={t.email_invalid} /> : null}
           </div>
+
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{t.invite_roles}</label>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_roles}</label>
+            <div className="flex gap-2 flex-wrap">
               {(['T', 'A', 'S'] as Role[]).map((rc) => {
                 const on = roles.includes(rc);
-                const [lbl, c, bg] = rmap[rc];
+                const [lbl, activo] = rmap[rc];
                 const locked = rc !== 'T' && !isSuper;
                 return (
                   <button
@@ -93,19 +116,22 @@ export default function InviteUserModal() {
                     disabled={locked}
                     title={locked ? t.only_super : ''}
                     onClick={() => toggleRole(rc)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: locked ? 'not-allowed' : 'pointer', border: '1px solid ' + (on ? c : 'var(--border-2)'), background: on ? bg : 'transparent', color: on ? c : 'var(--text-3)', opacity: locked ? 0.5 : 1 }}
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-semibold border transition-colors ${
+                      locked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                    } ${on ? activo : 'border-input text-muted-foreground'}`}
                   >
                     {on ? hi('check', { w: 13 }) : hi('plus', { w: 13 })}
-                    <span style={{ marginLeft: 2 }}>{lbl}</span>
+                    <span className="ml-0.5">{lbl}</span>
                     {locked ? hi('lock', { w: 12 }) : null}
                   </button>
                 );
               })}
             </div>
-            {isSuper ? null : <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 6 }}>{t.only_super}</div>}
+            {isSuper ? null : <div className="text-[11.5px] text-muted-foreground mt-1.5">{t.only_super}</div>}
           </div>
+
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{t.invite_tech}</label>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_tech}</label>
             <select value={techId} onChange={(e) => setTechId(e.target.value)} className={inputStyle}>
               <option value="">{t.user_no_link}</option>
               {activos(techs ?? []).map((tc) => (
@@ -113,13 +139,17 @@ export default function InviteUserModal() {
               ))}
             </select>
           </div>
+
           {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
-            <button onClick={close} className={gbtn}>{t.btn_cancel}</button>
-            <button onClick={create} className={pbtn}>
+
+          <div className="flex gap-2.5 justify-end mt-1">
+            <Button variant="outline" onClick={close} className="min-h-11 md:min-h-9">
+              {t.btn_cancel}
+            </Button>
+            <Button onClick={create} className="min-h-11 md:min-h-9">
               {hi('up', { w: 15 })}
               {t.btn_invite}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

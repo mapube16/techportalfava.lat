@@ -76,5 +76,5 @@ export default function SignatureBox({
     if (c && ctx && clearToken > 0) ctx.clearRect(0, 0, c.width, c.height);
   }, [clearToken]);
 
-  return <canvas ref={ref} style={{ width: '100%', height: '100%', touchAction: 'none', cursor: 'crosshair' }} />;
+  return <canvas ref={ref} className="w-full h-full touch-none cursor-crosshair" />;
 }
