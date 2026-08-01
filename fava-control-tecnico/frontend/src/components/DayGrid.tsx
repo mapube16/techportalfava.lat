@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Badge,
   Card,
   Metric,
   Select,
@@ -107,17 +106,19 @@ export default function DayGrid() {
       <TableRow
         key={kp}
         onClick={() => alternar(kp)}
-        className="cursor-pointer bg-tremor-background-muted hover:bg-tremor-background-subtle"
+        className="cursor-pointer group"
       >
-        <TableCell className={`${FIJA} bg-tremor-background-muted font-semibold text-tremor-content-strong`}>
-          <span className="inline-flex items-center gap-2">
+        {/* Cabecera de grupo al estilo del planner: nombre en negrita y el conteo
+            apagado al lado, sin fondo ni pastilla. El peso lo da la tipografia. */}
+        <TableCell className={`${FIJA} bg-tremor-background py-4`}>
+          <span className="inline-flex items-baseline gap-2">
             {flecha(!!verTecnicos, p.technicians.length > 0)}
-            {p.projectName}
-            <Badge size="xs" color="gray">{p.total}</Badge>
+            <span className="font-semibold text-tremor-content-strong">{p.projectName}</span>
+            <span className="text-tremor-content-subtle tabular-nums">{p.total}</span>
           </span>
         </TableCell>
         {cifras(p.counts, true)}
-        <TableCell className="text-right font-bold tabular-nums">{p.total}</TableCell>
+        <TableCell className="text-right font-semibold tabular-nums py-4">{p.total}</TableCell>
       </TableRow>,
     ];
     if (!verTecnicos) return filas;
@@ -129,31 +130,29 @@ export default function DayGrid() {
         <TableRow
           key={kt}
           onClick={() => alternar(kt)}
-          className="cursor-pointer bg-tremor-background hover:bg-tremor-background-muted"
+          className="cursor-pointer hover:bg-tremor-background-muted"
         >
-          {/* La sangría se marca además con una línea vertical: en una tabla ancha, el
-              espacio en blanco solo no basta para ver de quién cuelga una fila. */}
-          <TableCell className={`${FIJA} bg-tremor-background`}>
-            <span className="inline-flex items-center gap-2 pl-3 border-l-2 border-tremor-border ml-1">
+          {/* El nombre en color de marca, como las empresas del planner: ademas de
+              verse mejor, es la senal de que la fila se puede abrir. */}
+          <TableCell className={`${FIJA} bg-tremor-background py-3.5 pl-8`}>
+            <span className="inline-flex items-center gap-2">
               {flecha(!!verMeses, tec.months.length > 0)}
-              <span className="font-medium">{tec.technicianName}</span>
+              <span className="text-tremor-brand">{tec.technicianName}</span>
             </span>
           </TableCell>
           {cifras(tec.counts)}
-          <TableCell className="text-right font-semibold tabular-nums">{tec.total}</TableCell>
+          <TableCell className="text-right tabular-nums py-3.5">{tec.total}</TableCell>
         </TableRow>,
       );
       if (!verMeses) continue;
       for (const m of tec.months) {
         filas.push(
-          <TableRow key={`${kt}|${m.month}`} className="bg-tremor-background">
-            <TableCell className={`${FIJA} bg-tremor-background`}>
-              <span className="inline-flex items-center gap-2 pl-3 border-l-2 border-tremor-border ml-8 text-tremor-content-subtle">
-                {mes(m.month)}
-              </span>
+          <TableRow key={`${kt}|${m.month}`}>
+            <TableCell className={`${FIJA} bg-tremor-background py-3 pl-16 text-tremor-content-subtle`}>
+              {mes(m.month)}
             </TableCell>
             {cifras(m.counts)}
-            <TableCell className="text-right tabular-nums text-tremor-content">{m.total}</TableCell>
+            <TableCell className="text-right tabular-nums py-3 text-tremor-content">{m.total}</TableCell>
           </TableRow>,
         );
       }
