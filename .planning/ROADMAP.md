@@ -80,12 +80,12 @@ Plans:
 **Plans**: 6 plans (4 waves)
 
 Plans:
-- [ ] 03-01-PLAN.md — Migración (description + CHECK BIT-03 + GRANT), `fecha.ts` del servidor y el guarda-rail `check-fecha-servidor` (Wave 1)
+- [x] 03-01-PLAN.md — Migración (description + CHECK BIT-03 + GRANT), `fecha.ts` del servidor y el guarda-rail `check-fecha-servidor` (Wave 1)
 - [x] 03-02-PLAN.md — Primer runner de tests del frontend (`node --test` + tsx, cero deps) + `lib/fecha.ts` y `lib/draft.ts` como módulos puros (Wave 1)
-- [ ] 03-03-PLAN.md — `GET /api/projects` relajado a T con proyección de técnico (solo nombre y máquinas) (Wave 1)
-- [ ] 03-04-PLAN.md — API de la bitácora: GET de la semana, PUT/DELETE del día, idempotencia por clave natural y la suite de 4 husos (Wave 2)
-- [ ] 03-05-PLAN.md — Cliente tipado + `Week.tsx`: grilla de 7 días, navegación, ventana temporal y borrador local (Wave 3)
-- [ ] 03-06-PLAN.md — `LogDayDrawer.tsx` contra el API, retirada de `MACHINES`/`LOG_PROJECTS` y guarda-rail ampliado a 9 archivos (Wave 4)
+- [x] 03-03-PLAN.md — `GET /api/projects` relajado a T con proyección de técnico (solo nombre y máquinas) (Wave 1)
+- [~] 03-04-PLAN.md — API de la bitácora: GET de la semana, PUT/DELETE del día, idempotencia por clave natural y la suite de 4 husos (Wave 2) — **2 de 3 tareas**: falta la suite de husos (`c1d14dd`, `215a042`)
+- [ ] 03-05-PLAN.md — Cliente tipado + `Week.tsx`: grilla de 7 días, navegación, ventana temporal y borrador local (Wave 3) — **replantear**: la Fase 2.1 cambió `FilaDia` (ahora lleva `orderId` e `inFactory`, no `machineModelId`)
+- [ ] 03-06-PLAN.md — `LogDayDrawer.tsx` contra el API, retirada de `MACHINES`/`LOG_PROJECTS` y guarda-rail ampliado a 9 archivos (Wave 4) — **replantear**: el técnico elige la ORDEN (máquina contratada), no un modelo de máquina
 - [x] 03-07-PLAN.md — Fundación móvil: `useIsMobile`, primeras media queries, barra lateral colapsable, 44px táctiles y contraste 4.5:1 (Wave 2)
 
 ### Phase 4: Flujo de aprobación y auditoría
@@ -183,6 +183,12 @@ Deben resolverse antes de la fase indicada, no durante su ejecución.
 
 ## Progress
 
+**Adelantos fuera de orden (2026-08-01):** a petición del usuario se adelantaron dos
+piezas. De la Fase 6, la migración del histórico (`06-01`: 6.573 jornadas, conciliación
+sin descuadres). De la Fase 7, KPI-07 (`07-01`: la cuadrícula de días por concepto,
+contra el API real). El resto de las dos fases sigue pendiente — en la pantalla de KPIs
+los gráficos siguen siendo el mock del prototipo.
+
 **Execution Order:**
 Las fases se ejecutan en orden numérico. Phase 6 (migración) puede adelantarse en paralelo con Phases 3-5 una vez estable el esquema de Phase 2.
 
@@ -194,8 +200,8 @@ Las fases se ejecutan en orden numérico. Phase 6 (migración) puede adelantarse
 | 3. Bitácora diaria | 4/7 | In Progress | - |
 | 4. Flujo de aprobación y auditoría | 0/TBD | Not started | - |
 | 5. Nota Semanal PDF y firma | 0/TBD | Not started | - |
-| 6. Migración del histórico | 0/TBD | Not started | - |
-| 7. Tableros KPI en vivo | 0/TBD | Not started | - |
+| 6. Migración del histórico | 1/TBD | Parcial     | - |
+| 7. Tableros KPI en vivo | 1/TBD | Parcial     | - |
 | 8. Endurecimiento y producción | 0/TBD | Not started | - |
 
 ---
