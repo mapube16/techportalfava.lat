@@ -19,13 +19,16 @@ import { aDate, aTexto, ventana } from './fecha';
 const FILA = {
   date: true,
   projectId: true,
+  orderId: true,
   machineModelId: true,
   conceptCode: true,
+  inFactory: true,
   phase: true,
   description: true,
   status: true,
   updatedAt: true,
   project: { select: { name: true } },
+  order: { select: { label: true, commessaShort: true } },
   machineModel: { select: { code: true } },
 } as const;
 
@@ -34,25 +37,38 @@ const RANGO_MAX_DIAS = 30;
 
 const DIA_MS = 86_400_000;
 
-/** Los 5 campos que BIT-01 captura. El servidor calcula todo lo demas. */
+/**
+ * Lo que BIT-01 captura. El servidor calcula todo lo demas.
+ *
+ * `orderId` es EL campo que la Fase 2.1 anadio y el que justifica el proyecto: dice a
+ * que maquina contratada fue el dia. Sin el, alguien tiene que repartir a mano los 151
+ * dias de un tecnico entre dos maquinas, que es lo que pasa hoy en el Excel.
+ *
+ * `machineModelId` sigue existiendo pero NO lo escribe la captura: es solo para el
+ * historico de la Fase 6, que trae la maquina como texto y sin orden.
+ */
 export interface Jornada {
   projectId: string | null;
-  machineModelId: string | null;
+  orderId: string | null;
   conceptCode: ConceptCode | null;
   phase: Phase | null;
+  inFactory: boolean;
   description: string | null;
 }
 
 interface Cruda {
   date: Date;
   projectId: string | null;
+  orderId: string | null;
   machineModelId: string | null;
   conceptCode: ConceptCode | null;
   phase: Phase | null;
+  inFactory: boolean;
   description: string | null;
   status: string;
   updatedAt: Date;
   project: { name: string } | null;
+  order: { label: string; commessaShort: string | null } | null;
   machineModel: { code: string } | null;
 }
 
@@ -60,10 +76,14 @@ const plana = (f: Cruda) => ({
   date: aTexto(f.date),
   projectId: f.projectId,
   projectName: f.project?.name ?? null,
-  machineModelId: f.machineModelId,
-  machineCode: f.machineModel?.code ?? null,
+  orderId: f.orderId,
+  orderLabel: f.order?.label ?? null,
+  commessaShort: f.order?.commessaShort ?? null,
+  // Respaldo del historico: las jornadas migradas del Excel traen modelo pero no orden.
+  machineCode: f.order?.label ?? f.machineModel?.code ?? null,
   conceptCode: f.conceptCode,
   phase: f.phase,
+  inFactory: f.inFactory,
   description: f.description,
   status: f.status,
   updatedAt: f.updatedAt.toISOString(),
@@ -125,6 +145,19 @@ export class DailyEntriesService {
    */
   async guardar(technicianId: string, fecha: string, datos: Jornada) {
     const date = aDate(fecha);
+
+    // La orden tiene que ser DEL proyecto que se declara. El FK solo garantiza que
+    // existe, no que sea de este proyecto: sin esta comprobacion un dia de JAV podria
+    // apuntar a una maquina de Lucchetti y el vendido/ejecutado saldria descuadrado
+    // sin que nada fallase.
+    if (datos.orderId) {
+      const orden = await this.prisma.client.order.findUnique({
+        where: { id: datos.orderId },
+        select: { projectId: true },
+      });
+      if (!orden) throw new BadRequestException('ORDEN_INEXISTENTE');
+      if (orden.projectId !== datos.projectId) throw new BadRequestException('ORDEN_DE_OTRO_PROYECTO');
+    }
 
     const fila = await this.prisma.client.dailyEntry.upsert({
       where: { technicianId_date: { technicianId, date } },

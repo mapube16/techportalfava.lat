@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -13,6 +14,7 @@ import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { Roles } from '../../common/auth/roles.decorator';
 import { Phase } from '../../generated/prisma/enums';
 import type { UserModel } from '../../generated/prisma/models';
+import { type DatosOrden, OrdersService } from './orders.service';
 import { type DatosProyecto, ProjectsService } from './projects.service';
 import { SoldDaysService } from './sold-days.service';
 
@@ -32,7 +34,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * 400 explicito y no un descarte silencioso: ignorarlos dejaria creer al cliente
  * que se guardaron. Mismo criterio que `code` en el PATCH de un concepto (02-03).
  */
-const APARTE = ['machines', 'machineModelIds', 'soldDays', 'delta', 'executed'];
+const APARTE = ['orders', 'oaNumber', 'contractValue', 'currencyCode', 'machines', 'machineModelIds', 'soldDays', 'delta', 'executed'];
 
 function texto(valor: unknown, campo: string): string {
   if (typeof valor !== 'string' || !valor.trim()) throw new BadRequestException(`${campo}_INVALIDO`);
@@ -84,6 +86,7 @@ export class ProjectsController {
   constructor(
     private readonly service: ProjectsService,
     private readonly soldDays: SoldDaysService,
+    private readonly orders: OrdersService,
   ) {}
 
   /**
@@ -122,9 +125,8 @@ export class ProjectsController {
       country: texto(body?.country, 'PAIS'),
       supply: texto(body?.supply, 'SUMINISTRO'),
       contractNumber: texto(body?.contractNumber, 'CONTRATO'),
-      oaNumber: opcional(body?.oaNumber, 'OA'),
-      contractValue: valorContrato(body?.contractValue),
-      currencyCode: moneda(body?.currencyCode),
+      // OA, importe y moneda ya NO se piden aqui: son de la orden (POST /:id/orders).
+      // `sinRecursosAparte` los rechaza con 400 en vez de descartarlos en silencio.
       normalHours: horas(body?.normalHours),
     });
   }
@@ -141,9 +143,6 @@ export class ProjectsController {
     if (body?.supply !== undefined) data.supply = texto(body.supply, 'SUMINISTRO');
     if (body?.contractNumber !== undefined)
       data.contractNumber = texto(body.contractNumber, 'CONTRATO');
-    if (body?.oaNumber !== undefined) data.oaNumber = opcional(body.oaNumber, 'OA');
-    if (body?.contractValue !== undefined) data.contractValue = valorContrato(body.contractValue);
-    if (body?.currencyCode !== undefined) data.currencyCode = moneda(body.currencyCode);
     if (body?.normalHours !== undefined) data.normalHours = horas(body.normalHours);
     // Sin esto un body `{ foo: 1 }` moveria `updated_at` sin cambiar nada.
     if (!Object.keys(data).length) throw new BadRequestException('NADA_QUE_EDITAR');
@@ -156,22 +155,42 @@ export class ProjectsController {
     return this.service.editar(id, { isActive: body.isActive });
   }
 
+  @Get(':id/orders')
+  ordenes(@Param('id', ParseUUIDPipe) id: string) {
+    return this.orders.listar(id);
+  }
+
   /**
-   * Reemplaza la seleccion completa (idempotente). Recurso aparte del PATCH: un
-   * `PATCH /:id` que tambien tocase maquinas es el anti-patron declarado del research.
+   * CRUD de verdad, no el «reemplazar la seleccion» del viejo `PUT /:id/machines`: la
+   * orden lleva commessa, OA e importe, y reemplazarla entera perderia datos que nadie
+   * pidio borrar.
    */
-  @Put(':id/machines')
-  fijarMaquinas(@Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo) {
-    const ids = body?.machineModelIds;
-    if (!Array.isArray(ids)) throw new BadRequestException('MAQUINAS_INVALIDAS');
-    return this.service.fijarMaquinas(
-      id,
-      ids.map((v) => {
-        if (typeof v !== 'string' || !UUID.test(v))
-          throw new BadRequestException('MAQUINA_INVALIDA');
-        return v;
-      }),
-    );
+  @Post(':id/orders')
+  crearOrden(@Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo) {
+    return this.orders.crear(id, {
+      // La etiqueta es lo unico obligatorio: es lo que el tecnico ve al elegir. Los
+      // demas llegan despues, cuando se firma la orden.
+      label: texto(body?.label, 'ETIQUETA'),
+      ...camposOrden(body),
+    });
+  }
+
+  @Patch('orders/:orderId')
+  editarOrden(@Param('orderId', ParseUUIDPipe) orderId: string, @Body() body: Cuerpo) {
+    const data: DatosOrden = camposOrden(body);
+    if (body?.label !== undefined) data.label = texto(body.label, 'ETIQUETA');
+    if (body?.isActive !== undefined) {
+      if (typeof body.isActive !== 'boolean') throw new BadRequestException('IS_ACTIVE_INVALIDO');
+      data.isActive = body.isActive;
+    }
+    if (!Object.keys(data).length) throw new BadRequestException('NADA_QUE_EDITAR');
+    return this.orders.editar(orderId, data);
+  }
+
+  /** Borrado real: una orden creada por error no es historia que preservar. */
+  @Delete('orders/:orderId')
+  eliminarOrden(@Param('orderId', ParseUUIDPipe) orderId: string) {
+    return this.orders.eliminar(orderId);
   }
 
   /**
@@ -179,10 +198,10 @@ export class ProjectsController {
    * aislado: un `PATCH /:id` generico que ademas tocase dias vendidos es el
    * anti-patron declarado del research.
    */
-  @Put(':id/sold-days')
+  @Put('orders/:orderId/sold-days')
   fijarDiasVendidos(
     @CurrentUser() actor: UserModel,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('orderId', ParseUUIDPipe) orderId: string,
     @Body() body: Cuerpo,
   ) {
     // Primero que nada: `delta` y `executed` los calcula el servidor. Aceptarlos y
@@ -199,8 +218,26 @@ export class ProjectsController {
     if (!Number.isInteger(soldDays) || (soldDays as number) < 0 || (soldDays as number) > 9999)
       throw new BadRequestException('DIAS_VENDIDOS_INVALIDOS');
 
-    return this.soldDays.fijar(actor.id, id, roleTypeId, phase as Phase, soldDays as number);
+    return this.soldDays.fijar(actor.id, orderId, roleTypeId, phase as Phase, soldDays as number);
   }
+}
+
+/** Los campos opcionales de una orden, compartidos por el POST y el PATCH. */
+function camposOrden(body: Cuerpo): DatosOrden {
+  const data: DatosOrden = {};
+  if (body?.machineModelId !== undefined) {
+    const v = body.machineModelId;
+    if (v !== null && (typeof v !== 'string' || !UUID.test(v)))
+      throw new BadRequestException('MAQUINA_INVALIDA');
+    data.machineModelId = (v as string | null) ?? null;
+  }
+  if (body?.commessa !== undefined) data.commessa = opcional(body.commessa, 'COMMESSA');
+  if (body?.commessaShort !== undefined)
+    data.commessaShort = opcional(body.commessaShort, 'COMMESSA_CORTA');
+  if (body?.oaNumber !== undefined) data.oaNumber = opcional(body.oaNumber, 'OA');
+  if (body?.contractValue !== undefined) data.contractValue = valorContrato(body.contractValue);
+  if (body?.currencyCode !== undefined) data.currencyCode = moneda(body.currencyCode);
+  return data;
 }
 
 function sinRecursosAparte(body: Cuerpo): void {

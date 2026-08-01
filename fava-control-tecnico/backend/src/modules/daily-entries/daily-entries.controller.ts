@@ -59,7 +59,10 @@ function jornada(body: Cuerpo): Jornada {
 
   return {
     projectId: uuid(body?.projectId, 'PROYECTO_INVALIDO'),
-    machineModelId: uuid(body?.machineModelId, 'MAQUINA_INVALIDA'),
+    // La maquina se elige por ORDEN, no por modelo: dos PL 6000 del mismo proyecto
+    // son el mismo modelo y solo se distinguen por la commessa de su orden.
+    orderId: uuid(body?.orderId, 'ORDEN_INVALIDA'),
+    inFactory: body?.inFactory === true,
     conceptCode: deLista(body?.conceptCode, CONCEPTOS, 'CONCEPTO_INVALIDO') as Jornada['conceptCode'],
     phase: deLista(body?.phase, FASES, 'FASE_INVALIDA') as Jornada['phase'],
     description: descripcion(body?.description),
