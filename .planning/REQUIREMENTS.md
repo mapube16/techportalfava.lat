@@ -53,7 +53,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **KPI-05**: Estado de reportes: matriz técnico×semana con semáforo (sin registrar/borrador/enviado/aprobado)
 - [ ] **KPI-06**: Todos los gráficos con Nivo aplicando la paleta FAVA (reemplaza ECharts)
 - [ ] **KPI-07**: Cuadrícula dinámica de días por concepto — filas proyecto → técnico → mes, columnas los 8 conceptos, totales por fila y columna. Reemplaza las tablas dinámicas que hoy se mantienen a mano (Dettaglio)
-- [ ] **KPI-08**: Cuadrícula comercial por línea de máquina — encabezado con OA/commessa/valor y, por fase, las filas rol + técnico titular con vendido, ejecutado y delta más el TOTALE. Reemplaza el Resoconto
+- [ ] **KPI-08**: Cuadrícula comercial por ORDEN (máquina contratada) — encabezado con OA/commessa/valor y, por fase, un bloque por ROL con sus técnicos asignados, el vendido del grupo, el ejecutado de cada uno y el delta contra la suma, más el TOTALE. NO hay técnico titular: verificado en Lucchetti, `144 − 62 − 56 = 26`, el delta es del grupo de rol y el número aparece en la fila del primer técnico solo por maquetación. Reemplaza el Resoconto
 
 ### Tiempo real y notificaciones
 
