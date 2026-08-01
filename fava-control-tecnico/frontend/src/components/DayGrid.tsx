@@ -57,10 +57,16 @@ const MES = 2;
  */
 const FIJA = 'sticky left-0 z-10 bg-card min-w-[230px]';
 
-/** Una tarjeta de métrica. Tres arriba, como en el planner. */
+/**
+ * Una tarjeta de métrica. Tres arriba, como en el planner.
+ *
+ * El filete de color en el borde superior es el `decoration="top"` que traía Tremor y
+ * que se perdió al retirarlo. Es CSS, no un componente, así que se reproduce entero:
+ * `border-t-4` sobre el color de marca.
+ */
 function Metrica({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
-    <Card>
+    <Card className="border-t-4 border-t-primary">
       <CardContent>
         <p className="text-sm text-muted-foreground">{etiqueta}</p>
         <p className="text-3xl font-semibold tabular-nums mt-1">{valor}</p>

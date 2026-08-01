@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { Globe, LogOut, Menu, Search, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { svg, ICON, FavaLogo } from './icons';
-import { ghostBtn, ghostIconBtn, initials } from './ui';
+import { initials } from './ui';
 import { useApp } from './state';
 import { useIsMobile } from './lib/useIsMobile';
 import type { Role, Route } from './types';
@@ -50,6 +52,18 @@ interface NavItem {
   badge?: number;
 }
 
+/**
+ * El armazón de la app: barra lateral, encabezado y el hueco donde vive cada pantalla.
+ *
+ * Móvil primero, que es el orden de Tailwind: sin prefijo es teléfono y `md:` es
+ * escritorio (≥900px). El padding de página, que antes era la variable `--gap-page`
+ * cambiada por una media query, ahora es `p-3.5 md:p-6` — los mismos 14 y 24 píxeles,
+ * pero dichos donde se usan.
+ *
+ * La barra lateral conserva la clase `.fava-aside` de `index.css`: en móvil sale del
+ * flujo con `position: fixed` + `transform`, y ese estado se lee mejor junto en CSS que
+ * repartido por el JSX.
+ */
 export default function Layout() {
   const { state, t, go, logout, switchRole, goInbox, toggleTheme, toggleLang, patch, inboxCount } = useApp();
   const tr = t as unknown as Record<string, string>;
@@ -122,45 +136,41 @@ export default function Layout() {
   // panel. Declarados una vez para que no haya dos copias que se desincronicen.
   const controles = (
     <>
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '0 10px', height: 34, minHeight: 'var(--tap)', width: movil ? '100%' : 220, color: 'var(--text-3)' }}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flex: 'none' }}>
-          <circle cx="11" cy="11" r="7" />
-          <path d="M21 21l-4-4" />
-        </svg>
+      <div className="relative flex items-center gap-2 bg-muted border border-border rounded-md px-2.5 h-11 md:h-9 w-full md:w-[220px] text-muted-foreground focus-within:border-primary">
+        <Search className="size-4 shrink-0" />
         <input
           placeholder={t.search}
           value={state.search}
           onChange={(e) => patch({ search: e.target.value })}
-          style={{ border: 0, background: 'transparent', outline: 'none', color: 'var(--text)', fontSize: 'var(--fs-input)', marginLeft: 8, width: '100%', fontFamily: 'inherit' }}
+          className="w-full border-0 bg-transparent outline-none text-foreground text-base md:text-sm font-sans placeholder:text-muted-foreground"
         />
       </div>
-      {/* selector de rol — solo si el usuario tiene más de uno */}
+
+      {/* Selector de rol — solo si el usuario tiene más de uno. */}
       {state.myRoles.length > 1 ? (
-        <div style={{ display: 'flex', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: 2 }}>
+        <div className="flex bg-muted border border-border rounded-md p-0.5">
           {state.myRoles.map((code) => (
             <button
               key={code}
               onClick={() => switchRole(code)}
               title={roleLabel[code]}
-              style={{
-                padding: '5px 11px', minHeight: 'var(--tap)', border: 0, borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Roboto Mono',
-                background: state.role === code ? 'var(--primary)' : 'transparent',
-                color: state.role === code ? '#fff' : 'var(--text-3)',
-              }}
+              className={`px-3 min-h-10 md:min-h-8 rounded font-mono text-xs font-bold cursor-pointer transition-colors ${
+                state.role === code ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
               {code}
             </button>
           ))}
         </div>
       ) : null}
-      <button onClick={toggleLang} className={ghostBtn}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 5 }}>
-          <circle cx="12" cy="12" r="9" />
-          <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
-        </svg>
+
+      <Button variant="outline" size="sm" onClick={toggleLang} className="min-h-11 md:min-h-9">
+        <Globe className="size-4" />
         {state.lang.toUpperCase()}
-      </button>
-      <button onClick={toggleTheme} aria-label="theme" className={ghostIconBtn}>{themeIcon}</button>
+      </Button>
+      <Button variant="outline" size="icon" onClick={toggleTheme} aria-label="theme" className="size-11 md:size-9">
+        {themeIcon}
+      </Button>
     </>
   );
 
@@ -171,44 +181,46 @@ export default function Layout() {
       {menuAbierto ? (
         <div
           onClick={() => setMenuAbierto(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(8,16,24,.5)', zIndex: 40, animation: 'favaIn .2s ease' }}
+          className="fixed inset-0 z-40 bg-black/50 fava-anim"
         />
       ) : null}
-      <div style={{ display: 'flex', minHeight: '100vh' }}>
+
+      <div className="flex min-h-screen">
         {/* SIDEBAR — en movil es un panel deslizante; ver `.fava-aside` en index.css */}
         <aside
           id="fava-nav"
-          className="fava-aside"
+          className="fava-aside bg-card border-r border-border"
           data-open={menuAbierto ? 'true' : 'false'}
-          style={{ background: 'var(--surface)', borderRight: '1px solid var(--border)' }}
         >
-          <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid var(--border)' }}>
+          <div className="px-[18px] pt-[18px] pb-3.5 border-b border-border">
             <FavaLogo height={44} onDark={state.theme === 'dark'} />
-            <div style={{ fontSize: 10, letterSpacing: '1.5px', color: 'var(--text-3)', textTransform: 'uppercase', marginTop: 8 }}>{t.brand_sub}</div>
+            <div className="text-[10px] tracking-[1.5px] text-muted-foreground uppercase mt-2">
+              {t.brand_sub}
+            </div>
           </div>
-          <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 10px' }}>
+
+          <nav className="flex-1 overflow-y-auto px-2.5 py-3">
             {groups.map((g) => (
-              <div key={g.title} style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1.4px', textTransform: 'uppercase', color: 'var(--text-3)', padding: '6px 10px' }}>{g.title}</div>
+              <div key={g.title} className="mb-3.5">
+                <div className="text-[10px] font-bold tracking-[1.4px] uppercase text-muted-foreground px-2.5 py-1.5">
+                  {g.title}
+                </div>
                 {g.items.map((it) => {
                   const active = state.route === it.route;
                   return (
                     <button
                       key={it.key}
                       onClick={() => irA(it.route)}
-                      style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '9px 11px', marginBottom: 2,
-                        minHeight: 'var(--tap)',
-                        border: 0, borderRadius: 8, cursor: 'pointer', fontSize: 13.5, fontWeight: active ? 600 : 500,
-                        fontFamily: 'inherit', textAlign: 'left',
-                        color: active ? 'var(--primary)' : 'var(--text-2)',
-                        background: active ? 'var(--primary-tint)' : 'transparent',
-                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 mb-0.5 min-h-11 md:min-h-0 rounded-md text-[13.5px] text-left cursor-pointer transition-colors ${
+                        active
+                          ? 'font-semibold text-primary bg-primary-tint'
+                          : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
                     >
-                      <span style={{ display: 'flex', width: 18, height: 18, flex: 'none' }}>{it.icon}</span>
-                      <span style={{ flex: 1, textAlign: 'left' }}>{it.label}</span>
+                      <span className="flex size-[18px] shrink-0">{it.icon}</span>
+                      <span className="flex-1 text-left">{it.label}</span>
                       {it.badge ? (
-                        <span style={{ background: 'var(--accent)', color: '#fff', fontSize: 10, fontWeight: 700, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, display: 'grid', placeItems: 'center' }}>
+                        <span className="bg-accent-brand text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1.5 rounded-full grid place-items-center">
                           {it.badge}
                         </span>
                       ) : null}
@@ -218,69 +230,81 @@ export default function Layout() {
               </div>
             ))}
           </nav>
+
           {movil ? (
-            <div style={{ padding: 12, borderTop: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {controles}
-            </div>
+            <div className="p-3 border-t border-border flex flex-wrap gap-2">{controles}</div>
           ) : null}
-          <div style={{ padding: 12, borderTop: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 9, background: 'var(--surface-2)' }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary-700)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>
+
+          <div className="p-3 border-t border-border">
+            <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-muted">
+              <div className="size-8 rounded-full bg-primary-700 text-white grid place-items-center text-xs font-bold shrink-0">
                 {initials(me?.displayName || '?')}
               </div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{me?.displayName}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{me?.email}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{roleList}</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-semibold truncate">{me?.displayName}</div>
+                <div className="text-[11px] text-muted-foreground truncate">{me?.email}</div>
+                <div className="text-[11px] text-muted-foreground">{roleList}</div>
               </div>
-              <button onClick={logout} aria-label="logout" className={ghostIconBtn}>
-                {svg(ICON.logout, { w: 16 })}
-              </button>
+              <Button variant="ghost" size="icon" onClick={logout} aria-label="logout" className="shrink-0">
+                <LogOut className="size-4" />
+              </Button>
             </div>
           </div>
         </aside>
 
         {/* MAIN */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <header style={{ height: 60, flex: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '0 var(--gap-page)', background: 'var(--surface)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 20 }}>
+        <div className="flex-1 min-w-0 flex flex-col">
+          <header className="h-15 flex-none flex items-center gap-3.5 px-3.5 md:px-6 bg-card border-b border-border sticky top-0 z-20">
             {movil ? (
-              <button
+              <Button
                 ref={btnMenu}
+                variant="outline"
+                size="icon"
                 onClick={() => setMenuAbierto((v) => !v)}
                 aria-label={menuAbierto ? t.menu_close : t.menu_open}
                 aria-expanded={menuAbierto}
                 aria-controls="fava-nav"
-                className={`${ghostIconBtn} shrink-0`}
+                className="size-11 shrink-0"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d={menuAbierto ? 'M6 18 18 6M6 6l12 12' : 'M4 7h16M4 12h16M4 17h16'} />
-                </svg>
-              </button>
+                {menuAbierto ? <X className="size-5" /> : <Menu className="size-5" />}
+              </Button>
             ) : null}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{titleMap[state.route] || ''}</div>
+
+            <div className="flex-1 min-w-0">
+              <div className="text-base font-bold truncate">{titleMap[state.route] || ''}</div>
             </div>
+
             {/* En movil estos cuatro no caben en 390px: viven dentro del panel. Se
                 renderizan en un sitio o en el otro, nunca en los dos. */}
             {movil ? null : controles}
+
             {state.myRoles.some((r) => r !== 'T') ? (
-              <button onClick={goInbox} aria-label="inbox" className={`${ghostIconBtn} relative shrink-0`}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goInbox}
+                aria-label="inbox"
+                className="relative shrink-0 size-11 md:size-9"
+              >
                 {svg(ICON.bell, { w: 17 })}
                 {count ? (
-                  <span style={{ position: 'absolute', top: 2, right: 2, background: 'var(--accent)', color: '#fff', fontSize: 9, fontWeight: 700, minWidth: 15, height: 15, padding: '0 3px', borderRadius: 8, display: 'grid', placeItems: 'center' }}>
+                  <span className="absolute top-0.5 right-0.5 bg-accent-brand text-white text-[9px] font-bold min-w-[15px] h-[15px] px-1 rounded-full grid place-items-center">
                     {count}
                   </span>
                 ) : null}
-              </button>
+              </Button>
             ) : null}
           </header>
 
-          <main style={{ flex: 1, overflowY: 'auto', padding: 'var(--gap-page)' }}>
+          <main className="flex-1 overflow-y-auto p-3.5 md:p-6">
             {state.loading ? (
-              <div style={{ display: 'grid', placeItems: 'center', minHeight: '50vh', color: 'var(--text-3)' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ width: 34, height: 34, border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'favaSpin .8s linear infinite', margin: '0 auto 14px' }} />
-                  <div style={{ fontSize: 13 }}>{t.loading}</div>
+              <div className="grid place-items-center min-h-[50vh] text-muted-foreground">
+                <div className="text-center">
+                  <div
+                    className="size-9 border-[3px] border-border rounded-full mx-auto mb-3.5"
+                    style={{ borderTopColor: 'var(--primary)', animation: 'favaSpin .8s linear infinite' }}
+                  />
+                  <div className="text-[13px]">{t.loading}</div>
                 </div>
               </div>
             ) : (
