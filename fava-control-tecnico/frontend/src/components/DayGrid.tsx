@@ -5,6 +5,9 @@ import {
   Metric,
   Select,
   SelectItem,
+  Tab,
+  TabGroup,
+  TabList,
   Table,
   TableBody,
   TableCell,
@@ -23,36 +26,39 @@ import { getDayGrid, getGridYears } from '../lib/api/kpis';
 import type { Counts, DayGrid as Datos, GridProject } from '../lib/api/kpis';
 
 /**
- * KPI-07 — la cuadrícula de días por concepto: proyecto → técnico → mes en las filas,
- * los 8 conceptos en las columnas, totales en cada nivel.
+ * KPI-07 — la cuadrícula de días por concepto.
  *
- * Es la misma forma que la tabla dinámica del Excel a propósito: sustituirla es el
- * objetivo, y Andrea y Luca ya saben leer ésa. Los totales llegan calculados del
- * servidor; aquí no se suma nada.
+ * Es la tabla dinámica del Excel, y se navega igual: se elige HASTA QUÉ NIVEL se
+ * despliega —proyecto, técnico o mes— y toda la tabla responde a la vez. Con solo el
+ * `+/−` por fila no se sabía en qué profundidad estaba cada rama y la lectura se perdía;
+ * el selector de nivel es el mismo gesto que «contraer/expandir campo» de Excel, que es
+ * el que Andrea y Luca ya tienen aprendido.
  *
- * Construida con `@tremor/react`, siguiendo el patrón del planner de Tremor: métricas
- * arriba, tabla agrupada debajo y el CONTEO en la cabecera de cada grupo (ahí «Europe 6»,
- * aquí los días del proyecto). Los tokens `tremor-*` están conectados a las variables de
- * FAVA en `index.css`, así que estos componentes heredan la identidad y el tema oscuro
- * sin configurarles nada.
+ * Las filas siguen siendo pulsables para abrir UNA rama concreta por encima del nivel
+ * elegido, que es lo que se hace cuando algo no cuadra en un proyecto en particular.
  *
- * Se pliega por niveles en vez de pintar las ~1.500 filas de golpe: en el Excel eso se
- * navega con scroll infinito, en pantalla no.
+ * Los totales llegan calculados del servidor; aquí no se suma nada.
  */
 
 const MESES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const MESI = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
+/** Hasta dónde se despliega la tabla. El índice es el de las pestañas. */
+const PROYECTO = 0;
+const TECNICO = 1;
+const MES = 2;
+
 /**
  * La primera columna se queda fija al desplazar en horizontal: sin ella no se sabe qué
- * fila se está mirando. `sticky` necesita un fondo opaco o el contenido se transparenta
- * por debajo.
+ * fila se está mirando. `sticky` necesita fondo opaco o el contenido se transparenta.
  */
-const FIJA = 'sticky left-0 z-10 bg-tremor-background min-w-[210px]';
+const FIJA = 'sticky left-0 z-10 min-w-[230px]';
 
 export default function DayGrid() {
   const { t, state } = useApp();
   const [anio, setAnio] = useState<number | null>(null);
+  const [nivel, setNivel] = useState<number>(PROYECTO);
+  /** Ramas abiertas A MANO, por encima del nivel elegido. Se limpian al cambiarlo. */
   const [abiertos, setAbiertos] = useState<Record<string, boolean>>({});
 
   const { data, error } = useApiData(async () => {
@@ -69,6 +75,13 @@ export default function DayGrid() {
   const mes = (n: number) => (state.lang === 'it' ? MESI[n] : MESES[n])!;
   const alternar = (k: string) => setAbiertos((a) => ({ ...a, [k]: !a[k] }));
 
+  const cambiarNivel = (n: number) => {
+    setNivel(n);
+    // Sin esto, una rama abierta a mano seguiría abierta al contraer todo y el nivel
+    // elegido dejaría de describir lo que se ve.
+    setAbiertos({});
+  };
+
   /** Vacío en vez de «0»: una cuadrícula sembrada de ceros no se lee. */
   const cifras = (c: Counts, fuerte?: boolean) =>
     g.concepts.map((k) => (
@@ -79,19 +92,27 @@ export default function DayGrid() {
 
   const tecnicos = g.projects.reduce((n, p) => n + p.technicians.length, 0);
 
+  /** El triángulo de desplegar. Vacío si la rama no tiene nada dentro. */
+  const flecha = (abierto: boolean, hayHijos: boolean) => (
+    <span className="inline-block w-3 shrink-0 text-tremor-content-subtle select-none">
+      {hayHijos ? (abierto ? '▾' : '▸') : ''}
+    </span>
+  );
+
   const filasDe = (p: GridProject) => {
     const kp = p.projectId ?? 'sin';
+    const verTecnicos = nivel >= TECNICO || abiertos[kp];
+
     const filas = [
       <TableRow
         key={kp}
         onClick={() => alternar(kp)}
         className="cursor-pointer bg-tremor-background-muted hover:bg-tremor-background-subtle"
       >
-        <TableCell className={`${FIJA} bg-tremor-background-muted font-semibold`}>
+        <TableCell className={`${FIJA} bg-tremor-background-muted font-semibold text-tremor-content-strong`}>
           <span className="inline-flex items-center gap-2">
-            <span className="inline-block w-3 text-tremor-content-subtle">{abiertos[kp] ? '−' : '+'}</span>
+            {flecha(!!verTecnicos, p.technicians.length > 0)}
             {p.projectName}
-            {/* El conteo en la cabecera del grupo, como en el planner. */}
             <Badge size="xs" color="gray">{p.total}</Badge>
           </span>
         </TableCell>
@@ -99,29 +120,40 @@ export default function DayGrid() {
         <TableCell className="text-right font-bold tabular-nums">{p.total}</TableCell>
       </TableRow>,
     ];
-    if (!abiertos[kp]) return filas;
+    if (!verTecnicos) return filas;
 
     for (const tec of p.technicians) {
       const kt = `${kp}|${tec.technicianId}`;
+      const verMeses = nivel >= MES || abiertos[kt];
       filas.push(
-        <TableRow key={kt} onClick={() => alternar(kt)} className="cursor-pointer hover:bg-tremor-background-muted">
-          <TableCell className={`${FIJA} pl-8 font-medium`}>
-            <span className="inline-flex items-center gap-2">
-              <span className="inline-block w-3 text-tremor-content-subtle">{abiertos[kt] ? '−' : '+'}</span>
-              {tec.technicianName}
+        <TableRow
+          key={kt}
+          onClick={() => alternar(kt)}
+          className="cursor-pointer bg-tremor-background hover:bg-tremor-background-muted"
+        >
+          {/* La sangría se marca además con una línea vertical: en una tabla ancha, el
+              espacio en blanco solo no basta para ver de quién cuelga una fila. */}
+          <TableCell className={`${FIJA} bg-tremor-background`}>
+            <span className="inline-flex items-center gap-2 pl-3 border-l-2 border-tremor-border ml-1">
+              {flecha(!!verMeses, tec.months.length > 0)}
+              <span className="font-medium">{tec.technicianName}</span>
             </span>
           </TableCell>
-          {cifras(tec.counts, true)}
+          {cifras(tec.counts)}
           <TableCell className="text-right font-semibold tabular-nums">{tec.total}</TableCell>
         </TableRow>,
       );
-      if (!abiertos[kt]) continue;
+      if (!verMeses) continue;
       for (const m of tec.months) {
         filas.push(
-          <TableRow key={`${kt}|${m.month}`}>
-            <TableCell className={`${FIJA} pl-16 text-tremor-content-subtle`}>{mes(m.month)}</TableCell>
+          <TableRow key={`${kt}|${m.month}`} className="bg-tremor-background">
+            <TableCell className={`${FIJA} bg-tremor-background`}>
+              <span className="inline-flex items-center gap-2 pl-3 border-l-2 border-tremor-border ml-8 text-tremor-content-subtle">
+                {mes(m.month)}
+              </span>
+            </TableCell>
             {cifras(m.counts)}
-            <TableCell className="text-right tabular-nums">{m.total}</TableCell>
+            <TableCell className="text-right tabular-nums text-tremor-content">{m.total}</TableCell>
           </TableRow>,
         );
       }
@@ -131,7 +163,7 @@ export default function DayGrid() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Métricas arriba, como en el planner: lo que se mira antes de entrar al detalle. */}
+      {/* Métricas arriba: lo que se mira antes de entrar al detalle. */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card decoration="top" decorationColor="blue">
           <Text>{t.grid_kpi_days}</Text>
@@ -148,25 +180,40 @@ export default function DayGrid() {
       </div>
 
       <Card className="p-0">
-        <div className="flex items-center justify-between gap-3 flex-wrap p-4 border-b border-tremor-border">
+        <div className="flex items-start justify-between gap-3 flex-wrap p-4 border-b border-tremor-border">
           <div className="min-w-0">
             <Title>{t.grid_title}</Title>
             <Text className="mt-0.5">{t.grid_hint}</Text>
           </div>
-          <Select
-            value={String(data.elegido ?? '')}
-            onValueChange={(v) => setAnio(v ? Number(v) : null)}
-            className="max-w-[180px] min-h-11 md:min-h-0"
-            enableClear={false}
-          >
-            {/* `SelectItem` exige valor no vacío, así que «todos» va como centinela. */}
-            <SelectItem value="">{t.grid_all_years}</SelectItem>
-            {data.anios.map((a) => (
-              <SelectItem key={a} value={String(a)}>
-                {String(a)}
-              </SelectItem>
-            ))}
-          </Select>
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* EL control que faltaba: hasta qué nivel se despliega TODA la tabla. */}
+            <div>
+              <Text className="text-[11px] uppercase tracking-wide mb-1">{t.grid_level}</Text>
+              <TabGroup index={nivel} onIndexChange={cambiarNivel}>
+                <TabList variant="solid">
+                  <Tab className="min-h-11 md:min-h-0">{t.grid_level_project}</Tab>
+                  <Tab className="min-h-11 md:min-h-0">{t.grid_level_tech}</Tab>
+                  <Tab className="min-h-11 md:min-h-0">{t.grid_level_month}</Tab>
+                </TabList>
+              </TabGroup>
+            </div>
+            <div>
+              <Text className="text-[11px] uppercase tracking-wide mb-1">{t.grid_year}</Text>
+              <Select
+                value={String(data.elegido ?? '')}
+                onValueChange={(v) => setAnio(v ? Number(v) : null)}
+                className="w-[150px] min-h-11 md:min-h-0"
+                enableClear={false}
+              >
+                <SelectItem value="">{t.grid_all_years}</SelectItem>
+                {data.anios.map((a) => (
+                  <SelectItem key={a} value={String(a)}>
+                    {String(a)}
+                  </SelectItem>
+                ))}
+              </Select>
+            </div>
+          </div>
         </div>
 
         {/* El scroll horizontal vive AQUÍ dentro: 10 columnas no caben en un móvil y el
