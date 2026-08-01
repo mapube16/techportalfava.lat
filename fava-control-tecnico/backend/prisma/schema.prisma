@@ -42,7 +42,7 @@ enum ConceptCode {
 
 /// Montaje / collaudo. En el Excel la fase solo existe en el lado *vendido*
 /// (hojas de proyecto); las hojas diarias no la traen. De ahi que en
-/// `daily_entries` sea nullable y en `project_sold_days` obligatoria.
+/// `daily_entries` sea nullable y en `order_sold_days` obligatoria.
 enum Phase {
   MONTAJE
   COLLAUDO
@@ -118,9 +118,25 @@ model DailyEntry {
   /// y un centinela en la tabla seria peor que un NULL honesto.
   projectId String? @map("project_id") @db.Uuid
 
+  /// EL campo que hoy falta y que justifica el proyecto entero: a que maquina
+  /// contratada fue esta jornada. De las 536 filas de JAV en el Excel, CERO lo dicen,
+  /// y por eso Andrea reparte 151 dias de Camilo Cruz en 120 + 31 a mano.
+  ///
+  /// Nullable por el historico (Fase 6) y por las jornadas sin proyecto. El servicio
+  /// lo exige cuando hay proyecto; la agregacion mantiene un bucket «sin orden» en vez
+  /// de descartar, que seria mentir por omision.
+  orderId String? @map("order_id") @db.Uuid
+
   /// Apunta al modelo GLOBAL, no a la seleccion del proyecto: asi quitar una
-  /// maquina de un proyecto nunca rompe ni vacia el historico.
+  /// maquina de un proyecto nunca rompe ni vacia el historico. Se queda ademas de
+  /// `order_id` porque el historico trae la maquina como texto y sin orden.
   machineModelId String? @map("machine_model_id") @db.Uuid
+
+  /// «En Fabrica» es un MODIFICADOR de DC y DFD, no un concepto aparte: la hoja
+  /// `Parametros` se lo pega a la etiqueta, pero los datos usan las dos variantes bajo
+  /// el mismo numero (1.109 con y 1.133 sin). Como concepto separado duplicaria el
+  /// catalogo cerrado de 8.
+  inFactory Boolean @default(false) @map("in_factory")
 
   /// El «sin texto libre» de CAT-01, a nivel de tipo. Sin relacion a `concepts`
   /// a proposito: el enum ya constrine la columna y una FK obligaria a leer el
@@ -154,6 +170,7 @@ model DailyEntry {
   // project_id de la bitacora. Nada de Cascade en ningun sitio de este esquema.
   technician   Technician    @relation(fields: [technicianId], references: [id], onDelete: Restrict)
   project      Project?      @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  order        Order?        @relation(fields: [orderId], references: [id], onDelete: Restrict)
   machineModel MachineModel? @relation(fields: [machineModelId], references: [id], onDelete: Restrict)
   roleType     RoleType?     @relation(fields: [roleTypeId], references: [id], onDelete: Restrict)
 
@@ -209,7 +226,7 @@ model RoleType {
   isActive Boolean @default(true) @map("is_active")
 
   technicians  Technician[]
-  soldDays     ProjectSoldDays[]
+  soldDays     OrderSoldDays[]
   dailyEntries DailyEntry[]
 
   @@map("role_types")
@@ -223,7 +240,7 @@ model Currency {
   symbol   String
   isActive Boolean @default(true) @map("is_active")
 
-  projects Project[]
+  orders Order[]
 
   @@map("currencies")
 }
@@ -239,7 +256,7 @@ model MachineModel {
   description String?
   isActive    Boolean @default(true) @map("is_active")
 
-  projects     ProjectMachine[]
+  orders       Order[]
   dailyEntries DailyEntry[]
 
   @@map("machine_models")
@@ -305,15 +322,11 @@ model Project {
   contractNumber String @map("contract_number")
 
   // ── Comercial ──
-
-  oaNumber String? @map("oa_number")
-
-  /// Se devuelve al frontend como `number` con una conversion explicita en el
-  /// controlador: Prisma lo representa con el Decimal de decimal.js y en JSON
-  /// saldria como string. Los valores reales (~4,15 M con 2 decimales) estan muy
-  /// por debajo de 2^53, asi que Number es exacto.
-  contractValue Decimal? @map("contract_value") @db.Decimal(14, 2)
-  currencyCode  String?  @map("currency_code")
+  //
+  // `oa_number`, `contract_value` y `currency_code` ESTUVIERON aqui y se fueron a
+  // `orders` en la Fase 2.1: J Macedo tiene dos lineas de maquina y CERO OA a nivel
+  // de proyecto, y JAV tiene tres importes distintos. El valor del proyecto es la
+  // suma de sus ordenes y por eso no se persiste.
 
   /// El «nh» del prototipo: horas normales pactadas por jornada.
   normalHours Int? @map("normal_hours")
@@ -327,51 +340,100 @@ model Project {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  currency     Currency?         @relation(fields: [currencyCode], references: [code], onDelete: Restrict)
-  machines     ProjectMachine[]
-  soldDays     ProjectSoldDays[]
+  orders       Order[]
   dailyEntries DailyEntry[]
 
   @@index([isActive])
   @@map("projects")
 }
 
-/// Seleccion pura (proyecto <-> modelo). NADA la referencia, y por eso quitar una
-/// maquina de un proyecto SI es un borrado real: la jornada apunta al modelo global
-/// (`daily_entries.machine_model_id`), nunca a esta fila, asi que el historico
-/// sigue resolviendo su maquina. Es lo que hace posible la decision bloqueada
-/// «quitar una maquina con jornadas registradas: se avisa y se permite».
-model ProjectMachine {
-  projectId      String @map("project_id") @db.Uuid
-  machineModelId String @map("machine_model_id") @db.Uuid
+/// La MAQUINA CONTRATADA, y la dueña del contrato. Sustituye a `project_machines`,
+/// que era un enlace sin datos y no distinguia dos maquinas iguales del mismo proyecto.
+///
+/// JAV Marata tiene tres: dos `PL 6000 KG` que solo se diferencian por la commessa
+/// (342898 y 342998) y una `PC 4000 + 4 SILOS`, cada una con su OA y su importe
+/// (182.500 / 182.500 / 130.000). A nivel de proyecto no hay ni OA ni valor, asi que
+/// esos campos NO pueden vivir en `projects`.
+model Order {
+  id        String @id @default(uuid()) @db.Uuid
+  projectId String @map("project_id") @db.Uuid
 
-  project      Project      @relation(fields: [projectId], references: [id], onDelete: Restrict)
-  machineModel MachineModel @relation(fields: [machineModelId], references: [id], onDelete: Restrict)
+  /// Lo que el tecnico ve al elegir: «PL 6000 KG - 1-3428». Es la etiqueta literal
+  /// de la hoja de proyecto, no una composicion nuestra: incluye alcance que el
+  /// modelo no tiene («+ 4 SILOS»).
+  label String
 
-  @@id([projectId, machineModelId])
-  @@map("project_machines")
+  /// Nullable: hay ordenes cuyo alcance no es un modelo del catalogo.
+  machineModelId String? @map("machine_model_id") @db.Uuid
+
+  /// La commessa larga tal cual («342898»). @unique: identifica la maquina en toda
+  /// la casa matriz y es la clave con la que Andrea ubica el trabajo en la cotizacion.
+  commessa String? @unique
+
+  /// Los 4 primeros digitos («3428»), que es como se nombra en obra y en las notas
+  /// de los tecnicos. Columna propia y no un substring: el histrico trae la corta
+  /// suelta, sin la larga.
+  commessaShort String? @map("commessa_short")
+
+  /// Correlativo cruzando maquinas Y clientes (JAV: 0159105/0159107/0159108;
+  /// Lucchetti: 0159103). Por eso es de la orden y nunca del proyecto.
+  oaNumber String? @map("oa_number")
+
+  /// El importe RESERVADO, que es lo que guarda la hoja — no la suma de las lineas
+  /// de la cotizacion: Lucchetti suma 168.500 y reserva 160.000.
+  contractValue Decimal? @map("contract_value") @db.Decimal(14, 2)
+  currencyCode  String?  @map("currency_code")
+
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  project      Project         @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  machineModel MachineModel?   @relation(fields: [machineModelId], references: [id], onDelete: Restrict)
+  currency     Currency?       @relation(fields: [currencyCode], references: [code], onDelete: Restrict)
+  soldDays     OrderSoldDays[]
+  dailyEntries DailyEntry[]
+
+  @@index([projectId])
+  @@map("orders")
 }
 
-/// CAT-04. NO existe columna `delta`: es `sold_days - ejecutado` y lo calcula el
-/// servidor en cada lectura. Tampoco hay CHECK que impida quedar por debajo de lo
-/// ejecutado — el delta negativo es un hecho real del negocio (Resoconto fila 39:
-/// 20 vendidos | 332 ejecutados | -312).
-model ProjectSoldDays {
+/// CAT-04. Una LINEA de la cotizacion. Cuelga de la ORDEN, no del proyecto: lo vendido
+/// se cotiza y se controla por maquina.
+///
+/// NO existe columna `delta`: es `sold_days - ejecutado` y lo calcula el servidor en
+/// cada lectura. Tampoco hay CHECK que impida quedar por debajo de lo ejecutado — el
+/// delta negativo es un hecho real del negocio (Resoconto fila 39: 20 | 332 | -312).
+model OrderSoldDays {
   id         String @id @default(uuid()) @db.Uuid
-  projectId  String @map("project_id") @db.Uuid
+  orderId    String @map("order_id") @db.Uuid
   roleTypeId String @map("role_type_id") @db.Uuid
   phase      Phase
 
+  /// Una cotizacion real trae DOS lineas `MECCATRONICO` (265 y 98) en el mismo bloque,
+  /// asi que (orden, rol, fase) NO es unico. La pantalla edita siempre el ordinal 0;
+  /// los demas los crea la migracion de la Fase 6.
+  ordinal Int @default(0)
+
+  /// Algunas lineas no son un rol del catalogo sino un nombre propio
+  /// («FELIPE SENA» a 85 EUR/dia, «FELIPE SENA (COSTO)»). Se guarda el literal para
+  /// no falsear el rol; si es NULL, manda el nombre del rol.
+  lineLabel String? @map("line_label")
+
+  /// `TOT GG CON VIAGGI` de la cotizacion — NO `GIORNI EFFETTIVI`. En JAV son 182 y
+  /// 141: incluye viajes y domingos, y el importe tambien se calcula sobre esta.
+  /// Confundirlas descuadra el delta un ~30%.
   /// >= 0, validado en el servicio (Postgres no modela CHECK desde Prisma).
   soldDays Int @map("sold_days")
 
   updatedById String?  @map("updated_by_id") @db.Uuid
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  project  Project  @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
   roleType RoleType @relation(fields: [roleTypeId], references: [id], onDelete: Restrict)
 
   /// Clave natural del upsert por celda (autoguardado al salir del campo).
-  @@unique([projectId, roleTypeId, phase])
-  @@map("project_sold_days")
+  @@unique([orderId, roleTypeId, phase, ordinal])
+  @@map("order_sold_days")
 }
