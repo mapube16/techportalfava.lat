@@ -99,7 +99,12 @@ Plans:
   4. Dos admins que aprueban la misma nota a la vez: uno gana y el otro recibe conflicto — nunca hay doble aprobación ni estado inconsistente.
   5. El Super Admin ve en el visor de auditoría quién hizo cada transición, cuándo, qué cambió y con qué motivo; dar de baja a un técnico con notas pendientes avisa del pendiente y permite aprobar en su nombre, quedando el `on_behalf_of` registrado.
 **Frontend cutover**: `Inbox.tsx`, `Notes.tsx`, `ReturnModal.tsx`, `Audit.tsx`, bandeja de `Home.tsx`
-**Plans**: TBD
+**Plans**: 5 (5/5 complete)
+- [x] 04-01 — Esquema: nota por (técnico, semana, proyecto), cargo semanal, `audit_log` append-only, RLS y CHECKs
+- [x] 04-02 — Transiciones con ruta propia, tabla de estados y bloqueo optimista por `updated_at`
+- [x] 04-03 — BIT-05: el estado de la jornada ES el de su nota; el PUT del día se niega si está bloqueada
+- [x] 04-04 — CAT-06 (notas pendientes + `on_behalf_of`) y AUD-02 (visor de Super Admin)
+- [x] 04-05 — Pantallas: Inbox (móvil en una columna), Notes, ReturnModal, Audit y Home
 
 ### Phase 5: Nota Semanal PDF y firma del cliente
 **Goal**: El cliente firma en el móvil del técnico en obra y queda un PDF idéntico al formato de papel, congelado como evidencia que nadie puede alterar después.
@@ -198,7 +203,7 @@ Las fases se ejecutan en orden numérico. Phase 6 (migración) puede adelantarse
 | 2. Maestros y catálogos | 6/6 | Complete    | 2026-07-26 |
 | 2.1 La orden como dueña del contrato | 4/4 | Complete    | 2026-08-01 |
 | 3. Bitácora diaria | 7/7 | Complete    | 2026-08-01 |
-| 4. Flujo de aprobación y auditoría | 0/TBD | Not started | - |
+| 4. Flujo de aprobación y auditoría | 5/5 | Complete    | 2026-08-01 |
 | 5. Nota Semanal PDF y firma | 0/TBD | Not started | - |
 | 6. Migración del histórico | 1/TBD | Parcial     | - |
 | 7. Tableros KPI en vivo | 1/TBD | Parcial     | - |
