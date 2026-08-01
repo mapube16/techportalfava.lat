@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import type { NextFunction, Request, Response } from 'express';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -20,8 +21,12 @@ const contentSecurityPolicy = {
 } as const;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
+  // Railway pone el proceso detrás de un proxy: sin esto, `req.ip` en la firma
+  // (NOTA-04, evidencia de quién firmó) guardaría la IP interna del proxy, no la del
+  // cliente. Un solo salto porque solo hay un proxy delante, no una cadena.
+  app.set('trust proxy', 1);
 
   const base = helmet({ contentSecurityPolicy });
   // El puente de redireccion de MSAL v5 NO puede llevar Cross-Origin-Opener-Policy:

@@ -8,13 +8,16 @@ import {
   Post,
   Put,
   Query,
+  Req,
   Res,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { Roles } from '../../common/auth/roles.decorator';
 import type { UserModel } from '../../generated/prisma/models';
 import { ESTADOS } from '../../common/estados';
+import type { Gasto } from './nota-pdf';
+import type { FirmaEntrada } from './weekly-notes.service';
 import { WeeklyNotesService } from './weekly-notes.service';
 
 type Cuerpo = Record<string, unknown>;
@@ -34,6 +37,35 @@ function esperado(body: Cuerpo): string | undefined {
 function texto(valor: unknown, campo: string): string {
   if (typeof valor !== 'string' || !valor.trim()) throw new BadRequestException(`${campo}_REQUERIDO`);
   return valor;
+}
+
+/** NOTA-08: como mucho 4, igual que las filas fijas de `bloqueGastos` en nota-pdf.ts. */
+function gastos(v: unknown, campo: string): Gasto[] {
+  if (v === undefined) return [];
+  if (!Array.isArray(v)) throw new BadRequestException(`${campo}_INVALIDO`);
+  if (v.length > 4) throw new BadRequestException(`${campo}_MAXIMO_4`);
+  return v.map((item, i) => {
+    if (!item || typeof item !== 'object') throw new BadRequestException(`${campo}_INVALIDO`);
+    const o = item as Record<string, unknown>;
+    return { descripcion: texto(o.descripcion, `${campo}_${i}_DESCRIPCION`), valor: texto(o.valor, `${campo}_${i}_VALOR`) };
+  });
+}
+
+/** Una firma del `POST :id/sign`: nombre, la declaracion aceptada EXPLICITAMENTE (no
+    basta con omitirla) y el trazo del canvas en base64. */
+function firma(v: unknown, campo: string): FirmaEntrada {
+  if (!v || typeof v !== 'object') throw new BadRequestException(`${campo}_REQUERIDA`);
+  const o = v as Record<string, unknown>;
+  const signerName = texto(o.signerName, `${campo}_NOMBRE`);
+  if (o.declarationAccepted !== true) throw new BadRequestException(`${campo}_SIN_DECLARACION`);
+  if (typeof o.imagePng !== 'string' || o.imagePng.length < 100) throw new BadRequestException(`${campo}_TRAZO`);
+  return {
+    signerName,
+    signerDocument: typeof o.signerDocument === 'string' && o.signerDocument.trim() ? o.signerDocument.trim() : undefined,
+    signerRole: typeof o.signerRole === 'string' && o.signerRole.trim() ? o.signerRole.trim() : undefined,
+    declarationAccepted: true,
+    imagePng: o.imagePng,
+  };
 }
 
 const quien = (u: UserModel) => ({ id: u.id, name: u.displayName });
@@ -82,6 +114,32 @@ export class WeeklyNotesController {
     res.send(bytes);
   }
 
+  /** NOTA-06 — el PDF YA firmado, de la versión actual. 404 hasta que exista `/sign`. */
+  @Get(':id/pdf')
+  async descargarPdf(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
+    const { bytes, version } = await this.service.descargarPdf(id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="nota-v${version}.pdf"`);
+    res.send(bytes);
+  }
+
+  /** Una versión anterior, solo alcanzable tras un `reopen` — es la evidencia de lo que
+      el cliente firmó antes de esa reapertura (NOTA-06). Va DESPUÉS de `/pdf` y de
+      `/pdf/preview` en el archivo: si fuera antes, `:version` capturaría "preview". */
+  @Get(':id/pdf/:version')
+  async descargarPdfVersion(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('version') version: string,
+    @Res() res: Response,
+  ) {
+    const v = Number(version);
+    if (!Number.isInteger(v) || v < 1) throw new BadRequestException('VERSION_INVALIDA');
+    const { bytes } = await this.service.descargarPdf(id, v);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="nota-v${v}.pdf"`);
+    res.send(bytes);
+  }
+
   /**
    * NOTA-01. El tecnico manda SU semana (el `technician_id` sale del token, nunca del
    * cuerpo) y recibe las notas ya derivadas, una por proyecto.
@@ -126,5 +184,33 @@ export class WeeklyNotesController {
     if (v !== null && (typeof v !== 'string' || !UUID.test(v)))
       throw new BadRequestException('ROL_TECNICO_INVALIDO');
     return this.service.fijarCargo(quien(actor), id, v as string | null);
+  }
+
+  /** NOTA-08: recurso aparte, como el cargo — y con el mismo candado (se bloquea al firmar). */
+  @Put(':id/expenses')
+  @Roles('T')
+  fijarGastos(@CurrentUser() actor: UserModel, @Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo) {
+    return this.service.gastos(
+      quien(actor),
+      id,
+      gastos(body?.gastosTecnico, 'GASTOS_TECNICO'),
+      gastos(body?.anticiposCliente, 'ANTICIPOS_CLIENTE'),
+    );
+  }
+
+  /**
+   * Fase 5 — el técnico firma y, presente en el sitio, el cliente. Las dos firmas
+   * llegan JUNTAS: ver el comentario de `WeeklyNotesService.firmar`.
+   */
+  @Post(':id/sign')
+  @Roles('T')
+  firmar(@CurrentUser() actor: UserModel, @Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo, @Req() req: Request) {
+    return this.service.firmar(quien(actor), id, {
+      technician: firma(body?.technician, 'FIRMA_TECNICO'),
+      client: firma(body?.client, 'FIRMA_CLIENTE'),
+      expectedUpdatedAt: esperado(body),
+      ip: req.ip ?? null,
+      userAgent: req.headers['user-agent'] ?? null,
+    });
   }
 }

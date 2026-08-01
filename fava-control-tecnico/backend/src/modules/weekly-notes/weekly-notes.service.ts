@@ -1,10 +1,22 @@
+import { createHash } from 'node:crypto';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { AuditService } from '../../common/audit/audit.service';
 import { EDITABLES } from '../../common/estados';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { aDate, aTexto } from '../daily-entries/fecha';
 import { renderizarNota } from './nota-pdf';
-import type { DatosNota, FilaNota as FilaPdfDia } from './nota-pdf';
+import type { DatosNota, FilaNota as FilaPdfDia, Gasto } from './nota-pdf';
+
+/** Lo que trae cada firma del cuerpo del `POST :id/sign`. Validado en el controlador. */
+export interface FirmaEntrada {
+  signerName: string;
+  signerDocument?: string;
+  signerRole?: string;
+  /** Siempre `true` al llegar aquí: el controlador rechaza lo demás. */
+  declarationAccepted: true;
+  /** PNG en base64, sin el prefijo `data:`. */
+  imagePng: string;
+}
 
 /**
  * Los estados de la nota y las transiciones LEGÍTIMAS desde cada uno. Es una tabla y no
@@ -190,6 +202,8 @@ export class WeeklyNotesService {
         roleType: { select: { name: true } },
         technician: { select: { fullName: true } },
         project: { select: { clientName: true, locality: true, country: true, supply: true, contractNumber: true } },
+        gastosTecnico: true,
+        anticiposCliente: true,
       },
     });
     if (!nota) throw new NotFoundException('NOTA_NO_ENCONTRADA');
@@ -231,9 +245,9 @@ export class WeeklyNotesService {
       cargoSemana: nota.roleType?.name ?? '',
       technicianName: nota.technician.fullName,
       filas,
-      // NOTA-08: informativos, sin flujo de reembolso — no hay de dónde leerlos todavía.
-      gastosTecnico: [],
-      anticiposCliente: [],
+      // NOTA-08: informativos, sin flujo de reembolso. Lo que haya escrito `gastos()`.
+      gastosTecnico: (nota.gastosTecnico as Gasto[] | null) ?? [],
+      anticiposCliente: (nota.anticiposCliente as Gasto[] | null) ?? [],
       firmaTecnico: firmas?.tecnico,
       firmaCliente: firmas?.cliente,
       fechaFirma: firmas?.fecha,
@@ -247,6 +261,134 @@ export class WeeklyNotesService {
    */
   async previsualizarPdf(id: string): Promise<Buffer> {
     return renderizarNota(await this.datosParaPdf(id));
+  }
+
+  /**
+   * NOTA-08. Editables solo hasta firmar: después, cambiarlos dejaría el PDF firmado
+   * diciendo algo distinto de lo que hay en la base — el mismo motivo que bloquea el
+   * cargo de una nota aprobada. La forma (máximo 4, textos no vacíos) ya la validó el
+   * controlador; aquí solo la regla de negocio.
+   */
+  async gastos(actor: { id: string; name: string }, id: string, gastosTecnico: Gasto[], anticiposCliente: Gasto[]) {
+    const antes = await this.prisma.client.weeklyNote.findUnique({
+      where: { id },
+      select: { signedContentHash: true, gastosTecnico: true, anticiposCliente: true },
+    });
+    if (!antes) throw new NotFoundException('NOTA_NO_ENCONTRADA');
+    if (antes.signedContentHash) throw new ConflictException('NOTA_FIRMADA');
+
+    const nota = await this.prisma.client.weeklyNote.update({
+      where: { id },
+      data: { gastosTecnico: gastosTecnico as never, anticiposCliente: anticiposCliente as never },
+      select: NOTA,
+    });
+    await this.audit.registrar({
+      actorId: actor.id,
+      actorName: actor.name,
+      entity: 'weekly_note',
+      entityId: id,
+      action: 'update',
+      before: { gastosTecnico: antes.gastosTecnico, anticiposCliente: antes.anticiposCliente },
+      after: { gastosTecnico, anticiposCliente },
+    });
+    return plana(nota);
+  }
+
+  /**
+   * NOTA-04/05/06 — el técnico firma y, presente, el cliente. El PDF se congela UNA
+   * vez con las dos firmas ya estampadas: `nota-pdf.ts` pinta ambas casillas en el
+   * mismo render, así que firmar es atómico o no es — no hay firma "a medias".
+   *
+   * Exige `status === 'submitted'`: firmar un borrador sería firmar algo que el
+   * servidor todavía no considera terminado, y una devuelta se firma tras corregir y
+   * reenviar, no antes.
+   */
+  async firmar(
+    actor: { id: string; name: string },
+    id: string,
+    datos: {
+      technician: FirmaEntrada;
+      client: FirmaEntrada;
+      expectedUpdatedAt?: string;
+      ip: string | null;
+      userAgent: string | null;
+    },
+  ) {
+    const c = this.prisma.client;
+    const nota = await c.weeklyNote.findUnique({
+      where: { id },
+      select: { status: true, updatedAt: true, version: true, signedContentHash: true },
+    });
+    if (!nota) throw new NotFoundException('NOTA_NO_ENCONTRADA');
+    if (datos.expectedUpdatedAt && nota.updatedAt.toISOString() !== datos.expectedUpdatedAt)
+      throw new ConflictException('NOTA_MODIFICADA');
+    if (nota.status !== 'submitted') throw new ConflictException('NOTA_NO_ENVIADA');
+    if (nota.signedContentHash) throw new ConflictException('NOTA_YA_FIRMADA');
+
+    const fecha = aTexto(new Date());
+    const bytes = await renderizarNota(
+      await this.datosParaPdf(id, { tecnico: datos.technician.imagePng, cliente: datos.client.imagePng, fecha }),
+    );
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+
+    // `Buffer` es `Uint8Array<ArrayBufferLike>`; Prisma 7 tipa `Bytes` como
+    // `Uint8Array<ArrayBuffer>` a secas. `new Uint8Array(bytes)` copia a un buffer
+    // plano y cierra la diferencia — no hay forma más corta que siga tipando bien.
+    await c.notePdf.create({ data: { noteId: id, version: nota.version, bytes: new Uint8Array(bytes), sha256 } });
+    for (const [kind, f] of [
+      ['technician', datos.technician],
+      ['client', datos.client],
+    ] as const) {
+      await c.noteSignature.create({
+        data: {
+          noteId: id,
+          version: nota.version,
+          kind,
+          signerName: f.signerName,
+          signerDocument: f.signerDocument ?? null,
+          signerRole: f.signerRole ?? null,
+          declarationAccepted: true,
+          imagePng: Buffer.from(f.imagePng, 'base64'),
+          pdfSha256: sha256,
+          ip: datos.ip,
+          userAgent: datos.userAgent,
+        },
+      });
+    }
+
+    const actualizada = await c.weeklyNote.update({
+      where: { id },
+      data: { signedContentHash: sha256 },
+      select: NOTA,
+    });
+
+    await this.audit.registrar({
+      actorId: actor.id,
+      actorName: actor.name,
+      entity: 'weekly_note',
+      entityId: id,
+      action: 'sign',
+      after: { version: nota.version, pdfSha256: sha256 },
+    });
+
+    return plana(actualizada);
+  }
+
+  /**
+   * Los bytes ya firmados. `version` por defecto es la ACTUAL; una versión vieja solo
+   * existe tras un `reopen`, y es la evidencia de lo que se firmó antes de esa
+   * reapertura — para eso se conserva.
+   */
+  async descargarPdf(id: string, version?: number): Promise<{ bytes: Buffer; version: number }> {
+    const nota = await this.prisma.client.weeklyNote.findUnique({ where: { id }, select: { version: true } });
+    if (!nota) throw new NotFoundException('NOTA_NO_ENCONTRADA');
+    const v = version ?? nota.version;
+    const pdf = await this.prisma.client.notePdf.findUnique({
+      where: { noteId_version: { noteId: id, version: v } },
+      select: { bytes: true },
+    });
+    if (!pdf) throw new NotFoundException('PDF_NO_DISPONIBLE');
+    return { bytes: Buffer.from(pdf.bytes), version: v };
   }
 
   /**
@@ -267,7 +409,7 @@ export class WeeklyNotesService {
     const c = this.prisma.client;
     const actual = await c.weeklyNote.findUnique({
       where: { id },
-      select: { status: true, updatedAt: true, technicianId: true, weekStart: true, projectId: true },
+      select: { status: true, updatedAt: true, technicianId: true, weekStart: true, projectId: true, signedContentHash: true },
     });
     if (!actual) throw new NotFoundException('NOTA_NO_ENCONTRADA');
 
@@ -277,6 +419,11 @@ export class WeeklyNotesService {
     if (!(TRANSICIONES[actual.status] ?? []).includes(destino))
       throw new ConflictException(`TRANSICION_INVALIDA_${actual.status.toUpperCase()}_A_${destino.toUpperCase()}`);
 
+    // El cliente ya firmó lo que el papel dice: devolverla desharía esa firma sin
+    // dejar rastro de que existió. Deshacer una nota firmada es lo mismo que deshacer
+    // una aprobación (reopen) — Super Admin, con motivo, y sube la versión.
+    if (destino === 'returned' && actual.signedContentHash) throw new ConflictException('NOTA_FIRMADA_USAR_REOPEN');
+
     const nota = await c.weeklyNote.update({
       where: { id },
       data: {
@@ -284,10 +431,11 @@ export class WeeklyNotesService {
         // El comentario se guarda al devolver y se limpia en cualquier otra transición:
         // dejarlo pegado haría creer al técnico que la nota sigue devuelta.
         returnComment: destino === 'returned' ? (opciones.reason ?? null) : null,
-        // NOTA-07: reabrir sube la versión. El PDF y las firmas de la versión anterior
-        // no se tocan (viven en filas propias por versión) — esto es lo que hace que la
-        // próxima firma escriba en una fila nueva en vez de chocar con el unique existente.
-        ...(action === 'reopen' ? { version: { increment: 1 } } : {}),
+        // NOTA-07: reabrir sube la versión Y limpia el hash firmado — la versión nueva
+        // empieza sin firmar, y sin esto `gastos()` se quedaría bloqueada para siempre
+        // creyendo que la nota (la nueva version) ya tiene firma. El PDF y las firmas
+        // de la versión anterior no se tocan (viven en filas propias por versión).
+        ...(action === 'reopen' ? { version: { increment: 1 }, signedContentHash: null } : {}),
       },
       select: NOTA,
     });

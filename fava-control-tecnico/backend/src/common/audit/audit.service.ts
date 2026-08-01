@@ -7,7 +7,7 @@ export interface Rastro {
   actorName: string;
   entity: 'weekly_note' | 'daily_entry' | 'technician' | 'project' | 'order';
   entityId: string;
-  action: 'submit' | 'approve' | 'return' | 'reopen' | 'update' | 'deactivate';
+  action: 'submit' | 'approve' | 'return' | 'reopen' | 'sign' | 'update' | 'deactivate';
   before?: unknown;
   after?: unknown;
   reason?: string | null;

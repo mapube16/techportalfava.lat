@@ -224,6 +224,14 @@ model WeeklyNote {
   /// Distinguirlo es la diferencia entre pedirle al cliente que vuelva a firmar o no.
   signedContentHash String? @map("signed_content_hash")
 
+  /// NOTA-08. Hasta 4 lineas cada uno, como las tablas fijas del PDF (`bloqueGastos` en
+  /// nota-pdf.ts): `[{descripcion, valor}]`. JSON y no una tabla propia porque son
+  /// informativos, sin flujo de reembolso ni aprobacion — una tabla con su propia RLS
+  /// seria ceremonia para cuatro lineas de texto que nadie consulta sueltas. Editables
+  /// solo hasta firmar (`signedContentHash` nulo); despues quedan congelados en el PDF.
+  gastosTecnico    Json? @map("gastos_tecnico")
+  anticiposCliente Json? @map("anticipos_cliente")
+
   sourceYear  Int?    @map("source_year")
   sourceSheet String? @map("source_sheet")
   sourceRow   Int?    @map("source_row")
