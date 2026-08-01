@@ -162,6 +162,14 @@ model DailyEntry {
   sourceSheet String? @map("source_sheet")
   sourceRow   Int?    @map("source_row")
 
+  /// El texto CRUDO de la columna «Maquina» del Excel, tal cual. No es
+  /// `machine_model_id` ni `order_id` porque no es ninguna de las dos cosas: son
+  /// valores como `PL 6000 PC 4500` (dos maquinas sin separador),
+  /// `CTA1000,PC4500` o `Pasta Corta 340300 / Pasta Larga 340200 / Nidos 340400`
+  /// (tres, con la commessa embebida). Convertirlo a una orden seria inventarse
+  /// cual; tirarlo seria perder la unica pista que existe para atribuirlas despues.
+  sourceMachine String? @map("source_machine")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
