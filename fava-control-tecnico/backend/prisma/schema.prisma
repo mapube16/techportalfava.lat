@@ -213,6 +213,17 @@ model WeeklyNote {
   /// es lo que el tecnico LEE para saber que corregir.
   returnComment String? @map("return_comment")
 
+  /// NOTA-07. Sube con cada `reopen`. El PDF de la version anterior NO se borra: es la
+  /// evidencia de lo que el cliente firmo aquel dia, y regenerarlo seria justo el
+  /// pitfall que la investigacion marca como el mas caro de esta fase.
+  version Int @default(1)
+
+  /// NOTA-07. SHA-256 de lo que el cliente vio al firmar: los 7 dias, los gastos y el
+  /// encabezado. Si al reabrir y reenviar el contenido cambia, la firma se invalida; si
+  /// solo se corrigio una falta de ortografia en un comentario interno, sigue valiendo.
+  /// Distinguirlo es la diferencia entre pedirle al cliente que vuelva a firmar o no.
+  signedContentHash String? @map("signed_content_hash")
+
   sourceYear  Int?    @map("source_year")
   sourceSheet String? @map("source_sheet")
   sourceRow   Int?    @map("source_row")
@@ -220,14 +231,90 @@ model WeeklyNote {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  technician Technician @relation(fields: [technicianId], references: [id], onDelete: Restrict)
-  project    Project    @relation(fields: [projectId], references: [id], onDelete: Restrict)
-  roleType   RoleType?  @relation(fields: [roleTypeId], references: [id], onDelete: Restrict)
+  technician Technician      @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+  project    Project         @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  roleType   RoleType?       @relation(fields: [roleTypeId], references: [id], onDelete: Restrict)
+  pdfs       NotePdf[]
+  signatures NoteSignature[]
 
   /// La clave natural de la derivacion: reenviar la misma semana NO duplica notas.
   @@unique([technicianId, weekStart, projectId])
   @@index([status])
   @@map("weekly_notes")
+}
+
+/// NOTA-06 — el PDF CONGELADO.
+///
+/// Los bytes viven en la columna y no en un bucket externo, a proposito. Un PDF de esta
+/// nota pesa ~150 KB y salen ~1.560 al ano: 230 MB anuales, que Postgres lleva sin
+/// despeinarse y que entran en la copia de seguridad de la base sin configurar nada.
+/// Un bucket S3 anadiria credenciales, un servicio mas que puede caer y un modo de
+/// fallo nuevo (la fila existe, el objeto no) a cambio de nada a esta escala.
+///
+/// La fila es INMUTABLE: la migracion no le da politica de UPDATE ni de DELETE, igual
+/// que al audit_log. Descargar el PDF de hace un ano devuelve los MISMOS bytes y el
+/// mismo hash porque no se vuelve a renderizar nunca — es el pitfall central de la
+/// fase segun la investigacion.
+model NotePdf {
+  id     String @id @default(uuid()) @db.Uuid
+  noteId String @map("note_id") @db.Uuid
+
+  /// La version de la nota a la que corresponde. Reabrir crea otra fila, no pisa esta.
+  version Int
+
+  bytes  Bytes
+  /// SHA-256 de `bytes`, en hexadecimal. Lo comprueba quien descarga.
+  sha256 String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  note WeeklyNote @relation(fields: [noteId], references: [id], onDelete: Restrict)
+
+  @@unique([noteId, version])
+  @@map("note_pdfs")
+}
+
+/// NOTA-04 — la firma y su expediente de evidencia.
+///
+/// «Firma digital» aqui significa un trazo en un canvas guardado como PNG: es una firma
+/// ELECTRONICA, no criptografica. Si FAVA pidiera algun dia no repudio legal (PAdES,
+/// certificado X.509) eso es otro problema y otra libreria; nada de lo pedido lo exige.
+/// Lo que si se guarda es todo lo que hace defendible la electronica: quien firmo, con
+/// que documento, en que cargo, que acepto la declaracion, cuando SEGUN EL SERVIDOR
+/// (nunca segun el reloj del movil), desde donde y sobre que bytes exactos.
+model NoteSignature {
+  id     String @id @default(uuid()) @db.Uuid
+  noteId String @map("note_id") @db.Uuid
+
+  /// La version firmada. Con `version` en la clave, reabrir no borra la firma vieja.
+  version Int
+
+  /// 'technician' | 'client'
+  kind String
+
+  signerName     String  @map("signer_name")
+  signerDocument String? @map("signer_document")
+  signerRole     String? @map("signer_role")
+
+  /// La aceptacion EXPLICITA de la declaracion de conformidad. Sin esto, el trazo es
+  /// un dibujo: lo que da valor a la firma es que alguien acepto un texto concreto.
+  declarationAccepted Boolean @map("declaration_accepted")
+
+  /// El trazo del canvas, PNG. Se estampa en el PDF y se conserva aparte.
+  imagePng Bytes @map("image_png")
+
+  /// SHA-256 del PDF que se firmo. Si no coincide con el de `note_pdfs`, alguien mintio.
+  pdfSha256 String @map("pdf_sha256")
+
+  /// Reloj del SERVIDOR. El del dispositivo del cliente no vale como evidencia.
+  signedAt  DateTime @default(now()) @map("signed_at")
+  ip        String?
+  userAgent String?  @map("user_agent")
+
+  note WeeklyNote @relation(fields: [noteId], references: [id], onDelete: Restrict)
+
+  @@unique([noteId, version, kind])
+  @@map("note_signatures")
 }
 
 /// AUD-01. Append-only POR MOTOR, no por convencion: la migracion le da politica de
