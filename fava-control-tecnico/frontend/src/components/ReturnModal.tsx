@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { hi } from '../icons';
-import { FieldError, gbtn, wbtn } from '../ui';
+import { Button } from '@/components/ui/button';
+import { FieldError } from '../ui';
 import { useApp } from '../state';
 import { codigo } from '../lib/api/useApiData';
 import { returnNote } from '../lib/api/weeklyNotes';
@@ -37,31 +38,38 @@ export default function ReturnModal() {
   };
 
   return (
-    <div onClick={close} style={{ position: 'fixed', inset: 0, background: 'rgba(8,16,24,.5)', zIndex: 60, display: 'grid', placeItems: 'center', padding: 20, animation: 'favaIn .2s ease' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 440, background: 'var(--surface)', borderRadius: 16, boxShadow: 'var(--shadow-lg)', padding: 22, animation: 'favaIn .26s ease both' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--warn-tint)', color: 'var(--warn)', display: 'grid', placeItems: 'center', flex: 'none' }}>
+    <div onClick={close} className="fixed inset-0 z-60 bg-black/50 grid place-items-center p-5 fava-anim">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[440px] bg-card rounded-2xl shadow-pop p-5.5 fava-anim"
+      >
+        <div className="flex items-center gap-2.5 mb-1.5">
+          <div className="size-8 rounded-lg bg-warn-tint text-warn grid place-items-center shrink-0">
             {hi('ureturn', { w: 17 })}
           </div>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>{t.return_title}</div>
+          <div className="text-base font-bold">{t.return_title}</div>
         </div>
-        <p style={{ fontSize: 13, color: 'var(--text-2)', margin: '0 0 14px' }}>{t.return_sub}</p>
+        <p className="text-[13px] text-muted-foreground mb-3.5">{t.return_sub}</p>
+        {/* 16px en móvil: por debajo, Safari hace zoom al enfocar y descuadra el modal. */}
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder={t.return_ph}
-          style={{ width: '100%', minHeight: 96, resize: 'vertical', border: '1px solid var(--border-2)', borderRadius: 10, padding: 12, fontFamily: 'inherit', fontSize: 'max(15px, var(--fs-input))', background: 'var(--surface-2)', color: 'var(--text)', outline: 'none' }}
+          className="w-full min-h-24 resize-y border border-input rounded-lg p-3 font-sans text-base md:text-sm bg-muted text-foreground outline-none focus:border-primary"
         />
         {err ? <FieldError msg={`${t.err_save}: ${err}`} /> : null}
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
-          <button onClick={close} className={`${gbtn} min-h-11`}>{t.btn_cancel}</button>
-          <button
+        <div className="flex gap-2.5 justify-end mt-4">
+          <Button variant="outline" onClick={close} className="min-h-11 md:min-h-9">
+            {t.btn_cancel}
+          </Button>
+          <Button
+            variant="destructive"
             onClick={devolver}
             disabled={!comment.trim() || enviando}
-            className={`${wbtn} min-h-11 ${comment.trim() && !enviando ? '' : 'opacity-50'}`}
+            className="min-h-11 md:min-h-9"
           >
             {t.btn_return}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

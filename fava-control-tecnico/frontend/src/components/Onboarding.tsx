@@ -1,4 +1,4 @@
-import { pbtn } from '../ui';
+import { Button } from '@/components/ui/button';
 import { useApp } from '../state';
 import { FavaLogo } from '../icons';
 
@@ -20,20 +20,26 @@ export default function Onboarding() {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(8,16,24,.6)', zIndex: 70, display: 'grid', placeItems: 'center', padding: 20, animation: 'favaIn .25s ease' }}>
-      <div style={{ width: '100%', maxWidth: 440, background: 'var(--surface)', borderRadius: 18, boxShadow: 'var(--shadow-lg)', overflow: 'hidden', animation: 'favaIn .3s ease both' }}>
-        <div style={{ height: 150, background: 'linear-gradient(140deg,var(--primary-700),var(--primary))', display: 'grid', placeItems: 'center' }}>
+    <div className="fixed inset-0 z-70 bg-black/60 grid place-items-center p-5 fava-anim">
+      <div className="w-full max-w-[440px] bg-card rounded-2xl shadow-pop overflow-hidden fava-anim">
+        <div className="h-[150px] bg-gradient-to-br from-primary-700 to-primary grid place-items-center">
           <FavaLogo height={76} onDark />
         </div>
-        <div style={{ padding: 24 }}>
-          <div style={{ fontSize: 19, fontWeight: 700, marginBottom: 8 }}>{title}</div>
-          <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 20px' }}>{body}</p>
-          <div style={{ height: 4, background: 'var(--surface-3)', borderRadius: 3, overflow: 'hidden', marginBottom: 18 }}>
-            <div style={{ height: '100%', background: 'var(--accent)', borderRadius: 3, transition: 'width .3s', width: pct }} />
+        <div className="p-6">
+          <div className="text-lg font-bold mb-2">{title}</div>
+          <p className="text-sm text-muted-foreground leading-relaxed mb-5">{body}</p>
+          {/* La barra de progreso: el ancho es un dato calculado, no un valor de diseño,
+              así que va en `style` — Tailwind no genera una clase por cada porcentaje. */}
+          <div className="h-1 bg-muted rounded-sm overflow-hidden mb-4.5">
+            <div className="h-full bg-accent-brand rounded-sm transition-[width] duration-300" style={{ width: pct }} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <button onClick={closeOnboard} style={{ background: 'none', border: 0, color: 'var(--text-3)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{t.ob_skip}</button>
-            <button onClick={next} className={pbtn}>{isLast ? t.ob_done : t.ob_next}</button>
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" onClick={closeOnboard} className="text-muted-foreground min-h-11 md:min-h-9">
+              {t.ob_skip}
+            </Button>
+            <Button onClick={next} className="min-h-11 md:min-h-9">
+              {isLast ? t.ob_done : t.ob_next}
+            </Button>
           </div>
         </div>
       </div>

@@ -1,5 +1,7 @@
 import { svg, ICON, hi } from '../icons';
-import { ApiState, Card, Empty, StatusPill, gbtn } from '../ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { ApiState, Empty, StatusPill } from '../ui';
 import { useApp } from '../state';
 import { useApiData } from '../lib/api/useApiData';
 import { listNotes } from '../lib/api/weeklyNotes';
@@ -30,36 +32,36 @@ export default function Notes() {
   }
 
   return (
-    <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="max-w-[820px] mx-auto flex flex-col gap-3">
       {data.map((n) => (
         <Card key={n.id}>
-          <div style={{ padding: '16px 18px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontSize: 14.5, fontWeight: 700 }}>{n.projectName}</div>
-                <div style={{ fontSize: 12.5, color: 'var(--text-3)', fontFamily: 'Roboto Mono' }}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex-1 min-w-[200px]">
+                <div className="text-[14.5px] font-bold">{n.projectName}</div>
+                <div className="text-[12.5px] text-muted-foreground font-mono">
                   {n.weekStart}
                   {n.roleTypeName ? ` · ${n.roleTypeName}` : ''}
                 </div>
               </div>
               <StatusPill st={n.status as never} t={t} />
-              {/* «Reenviar» NO es un boton propio: se corrige el dia en la semana y se
-                  vuelve a enviar desde alli. Un boton aqui sugeriria que la nota se
+              {/* «Reenviar» NO es un botón propio: se corrige el día en la semana y se
+                  vuelve a enviar desde allí. Un botón aquí sugeriría que la nota se
                   puede reenviar sin tocar lo que la hizo volver. */}
-              <button onClick={() => go('week')} className={`${gbtn} min-h-11`}>
+              <Button variant="outline" onClick={() => go('week')} className="min-h-11 md:min-h-9">
                 {t.btn_open}
-              </button>
+              </Button>
             </div>
             {n.returnComment ? (
-              <div style={{ marginTop: 12, display: 'flex', gap: 10, background: 'var(--warn-tint)', border: '1px solid var(--warn)', borderRadius: 9, padding: '10px 12px' }}>
-                <div style={{ color: 'var(--warn)', flex: 'none' }}>{svg(ICON.triangle, { w: 17 })}</div>
+              <div className="mt-3 flex gap-2.5 bg-warn-tint border border-warn rounded-lg px-3 py-2.5">
+                <div className="text-warn shrink-0">{svg(ICON.triangle, { w: 17 })}</div>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--warn)' }}>{t.returned_note}</div>
-                  <div style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 2 }}>{n.returnComment}</div>
+                  <div className="text-xs font-bold text-warn">{t.returned_note}</div>
+                  <div className="text-[12.5px] text-muted-foreground mt-0.5">{n.returnComment}</div>
                 </div>
               </div>
             ) : null}
-          </div>
+          </CardContent>
         </Card>
       ))}
     </div>

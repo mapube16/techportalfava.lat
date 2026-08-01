@@ -1,24 +1,40 @@
 import { hi } from '../icons';
 import { useApp } from '../state';
 
-const COLOR: Record<string, string> = { approved: 'var(--ok)', returned: 'var(--warn)', saved: 'var(--accent)', submitted: 'var(--sent)', invite: 'var(--sent)', proj: 'var(--primary)' };
-const TINT: Record<string, string> = { approved: 'var(--ok-tint)', returned: 'var(--warn-tint)', saved: 'var(--accent-tint)', submitted: 'var(--sent-tint)', invite: 'var(--sent-tint)', proj: 'var(--primary-tint)' };
-const ICON_NAME: Record<string, string> = { approved: 'check', returned: 'ureturn', saved: 'check', submitted: 'up', invite: 'up', proj: 'plus' };
+/**
+ * El aviso flotante. El color depende del tipo de accion, y por eso el mapa lleva las
+ * clases ENTERAS: Tailwind no puede componer `text-${x}` en tiempo de compilacion —no
+ * veria la clase al escanear y la purgaria—.
+ */
+const ESTILO: Record<string, { barra: string; icono: string; nombre: string }> = {
+  approved: { barra: 'border-l-ok', icono: 'bg-ok-tint text-ok', nombre: 'check' },
+  returned: { barra: 'border-l-warn', icono: 'bg-warn-tint text-warn', nombre: 'ureturn' },
+  saved: { barra: 'border-l-accent-brand', icono: 'bg-accent-tint text-accent-brand', nombre: 'check' },
+  submitted: { barra: 'border-l-sent', icono: 'bg-sent-tint text-sent', nombre: 'up' },
+  invite: { barra: 'border-l-sent', icono: 'bg-sent-tint text-sent', nombre: 'up' },
+  proj: { barra: 'border-l-primary', icono: 'bg-primary-tint text-primary', nombre: 'plus' },
+};
+
+const POR_DEFECTO = { barra: 'border-l-primary', icono: 'bg-primary-tint text-primary', nombre: 'check' };
 
 export default function Toast() {
   const { state } = useApp();
   const toast = state.toast;
   if (!toast) return null;
-  const color = COLOR[toast.kind] || 'var(--primary)';
-  const tint = TINT[toast.kind] || 'var(--primary-tint)';
-  const icon = ICON_NAME[toast.kind] || 'check';
+  const e = ESTILO[toast.kind] ?? POR_DEFECTO;
 
   return (
-    <div style={{ position: 'fixed', bottom: 22, right: 22, zIndex: 80, display: 'flex', alignItems: 'center', gap: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '4px solid ' + color, borderRadius: 11, boxShadow: 'var(--shadow-lg)', padding: '13px 16px', minWidth: 280, maxWidth: 380, animation: 'favaToast .3s ease both' }}>
-      <div style={{ width: 26, height: 26, borderRadius: 7, background: tint, color, display: 'grid', placeItems: 'center', flex: 'none' }}>{hi(icon, { w: 15 })}</div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 600 }}>{toast.title}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-2)' }}>{toast.body}</div>
+    <div
+      className={`fixed bottom-5 right-5 z-80 flex items-center gap-3 bg-card border border-border border-l-4 ${e.barra} rounded-xl shadow-pop px-4 py-3 min-w-[280px] max-w-[380px]`}
+      style={{ animation: 'favaToast .3s ease both' }}
+      role="status"
+    >
+      <div className={`size-[26px] rounded-md grid place-items-center shrink-0 ${e.icono}`}>
+        {hi(e.nombre, { w: 15 })}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[13.5px] font-semibold">{toast.title}</div>
+        <div className="text-xs text-muted-foreground">{toast.body}</div>
       </div>
     </div>
   );
