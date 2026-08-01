@@ -173,9 +173,10 @@ externos y 1.009 filas completamente vacías. El Excel es una rejilla de calenda
 técnico × día del año, no un registro de trabajo. Solo 2.774 filas son jornadas
 reales. Esto cambia el tamaño esperado de la migración.
 
-**Alias de técnico**: `Leomar Klein`, `Leomir Klein` y `Leomir Kleir` conviven. En
-la grabación Andrea se corrige sola (*«Leomar, Leomir, perdón»*), así que hay que
-confirmarle si son una persona o dos antes de fusionar nada.
+**Alias de técnico**: `Leomar Klein`, `Leomir Klein` y `Leomir Kleir` son **la misma
+persona** (confirmado por el usuario, 2026-08-01). Se fusionan en la migración; el
+nombre canónico queda por decidir. Es coherente con que Andrea se corrija sola en la
+grabación (*«Leomar, Leomir, perdón»*).
 
 ---
 
@@ -219,3 +220,109 @@ Sin decidir.
 | `technician_specialties` | Aditivo: sugiere el rol por defecto, no lo impone |
 | `day_concepts` | 8 entradas + booleano `in_factory`. Resolver el choque LR/NR por número |
 | Ejecutado y delta | Nunca se persisten. Delta = vendido − Σ(ejecutado del grupo de rol) |
+
+---
+
+## 9. La cotización: el origen de todo, y no está en ninguna celda
+
+Las hojas de proyecto llevan **capturas de la cotización pegadas como imagen**. Por eso
+no aparecían al leer celdas. Las extraje del stream OLE del `.xls` (los PNG venían
+partidos en registros `CONTINUE` de BIFF cada 8 KB, hay que reensamblarlos) y están en
+[`docs/cotizaciones/`](../docs/cotizaciones/) — 9 documentos a resolución completa.
+
+Que la cotización sea **una imagen** explica por qué Andrea reteclea el resumen a mano:
+
+> *«después de la cotización yo hago un resumen de la cotización, es decir, esto es un copy page»*
+
+Es el segundo trabajo manual del proceso, después del reparto por máquina.
+
+### El documento
+
+`QUOTAZIONE SERVIZI TECNICI`, numerado y versionado — p. ej. **`FP 09_26-PL4500 REV 1`**.
+Lo emite **FAVA Latino America SAS a FAVA SpA (Italia)**: es facturación intercompañía,
+no al cliente final. Firma **Fabio Turrisi, Commercial**.
+
+Cabecera: cliente · NR. Commessa · descrizione attività · periodo intervento previsto ·
+**`Nome tecnico: DA DEFINIRE`** · pagamento · validità offerta (30 GG).
+
+Ese `DA DEFINIRE` confirma por escrito que **al cotizar no hay técnico asignado**.
+
+### De dónde sale exactamente el «vendido»
+
+Cada bloque de rol tiene dos columnas de días distintas, y el control usa una sola:
+
+| Rol | GIORNI EFFETTIVI | **TOT GG CON VIAGGI** | €/giorno | Totale |
+|---|---|---|---|---|
+| SUPERVISORE FLA | — | **15** | 650 | 9.750 |
+| MECCANICO | 141 | **182** | 430 | 78.260 |
+| ELETTRICISTA | 100 | **130** | 440 | 57.200 |
+
+Los 15 / 182 / 130 son los mismos números que la hoja `JAV Brasil` guarda como vendido.
+Lucchetti da 10 / 144 / 104 — los que Andrea pronuncia en la grabación.
+
+> **El vendido es `TOT GG CON VIAGGI`, no `GIORNI EFFETTIVI`.** El importe también se
+> calcula sobre esa columna (182 × 430 = 78.260). Confundirlas descuadra el delta en
+> ~30%: son días de obra más viajes y domingos.
+
+### `NR. TECNICI` siempre es 1, pero trabajan varios
+
+Lucchetti vende `MECCANICO · NR. TECNICI 1 · 144 días`, y en la ejecución hay **dos**
+mecánicos (Leomar 62 + Vito 56 = 118, delta 26). Los días vendidos son un **bolsón de
+días-técnico** por (máquina, fase, rol); cuántas personas lo consuman es indiferente.
+`NR. TECNICI` es un supuesto de planificación, no una restricción.
+
+### Dos tarifarios distintos
+
+| Rol | Tarifa A (€/día) | Tarifa B (€/día) |
+|---|---|---|
+| Supervisore FLA / **Manager Cantiere FLA** | 650 | 650 |
+| Meccanico | 430 | 350 |
+| **Meccatronico** | — | 350 |
+| **Capo Elettricista** | — | 400 |
+| Elettricista | 440 | 215 |
+| Test I/O | 440 | — |
+| Softwerista | 600 | 500 |
+
+`SUPERVISORE FLA` y `MANAGER CANTIERE FLA` son **el mismo rol con dos etiquetas**, al
+mismo precio — lo que cierra la duda que quedó abierta sobre `Supervisore`.
+
+La tarifa no puede ser un campo del catálogo de roles: depende del tarifario aplicado.
+
+### Cosas que rompen un modelo ingenuo
+
+- **Dos líneas del mismo rol en el mismo bloque** (una cotización tiene `MECCATRONICO 265`
+  y `MECCATRONICO 98`). La clave **no** puede ser (orden, fase, rol): cada línea es un
+  ítem con su propio orden.
+- **Una línea es un nombre propio**: `FELIPE SENA` a 85 €/día, y en otra `FELIPE SENA (COSTO)`.
+  Hay líneas que no son roles del catálogo.
+- **El total reservado no es la suma de las líneas.** Lucchetti suma 168.500 y reserva
+  160.000; JAV suma 191.150 y reserva 182.500. **La hoja guarda el reservado**, que es lo
+  que hay que persistir como valor del contrato.
+- **La cotización de JAV tiene un error de fórmula**: su total de collaudo (45.940) se deja
+  fuera la línea `TEST I/O` (10.120); Lucchetti sí la incluye. No replicar el error.
+- Hay filas de rol en blanco con € 0,00 como separadores visuales.
+
+### Gastos
+
+Dos bloques, y en todas las cotizaciones revisadas van a cero:
+
+- `SPESE DI LOGISTICA` — billetes de avión ida/vuelta: **`AL COSTO`**, se facturan aparte.
+- `SPESE VITTO ALLOGGIO / AUTO` — lavandería, alquiler de coche, comidas, cenas,
+  alojamiento: **`a carico cliente`**.
+
+Confirma que los gastos en la app son informativos, como ya estaba decidido.
+
+### La jornada, definida por contrato
+
+> `GIORNI LAVORATIVI: Da lunedì a venerdì 10h/giorno - sabato 1/2 giornata - domenica riposo`
+> `rientro ogni 8/9 settimane`
+
+Esto da sentido a dos conceptos del catálogo: **`MD` (medio día) es el sábado**, y
+**`DVRC` (retorno a casa) es la rotación de 8-9 semanas**.
+
+### Lo que implica para el cotizador
+
+El cotizador que pide Andrea en ES/IT/EN/PT ya tiene casi toda su especificación aquí:
+plantilla fija, numeración con revisión, cabecera intercompañía, dos bloques de fase,
+tarifario por rol, columna de días con viajes, dos bloques de gastos y un total reservado
+negociado aparte. Sigue **sin decidir** si entra en el alcance.
