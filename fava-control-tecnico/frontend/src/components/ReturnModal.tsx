@@ -1,12 +1,40 @@
 import { useState } from 'react';
 import { hi } from '../icons';
-import { gbtn, wbtn } from '../ui';
+import { FieldError, gbtn, wbtn } from '../ui';
 import { useApp } from '../state';
+import { codigo } from '../lib/api/useApiData';
+import { returnNote } from '../lib/api/weeklyNotes';
 
+/**
+ * NOTA-03 — devolver exige comentario.
+ *
+ * El boton se deshabilita sin texto, pero eso es cortesia: quien manda es el servidor,
+ * y por debajo un CHECK del motor impide que una nota quede en `returned` sin comentario
+ * aunque el servicio se equivoque.
+ */
 export default function ReturnModal() {
-  const { state, t, patch, returnNote } = useApp();
+  const { state, t, patch, showToast, refresh } = useApp();
   const [comment, setComment] = useState('');
-  const close = () => patch({ returnOpen: false, returnId: null });
+  const [err, setErr] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
+
+  const close = () => patch({ returnOpen: false, returnId: null, returnUpdatedAt: null });
+
+  const devolver = () => {
+    if (!state.returnId || !comment.trim()) return;
+    setErr(null);
+    setEnviando(true);
+    // El `updatedAt` que se leyo al abrir: si otro admin la movio mientras se escribia
+    // el comentario, el servidor responde 409 en vez de pisar su decision.
+    returnNote(state.returnId, comment.trim(), state.returnUpdatedAt ?? '')
+      .then(() => {
+        close();
+        refresh();
+        showToast('saved');
+      })
+      .catch((e: unknown) => setErr(codigo(e)))
+      .finally(() => setEnviando(false));
+  };
 
   return (
     <div onClick={close} style={{ position: 'fixed', inset: 0, background: 'rgba(8,16,24,.5)', zIndex: 60, display: 'grid', placeItems: 'center', padding: 20, animation: 'favaIn .2s ease' }}>
@@ -22,11 +50,18 @@ export default function ReturnModal() {
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder={t.return_ph}
-          style={{ width: '100%', minHeight: 96, resize: 'vertical', border: '1px solid var(--border-2)', borderRadius: 10, padding: 12, fontFamily: 'inherit', fontSize: 14, background: 'var(--surface-2)', color: 'var(--text)', outline: 'none' }}
+          style={{ width: '100%', minHeight: 96, resize: 'vertical', border: '1px solid var(--border-2)', borderRadius: 10, padding: 12, fontFamily: 'inherit', fontSize: 'max(15px, var(--fs-input))', background: 'var(--surface-2)', color: 'var(--text)', outline: 'none' }}
         />
+        {err ? <FieldError msg={`${t.err_save}: ${err}`} /> : null}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
-          <button onClick={close} style={gbtn}>{t.btn_cancel}</button>
-          <button onClick={() => state.returnId && returnNote(state.returnId, comment)} style={wbtn}>{t.btn_return}</button>
+          <button onClick={close} style={{ ...gbtn, minHeight: 'var(--tap)' }}>{t.btn_cancel}</button>
+          <button
+            onClick={devolver}
+            disabled={!comment.trim() || enviando}
+            style={{ ...wbtn, minHeight: 'var(--tap)', opacity: comment.trim() && !enviando ? 1 : 0.5 }}
+          >
+            {t.btn_return}
+          </button>
         </div>
       </div>
     </div>

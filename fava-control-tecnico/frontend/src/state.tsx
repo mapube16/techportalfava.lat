@@ -38,6 +38,8 @@ export interface AppState {
   logDate: string | null;
   returnOpen: boolean;
   returnId: string | null;
+  /** El `updated_at` que se leyó al abrir el modal: el bloqueo optimista del devolver. */
+  returnUpdatedAt: string | null;
   projOpen: boolean;
   inviteOpen: boolean;
   pdfOpen: boolean;
@@ -74,6 +76,7 @@ const initialState: AppState = {
   logDate: null,
   returnOpen: false,
   returnId: null,
+  returnUpdatedAt: null,
   projOpen: false,
   inviteOpen: false,
   pdfOpen: false,
@@ -259,6 +262,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       notes: s.notes.map((n) => (n.id === id ? { ...n, status: 'returned', comment: comment || n.comment } : n)),
       returnOpen: false,
       returnId: null,
+  returnUpdatedAt: null,
     }));
     showToast('returned');
   };

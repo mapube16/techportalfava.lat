@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { svg, ICON } from '../icons';
 import { Card, CardHead, StatusPill } from '../ui';
 import { useApp } from '../state';
-import { CURRENT_TECH } from '../data';
+import { useApiData } from '../lib/api/useApiData';
+import { listNotes } from '../lib/api/weeklyNotes';
 
 export default function Home() {
   const { state, t, go, patch } = useApp();
@@ -21,7 +22,10 @@ export default function Home() {
     </button>
   );
 
-  const mine = state.notes.filter((n) => n.tech === CURRENT_TECH);
+  // Las suyas y solo las suyas: lo garantiza la política `wn_read` de RLS en el motor,
+  // no un filtro por nombre —que además se rompía en cuanto dos técnicos se llamaban
+  // parecido, como Leomar y Leomir Klein—.
+  const { data: mine } = useApiData(() => listNotes(), [state.dataVersion]);
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -58,16 +62,16 @@ export default function Home() {
           }
         />
         <div>
-          {mine.map((n, i) => (
+          {(mine ?? []).map((n, i) => (
             <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'var(--row-pad)', borderTop: i ? '1px solid var(--border)' : 'none' }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 600 }}>{n.project}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{n.week}</div>
+                <div style={{ fontSize: 13.5, fontWeight: 600 }}>{n.projectName}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'Roboto Mono' }}>{n.weekStart}</div>
               </div>
-              {n.comment ? (
-                <span style={{ fontSize: 11.5, color: 'var(--warn)', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>“{n.comment}”</span>
+              {n.returnComment ? (
+                <span style={{ fontSize: 11.5, color: 'var(--warn)', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>“{n.returnComment}”</span>
               ) : null}
-              <StatusPill st={n.status} t={t} />
+              <StatusPill st={n.status as never} t={t} />
             </div>
           ))}
         </div>

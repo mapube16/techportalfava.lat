@@ -32,6 +32,13 @@ const ARCHIVOS = [
   // «sin texto libre» del criterio 4 se rompe justo por donde entran los datos.
   'screens/Week.tsx',
   'components/LogDayDrawer.tsx',
+  // Anadidas en 04-05: el flujo de aprobacion. Si alguna vuelve a una lista cableada
+  // de notas o de acciones, el estado deja de venir del servidor -que es quien manda
+  // las transiciones- y la UI puede ofrecer una que el motor rechaza.
+  'screens/Inbox.tsx',
+  'screens/Notes.tsx',
+  'screens/Audit.tsx',
+  'components/ReturnModal.tsx',
 ];
 
 /**

@@ -3,8 +3,9 @@ import { hi } from '../icons';
 import { ApiState, Card, CardHead, ConceptPill, StatusPill, gbtn, pbtn, sbtn } from '../ui';
 import { useApp } from '../state';
 import SignatureBox from '../components/SignatureBox';
-import { useApiData } from '../lib/api/useApiData';
+import { codigo, useApiData } from '../lib/api/useApiData';
 import { getWeek } from '../lib/api/dailyEntries';
+import { submitWeek } from '../lib/api/weeklyNotes';
 import type { Entry } from '../lib/api/dailyEntries';
 import { diasDeSemana, hoyLocal, lunesDe, sumarDias } from '../lib/fecha';
 
@@ -28,6 +29,8 @@ export default function Week() {
   const [clearToken, setClearToken] = useState(0);
   /** Lunes de la semana visible. `null` = la de hoy, que se resuelve al renderizar. */
   const [lunes, setLunes] = useState<string | null>(null);
+  const [errEnvio, setErrEnvio] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   const clearSign = () => {
     setClearToken((v) => v + 1);
@@ -177,12 +180,27 @@ export default function Week() {
           {hi('eye', { w: 15 })}
           {t.btn_pdf}
         </button>
+        {errEnvio ? (
+          <div style={{ fontSize: 12, color: 'var(--warn)', width: '100%', textAlign: 'right' }}>
+            {t.err_save}: {errEnvio}
+          </div>
+        ) : null}
         <button
           onClick={() => {
-            showToast('submitted');
-            go('notes');
+            // NOTA-01: el servidor deriva UNA NOTA POR PROYECTO. El técnico no elige
+            // ninguna, solo manda su semana.
+            setErrEnvio(null);
+            setEnviando(true);
+            submitWeek(semana)
+              .then(() => {
+                showToast('submitted');
+                go('notes');
+              })
+              .catch((e: unknown) => setErrEnvio(codigo(e)))
+              .finally(() => setEnviando(false));
           }}
-          style={pbtn}
+          disabled={enviando}
+          style={{ ...pbtn, minHeight: 'var(--tap)', opacity: enviando ? 0.6 : 1 }}
         >
           {t.btn_submit} →
         </button>
