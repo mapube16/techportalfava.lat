@@ -250,7 +250,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleTheme = () => patch({ theme: stateRef.current.theme === 'dark' ? 'light' : 'dark' });
-  const toggleLang = () => patch({ lang: stateRef.current.lang === 'es' ? 'it' : 'es' });
+  /**
+   * Tres idiomas y UN botón: el que hay en el encabezado muestra el idioma actual y
+   * pasa al siguiente. Se queda en botón y no en desplegable porque el rótulo ya dice
+   * dónde estás (ES → IT → PT → ES) y son tres, no doce.
+   *
+   * El ciclo sale de las claves de `D`, no de una lista aparte: añadir un idioma al
+   * diccionario lo mete en la rueda sin tocar esto.
+   */
+  const toggleLang = () => {
+    const langs = Object.keys(D) as Lang[];
+    const i = langs.indexOf(stateRef.current.lang);
+    patch({ lang: langs[(i + 1) % langs.length] });
+  };
 
   const approve = (id: string) => {
     setState((s) => ({ ...s, notes: s.notes.map((n) => (n.id === id ? { ...n, status: 'approved' } : n)) }));

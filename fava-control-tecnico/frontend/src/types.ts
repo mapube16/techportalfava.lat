@@ -1,9 +1,9 @@
-export type Lang = 'es' | 'it';
+export type Lang = 'es' | 'it' | 'pt';
 export type Theme = 'light' | 'dark';
 export type Density = 'comfortable' | 'compact';
 export type Role = 'T' | 'A' | 'S';
 export type Route =
-  | 'home' | 'week' | 'notes' | 'inbox' | 'projects' | 'project'
+  | 'home' | 'week' | 'notes' | 'inbox' | 'allnotes' | 'projects' | 'project'
   | 'techs' | 'users' | 'kpis' | 'audit' | 'config';
 export type NoteStatus = 'draft' | 'sent' | 'approved' | 'returned';
 

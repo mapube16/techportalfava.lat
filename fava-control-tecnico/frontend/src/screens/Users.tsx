@@ -7,6 +7,7 @@ import { useApp } from '../state';
 import { dismissAccessRequest, listAccessRequests } from '../lib/api/client';
 import type { AccessRequest } from '../lib/api/client';
 import { codigo, useApiData } from '../lib/api/useApiData';
+import { LOCALE } from '../i18n';
 import { linkTechnician, listUsers, setUserActive, setUserRoles } from '../lib/api/users';
 import type { UserRow } from '../lib/api/users';
 import { listTechnicians } from '../lib/api/technicians';
@@ -61,7 +62,7 @@ function AccessRequests() {
                 <div className="text-xs text-muted-foreground">{r.email}</div>
               </div>
               <div className="text-xs text-muted-foreground">
-                {new Date(r.createdAt).toLocaleDateString(state.lang === 'es' ? 'es-ES' : 'it-IT')}
+                {new Date(r.createdAt).toLocaleDateString(LOCALE[state.lang])}
               </div>
               <Button variant="outline" size="sm" onClick={() => dismiss(r.id)} className="min-h-11 md:min-h-8">
                 {t.access_requests_dismiss}

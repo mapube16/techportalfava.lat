@@ -220,7 +220,10 @@ export default function Config() {
                   </>
                 ) : (
                   <>
-                    <span className="flex-1 text-[13.5px]">{state.lang === 'es' ? c.labelEs : c.labelIt}</span>
+                    {/* El catálogo del API solo guarda ES e IT (columnas `label_es` y
+                        `label_it`). En portugués se cae al español, que es el idioma
+                        más cercano de los dos — mejor eso que una etiqueta vacía. */}
+                    <span className="flex-1 text-[13.5px]">{state.lang === 'it' ? c.labelIt : c.labelEs}</span>
                     {isSuper ? (
                       <Button
                         variant="outline"

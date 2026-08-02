@@ -35,6 +35,8 @@ function Screen() {
     case 'week': return <Week />;
     case 'notes': return <Notes />;
     case 'inbox': return <Inbox />;
+    // La MISMA pantalla en modo consulta: todas las notas, sin botones de decisión.
+    case 'allnotes': return <Inbox archivo />;
     case 'projects': return <Projects />;
     case 'project': return <ProjectDetail />;
     case 'techs': return <Techs />;
@@ -45,6 +47,16 @@ function Screen() {
     default: return <Kpis />;
   }
 }
+
+/**
+ * Las únicas pantallas que LEEN `state.search`. Fuera de estas, el buscador del
+ * encabezado no filtra nada: escribes y no pasa absolutamente nada.
+ *
+ * A un técnico eso le pasaba SIEMPRE — sus tres pantallas (inicio, semana, notas) no
+ * están aquí, así que la caja era decorado permanente. Si una pantalla nueva empieza a
+ * filtrar por `state.search`, se añade su ruta a esta lista o el buscador no aparecerá.
+ */
+const RUTAS_CON_BUSCADOR: Route[] = ['inbox', 'allnotes', 'projects', 'techs', 'users', 'audit'];
 
 interface NavItem {
   key: string;
@@ -123,7 +135,7 @@ export default function Layout() {
   if (state.role === 'A' || state.role === 'S') {
     groups.push({
       title: t.grp_admin,
-      items: [mk('inbox', 'inbox', 'inbox', count), mk('projects', 'projects', 'folder'), mk('techs', 'techs', 'users'), mk('users', 'users', 'users'), mk('kpis', 'kpis', 'chart')],
+      items: [mk('inbox', 'inbox', 'inbox', count), mk('allnotes', 'allnotes', 'doc'), mk('projects', 'projects', 'folder'), mk('techs', 'techs', 'users'), mk('users', 'users', 'users'), mk('kpis', 'kpis', 'chart')],
     });
   }
   if (state.role === 'S') {
@@ -131,7 +143,7 @@ export default function Layout() {
   }
 
   const titleMap: Record<string, string> = {
-    home: t.t_home, week: t.t_week, notes: t.t_notes, inbox: t.t_inbox, projects: t.t_projects,
+    home: t.t_home, week: t.t_week, notes: t.t_notes, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
     project: t.t_project, techs: t.t_techs, users: t.t_users, kpis: t.t_kpis, audit: t.t_audit, config: t.t_config,
   };
 
@@ -148,15 +160,17 @@ export default function Layout() {
   // panel. Declarados una vez para que no haya dos copias que se desincronicen.
   const controles = (
     <>
-      <div className="relative flex items-center gap-2 bg-muted border border-border rounded-md px-2.5 h-11 md:h-9 w-full md:w-[220px] text-muted-foreground focus-within:border-primary">
-        <Search className="size-4 shrink-0" />
-        <input
-          placeholder={t.search}
-          value={state.search}
-          onChange={(e) => patch({ search: e.target.value })}
-          className="w-full border-0 bg-transparent outline-none text-foreground text-base md:text-sm font-sans placeholder:text-muted-foreground"
-        />
-      </div>
+      {RUTAS_CON_BUSCADOR.includes(state.route) && (
+        <div className="relative flex items-center gap-2 bg-muted border border-border rounded-md px-2.5 h-11 md:h-9 w-full md:w-[220px] text-muted-foreground focus-within:border-primary">
+          <Search className="size-4 shrink-0" />
+          <input
+            placeholder={t.search}
+            value={state.search}
+            onChange={(e) => patch({ search: e.target.value })}
+            className="w-full border-0 bg-transparent outline-none text-foreground text-base md:text-sm font-sans placeholder:text-muted-foreground"
+          />
+        </div>
+      )}
 
       {/* El selector T·A·S se retiró: cada persona entra con SU cuenta y ve SU rol.
           Servía para enseñar la app desde una sola sesión, pero no para probarla — con

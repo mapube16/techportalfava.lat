@@ -15,8 +15,10 @@
     "smoke": "tsx scripts/smoke.ts",
     "migrate:excel": "tsx prisma/migrate-excel.ts",
     "migrate:ordenes": "tsx prisma/migrate-ordenes.ts",
+    "migrate:notas": "tsx prisma/migrate-notas.ts",
     "informe": "tsx scripts/informe-excel.ts",
-    "cuentas": "tsx scripts/crear-cuentas.ts"
+    "cuentas": "tsx scripts/crear-cuentas.ts",
+    "usuarios:tecnicos": "tsx scripts/crear-usuarios-tecnicos.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",
