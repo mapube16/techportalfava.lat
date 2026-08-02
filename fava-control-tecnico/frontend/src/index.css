@@ -414,4 +414,8 @@
   .fava-lift:hover {
     transform: none;
   }
+  /* Un vídeo en bucle es movimiento aunque no sea una animación CSS. */
+  .fava-video {
+    display: none;
+  }
 }

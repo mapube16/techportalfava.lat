@@ -55,6 +55,20 @@ export default function Login() {
         onMouseLeave={() => setPar({ x: 0, y: 0 })}
         className="relative flex flex-col justify-between gap-5 p-5 md:p-12 bg-gradient-to-br from-primary-700 via-primary to-primary-600 text-white overflow-hidden"
       >
+        {/* El vídeo de la planta, por debajo de todo lo demás.
+            Solo en escritorio: son 1,3 MB y el técnico entra desde el móvil con la
+            cobertura de una nave industrial. La opacidad baja lo tiñe con el
+            degradado de marca y es lo que mantiene legible el texto blanco encima. */}
+        <video
+          src="/login-bg.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden="true"
+          className="fava-video absolute inset-0 size-full object-cover opacity-35 hidden md:block"
+        />
+
         {/* La retícula de fondo: un patrón repetido, no un valor de diseño que quepa
             en una clase de utilidad.
 
