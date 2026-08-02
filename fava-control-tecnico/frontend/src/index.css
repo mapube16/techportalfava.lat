@@ -135,7 +135,19 @@
   }
 }
 
-.fava {
+/*
+ * Los tokens viven en `:root` y NO en `.fava`, y la diferencia no es de estilo.
+ *
+ * Radix monta los menús (Select, DropdownMenu, Dialog) con un `<Portal>`, o sea como
+ * hijos directos de `<body>` — FUERA del div `.fava`. Con las variables definidas en
+ * `.fava`, dentro de un portal `var(--surface)` no resolvía nada: `bg-popover` quedaba
+ * transparente y el desplegable de la cuadrícula dejaba ver la tabla por detrás.
+ *
+ * Es además lo que documenta shadcn («CSS variables in :root»). Las reglas de `.fava`
+ * que quedan más abajo (scrollbar, focus, la barra lateral) sí son estilos de ESE
+ * subárbol y se quedan donde están.
+ */
+:root {
   --primary: #104a78;
   --primary-600: #0e4d7a;
   --primary-700: #133e5d;
@@ -174,7 +186,7 @@
   background: var(--bg);
 }
 
-.fava[data-theme='dark'] {
+:root[data-theme='dark'] {
   --primary: #3f86c4;
   --primary-600: #4f93cf;
   --primary-700: #2b6ea8;
@@ -211,10 +223,10 @@
  * así que no puede ser una clase de Tailwind — se elige con un atributo. La utilidad
  * `p-row` la consume.
  */
-.fava {
+:root {
   --row-pad: 13px 16px;
 }
-.fava[data-density='compact'] {
+:root[data-density='compact'] {
   --row-pad: 7px 14px;
 }
 @utility p-row {
@@ -225,22 +237,25 @@
    la lee de este archivo y la compara con `CONSULTA_MOVIL`. Coincide con
    `--breakpoint-md: 900px` de arriba: 899 es su último píxel. */
 @media (max-width: 899px) {
-  .fava {
+  :root {
     --row-pad: 12px 14px;
   }
 }
 
-.fava *::-webkit-scrollbar {
+*::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-.fava *::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
   background: var(--border-2);
   border-radius: 6px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
-.fava *:focus-visible {
+/* Global y no descendiente de `.fava`: el foco tiene que verse TAMBIÉN dentro de un
+   menú montado por portal, que vive fuera de ese subárbol. Es accesibilidad, no
+   decoración — sin esto, navegar el desplegable con el teclado no marca dónde estás. */
+*:focus-visible {
   outline: 2px solid var(--info);
   outline-offset: 2px;
   border-radius: 4px;

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { AppProvider, useApp } from './state';
 import Login from './Login';
 import Layout from './Layout';
@@ -6,9 +7,20 @@ import { devAuthEnabled } from './lib/auth/dev';
 
 function Root() {
   const { state, t } = useApp();
+
+  // Tema y densidad van en el <html>, no en este div: los menús de Radix se montan por
+  // PORTAL como hijos de <body>, así que desde dentro de un portal este div no es un
+  // ancestro y no heredarían ni los tokens ni el tema oscuro. Ver el comentario de
+  // `:root` en index.css.
+  useEffect(() => {
+    const html = document.documentElement;
+    html.setAttribute('data-theme', state.theme);
+    html.setAttribute('data-density', state.density);
+  }, [state.theme, state.density]);
+
   // El árbol lo gobierna sessionStatus, que viene del servidor (GET /api/me).
   return (
-    <div className="fava min-h-screen" data-theme={state.theme} data-density={state.density}>
+    <div className="fava min-h-screen">
       {/* Aviso permanente mientras el login de desarrollo esté activo: nadie debe
           confundir esta instancia con una asegurada por Microsoft Entra. */}
       {devAuthEnabled && (

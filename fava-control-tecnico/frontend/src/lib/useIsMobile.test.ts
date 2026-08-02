@@ -93,7 +93,7 @@ describe('contraste del texto secundario', () => {
    * formato acaba desactivado, que es peor que no tenerlo.
    */
   const token = (nombre: string, tema: 'claro' | 'oscuro'): string => {
-    const bloque = css.split(/\.fava\[data-theme=['"]dark['"]\]/);
+    const bloque = css.split(/:root\[data-theme=['"]dark['"]\]/);
     assert.equal(bloque.length, 2, 'index.css tiene que traer exactamente un bloque de tema oscuro');
     const trozo = tema === 'claro' ? bloque[0] : bloque[1];
     const m = trozo.match(new RegExp(`--${nombre}:\\s*(#[0-9a-f]{6})`, 'i'));
