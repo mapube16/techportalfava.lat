@@ -55,10 +55,12 @@ export default function Login() {
         onMouseLeave={() => setPar({ x: 0, y: 0 })}
         className="relative flex flex-col justify-between gap-5 p-5 md:p-12 bg-gradient-to-br from-primary-700 via-primary to-primary-600 text-white overflow-hidden"
       >
-        {/* El vídeo de la planta, por debajo de todo lo demás.
-            Solo en escritorio: son 1,3 MB y el técnico entra desde el móvil con la
-            cobertura de una nave industrial. La opacidad baja lo tiñe con el
-            degradado de marca y es lo que mantiene legible el texto blanco encima. */}
+        {/* El vídeo de la planta, por debajo de todo lo demás y a plena opacidad: el
+            degradado azul del contenedor queda solo para el móvil, donde el vídeo no
+            se carga — son 1,3 MB y el técnico entra con la cobertura de una nave.
+
+            Lo que mantiene legible el texto blanco ya no es teñirlo de azul, sino el
+            velo neutro de debajo, que oscurece sin cambiarle el color. */}
         <video
           src="/login-bg.mp4"
           autoPlay
@@ -66,25 +68,13 @@ export default function Login() {
           loop
           playsInline
           aria-hidden="true"
-          className="fava-video absolute inset-0 size-full object-cover opacity-35 hidden md:block"
+          className="fava-video absolute inset-0 size-full object-cover hidden md:block"
         />
+        <div className="absolute inset-0 hidden md:block pointer-events-none bg-gradient-to-t from-black/70 via-black/45 to-black/40" />
 
-        {/* La retícula de fondo: un patrón repetido, no un valor de diseño que quepa
-            en una clase de utilidad.
-
-            Se desplaza MENOS que el contenido (la mitad) al mover el ratón: es lo que
-            crea la sensación de profundidad, un fondo que va por detrás. Solo
-            `translate3d`, que la GPU resuelve sin recalcular nada. */}
-        <div
-          className="absolute -inset-8 opacity-[0.09] fava-parallax"
-          style={{
-            backgroundImage:
-              'repeating-linear-gradient(90deg,#fff 0 1px,transparent 1px 64px),repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 64px)',
-            transform: `translate3d(${par.x * 12}px, ${par.y * 12}px, 0)`,
-          }}
-        />
-        {/* Halo: da volumen al degradado plano y se mueve al contrario que la retícula,
-            que es lo que separa los dos planos. */}
+        {/* Halo: da volumen al degradado plano y se desplaza con el ratón, que es lo
+            que lo separa del vídeo de detrás. Solo `translate3d`, que la GPU resuelve
+            sin recalcular nada. */}
         <div
           className="absolute -inset-8 pointer-events-none fava-parallax"
           style={{
