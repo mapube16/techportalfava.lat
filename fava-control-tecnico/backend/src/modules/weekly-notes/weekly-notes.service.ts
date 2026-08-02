@@ -195,6 +195,52 @@ export class WeeklyNotesService {
   }
 
   /**
+   * Los SIETE días de esta nota, para pintarlos en pantalla.
+   *
+   * Existe porque el admin no podía verlos. La bandeja los pedía a
+   * `GET /api/daily-entries`, y ese endpoint empieza por `tecnicoDe(actor)`: un admin no
+   * tiene técnico vinculado, así que recibía 409 USUARIO_SIN_TECNICO y los siete días
+   * salían en blanco. Con las 443 notas del histórico dentro eso dejaba el archivo
+   * entero mudo.
+   *
+   * Y de paso es MÁS correcto que la ruta de la bitácora: acota por técnico, proyecto Y
+   * semana de la nota, así que un técnico con dos proyectos en la misma semana ya no ve
+   * los mismos siete días repetidos en sus dos notas.
+   *
+   * La autorización la da RLS sobre `weekly_notes`: si el actor no puede leer la nota,
+   * `findUnique` no la encuentra y esto es un 404 — no hace falta un guard aparte.
+   */
+  async dias(noteId: string) {
+    const c = this.prisma.client;
+    const nota = await c.weeklyNote.findUnique({
+      where: { id: noteId },
+      select: { weekStart: true, projectId: true, technicianId: true },
+    });
+    if (!nota) throw new NotFoundException('NOTA_NO_ENCONTRADA');
+
+    const fin = new Date(nota.weekStart.getTime() + 6 * 86_400_000);
+    const entradas = await c.dailyEntry.findMany({
+      where: { technicianId: nota.technicianId, projectId: nota.projectId, date: { gte: nota.weekStart, lte: fin } },
+      select: {
+        date: true,
+        description: true,
+        conceptCode: true,
+        inFactory: true,
+        order: { select: { commessaShort: true } },
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    return entradas.map((e) => ({
+      date: aTexto(e.date),
+      conceptCode: e.conceptCode,
+      description: e.description,
+      inFactory: e.inFactory,
+      commessaShort: e.order?.commessaShort ?? null,
+    }));
+  }
+
+  /**
    * Fase 5 — arma el `DatosNota` que pide `nota-pdf.ts` a partir de la nota: técnico,
    * proyecto, los 7 días de SU semana y SU proyecto (no toda la semana del técnico, que
    * puede tener días de otro) y la máquina, tomada de las órdenes que esos días usaron.

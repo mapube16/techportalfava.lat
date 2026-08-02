@@ -13,9 +13,8 @@ import { ApiState, ConceptPill, StatusPill, filterBy, mesCorto } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
-import { approveNote, listNotes } from '../lib/api/weeklyNotes';
+import { approveNote, listNotes, noteDays } from '../lib/api/weeklyNotes';
 import type { NoteStatus, WeeklyNote } from '../lib/api/weeklyNotes';
-import { getWeek } from '../lib/api/dailyEntries';
 import { diasDeSemana } from '../lib/fecha';
 import type { Lang } from '../types';
 
@@ -71,8 +70,8 @@ const PUNTO: Record<NoteStatus, string> = {
 /** Los 7 días de la nota. Se piden aparte: es lo que el admin lee para decidir. */
 function Dias({ nota, lang, dias }: { nota: WeeklyNote; lang: Lang; dias: string[] }) {
   const { t } = useApp();
-  const { data } = useApiData(() => getWeek(dias[0], dias[6]), [nota.id]);
-  const porFecha = new Map((data?.entries ?? []).map((e) => [e.date, e]));
+  const { data } = useApiData(() => noteDays(nota.id), [nota.id]);
+  const porFecha = new Map((data ?? []).map((e) => [e.date, e]));
 
   return (
     <div className="px-4.5 py-2">

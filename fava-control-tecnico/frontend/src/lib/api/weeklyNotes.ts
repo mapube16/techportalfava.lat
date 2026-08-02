@@ -89,6 +89,22 @@ export const signNote = (
   expectedUpdatedAt: string,
 ) => apiSend<WeeklyNote>(`/weekly-notes/${id}/sign`, 'POST', { technician, client, expectedUpdatedAt });
 
+/** Un día de la nota, tal cual se pinta. Menos campos que la bitácora: aquí solo se lee. */
+export interface DiaNota {
+  date: string;
+  conceptCode: string | null;
+  description: string | null;
+  inFactory: boolean;
+  commessaShort: string | null;
+}
+
+/**
+ * Los 7 días de la nota. Se piden por la NOTA y no por la bitácora del técnico porque
+ * `GET /daily-entries` exige un técnico vinculado y el admin no lo tiene: le devolvía
+ * 409 y los días salían en blanco.
+ */
+export const noteDays = (id: string) => apiFetch<DiaNota[]>(`/weekly-notes/${id}/dias`);
+
 /** Se renderiza al vuelo y no congela nada: es el borrador de antes de firmar. */
 export const previewNotePdf = (id: string) => apiBlob(`/weekly-notes/${id}/pdf/preview`);
 

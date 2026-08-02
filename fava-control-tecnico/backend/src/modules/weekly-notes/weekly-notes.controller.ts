@@ -102,6 +102,17 @@ export class WeeklyNotesController {
   }
 
   /**
+   * Los siete dias de la nota. Va ANTES que `:id/pdf/...` no por orden de rutas —no
+   * colisionan— sino porque es lo que pinta la pantalla antes de ofrecer el PDF.
+   *
+   * Sirve al admin Y al tecnico: RLS ya decide quien puede leer esa nota.
+   */
+  @Get(':id/dias')
+  dias(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.dias(id);
+  }
+
+  /**
    * Fase 5 — la vista previa de antes de firmar. Se sirve inline (no como adjunto):
    * es para pintarla en la app, no para descargarla. `@Res()` porque Nest no sabe mandar
    * un `Buffer` como cuerpo por su cuenta.
