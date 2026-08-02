@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ApiState } from '../ui';
+import { ApiState, mesCorto } from '../ui';
 import { useApp } from '../state';
 import { useApiData } from '../lib/api/useApiData';
 import { getDayGrid, getGridYears } from '../lib/api/kpis';
@@ -43,8 +43,6 @@ import type { Counts, DayGrid as Datos, GridProject } from '../lib/api/kpis';
  * Los totales llegan calculados del servidor; aquí no se suma nada.
  */
 
-const MESES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const MESI = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
 /** Hasta dónde se despliega la tabla. */
 const PROYECTO = 0;
@@ -93,7 +91,7 @@ export default function DayGrid() {
   if (!data) return <ApiState error={null} label={t.loading} />;
 
   const g: Datos = data.grid;
-  const mes = (n: number) => (state.lang === 'it' ? MESI[n] : MESES[n])!;
+  const mes = (n: number) => mesCorto(n, state.lang);
   const alternar = (k: string) => setAbiertos((a) => ({ ...a, [k]: !a[k] }));
 
   const cambiarNivel = (n: number) => {

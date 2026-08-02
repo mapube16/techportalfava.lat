@@ -2,7 +2,14 @@ import { useState } from 'react';
 import { hi } from '../icons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ApiState, ConceptPill, StatusPill, filterBy } from '../ui';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ApiState, ConceptPill, StatusPill, filterBy, mesCorto } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
@@ -28,6 +35,33 @@ const iniciales = (nombre: string) =>
     .slice(0, 2)
     .map((p) => p[0]?.toUpperCase() ?? '')
     .join('');
+
+/** «Todos». Centinela porque `SelectItem` de Radix no admite valor vacío. */
+const TODOS = '*';
+
+/** Un desplegable de filtro. Los tres son el mismo, así que se escribe una vez. */
+function Filtro({
+  valor, set, todos, ops,
+}: {
+  valor: string;
+  set: (v: string) => void;
+  todos: string;
+  ops: { v: string; label: string }[];
+}) {
+  return (
+    <Select value={valor} onValueChange={set}>
+      <SelectTrigger className="min-h-11 md:min-h-8 text-[12.5px]">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={TODOS}>{todos}</SelectItem>
+        {ops.map((o) => (
+          <SelectItem key={o.v} value={o.v}>{o.label}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 /** El punto de color de la lista. Escritas enteras: Tailwind no compone `bg-${x}`. */
 const PUNTO: Record<NoteStatus, string> = {
@@ -84,6 +118,12 @@ export default function Inbox({ archivo = false }: { archivo?: boolean }) {
   const [err, setErr] = useState<string | null>(null);
 
   const [estado, setEstado] = useState<NoteStatus | 'all'>('all');
+  // Año, mes y técnico. `TODOS` es un centinela porque `SelectItem` de Radix no admite
+  // valor vacío — el mismo truco que ya usa el selector de año de la cuadrícula.
+  const [anio, setAnio] = useState(TODOS);
+  const [mes, setMes] = useState(TODOS);
+  const [tec, setTec] = useState(TODOS);
+
   const filtrar = archivo ? estado : 'submitted';
   const { data, error } = useApiData(
     () => listNotes(filtrar === 'all' ? undefined : filtrar),
@@ -99,7 +139,27 @@ export default function Inbox({ archivo = false }: { archivo?: boolean }) {
   if (error) return <ApiState error={error} label={t.err_load} />;
   if (!data) return <ApiState error={null} label={t.loading} />;
 
-  const q = filterBy(data, state.search, (n) => `${n.technicianName} ${n.projectName}`);
+  /**
+   * Los tres filtros se resuelven en el cliente y no en el servidor a propósito: las
+   * notas de la pantalla ya están todas descargadas (443 hoy, ~1.500 al año) y filtrar
+   * un array es instantáneo. Un parámetro más en el endpoint solo tendría sentido el
+   * día que esto haya que paginar.
+   *
+   * Las opciones salen de lo que HAY, no de un rango inventado: si nadie trabajó en
+   * agosto, agosto no aparece.
+   */
+  const anios = [...new Set(data.map((n) => n.weekStart.slice(0, 4)))].sort().reverse();
+  const meses = [...new Set(data.map((n) => n.weekStart.slice(5, 7)))].sort();
+  const tecnicos = [...new Set(data.map((n) => n.technicianName))].sort((a, b) => a.localeCompare(b));
+
+  const enFiltro = data.filter(
+    (n) =>
+      (anio === TODOS || n.weekStart.slice(0, 4) === anio) &&
+      (mes === TODOS || n.weekStart.slice(5, 7) === mes) &&
+      (tec === TODOS || n.technicianName === tec),
+  );
+
+  const q = filterBy(archivo ? enFiltro : data, state.search, (n) => `${n.technicianName} ${n.projectName}`);
   // En escritorio se preselecciona la primera; en móvil no, porque la lista ES la vista.
   const cur = q.find((n) => n.id === selNote) ?? (movil ? null : q[0]);
 
@@ -119,19 +179,34 @@ export default function Inbox({ archivo = false }: { archivo?: boolean }) {
   const lista = (
     <div className={`${movil ? 'w-full' : 'w-[340px]'} shrink-0 flex flex-col gap-2.5`}>
       {archivo ? (
-        <div className="flex flex-wrap gap-1.5">
-          {filtros.map((f) => (
-            <Button
-              key={f.k}
-              variant={estado === f.k ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => { setEstado(f.k); setSelNote(null); }}
-              className="min-h-11 md:min-h-8"
-            >
-              {f.label}
-            </Button>
-          ))}
-        </div>
+        <>
+          <div className="flex flex-wrap gap-1.5">
+            {filtros.map((f) => (
+              <Button
+                key={f.k}
+                variant={estado === f.k ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => { setEstado(f.k); setSelNote(null); }}
+                className="min-h-11 md:min-h-8"
+              >
+                {f.label}
+              </Button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            <Filtro valor={anio} set={setAnio} todos={t.grid_all_years}
+              ops={anios.map((a) => ({ v: a, label: a }))} />
+            <Filtro valor={mes} set={setMes} todos={t.all_months}
+              ops={meses.map((m) => ({ v: m, label: mesCorto(Number(m), state.lang) }))} />
+            <Filtro valor={tec} set={setTec} todos={t.all_techs}
+              ops={tecnicos.map((n) => ({ v: n, label: n }))} />
+          </div>
+
+          <div className="text-[11.5px] text-muted-foreground px-0.5">
+            {q.length} / {data.length}
+          </div>
+        </>
       ) : null}
       {q.length ? (
         q.map((n) => {

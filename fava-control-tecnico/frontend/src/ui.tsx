@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CONCEPTS } from './i18n';
+import { CONCEPTS, LOCALE } from './i18n';
 import type { Dict } from './i18n';
 import type { Lang, NoteStatus } from './types';
 
@@ -171,6 +171,14 @@ export function ApiState({ error, label }: { error: string | null; label: string
 export const money = (v: number, cur: string) =>
   (cur === 'USD' ? 'US$ ' : cur ? cur + ' ' : '') + v.toLocaleString('es-CL');
 export const nf = (v: number) => v.toLocaleString('es-CL');
+
+/**
+ * El nombre corto del mes (1–12), del navegador y no de una tabla nuestra: con el
+ * tercer idioma, mantener un array por idioma era escribir a mano lo que `Intl` ya
+ * sabe. El día 15 evita el borde del huso; solo se usa para sacar la etiqueta.
+ */
+export const mesCorto = (n: number, lang: Lang) =>
+  new Date(Date.UTC(2000, n - 1, 15)).toLocaleDateString(LOCALE[lang], { month: 'short' });
 export const initials = (n: string) => n.split(' ').map((w) => w[0]).join('');
 
 export const filterBy = <T,>(list: T[], q: string, keyFn: (it: T) => string): T[] => {
