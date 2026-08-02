@@ -44,6 +44,7 @@
 
   --shadow-card: var(--shadow);
   --shadow-pop: var(--shadow-lg);
+  --shadow-float: var(--lift);
   --radius-card: var(--radius);
 
   --font-sans: Roboto, system-ui, sans-serif;
@@ -179,8 +180,20 @@
   --sent-tint: #e2eefd;
   --draft: #78889a;
   --draft-tint: #eceff2;
-  --shadow: 0 1px 2px rgba(19, 35, 48, 0.06), 0 4px 16px rgba(19, 35, 48, 0.06);
-  --shadow-lg: 0 8px 40px rgba(19, 35, 48, 0.18);
+  --shadow:
+    0 1px 2px rgba(19, 35, 48, 0.05),
+    0 4px 12px rgba(19, 35, 48, 0.05),
+    0 12px 28px rgba(19, 35, 48, 0.04);
+  --shadow-lg:
+    0 2px 8px rgba(19, 35, 48, 0.08),
+    0 12px 32px rgba(19, 35, 48, 0.12),
+    0 32px 64px rgba(19, 35, 48, 0.1);
+  /* Solo para el acceso: la unica superficie donde algo debe parecer que levita. */
+  --lift:
+    0 2px 6px rgba(19, 35, 48, 0.05),
+    0 10px 24px rgba(19, 35, 48, 0.08),
+    0 28px 56px rgba(19, 35, 48, 0.1),
+    0 56px 88px rgba(19, 35, 48, 0.06);
   --radius: 10px;
   color: var(--text);
   background: var(--bg);
@@ -214,8 +227,19 @@
   --sent-tint: #122438;
   --draft: #7d8b98;
   --draft-tint: #1b2836;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.6);
+  --shadow:
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.32),
+    0 12px 28px rgba(0, 0, 0, 0.28);
+  --shadow-lg:
+    0 2px 8px rgba(0, 0, 0, 0.45),
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 32px 64px rgba(0, 0, 0, 0.45);
+  --lift:
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    0 10px 24px rgba(0, 0, 0, 0.45),
+    0 28px 56px rgba(0, 0, 0, 0.5),
+    0 56px 88px rgba(0, 0, 0, 0.35);
 }
 
 /*
@@ -344,4 +368,50 @@
 }
 .fava-anim {
   animation: favaIn 0.28s ease both;
+}
+
+/*
+ * Entrada ESCALONADA: los hijos directos entran en cascada en vez de todos a la vez.
+ * El retardo lo lleva cada hijo con `--i`, que se pone en el JSX.
+ *
+ * `translateY` + `opacity` a proposito: son las dos unicas propiedades que el navegador
+ * anima en la GPU sin recalcular el layout. Animar `box-shadow` o `filter`, que es lo
+ * que pediria una sombra que «crece», obliga a repintar en cada fotograma.
+ */
+.fava-cascade > * {
+  animation: favaIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+
+/* Levita: reposo elevado y un empujon sutil al pasar por encima. La sombra NO se
+   anima (repinta); lo que se mueve es el desplazamiento. */
+.fava-lift {
+  box-shadow: var(--lift);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.fava-lift:hover {
+  transform: translateY(-2px);
+}
+
+/*
+ * Sin movimiento: no basta con acortar la animacion, hay que ANULARLA y dejar el
+ * estado final. Cubre tambien lo nuevo del acceso — una regla que solo tapa la barra
+ * lateral deja de ser una promesa en cuanto se anima cualquier otra cosa.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .fava-anim,
+  .fava-cascade > *,
+  .fava-parallax {
+    animation: none;
+    transition: none;
+    transform: none;
+    opacity: 1;
+  }
+  .fava-lift {
+    transition: none;
+  }
+  .fava-lift:hover {
+    transform: none;
+  }
 }
