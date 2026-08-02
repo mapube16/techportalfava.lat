@@ -281,7 +281,7 @@ export default function Inbox({ archivo = false }: { archivo?: boolean }) {
           onClick={() => patch({ pdfOpen: true, pdfNoteId: cur.id, pdfSigned: cur.signed })}
           className="min-h-11 md:min-h-9 mr-auto"
         >
-          {hi('doc', { w: 15 })}
+          {hi('eye', { w: 15 })}
           {t.btn_pdf}
         </Button>
 

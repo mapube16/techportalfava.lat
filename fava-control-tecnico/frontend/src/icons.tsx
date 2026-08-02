@@ -8,22 +8,29 @@ interface SvgOpts {
   sw?: number;
 }
 
-export const svg = (paths: string[], o: SvgOpts = {}) => (
-  <svg
-    width={o.w || 18}
-    height={o.h || o.w || 18}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={o.sw || 2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    {paths.map((d, i) => (
-      <path key={i} d={d} />
-    ))}
-  </svg>
-);
+/**
+ * `hi()` e `ICON[...]` se indexan con una CADENA, así que un nombre que no existe entra
+ * aquí como `undefined` y `paths.map` tumbaba la app entera con un
+ * «Cannot read properties of undefined». Un icono que falta es un icono que falta: no
+ * se pinta y ya. El resto de la pantalla no tiene por qué caerse con él.
+ */
+export const svg = (paths: string[] | undefined, o: SvgOpts = {}) =>
+  !paths ? null : (
+    <svg
+      width={o.w || 18}
+      height={o.h || o.w || 18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={o.sw || 2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {paths.map((d, i) => (
+        <path key={i} d={d} />
+      ))}
+    </svg>
+  );
 
 export const ICON: Record<string, string[]> = {
   home: ['M3 11l9-8 9 8', 'M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10'],
