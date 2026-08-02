@@ -15,7 +15,11 @@ const contentSecurityPolicy = {
   useDefaults: true,
   directives: {
     'connect-src': ["'self'", AAD],
-    'frame-src': ["'self'", AAD],
+    // `blob:` es el visor de PDF: el servidor manda los bytes, el cliente hace
+    // `URL.createObjectURL` y lo pinta en un `<iframe>`. Sin esto el navegador tapa el
+    // marco con «este contenido está bloqueado» y no dice por qué en la pantalla.
+    // No abre nada: un blob solo existe dentro de esta pestaña y de este origen.
+    'frame-src': ["'self'", 'blob:', AAD],
     'form-action': ["'self'", AAD],
   },
 } as const;
