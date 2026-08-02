@@ -88,14 +88,9 @@ export default function Login() {
           <div className="relative" style={{ '--i': 0 } as CSSProperties}>
             <FavaLogo height={64} onDark />
           </div>
-          <div className="relative max-w-[400px]" style={{ '--i': 1 } as CSSProperties}>
-            <div className="text-xs tracking-[3px] uppercase opacity-70 mb-3.5">Control Técnico</div>
-            <h1 className="serif text-[26px] md:text-[38px] leading-tight font-bold mb-4">{t.login_head}</h1>
-            <p className="text-[15px] leading-relaxed opacity-80">{t.login_body}</p>
-          </div>
           <div
             className="relative flex flex-wrap gap-x-6 gap-y-1 text-xs opacity-70"
-            style={{ '--i': 2 } as CSSProperties}
+            style={{ '--i': 1 } as CSSProperties}
           >
             <span>Montaggio</span>
             <span>Collaudo</span>

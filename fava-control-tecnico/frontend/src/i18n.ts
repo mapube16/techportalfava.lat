@@ -29,8 +29,6 @@ export const CONCEPT_COLOR: Record<string, string> = Object.fromEntries(
 
 const es = {
   brand_sub: 'Control Técnico', search: 'Buscar…', loading: 'Cargando…',
-  login_head: 'Una jornada, una captura.',
-  login_body: 'La bitácora diaria del técnico genera la nota semanal firmada, los KPIs y el control comercial por proyecto. Adiós al Excel de 14 hojas.',
   login_signin: 'Iniciar sesión', login_sub: 'Usa tu cuenta corporativa FAVA para continuar.',
   login_ms: 'Iniciar sesión con Microsoft', login_or: 'ACCESO', login_foot: 'Acceso interno · SSO Microsoft Entra ID',
   login_note: 'Acceso con cuenta corporativa',
@@ -189,8 +187,6 @@ export type Dict = typeof es;
 
 const it: Dict = {
   brand_sub: 'Controllo Tecnico', search: 'Cerca…', loading: 'Caricamento…',
-  login_head: 'Una giornata, una registrazione.',
-  login_body: 'Il diario giornaliero del tecnico genera la nota settimanale firmata, i KPI e il controllo commerciale per progetto. Addio al foglio Excel di 14 schede.',
   login_signin: 'Accedi', login_sub: 'Usa il tuo account aziendale FAVA per continuare.',
   login_ms: 'Accedi con Microsoft', login_or: 'ACCESSO', login_foot: 'Accesso interno · SSO Microsoft Entra ID',
   login_note: 'Accesso con account aziendale',
