@@ -1,5 +1,6 @@
 import { dirname, join } from 'node:path';
-import type { Column, Content, TDocumentDefinitions } from 'pdfmake/interfaces';
+import type { Column, ContentText, TableCell, TableCellProperties, TDocumentDefinitions } from 'pdfmake/interfaces';
+import { LOGO_SVG } from './fava-logo';
 
 /**
  * El `PdfPrinter` del SERVIDOR. `require('pdfmake')` a secas devuelve el bundle del
@@ -119,168 +120,215 @@ const FUENTES = {
   },
 };
 
-const etiqueta = (k: string, v: string): Content => ({
-  text: [{ text: `${k} `, bold: true }, v],
-  fontSize: 8,
-  margin: [0, 0, 0, 1],
+/**
+ * La paleta del papel. El original está hecho en Excel: rejilla con bordes finos, las
+ * casillas de DATO con relleno azul claro y el valor en azul oscuro y negrita, y las
+ * de ETIQUETA en blanco. Reproducirlo importa — es el documento que el cliente firma y
+ * lo compara con el que ya conoce.
+ */
+const BORDE = '#3f3f3f';
+const AZUL_FONDO = '#dce9f6';
+const AZUL_TEXTO = '#1f4e79';
+
+/** Rejilla completa: todas las líneas, del mismo grosor. Como la hoja de cálculo. */
+const REJILLA = {
+  hLineWidth: () => 0.7,
+  vLineWidth: () => 0.7,
+  hLineColor: () => BORDE,
+  vLineColor: () => BORDE,
+  paddingTop: () => 4,
+  paddingBottom: () => 4,
+};
+
+/**
+ * Una celda de texto. `TableCell` incluye `string` en la union, y de un string no se
+ * puede hacer spread: sin este alias, cada `{ ...eti(...), colSpan: 2 }` no compila.
+ */
+type Celda = ContentText & TableCellProperties;
+
+/** Casilla de etiqueta: fondo blanco, texto pequeño y normal. */
+const eti = (texto: string, opts: Record<string, unknown> = {}): Celda => ({
+  text: texto,
+  fontSize: 7.5,
+  margin: [1, 1, 1, 1] as [number, number, number, number],
+  ...opts,
 });
 
-/** Un bloque de gastos: 4 filas numeradas y un TOTAL, como el papel. */
-function bloqueGastos(titulo: string, items: Gasto[], width: string): Column {
-  // Devuelve un `Column`, que es `Content & ColumnProperties`: el ancho solo existe
-  // dentro de `columns`, no en una tabla suelta.
-  const filas = Array.from({ length: 4 }, (_, i) => [
-    { text: `${i + 1}.`, fontSize: 8 },
-    { text: items[i]?.descripcion ?? '', fontSize: 8 },
-    { text: items[i]?.valor ?? '', fontSize: 8, alignment: 'right' as const },
-  ]);
-  const tabla: Content = {
+/** Casilla de dato: relleno azul y el valor en azul oscuro, como el papel. */
+const dato = (texto: string, opts: Record<string, unknown> = {}): Celda => ({
+  text: texto || ' ',
+  fontSize: 9,
+  bold: true,
+  color: AZUL_TEXTO,
+  fillColor: AZUL_FONDO,
+  margin: [2, 1, 2, 1] as [number, number, number, number],
+  ...opts,
+});
+
+/**
+ * Un bloque de gastos: cuatro filas numeradas y un TOTAL, como el papel. El area
+ * rellenable va en azul; los numeros y los rotulos, en blanco.
+ */
+function bloqueGastos(titulo: string, items: Gasto[], conFecha: boolean, width: string): Column {
+  const cols = conFecha ? ['auto', '*', 'auto', 'auto'] : ['auto', '*', 'auto'];
+  const n = cols.length;
+  const fila = (i: number) => {
+    const g = items[i];
+    const celdas: Celda[] = [
+      eti(`${i + 1}.`, { alignment: 'right' }),
+      dato(g?.descripcion ?? ''),
+      dato(g?.valor ?? '', { alignment: 'right' }),
+    ];
+    // La columna «Fecha» solo existe en el bloque del técnico, igual que en el papel.
+    if (conFecha) celdas.splice(2, 0, dato(''));
+    return celdas;
+  };
+  const cabecera: Celda[] = conFecha
+    ? [eti(''), eti('Descripción', { alignment: 'center' }), eti('Fecha', { alignment: 'center' }), eti('Valor', { alignment: 'center' })]
+    : [eti(''), eti('Descripción', { alignment: 'center' }), eti('Valor', { alignment: 'center' })];
+
+  return {
+    width,
     table: {
-      widths: ['auto', '*', 'auto'],
+      widths: cols,
       body: [
-        [{ text: titulo, bold: true, fontSize: 8, colSpan: 3, alignment: 'center' as const }, {}, {}],
+        [{ ...eti(titulo, { bold: true, alignment: 'center' }), colSpan: n }, ...Array<TableCell>(n - 1).fill({})],
+        cabecera,
+        ...[0, 1, 2, 3].map(fila),
         [
-          { text: '', fontSize: 7 },
-          { text: 'Descripción', bold: true, fontSize: 7 },
-          { text: 'Valor', bold: true, fontSize: 7, alignment: 'right' as const },
-        ],
-        ...filas,
-        [
-          { text: 'TOTAL:', bold: true, fontSize: 8, colSpan: 2 },
-          {},
-          { text: '', fontSize: 8, alignment: 'right' as const },
+          { ...eti('TOTAL:', { bold: true, alignment: 'right' }), colSpan: n - 1 },
+          ...Array<TableCell>(n - 2).fill({}),
+          dato('', { alignment: 'right' }),
         ],
       ],
     },
-    layout: 'lightHorizontalLines',
+    layout: REJILLA,
   };
-  return { width, stack: [tabla] };
 }
 
-/** Una casilla de firma: el trazo si existe, y siempre la línea con su rótulo. */
-const casillaFirma = (rotulo: string, png?: string): Content => ({
-  stack: [
-    png
-      ? { image: `data:image/png;base64,${png}`, width: 130, height: 42, margin: [0, 2, 0, 2] }
-      : { text: ' ', margin: [0, 22, 0, 0] },
-    { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 150, y2: 0, lineWidth: 0.7 }] },
-    { text: rotulo, fontSize: 7, bold: true, margin: [0, 3, 0, 0] },
-  ],
-});
+/** La casilla donde va el trazo. Vacía y azul mientras nadie haya firmado. */
+const casillaFirma = (png?: string): TableCell =>
+  png
+    ? { image: `data:image/png;base64,${png}`, width: 120, height: 40, fillColor: AZUL_FONDO, margin: [2, 2, 2, 2] }
+    : { text: ' ', fillColor: AZUL_FONDO, margin: [2, 20, 2, 20] };
 
+/**
+ * La Nota, campo por campo y CELDA POR CELDA como el original.
+ *
+ * El papel de FAVA es una hoja de cálculo: rejilla continua de bordes finos, membrete y
+ * título en la misma banda de arriba, y los valores sobre relleno azul. La primera
+ * versión de este generador ponía el mismo contenido como texto suelto con líneas
+ * horizontales: decía lo mismo pero no se parecía, y este documento lo firma un cliente
+ * que ya conoce el suyo.
+ */
 export function definicionNota(d: DatosNota): TDocumentDefinitions {
+  const localidad = [d.locality, d.country].filter(Boolean).join(', ');
+
   return {
     pageSize: 'A4',
-    pageMargins: [30, 26, 30, 26],
+    pageMargins: [28, 24, 28, 24],
     defaultStyle: { font: 'Roboto', fontSize: 9 },
     content: [
-      // ── Membrete + encabezado del cliente, en dos columnas como el original ──
+      // Banda superior: membrete a la izquierda, título y datos del cliente a la derecha.
       {
-        columns: [
-          {
-            width: '52%',
-            stack: [
-              { text: FAVA.razonSocial, bold: true, fontSize: 10 },
-              { text: FAVA.direccion, fontSize: 7.5, color: '#444' },
-              { text: FAVA.web, fontSize: 7.5, color: '#444' },
-            ],
-          },
-          {
-            width: '48%',
-            stack: [
-              etiqueta('Cliente:', d.clientName),
-              // El NIT del membrete, el de FAVA. Ver la constante.
-              etiqueta('NIT:', FAVA.nit),
-              etiqueta('Localidad:', [d.locality, d.country].filter(Boolean).join(', ')),
-              etiqueta('Suministro:', d.supply),
-              etiqueta('Contrato:', d.contractNumber),
-              etiqueta('Maquinaria:', d.maquinaria),
-              etiqueta('Cargo durante esta semana:', d.cargoSemana),
-              etiqueta('Técnico:', d.technicianName.toUpperCase()),
-            ],
-          },
-        ],
-        margin: [0, 0, 0, 10],
-      },
-
-      { text: 'NOTA PRESTACIÓN SEMANAL', bold: true, fontSize: 13, alignment: 'center', margin: [0, 0, 0, 8] },
-
-      // ── El cuerpo: los 7 días, y a su derecha la columna DIA/NOTA ──
-      {
-        columns: [
-          {
-            width: '74%',
-            table: {
-              headerRows: 1,
-              widths: ['auto', '*', 'auto'],
-              body: [
-                [
-                  { text: 'FECHA\n(dd/mm)', bold: true, fontSize: 7.5, alignment: 'center' },
-                  { text: 'DESCRIPCIÓN TRABAJOS', bold: true, fontSize: 7.5, alignment: 'center' },
-                  { text: 'CATEGORÍA', bold: true, fontSize: 7.5, alignment: 'center' },
+        table: {
+          widths: ['30%', 'auto', '*', 'auto'],
+          body: [
+            [
+              {
+                rowSpan: 3,
+                margin: [4, 4, 4, 4],
+                stack: [
+                  { svg: LOGO_SVG, width: 105, alignment: 'center' },
+                  { text: FAVA.razonSocial, bold: true, fontSize: 8.5, alignment: 'center', margin: [0, 3, 0, 0] },
+                  // El NIT del membrete es el de FAVA, NO el del cliente. Ver la constante.
+                  { text: `NIT: ${FAVA.nit}`, fontSize: 7, alignment: 'center' },
+                  { text: FAVA.direccion, fontSize: 6.5, alignment: 'center' },
+                  { text: FAVA.web, fontSize: 6.5, alignment: 'center' },
                 ],
-                // Siempre SIETE filas. Un día de otro proyecto va en blanco y no se
-                // omite: la Nota es de una semana entera y una fila que falta parece
-                // un olvido, no «ese día estuvo en otra obra».
-                ...d.filas.map((f) => [
-                  { text: ddmmyyyy(f.date), fontSize: 8, alignment: 'center' as const },
-                  { text: f.description ?? '', fontSize: 8 },
-                  { text: f.categoria ?? '', fontSize: 8, alignment: 'center' as const },
-                ]),
-              ],
-            },
-            layout: 'lightHorizontalLines',
-          },
-          {
-            width: '26%',
-            table: {
-              headerRows: 1,
-              widths: ['*', 'auto'],
-              body: [
-                [
-                  { text: 'DIA', bold: true, fontSize: 7.5, alignment: 'center' },
-                  { text: 'NOTA', bold: true, fontSize: 7.5, alignment: 'center' },
-                ],
-                // La columna NOTA repite el n.º de contrato en los siete días. No es un
-                // campo aparte: en el PDF de referencia es literalmente el mismo valor.
-                ...DIAS.map((dia) => [
-                  { text: dia, fontSize: 8 },
-                  { text: d.contractNumber, fontSize: 8, alignment: 'center' as const },
-                ]),
-              ],
-            },
-            layout: 'lightHorizontalLines',
-            margin: [6, 0, 0, 0],
-          },
-        ],
-        margin: [0, 0, 0, 10],
-      },
-
-      // ── Gastos y anticipos: informativos (NOTA-08), sin flujo de reembolso ──
-      {
-        columns: [
-          bloqueGastos('Gastos sostenidos por el técnico', d.gastosTecnico, '49%'),
-          { width: '2%', text: '' },
-          bloqueGastos('Anticipo efectuado por el cliente', d.anticiposCliente, '49%'),
-        ],
-        margin: [0, 0, 0, 14],
-      },
-
-      { text: DECLARACION, bold: true, fontSize: 8, alignment: 'center', margin: [0, 0, 0, 16] },
-
-      {
-        columns: [
-          casillaFirma('FIRMA DEL TÉCNICO', d.firmaTecnico),
-          {
-            stack: [
-              { text: ' ', margin: [0, 22, 0, 0] },
-              { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 110, y2: 0, lineWidth: 0.7 }] },
-              { text: 'FECHA', fontSize: 7, bold: true, margin: [0, 3, 0, 0] },
-              { text: d.fechaFirma ?? '', fontSize: 8, margin: [0, 1, 0, 0] },
+              },
+              {
+                colSpan: 3,
+                text: 'NOTA PRESTACIÓN SEMANAL',
+                bold: true,
+                fontSize: 13,
+                alignment: 'center',
+                margin: [0, 12, 0, 12],
+              },
+              {},
+              {},
             ],
-          },
-          casillaFirma('TIMBRE Y FIRMA DEL CLIENTE', d.firmaCliente),
+            [{}, eti('Cliente:'), { ...dato(d.clientName), colSpan: 2 }, {}],
+            [{}, eti('Localidad:'), { ...dato(localidad), colSpan: 2 }, {}],
+            [eti('Suministro:'), dato(d.supply), eti('Contrato:'), dato(d.contractNumber)],
+            [eti('Maquinaria:'), { ...dato(d.maquinaria), colSpan: 3 }, {}, {}],
+            [eti('Cargo durante esta semana:'), { ...dato(d.cargoSemana), colSpan: 3 }, {}, {}],
+            [eti('Técnico:'), { ...dato(d.technicianName.toUpperCase(), { alignment: 'center' }), colSpan: 3 }, {}, {}],
+          ],
+        },
+        layout: REJILLA,
+      },
+
+      // Los siete días. DIA y NOTA son COLUMNAS de esta misma tabla y no un bloque
+      // aparte: en el original todo vive dentro de la misma rejilla.
+      {
+        table: {
+          headerRows: 1,
+          widths: ['auto', 'auto', '*', 'auto', 'auto'],
+          body: [
+            [
+              eti('FECHA\n(dd/mm)', { bold: true, alignment: 'center' }),
+              eti('DIA', { bold: true, alignment: 'center' }),
+              eti('DESCRIPCIÓN TRABAJOS', { bold: true, alignment: 'center' }),
+              eti('CATEGORÍA', { bold: true, alignment: 'center' }),
+              eti('NOTA', { bold: true, alignment: 'center' }),
+            ],
+            // Siempre SIETE filas. Un día de otro proyecto va en blanco y no se omite:
+            // la Nota es de una semana entera y una fila que falta parece un olvido, no
+            // «ese día estuvo en otra obra».
+            ...d.filas.map((f, i) => [
+              eti(ddmmyyyy(f.date), { alignment: 'center', fontSize: 8 }),
+              eti(DIAS[i] ?? '', { alignment: 'center', fontSize: 8 }),
+              eti(f.description ?? ' ', { alignment: 'center', fontSize: 8 }),
+              eti(f.categoria ?? ' ', { alignment: 'center', fontSize: 8 }),
+              // NOTA repite el n.º de contrato en los siete días: en el original es
+              // literalmente el mismo valor, no un campo distinto.
+              eti(d.contractNumber || ' ', { alignment: 'center', fontSize: 8 }),
+            ]),
+          ],
+        },
+        layout: REJILLA,
+      },
+
+      // Gastos y anticipos: informativos (NOTA-08), sin flujo de reembolso.
+      {
+        columns: [
+          bloqueGastos('Gastos sostenidos por el técnico', d.gastosTecnico, true, '54%'),
+          bloqueGastos('Anticipo efectuado por el cliente', d.anticiposCliente, false, '46%'),
         ],
+        columnGap: 0,
+      },
+
+      // Declaración, el hueco libre del papel y las tres casillas de firma.
+      {
+        table: {
+          widths: ['*', '*', '*'],
+          body: [
+            [{ ...eti(DECLARACION, { bold: true, alignment: 'center' }), colSpan: 3 }, {}, {}],
+            [{ text: ' ', margin: [0, 20, 0, 20], colSpan: 3 }, {}, {}],
+            [
+              eti('FIRMA DEL TÉCNICO', { bold: true, alignment: 'center' }),
+              eti('FECHA', { bold: true, alignment: 'center' }),
+              eti('TIMBRE Y FIRMA DEL CLIENTE', { bold: true, alignment: 'center' }),
+            ],
+            [
+              casillaFirma(d.firmaTecnico),
+              dato(d.fechaFirma ?? '', { alignment: 'center', margin: [2, 20, 2, 20] }),
+              casillaFirma(d.firmaCliente),
+            ],
+          ],
+        },
+        layout: REJILLA,
       },
     ],
   };
