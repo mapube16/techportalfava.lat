@@ -72,6 +72,9 @@ function Dias({ nota, lang, dias }: { nota: WeeklyNote; lang: Lang; dias: string
   const { t } = useApp();
   const { data } = useApiData(() => noteDays(nota.id), [nota.id]);
   const porFecha = new Map((data ?? []).map((e) => [e.date, e]));
+  // Días registrados pero SIN una sola descripción: es el histórico del Excel, que no
+  // tiene esa columna. Sin decirlo, el hueco se lee como si la app hubiera perdido algo.
+  const sinTexto = !!data?.length && data.every((e) => !e.description);
 
   return (
     <div className="px-4.5 py-2">
@@ -87,13 +90,22 @@ function Dias({ nota, lang, dias }: { nota: WeeklyNote; lang: Lang; dias: string
             </div>
             <div className="flex-1 text-[12.5px] text-muted-foreground leading-relaxed min-w-0">
               {e?.description ?? ''}
+              {e?.machine ? <span className="text-ink-2">{e.machine}</span> : null}
               {e?.commessaShort ? (
                 <span className="ml-2 font-mono text-[11px] text-primary">{e.commessaShort}</span>
+              ) : null}
+              {e?.inFactory ? (
+                <span className="ml-2 text-[11px] text-muted-foreground">· {t.log_in_factory}</span>
               ) : null}
             </div>
           </div>
         );
       })}
+      {sinTexto ? (
+        <div className="border-t border-border pt-2.5 pb-1 text-[11.5px] text-muted-foreground">
+          {t.hist_no_desc}
+        </div>
+      ) : null}
     </div>
   );
 }

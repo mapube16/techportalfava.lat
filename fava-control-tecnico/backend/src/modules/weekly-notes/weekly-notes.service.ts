@@ -226,7 +226,8 @@ export class WeeklyNotesService {
         description: true,
         conceptCode: true,
         inFactory: true,
-        order: { select: { commessaShort: true } },
+        sourceMachine: true,
+        order: { select: { label: true, commessaShort: true } },
       },
       orderBy: { date: 'asc' },
     });
@@ -237,6 +238,14 @@ export class WeeklyNotesService {
       description: e.description,
       inFactory: e.inFactory,
       commessaShort: e.order?.commessaShort ?? null,
+      /**
+       * La máquina contratada si la hay y, si no, el texto CRUDO de la columna
+       * «Maquina» del Excel. En el histórico solo 437 de 6.573 jornadas tienen orden,
+       * pero 1.013 traen ese texto: enseñarlo es la diferencia entre una fila que dice
+       * algo y una fila vacía. Va aparte de `commessaShort` porque no es lo mismo — uno
+       * es un dato del sistema y el otro es lo que alguien escribió a mano.
+       */
+      machine: e.order?.label ?? e.sourceMachine,
     }));
   }
 

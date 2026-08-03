@@ -96,6 +96,8 @@ export interface DiaNota {
   description: string | null;
   inFactory: boolean;
   commessaShort: string | null;
+  /** La máquina contratada, o el texto crudo del Excel en las jornadas migradas. */
+  machine: string | null;
 }
 
 /**
