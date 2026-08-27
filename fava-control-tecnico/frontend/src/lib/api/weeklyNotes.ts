@@ -43,8 +43,15 @@ export interface WeeklyNote {
  * La MISMA ruta sirve al admin y al técnico: RLS filtra por `app.technician_id` cuando
  * no es admin, así que no hay dos endpoints ni un parámetro de técnico que falsear.
  */
-export const listNotes = (status?: NoteStatus) =>
-  apiFetch<WeeklyNote[]>(`/weekly-notes${status ? `?status=${status}` : ''}`);
+/** `technicianId` solo lo mandan las pantallas de técnico: ver el comentario del @Get()
+    en weekly-notes.controller.ts (una cuenta admin NO está acotada por RLS). */
+export const listNotes = (status?: NoteStatus, technicianId?: string | null) => {
+  const q = new URLSearchParams();
+  if (status) q.set('status', status);
+  if (technicianId) q.set('technicianId', technicianId);
+  const qs = q.toString();
+  return apiFetch<WeeklyNote[]>(`/weekly-notes${qs ? `?${qs}` : ''}`);
+};
 
 /** NOTA-01: el técnico manda SU semana y recibe las notas ya derivadas, una por proyecto. */
 export const submitWeek = (weekStart: string) =>

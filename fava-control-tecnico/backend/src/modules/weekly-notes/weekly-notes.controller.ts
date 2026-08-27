@@ -88,12 +88,20 @@ export class WeeklyNotesController {
    * La MISMA consulta sirve a la bandeja del admin y a la lista del tecnico: la
    * politica `wn_read` de RLS filtra por `app.technician_id` cuando no es admin, asi
    * que no hacen falta dos endpoints ni un filtro en el servicio.
+   *
+   * `technicianId` existe para el caso en que el que pregunta es LAS DOS COSAS: la
+   * cuenta del seed es T+A+S, y al entrar en «Mis notas» RLS no le acota nada
+   * (is_admin = 'on'), asi que veria las notas de toda la empresa como si fueran suyas
+   * —y solo las 200 mas recientes, con lo que las suyas ni siquiera saldrian—. No
+   * concede nada: quien no es admin ya estaba acotado por el motor.
    */
   @Get()
-  listar(@Query('status') status?: string) {
+  listar(@Query('status') status?: string, @Query('technicianId') technicianId?: string) {
     if (status !== undefined && !(ESTADOS as readonly string[]).includes(status))
       throw new BadRequestException('ESTADO_INVALIDO');
-    return this.service.listar(status);
+    if (technicianId !== undefined && !UUID.test(technicianId))
+      throw new BadRequestException('TECNICO_INVALIDO');
+    return this.service.listar(status, technicianId);
   }
 
   @Get(':id')

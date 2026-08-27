@@ -8,10 +8,16 @@ import { listNotes } from '../lib/api/weeklyNotes';
 export default function Home() {
   const { state, t, go, patch } = useApp();
 
-  // Las suyas y solo las suyas: lo garantiza la política `wn_read` de RLS en el motor,
-  // no un filtro por nombre —que además se rompía en cuanto dos técnicos se llamaban
-  // parecido, como Leomar y Leomir Klein—.
-  const { data: mine } = useApiData(() => listNotes(), [state.dataVersion]);
+  // Las suyas y solo las suyas. Normalmente lo garantiza la política `wn_read` de RLS
+  // en el motor —no un filtro por nombre, que se rompía en cuanto dos técnicos se
+  // llamaban parecido, como Leomar y Leomir Klein—. La excepción es una cuenta que
+  // ADEMÁS es admin: lleva `is_admin = 'on'` y RLS no le acota nada, así que el id va
+  // explícito. Sin vínculo a técnico no hay notas propias y no se pide nada.
+  const miTecnico = state.me?.status === 'ok' ? state.me.user.technicianId : null;
+  const { data: mine } = useApiData(
+    () => (miTecnico ? listNotes(undefined, miTecnico) : Promise.resolve([])),
+    [miTecnico, state.dataVersion],
+  );
 
   // Días registrados esta semana: los que YA tienen concepto en las notas propias
   // (borrador o enviado, da igual el proyecto). Sustituye al `reg = 4` fijo del mock.

@@ -18,12 +18,18 @@ import type { WeeklyNote } from '../lib/api/weeklyNotes';
  * trabajo en dos obras la misma semana hay dos notas y dos clientes, y en la pantalla de
  * la semana no hay forma de decir cual de los dos esta firmando.
  *
- * No hace falta filtrar por tecnico: la politica `wn_read` de RLS ya lo hace en el
- * motor. Un filtro aqui seria una segunda verdad que puede desincronizarse.
+ * El filtro por tecnico va explicito, y no es una segunda verdad frente a RLS: la
+ * politica `wn_read` acota a `app.technician_id` SOLO cuando el que pregunta no es
+ * admin. Una cuenta que es tecnico Y admin a la vez (la del seed es T+A+S) lleva
+ * `is_admin = 'on'` y veria aqui las notas de toda la empresa.
  */
 export default function Notes() {
   const { state, t, go, patch, showToast } = useApp();
-  const { data, error } = useApiData(() => listNotes(), [state.dataVersion]);
+  const miTecnico = state.me?.status === 'ok' ? state.me.user.technicianId : null;
+  const { data, error } = useApiData(
+    () => (miTecnico ? listNotes(undefined, miTecnico) : Promise.resolve([])),
+    [miTecnico, state.dataVersion],
+  );
   const [firmando, setFirmando] = useState<WeeklyNote | null>(null);
   const [errPdf, setErrPdf] = useState<string | null>(null);
 

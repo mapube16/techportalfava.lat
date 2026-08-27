@@ -128,17 +128,22 @@ export default function Layout() {
   const mk = (key: string, route: Route, icon: string, badge?: number): NavItem => ({
     key, route, icon: svg(ICON[icon], { w: 17 }), label: tr['nav_' + key], badge,
   });
+  // El menu sale de TODOS los roles de la cuenta, no del mas alto. `state.role` es el
+  // rol de entrada (a que pantalla aterrizas) y solo eso: mientras el menu se armaba
+  // con el, la cuenta del seed —que es T+A+S— no veia jamas el grupo de Tecnico,
+  // porque 'S' gana el desempate y `role === 'T'` era falso para ella.
+  const tiene = (r: Role) => state.myRoles.includes(r);
   const groups: { title: string; items: NavItem[] }[] = [];
-  if (state.role === 'T') {
+  if (tiene('T')) {
     groups.push({ title: t.grp_tecnico, items: [mk('home', 'home', 'home'), mk('week', 'week', 'doc'), mk('notes', 'notes', 'doc')] });
   }
-  if (state.role === 'A' || state.role === 'S') {
+  if (tiene('A') || tiene('S')) {
     groups.push({
       title: t.grp_admin,
       items: [mk('inbox', 'inbox', 'inbox', count), mk('allnotes', 'allnotes', 'doc'), mk('projects', 'projects', 'folder'), mk('techs', 'techs', 'users'), mk('users', 'users', 'users'), mk('kpis', 'kpis', 'chart')],
     });
   }
-  if (state.role === 'S') {
+  if (tiene('S')) {
     groups.push({ title: t.grp_super, items: [mk('audit', 'audit', 'shield'), mk('config', 'config', 'gear')] });
   }
 

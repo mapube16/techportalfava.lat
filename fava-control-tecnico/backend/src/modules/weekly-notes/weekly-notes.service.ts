@@ -177,10 +177,14 @@ export class WeeklyNotesService {
     return notas;
   }
 
-  /** La bandeja del admin y la lista del técnico son la MISMA consulta: RLS filtra. */
-  async listar(status?: string) {
+  /**
+   * La bandeja del admin y la lista del técnico son la MISMA consulta: RLS filtra.
+   * Salvo cuando quien pregunta es admin Y técnico a la vez — ahí RLS no acota y el
+   * `technicianId` explícito es lo que hace que «mis notas» sean las suyas.
+   */
+  async listar(status?: string, technicianId?: string) {
     const filas = await this.prisma.client.weeklyNote.findMany({
-      where: status ? { status } : {},
+      where: { ...(status ? { status } : {}), ...(technicianId ? { technicianId } : {}) },
       select: NOTA,
       orderBy: [{ weekStart: 'desc' }, { id: 'asc' }],
       take: 200,
