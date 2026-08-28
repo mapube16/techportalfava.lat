@@ -16,5 +16,8 @@
     "check:no-free-text": "node scripts/check-no-free-text.mjs",
     "check:fecha-servidor": "node scripts/check-fecha-servidor.mjs",
     "check:iconos": "node scripts/check-iconos.mjs"
+  },
+  "devDependencies": {
+    "railway": "^3.11.0"
   }
 }
