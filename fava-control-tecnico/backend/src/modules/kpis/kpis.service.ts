@@ -88,6 +88,13 @@ export interface Utilizacion {
   excluded: number;
   /** Días futuros que el Excel dejó pre-rellenados y que NO entran. Se muestra en pantalla. */
   futureExcluded: number;
+  /**
+   * Cuántos de los días contados están todavía en `submitted`, esperando que un admin
+   * los apruebe. Se cuenta y se devuelve en vez de esconderlo: el indicador incluye
+   * trabajo que el técnico declaró y nadie ha validado aún, y quien lo lee tiene
+   * derecho a saber qué parte es.
+   */
+  pendingApproval: number;
   denominator: number;
   utilizationPct: number | null;
 }
@@ -123,9 +130,20 @@ export class KpisService {
    * sin despeinarse y lo que viaja son las ~1.500 combinaciones que existen de verdad,
    * no el producto cartesiano de proyectos × técnicos × meses × conceptos.
    *
-   * `status = 'approved'`, coherente con KPI-01 y con la agregación de vendido/
-   * ejecutado: un borrador no es un día ejecutado. Todo el histórico migrado entra
-   * como aprobado, que es lo que es — un hecho ya cerrado.
+   * QUÉ CUENTA COMO EJECUTADO: `submitted` Y `approved`, no solo `approved`.
+   *
+   * Antes era solo `approved` y con el histórico migrado daba igual — entró todo
+   * aprobado. Deja de dar igual en cuanto los técnicos usan la app: su semana se
+   * queda en `submitted` hasta que un admin la aprueba, así que el tablero iría
+   * siempre por detrás de la realidad y, durante la adopción, parecería vacío.
+   * Un día enviado ES un día trabajado; lo que falta es validarlo, no hacerlo.
+   *
+   * `draft` y `returned` siguen fuera, y por el mismo criterio: uno todavía se está
+   * escribiendo y el otro está en corrección. Ninguno de los dos es una afirmación
+   * del técnico de que la semana esté como debe.
+   *
+   * Cuántos de esos días esperan aprobación se devuelve aparte (`pendingApproval`
+   * en KPI-02), para que el número se pueda leer sin suponer que todo está validado.
    */
   async cuadricula(year: number | null): Promise<Cuadricula> {
     const [filas, conceptos] = await Promise.all([
@@ -140,7 +158,7 @@ export class KpisService {
           FROM daily_entries de
           JOIN technicians t ON t.id = de.technician_id
           LEFT JOIN projects p ON p.id = de.project_id
-         WHERE de.status = 'approved'
+         WHERE de.status IN ('submitted', 'approved')
            AND de.concept_code IS NOT NULL
            AND (${year}::int IS NULL OR EXTRACT(YEAR FROM de.date)::int = ${year}::int)
          GROUP BY 1, 2, 3, 4, 5, 6
@@ -251,7 +269,7 @@ export class KpisService {
              COUNT(*)::int  AS days
         FROM daily_entries de
         JOIN technicians t ON t.id = de.technician_id
-       WHERE de.status = 'approved'
+       WHERE de.status IN ('submitted', 'approved')
          AND de.concept_code IS NOT NULL
          AND de.date <= CURRENT_DATE
          AND (${year}::int IS NULL OR EXTRACT(YEAR FROM de.date)::int = ${year}::int)
@@ -261,10 +279,22 @@ export class KpisService {
     // Se cuentan aparte y se devuelven: descartarlas en silencio dejaría al lector sin
     // saber por qué la cuadrícula (KPI-07, que sí las muestra porque reproduce el pivot
     // de Andrea) y esta pantalla no dan el mismo total de días.
+
+    // La parte del indicador que aún no ha validado nadie. Mismo recorte que arriba
+    // (con concepto, no futura) para que sea un subconjunto honesto del denominador.
+    const [{ n: pendientes }] = await this.prisma.client.$queryRaw<{ n: number }[]>`
+      SELECT COUNT(*)::int AS n
+        FROM daily_entries
+       WHERE status = 'submitted'
+         AND concept_code IS NOT NULL
+         AND date <= CURRENT_DATE
+         AND (${year}::int IS NULL OR EXTRACT(YEAR FROM date)::int = ${year}::int)
+    `;
+
     const [{ n: futuras }] = await this.prisma.client.$queryRaw<{ n: number }[]>`
       SELECT COUNT(*)::int AS n
         FROM daily_entries
-       WHERE status = 'approved'
+       WHERE status IN ('submitted', 'approved')
          AND concept_code IS NOT NULL
          AND date > CURRENT_DATE
          AND (${year}::int IS NULL OR EXTRACT(YEAR FROM date)::int = ${year}::int)
@@ -314,6 +344,7 @@ export class KpisService {
       productive,
       excluded: tecnicos.reduce((s, t) => s + t.excluded, 0),
       futureExcluded: futuras,
+      pendingApproval: pendientes,
       denominator,
       utilizationPct: denominator ? Math.round((productive / denominator) * 1000) / 10 : null,
     };
@@ -324,7 +355,7 @@ export class KpisService {
     const filas = await this.prisma.client.$queryRaw<{ year: number }[]>`
       SELECT DISTINCT EXTRACT(YEAR FROM date)::int AS year
         FROM daily_entries
-       WHERE status = 'approved'
+       WHERE status IN ('submitted', 'approved')
        ORDER BY 1 DESC
     `;
     return filas.map((f) => f.year);

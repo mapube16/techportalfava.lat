@@ -10,9 +10,17 @@ import { FUERA_DEL_DENOMINADOR, KpisService, NO_PRODUCTIVOS, PRODUCTIVOS } from 
  * Lo que sí queda blindado aquí es que la regla no se pueda cambiar sin querer.
  */
 
-/** El `$queryRaw` del servicio se llama dos veces: las filas y el conteo de futuras. */
-function servicioCon(filas: unknown[], futuras = 0) {
-  const queryRaw = jest.fn().mockResolvedValueOnce(filas).mockResolvedValueOnce([{ n: futuras }]);
+/**
+ * El `$queryRaw` del servicio se llama TRES veces y en este orden: las filas, los días
+ * que esperan aprobación, y los futuros que quedan fuera. El orden importa: si alguien
+ * añade una consulta en medio, estos casos se caen en vez de mentir.
+ */
+function servicioCon(filas: unknown[], futuras = 0, pendientes = 0) {
+  const queryRaw = jest
+    .fn()
+    .mockResolvedValueOnce(filas)
+    .mockResolvedValueOnce([{ n: pendientes }])
+    .mockResolvedValueOnce([{ n: futuras }]);
   return new KpisService({ client: { $queryRaw: queryRaw } } as never);
 }
 
@@ -86,5 +94,18 @@ describe('KpisService.utilizacion', () => {
   it('informa cuántos días futuros dejó fuera', async () => {
     const u = await servicioCon([fila('Ana', 'DC', 10)], 1220).utilizacion(2026);
     expect(u.futureExcluded).toBe(1220);
+  });
+
+  /**
+   * Un día ENVIADO es un día trabajado: lo que falta es que un admin lo valide, no que
+   * ocurra. Contar solo los aprobados dejaba el tablero por detrás de la realidad en
+   * cuanto los técnicos empiezan a usar la app — y vacío durante la adopción.
+   */
+  it('los días enviados cuentan como ejecutados, y se dice cuántos esperan aprobación', async () => {
+    const u = await servicioCon([fila('Ana', 'DC', 10)], 0, 4).utilizacion(2026);
+    expect(u.productive).toBe(10);
+    expect(u.pendingApproval).toBe(4);
+    // El pendiente es un SUBCONJUNTO de lo contado, no algo que se sume aparte.
+    expect(u.pendingApproval).toBeLessThanOrEqual(u.denominator);
   });
 });
