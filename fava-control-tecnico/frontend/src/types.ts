@@ -5,7 +5,15 @@ export type Role = 'T' | 'A' | 'S';
 export type Route =
   | 'home' | 'week' | 'notes' | 'inbox' | 'allnotes' | 'projects' | 'project'
   | 'techs' | 'users' | 'kpis' | 'audit' | 'config';
-export type NoteStatus = 'draft' | 'sent' | 'approved' | 'returned';
+/**
+ * El vocabulario del SERVIDOR, que es el unico real: lo impone el CHECK
+ * `wn_status_valido` de la migracion. El prototipo decia `sent` y eso sobrevivio en el
+ * mock mucho despues de que la API existiera; como las pantallas pasaban el estado a
+ * `StatusPill` con `as never`, el compilador no podia avisar y la unica senal era un
+ * `undefined is not iterable` en produccion — que solo aparecio el dia que existio la
+ * primera nota `submitted` de verdad.
+ */
+export type NoteStatus = 'draft' | 'submitted' | 'approved' | 'returned';
 
 // Los tipos del dominio que ya tiene backend viven junto a su cliente tipado
 // (`lib/api/*.ts`), que es donde está el contrato: proyecto, fase, matriz, técnico,

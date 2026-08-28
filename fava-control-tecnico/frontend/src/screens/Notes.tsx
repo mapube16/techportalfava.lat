@@ -79,7 +79,7 @@ export default function Notes() {
                     {n.roleTypeName ? ` · ${n.roleTypeName}` : ''}
                   </div>
                 </div>
-                <StatusPill st={n.status as never} t={t} />
+                <StatusPill st={n.status} t={t} />
                 {/* Solo se firma lo ENVIADO y todavia sin firma: el servidor rechaza lo
                     demas, y ofrecer el boton igual seria prometer algo que no pasa. */}
                 {n.status === 'submitted' && !n.signed ? (

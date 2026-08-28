@@ -210,7 +210,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadTimer.current = window.setTimeout(() => patch({ route: r, loading: false }), 320);
   };
 
-  const inboxCount = () => stateRef.current.notes.filter((n) => n.status === 'sent').length;
+  const inboxCount = () => stateRef.current.notes.filter((n) => n.status === 'submitted').length;
 
   // loginRedirect sale de la página; al volver, el efecto de arriba retoma la sesión.
   const login = () => {
@@ -289,7 +289,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const resend = (id: string) => {
-    setState((s) => ({ ...s, notes: s.notes.map((n) => (n.id === id ? { ...n, status: 'sent', comment: '' } : n)) }));
+    setState((s) => ({ ...s, notes: s.notes.map((n) => (n.id === id ? { ...n, status: 'submitted', comment: '' } : n)) }));
     showToast('submitted');
   };
 

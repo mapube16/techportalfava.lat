@@ -80,12 +80,14 @@ export function StatusPill({ st, t }: { st: NoteStatus; t: Dict }) {
   // al escanear y la purgaría. Las cuatro parejas van escritas enteras.
   const map: Record<NoteStatus, [string, string]> = {
     draft: ['text-draft bg-draft-tint', 'bg-draft'],
-    sent: ['text-sent bg-sent-tint', 'bg-sent'],
+    submitted: ['text-sent bg-sent-tint', 'bg-sent'],
     approved: ['text-ok bg-ok-tint', 'bg-ok'],
     returned: ['text-warn bg-warn-tint', 'bg-warn'],
   };
   const [pill, punto] = map[st];
-  const lbl = { draft: t.st_draft, sent: t.st_sent, approved: t.st_approved, returned: t.st_returned }[st];
+  // La CLAVE del diccionario sigue siendo `st_sent`: es una etiqueta, no un estado,
+  // y renombrarla en los tres idiomas no arregla nada.
+  const lbl = { draft: t.st_draft, submitted: t.st_sent, approved: t.st_approved, returned: t.st_returned }[st];
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-full text-xs font-semibold ${pill}`}>
       <span className={`size-1.5 rounded-full ${punto}`} />

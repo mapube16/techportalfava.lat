@@ -98,7 +98,7 @@ export default function Home() {
                     “{n.returnComment}”
                   </span>
                 ) : null}
-                <StatusPill st={n.status as never} t={t} />
+                <StatusPill st={n.status} t={t} />
               </div>
             ))
           ) : (

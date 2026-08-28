@@ -20,9 +20,9 @@ import type { AuditRow, DayEntry, Expense, Note } from './types';
 export const CURRENT_TECH = 'Ivan Cortés';
 
 export const NOTES: Note[] = [
-  { id: 'n1', tech: 'Leomar Klein', ini: 'LK', project: 'Lucchetti Chile', week: '20–26 Jul 2026', status: 'sent', days: 7, expenses: 2, comment: '' },
-  { id: 'n2', tech: 'Marco Ferro', ini: 'MF', project: 'Molino Cibao Bocel — RD', week: '20–26 Jul 2026', status: 'sent', days: 6, expenses: 1, comment: '' },
-  { id: 'n3', tech: 'Diego Salas', ini: 'DS', project: 'Barilla USA — Ames', week: '20–26 Jul 2026', status: 'sent', days: 7, expenses: 4, comment: '' },
+  { id: 'n1', tech: 'Leomar Klein', ini: 'LK', project: 'Lucchetti Chile', week: '20–26 Jul 2026', status: 'submitted', days: 7, expenses: 2, comment: '' },
+  { id: 'n2', tech: 'Marco Ferro', ini: 'MF', project: 'Molino Cibao Bocel — RD', week: '20–26 Jul 2026', status: 'submitted', days: 6, expenses: 1, comment: '' },
+  { id: 'n3', tech: 'Diego Salas', ini: 'DS', project: 'Barilla USA — Ames', week: '20–26 Jul 2026', status: 'submitted', days: 7, expenses: 4, comment: '' },
   { id: 'n4', tech: 'Anahí Rueda', ini: 'AR', project: 'Lucchetti Chile', week: '13–19 Jul 2026', status: 'approved', days: 7, expenses: 0, comment: '' },
   { id: 'n5', tech: 'Ivan Cortés', ini: 'IC', project: 'Molino Cibao Bocel — RD', week: '13–19 Jul 2026', status: 'returned', days: 5, expenses: 2, comment: 'Falta la descripción del trabajo del miércoles y el gasto de peaje sin comprobante.' },
   { id: 'n6', tech: 'Ivan Cortés', ini: 'IC', project: 'Molino Cibao Bocel — RD', week: '20–26 Jul 2026', status: 'draft', days: 4, expenses: 1, comment: '' },

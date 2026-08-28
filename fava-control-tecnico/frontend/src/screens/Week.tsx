@@ -88,7 +88,7 @@ export default function Week() {
             </div>
             {nav(1, adelanteBloqueado)}
           </div>
-          <StatusPill st={estado as never} t={t} />
+          <StatusPill st={estado} t={t} />
         </div>
 
         <div>

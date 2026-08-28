@@ -273,7 +273,7 @@ export default function Inbox({ archivo = false }: { archivo?: boolean }) {
             {cur.roleTypeName ? ` · ${cur.roleTypeName}` : ''}
           </div>
         </div>
-        <StatusPill st={cur.status as never} t={t} />
+        <StatusPill st={cur.status} t={t} />
       </div>
 
       <Dias nota={cur} lang={state.lang} dias={diasDeSemana(cur.weekStart)} />
