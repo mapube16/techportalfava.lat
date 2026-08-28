@@ -17,6 +17,7 @@
     "notificar": "tsx scripts/notificar.ts",
     "migrate:excel": "tsx prisma/migrate-excel.ts",
     "migrate:ordenes": "tsx prisma/migrate-ordenes.ts",
+    "migrate:vendido": "tsx prisma/migrate-vendido.ts",
     "migrate:notas": "tsx prisma/migrate-notas.ts",
     "informe": "tsx scripts/informe-excel.ts",
     "cuentas": "tsx scripts/crear-cuentas.ts",

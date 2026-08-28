@@ -1,0 +1,56 @@
+{"hoja": "Lucchetti Chile ", "fila": 11, "commessa": "343298", "fase": "MONTAJE", "rol": "Supervisore", "tecnico": "Luca Carraro", "vendido": 10, "ejecutado": 6, "ordinal": 1}
+{"hoja": "Lucchetti Chile ", "fila": 12, "commessa": "343298", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "Leomar Klein", "vendido": 144, "ejecutado": 62, "ordinal": 2}
+{"hoja": "Lucchetti Chile ", "fila": 13, "commessa": "343298", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "Vito Antonio Accini", "vendido": null, "ejecutado": 56, "ordinal": 3}
+{"hoja": "Lucchetti Chile ", "fila": 14, "commessa": "343298", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "Diego Bautista", "vendido": 104, "ejecutado": 69, "ordinal": 4}
+{"hoja": "Lucchetti Chile ", "fila": 15, "commessa": "343298", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "Felice Ruocco", "vendido": null, "ejecutado": 29, "ordinal": 5}
+{"hoja": "Lucchetti Chile ", "fila": 16, "commessa": "343298", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "Andrea Scapin", "vendido": null, "ejecutado": 38, "ordinal": 6}
+{"hoja": "Lucchetti Chile ", "fila": 22, "commessa": "343298", "fase": "COLLAUDO", "rol": "Test -", "tecnico": "Andrea Scapin", "vendido": 21, "ejecutado": 38, "ordinal": 1}
+{"hoja": "Lucchetti Chile ", "fila": 23, "commessa": "343298", "fase": "COLLAUDO", "rol": "Sofware", "tecnico": "Ivan cortes", "vendido": 35, "ejecutado": 0, "ordinal": 2}
+{"hoja": "Lucchetti Chile ", "fila": 24, "commessa": "343298", "fase": "COLLAUDO", "rol": "Meccanico", "tecnico": "Leomar Klein", "vendido": 56, "ejecutado": 0, "ordinal": 3}
+{"hoja": "JAV Brasil", "fila": 5, "commessa": "342898", "fase": "MONTAJE", "rol": "Supervisore", "tecnico": "Luca Carraro", "vendido": 15, "ejecutado": 6, "ordinal": 1}
+{"hoja": "JAV Brasil", "fila": 6, "commessa": "342898", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "Camilo Cruz", "vendido": 182, "ejecutado": 120, "ordinal": 2}
+{"hoja": "JAV Brasil", "fila": 7, "commessa": "342898", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "Felipe Sena", "vendido": null, "ejecutado": 56, "ordinal": 3}
+{"hoja": "JAV Brasil", "fila": 8, "commessa": "342898", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "Andrea Scapin", "vendido": 130, "ejecutado": 55, "ordinal": 4}
+{"hoja": "JAV Brasil", "fila": 9, "commessa": "342898", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "Fredy Sarmiento", "vendido": null, "ejecutado": 43, "ordinal": 5}
+{"hoja": "JAV Brasil", "fila": 14, "commessa": "342898", "fase": "COLLAUDO", "rol": "Test -", "tecnico": "", "vendido": 23, "ejecutado": 0, "ordinal": 1}
+{"hoja": "JAV Brasil", "fila": 15, "commessa": "342898", "fase": "COLLAUDO", "rol": "Sofware", "tecnico": "", "vendido": 35, "ejecutado": 0, "ordinal": 2}
+{"hoja": "JAV Brasil", "fila": 16, "commessa": "342898", "fase": "COLLAUDO", "rol": "Meccanico", "tecnico": "", "vendido": 58, "ejecutado": 0, "ordinal": 3}
+{"hoja": "JAV Brasil", "fila": 23, "commessa": "343098", "fase": "MONTAJE", "rol": "Supervisore", "tecnico": "Luca Carraro", "vendido": 10, "ejecutado": 0, "ordinal": 1}
+{"hoja": "JAV Brasil", "fila": 24, "commessa": "343098", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "Camilo Cruz", "vendido": 98, "ejecutado": 45, "ordinal": 2}
+{"hoja": "JAV Brasil", "fila": 25, "commessa": "343098", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "Felipe", "vendido": null, "ejecutado": 41, "ordinal": 3}
+{"hoja": "JAV Brasil", "fila": 26, "commessa": "343098", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "", "vendido": 92, "ejecutado": 0, "ordinal": 4}
+{"hoja": "JAV Brasil", "fila": 27, "commessa": "343098", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "", "vendido": null, "ejecutado": 0, "ordinal": 5}
+{"hoja": "JAV Brasil", "fila": 32, "commessa": "343098", "fase": "COLLAUDO", "rol": "Test -", "tecnico": "", "vendido": 21, "ejecutado": 0, "ordinal": 1}
+{"hoja": "JAV Brasil", "fila": 33, "commessa": "343098", "fase": "COLLAUDO", "rol": "Sofware", "tecnico": "", "vendido": 35, "ejecutado": 0, "ordinal": 2}
+{"hoja": "JAV Brasil", "fila": 34, "commessa": "343098", "fase": "COLLAUDO", "rol": "Meccanico", "tecnico": "", "vendido": 56, "ejecutado": 0, "ordinal": 3}
+{"hoja": "JAV Brasil", "fila": 40, "commessa": "342998", "fase": "MONTAJE", "rol": "Supervisore", "tecnico": "Luca Carraro", "vendido": 10, "ejecutado": 0, "ordinal": 1}
+{"hoja": "JAV Brasil", "fila": 41, "commessa": "342998", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "Leomir Klein", "vendido": 182, "ejecutado": 87, "ordinal": 2}
+{"hoja": "JAV Brasil", "fila": 42, "commessa": "342998", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "Felipe Sena", "vendido": null, "ejecutado": 94, "ordinal": 3}
+{"hoja": "JAV Brasil", "fila": 43, "commessa": "342998", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "Andrea Scapin", "vendido": 130, "ejecutado": 20, "ordinal": 4}
+{"hoja": "JAV Brasil", "fila": 44, "commessa": "342998", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "Fredy Sarmiento", "vendido": null, "ejecutado": 109, "ordinal": 5}
+{"hoja": "JAV Brasil", "fila": 49, "commessa": "342998", "fase": "COLLAUDO", "rol": "Test -", "tecnico": "", "vendido": 23, "ejecutado": 0, "ordinal": 1}
+{"hoja": "JAV Brasil", "fila": 50, "commessa": "342998", "fase": "COLLAUDO", "rol": "Sofware", "tecnico": "", "vendido": 35, "ejecutado": 0, "ordinal": 2}
+{"hoja": "JAV Brasil", "fila": 51, "commessa": "342998", "fase": "COLLAUDO", "rol": "Meccanico", "tecnico": "", "vendido": 58, "ejecutado": 0, "ordinal": 3}
+{"hoja": "Cibao -Rep D", "fila": 6, "commessa": "345598", "fase": "MONTAJE", "rol": "Supervisore", "tecnico": "Luca Carraro", "vendido": 10, "ejecutado": 0, "ordinal": 1}
+{"hoja": "Cibao -Rep D", "fila": 7, "commessa": "345598", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "Giuliano Lodi", "vendido": 156, "ejecutado": 103, "ordinal": 2}
+{"hoja": "Cibao -Rep D", "fila": 8, "commessa": "345598", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "xxxxxx", "vendido": null, "ejecutado": 0, "ordinal": 3}
+{"hoja": "Cibao -Rep D", "fila": 9, "commessa": "345598", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "Ivan Cortes", "vendido": 104, "ejecutado": 77, "ordinal": 4}
+{"hoja": "Cibao -Rep D", "fila": 10, "commessa": "345598", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "Andrea scapin", "vendido": null, "ejecutado": 16, "ordinal": 5}
+{"hoja": "Cibao -Rep D", "fila": 16, "commessa": "345598", "fase": "COLLAUDO", "rol": "Test -", "tecnico": "", "vendido": 21, "ejecutado": 0, "ordinal": 1}
+{"hoja": "Cibao -Rep D", "fila": 17, "commessa": "345598", "fase": "COLLAUDO", "rol": "Sofware", "tecnico": "Ivan Cortes", "vendido": 35, "ejecutado": 0, "ordinal": 2}
+{"hoja": "Cibao -Rep D", "fila": 18, "commessa": "345598", "fase": "COLLAUDO", "rol": "Meccanico", "tecnico": "", "vendido": 56, "ejecutado": 0, "ordinal": 3}
+{"hoja": "Pasta Sole - Ex Molino Fenix", "fila": 10, "commessa": "343498", "fase": "MONTAJE", "rol": "Supervisore", "tecnico": "Luca Carraro", "vendido": 10, "ejecutado": 2, "ordinal": 1}
+{"hoja": "Pasta Sole - Ex Molino Fenix", "fila": 11, "commessa": "343498", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "Luca Carraro", "vendido": 156, "ejecutado": 98, "ordinal": 2}
+{"hoja": "Pasta Sole - Ex Molino Fenix", "fila": 12, "commessa": "343498", "fase": "MONTAJE", "rol": "Meccanico", "tecnico": "", "vendido": null, "ejecutado": 0, "ordinal": 3}
+{"hoja": "Pasta Sole - Ex Molino Fenix", "fila": 13, "commessa": "343498", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "Felipe Ruoco", "vendido": 104, "ejecutado": 96, "ordinal": 4}
+{"hoja": "Pasta Sole - Ex Molino Fenix", "fila": 14, "commessa": "343498", "fase": "MONTAJE", "rol": "Elettricista", "tecnico": "", "vendido": null, "ejecutado": 0, "ordinal": 5}
+{"hoja": "Pasta Sole - Ex Molino Fenix", "fila": 21, "commessa": "343498", "fase": "COLLAUDO", "rol": "Test -", "tecnico": "", "vendido": 21, "ejecutado": 0, "ordinal": 1}
+{"hoja": "Pasta Sole - Ex Molino Fenix", "fila": 22, "commessa": "343498", "fase": "COLLAUDO", "rol": "Sofware", "tecnico": "", "vendido": 35, "ejecutado": 0, "ordinal": 2}
+{"hoja": "Pasta Sole - Ex Molino Fenix", "fila": 23, "commessa": "343498", "fase": "COLLAUDO", "rol": "Meccanico", "tecnico": "", "vendido": 56, "ejecutado": 0, "ordinal": 3}
+{"hoja": "J Macedo Brasil- final", "fila": 11, "commessa": null, "fase": "MONTAJE", "rol": "Manager Cantiere FLA", "tecnico": "Luca Carraro", "vendido": 45, "ejecutado": 45, "ordinal": 1}
+{"hoja": "J Macedo Brasil- final", "fila": 12, "commessa": null, "fase": "MONTAJE", "rol": "Meccatronico", "tecnico": "Leomar / Camilo", "vendido": 363, "ejecutado": 338, "ordinal": 2}
+{"hoja": "J Macedo Brasil- final", "fila": 13, "commessa": null, "fase": "MONTAJE", "rol": "Capo Elettricista", "tecnico": "Ivan Cortes", "vendido": 120, "ejecutado": 154, "ordinal": 3}
+{"hoja": "J Macedo Brasil- final", "fila": 14, "commessa": null, "fase": "MONTAJE", "rol": "Electtricista", "tecnico": "Fredy", "vendido": 171, "ejecutado": 132, "ordinal": 4}
+{"hoja": "J Macedo Brasil- final", "fila": 15, "commessa": null, "fase": "MONTAJE", "rol": "Auto Meccanico", "tecnico": "Felipe Sena", "vendido": 0, "ejecutado": 0, "ordinal": 5}
+{"hoja": "J Macedo Brasil- final", "fila": 18, "commessa": null, "fase": "COLLAUDO", "rol": "Softwerista", "tecnico": "Ivan Cortes", "vendido": 187, "ejecutado": 166, "ordinal": 1}
+{"hoja": "J Macedo Brasil- final", "fila": 19, "commessa": null, "fase": "COLLAUDO", "rol": "Meccanico", "tecnico": "Leomar / Camilo", "vendido": 187, "ejecutado": 118, "ordinal": 2}
