@@ -75,14 +75,14 @@ export default function InviteUserModal() {
             <div className="text-lg font-bold">{t.invite_title}</div>
             <div className="text-[12.5px] text-muted-foreground mt-0.5 max-w-[320px]">{t.invite_sub}</div>
           </div>
-          <Button variant="outline" size="icon" onClick={close} className="size-11 md:size-9">
+          <Button variant="outline" size="icon" onClick={close} aria-label={t.pdf_close} className="size-11 md:size-9">
             <X className="size-4" />
           </Button>
         </div>
 
         <div className="px-5.5 pb-5.5 pt-3.5 flex flex-col gap-3.5">
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_name}</label>
+          <label className="block">
+            <span className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_name}</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -90,10 +90,10 @@ export default function InviteUserModal() {
               className={errors.name ? inputError : inputStyle}
             />
             {errors.name ? <FieldError msg={t.field_req} /> : null}
-          </div>
+          </label>
 
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_email}</label>
+          <label className="block">
+            <span className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_email}</span>
             <input
               value={mail}
               onChange={(e) => setMail(e.target.value)}
@@ -101,10 +101,12 @@ export default function InviteUserModal() {
               className={errors.mail || errors.mailFmt ? inputError : inputStyle}
             />
             {errors.mail ? <FieldError msg={t.field_req} /> : errors.mailFmt ? <FieldError msg={t.email_invalid} /> : null}
-          </div>
+          </label>
 
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_roles}</label>
+            {/* Botones, no un control de formulario: una <label> aqui no nombraria
+                nada. Es un rotulo, y los botones ya llevan su propio texto. */}
+            <div className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_roles}</div>
             <div className="flex gap-2 flex-wrap">
               {(['T', 'A', 'S'] as Role[]).map((rc) => {
                 const on = roles.includes(rc);
@@ -130,15 +132,15 @@ export default function InviteUserModal() {
             {isSuper ? null : <div className="text-[11.5px] text-muted-foreground mt-1.5">{t.only_super}</div>}
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_tech}</label>
+          <label className="block">
+            <span className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.invite_tech}</span>
             <select value={techId} onChange={(e) => setTechId(e.target.value)} className={inputStyle}>
               <option value="">{t.user_no_link}</option>
               {activos(techs ?? []).map((tc) => (
                 <option key={tc.id} value={tc.id}>{tc.fullName}</option>
               ))}
             </select>
-          </div>
+          </label>
 
           {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
 

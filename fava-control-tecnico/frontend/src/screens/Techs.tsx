@@ -144,7 +144,7 @@ export default function Techs() {
 
   const acciones = (tc: Technician) => (
     <>
-      <Button variant="outline" size="icon" onClick={() => abrirEdicion(tc)} title={t.cat_edit} className="size-11 md:size-9">
+      <Button variant="outline" size="icon" onClick={() => abrirEdicion(tc)} title={t.cat_edit} aria-label={t.cat_edit} className="size-11 md:size-9">
         <Dots w={16} />
       </Button>
       <Button variant="outline" size="sm" onClick={() => conmutarActivo(tc)} className="min-h-11 md:min-h-9 ml-1.5">

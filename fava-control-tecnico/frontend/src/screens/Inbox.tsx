@@ -259,7 +259,7 @@ export default function Inbox({ archivo = false }: { archivo?: boolean }) {
     <Card className="p-0 gap-0 overflow-hidden">
       <div className="flex items-center gap-3 px-4.5 py-4 border-b border-border flex-wrap">
         {movil ? (
-          <Button variant="outline" size="icon" onClick={() => setSelNote(null)} className="size-11 md:size-9">
+          <Button variant="outline" size="icon" onClick={() => setSelNote(null)} aria-label={t.pdf_close} className="size-11 md:size-9">
             ←
           </Button>
         ) : null}

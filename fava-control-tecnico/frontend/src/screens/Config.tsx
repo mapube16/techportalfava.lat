@@ -230,6 +230,7 @@ export default function Config() {
                         size="icon"
                         onClick={() => { setEdit(c.code); setLabelEs(c.labelEs); setLabelIt(c.labelIt); setErr(null); }}
                         title={t.cat_edit}
+                        aria-label={t.cat_edit}
                         className="size-11 md:size-8"
                       >
                         <Dots w={16} />

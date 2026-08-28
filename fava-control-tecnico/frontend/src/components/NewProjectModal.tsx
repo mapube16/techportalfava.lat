@@ -110,11 +110,14 @@ export default function NewProjectModal() {
   };
 
   const field = (label: string, el: ReactNode, e?: boolean, msg?: string) => (
-    <div>
-      <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{label}</label>
+    <label className="block">
+      {/* La etiqueta ENVUELVE al control: asociacion implicita, sin inventar ids.
+          Como hermana no nombraba nada — un lector de pantalla anunciaba el campo
+          sin nombre y pulsar el texto no enfocaba. */}
+      <span className="block text-xs font-semibold text-muted-foreground mb-1.5">{label}</span>
       {el}
       {e ? <FieldError msg={msg || t.field_req} /> : null}
-    </div>
+    </label>
   );
 
   const texto = (v: string, set: (s: string) => void, ph: string, mono?: boolean, err?: boolean) => (
@@ -137,7 +140,7 @@ export default function NewProjectModal() {
             <div className="text-lg font-bold">{t.proj_new}</div>
             <div className="text-[12.5px] text-muted-foreground mt-0.5 max-w-[340px]">{t.proj_new_sub}</div>
           </div>
-          <Button variant="outline" size="icon" onClick={close} className="size-11 md:size-9">
+          <Button variant="outline" size="icon" onClick={close} aria-label={t.pdf_close} className="size-11 md:size-9">
             <X className="size-4" />
           </Button>
         </div>
@@ -171,8 +174,8 @@ export default function NewProjectModal() {
               </select>,
             )}
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.proj_hours}</label>
+          <label className="block">
+            <span className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.proj_hours}</span>
             <div className="relative">
               <input
                 value={hoursRaw}
@@ -187,7 +190,7 @@ export default function NewProjectModal() {
             ) : (
               <div className="text-[11.5px] text-muted-foreground mt-1.5">{t.proj_hours_hint}</div>
             )}
-          </div>
+          </label>
           <div className="grid grid-cols-[1.6fr_1fr] gap-3">
             {field(
               t.order_label,

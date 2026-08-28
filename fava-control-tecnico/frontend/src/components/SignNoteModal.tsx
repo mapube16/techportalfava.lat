@@ -92,10 +92,13 @@ export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onC
   };
 
   const campo = (label: string, valor: string, set: (s: string) => void, ph: string, error?: boolean) => (
-    <div>
-      <label className="block text-xs font-semibold text-muted-foreground mb-1.5">{label}</label>
+    <label className="block">
+      {/* La etiqueta ENVUELVE al control: asociacion implicita, sin inventar ids.
+          Como hermana no nombraba nada — un lector de pantalla anunciaba el campo
+          sin nombre y pulsar el texto no enfocaba. */}
+      <span className="block text-xs font-semibold text-muted-foreground mb-1.5">{label}</span>
       <input value={valor} onChange={(e) => set(e.target.value)} placeholder={ph} className={error ? inputError : inputStyle} />
-    </div>
+    </label>
   );
 
   /** Un bloque de firma: los datos del firmante, el lienzo y el botón de limpiar. */
@@ -178,7 +181,7 @@ export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onC
             <div className="text-lg font-bold">{t.sign_modal_title}</div>
             <div className="text-[12.5px] text-muted-foreground mt-0.5 max-w-[420px]">{t.sign_modal_sub}</div>
           </div>
-          <Button variant="outline" size="icon" onClick={onClose} className="size-11 md:size-9">
+          <Button variant="outline" size="icon" onClick={onClose} aria-label={t.pdf_close} className="size-11 md:size-9">
             <X className="size-4" />
           </Button>
         </div>

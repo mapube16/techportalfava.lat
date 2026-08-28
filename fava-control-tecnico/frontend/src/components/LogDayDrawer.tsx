@@ -100,11 +100,14 @@ export default function LogDayDrawer() {
   };
 
   const field = (label: string, el: ReactNode, err?: boolean) => (
-    <div className="mb-3.5">
-      <label className="block text-[12.5px] font-semibold text-muted-foreground mb-1.5">{label}</label>
+    <label className="block mb-3.5">
+      {/* La etiqueta ENVUELVE al control: asociacion implicita, sin inventar ids.
+          Como hermana no nombraba nada — un lector de pantalla anunciaba el campo
+          sin nombre y pulsar el texto no enfocaba. */}
+      <span className="block text-[12.5px] font-semibold text-muted-foreground mb-1.5">{label}</span>
       {el}
       {err ? <FieldError msg={t.field_req} /> : null}
-    </div>
+    </label>
   );
 
   return (
@@ -124,7 +127,7 @@ export default function LogDayDrawer() {
                 <div className="text-xs text-muted-foreground font-semibold">{t.log_editing}</div>
               ) : null}
             </div>
-            <Button variant="outline" size="icon" onClick={close} className="size-11 md:size-9">
+            <Button variant="outline" size="icon" onClick={close} aria-label={t.pdf_close} className="size-11 md:size-9">
               <X className="size-4" />
             </Button>
           </div>
