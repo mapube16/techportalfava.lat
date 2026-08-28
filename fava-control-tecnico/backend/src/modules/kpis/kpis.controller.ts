@@ -23,6 +23,12 @@ export class KpisController {
     return this.service.cuadricula(anio(year));
   }
 
+  /** KPI-01 y KPI-08: vendido contra ejecutado, por proyecto. */
+  @Get('sold-vs-executed')
+  vendidoEjecutado(@Query('year') year?: string) {
+    return this.service.soldVsExecuted(anio(year));
+  }
+
   /** KPI-02. Mismo criterio de `year` que la cuadrícula. */
   @Get('utilization')
   utilizacion(@Query('year') year?: string) {

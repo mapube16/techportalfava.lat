@@ -47,6 +47,26 @@ interface FilaCruda {
   days: number;
 }
 
+// ── KPI-01 / KPI-08: vendido contra ejecutado ──
+
+export interface FilaVendidoEjecutado {
+  role: string;
+  /** `null` = el ejecutado no dice de que fase es. Ver la nota de `soldVsExecuted`. */
+  phase: string | null;
+  sold: number;
+  executed: number;
+}
+
+export interface ProyectoVendidoEjecutado {
+  id: string;
+  name: string;
+  isActive: boolean;
+  normalHours: number | null;
+  rows: FilaVendidoEjecutado[];
+  sold: number;
+  executed: number;
+}
+
 // ── KPI-02: la definición del denominador, en UN solo sitio ──
 //
 // Es la parte discutible del indicador y por eso está aquí arriba, nombrada y
@@ -348,6 +368,84 @@ export class KpisService {
       denominator,
       utilizationPct: denominator ? Math.round((productive / denominator) * 1000) / 10 : null,
     };
+  }
+
+
+  /**
+   * KPI-01 y KPI-08 — lo VENDIDO del contrato contra lo EJECUTADO en la bitácora.
+   *
+   * Es el número con el que se negocia, y hasta ahora la pantalla lo inventaba.
+   *
+   * LA ASIMETRÍA QUE HAY QUE CONOCER PARA LEER ESTO: el vendido SÍ tiene fase
+   * (`order_sold_days.phase`, que sale de los bloques «Supervisione meccanica» y
+   * «Supervisione software» del Excel), pero el ejecutado casi nunca — la hoja diaria
+   * no registra la fase, así que `daily_entries.phase` viene NULL en la mayoría del
+   * histórico. Esas jornadas salen con `phase: null` en vez de repartirse a ojo entre
+   * montaje y collaudo: inventar la fase sería fabricar el dato que justamente falta.
+   *
+   * Por eso el total por proyecto es fiable y el desglose POR FASE solo lo es del lado
+   * vendido. Los totales se suman igual, que es lo que mira quien negocia.
+   */
+  async soldVsExecuted(year: number | null): Promise<ProyectoVendidoEjecutado[]> {
+    const vendido = await this.prisma.client.$queryRaw<
+      { project_id: string; role: string; phase: string; days: number }[]
+    >`
+      SELECT o.project_id, rt.name AS role, sd.phase::text AS phase, SUM(sd.sold_days)::int AS days
+        FROM order_sold_days sd
+        JOIN orders o     ON o.id = sd.order_id
+        JOIN role_types rt ON rt.id = sd.role_type_id
+       GROUP BY 1, 2, 3
+    `;
+
+    // Mismo criterio de estado que el resto de la pantalla: un día enviado ya es un día
+    // trabajado, lo que falta es validarlo (ver `cuadricula`).
+    const ejecutado = await this.prisma.client.$queryRaw<
+      { project_id: string; role: string; phase: string | null; days: number }[]
+    >`
+      SELECT de.project_id, rt.name AS role, de.phase::text AS phase, COUNT(*)::int AS days
+        FROM daily_entries de
+        JOIN role_types rt ON rt.id = de.role_type_id
+       WHERE de.project_id IS NOT NULL
+         AND de.status IN ('submitted', 'approved')
+         AND de.concept_code IS NOT NULL
+         AND (${'${year}'}::int IS NULL OR EXTRACT(YEAR FROM de.date)::int = ${'${year}'}::int)
+       GROUP BY 1, 2, 3
+    `;
+
+    // Solo los proyectos que tienen ALGO de lo que hablar: uno sin vendido ni ejecutado
+    // es una fila vacía en la gráfica.
+    const conDatos = new Set([...vendido, ...ejecutado].map((f) => f.project_id));
+    const proyectos = await this.prisma.client.project.findMany({
+      where: { id: { in: [...conDatos] } },
+      select: { id: true, name: true, isActive: true, normalHours: true },
+      orderBy: { name: 'asc' },
+    });
+
+    return proyectos.map((p) => {
+      const filas = new Map<string, FilaVendidoEjecutado>();
+      const clave = (role: string, phase: string | null) => `${'${role}'}|${'${phase ?? ""}'}`;
+      const tocar = (role: string, phase: string | null) => {
+        const k = clave(role, phase);
+        let f = filas.get(k);
+        if (!f) {
+          f = { role, phase, sold: 0, executed: 0 };
+          filas.set(k, f);
+        }
+        return f;
+      };
+      for (const v of vendido.filter((x) => x.project_id === p.id))
+        tocar(v.role, v.phase).sold += v.days;
+      for (const e of ejecutado.filter((x) => x.project_id === p.id))
+        tocar(e.role, e.phase).executed += e.days;
+
+      const rows = [...filas.values()].sort((a, b) => a.role.localeCompare(b.role));
+      return {
+        ...p,
+        rows,
+        sold: rows.reduce((s, f) => s + f.sold, 0),
+        executed: rows.reduce((s, f) => s + f.executed, 0),
+      };
+    });
   }
 
   /** Los años con datos, para el selector. Descendente: se mira el actual primero. */

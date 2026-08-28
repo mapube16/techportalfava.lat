@@ -78,3 +78,27 @@ export interface Utilization {
 
 export const getUtilization = (year: number | null) =>
   apiFetch<Utilization>(`/kpis/utilization${year ? `?year=${year}` : ''}`);
+
+// KPI-01 / KPI-08: lo VENDIDO del contrato contra lo EJECUTADO en la bitacora.
+
+export interface SoldRow {
+  role: string;
+  /** `null` = el ejecutado no dice de que fase es; el Excel no la registra en la hoja
+      diaria. Se muestra tal cual en vez de repartirlo a ojo entre montaje y collaudo. */
+  phase: 'MONTAJE' | 'COLLAUDO' | null;
+  sold: number;
+  executed: number;
+}
+
+export interface SoldProject {
+  id: string;
+  name: string;
+  isActive: boolean;
+  normalHours: number | null;
+  rows: SoldRow[];
+  sold: number;
+  executed: number;
+}
+
+export const getSoldVsExecuted = (year: number | null) =>
+  apiFetch<SoldProject[]>(`/kpis/sold-vs-executed${year ? `?year=${year}` : ''}`);

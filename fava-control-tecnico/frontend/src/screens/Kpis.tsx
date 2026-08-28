@@ -1,73 +1,38 @@
 import { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { nf, td, th } from '../ui';
+import { ApiState, nf, td, th } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
+import { useApiData } from '../lib/api/useApiData';
+import { getSoldVsExecuted, getUtilization } from '../lib/api/kpis';
+import type { SoldProject } from '../lib/api/kpis';
 import DayGrid from '../components/DayGrid';
 import UtilizationCard from '../components/UtilizationCard';
 import type { KpiSeg } from '../state';
 
 /**
- * ESTA PANTALLA SIGUE CON MOCKS, A PROPÓSITO. Los tableros son la Fase 7 (KPI-01…);
- * hasta que exista bitácora (Fase 3) todo lo ejecutado saldría en cero y cinco
- * gráficas planas confunden más que unos datos de ejemplo.
+ * Los tableros, contra datos REALES. Hasta el 2026-08-28 media pantalla eran cifras
+ * inventadas con nombres de proyectos que no existen («Barilla USA — Ames»), y eso es
+ * peor que no tener grafica: un usuario no distingue una barra falsa de una verdadera.
  *
- * Lo que sí cambió aquí es la FORMA: la matriz dejó de ser
- * `Record<fase, Record<rol, número>>` y ahora son filas (rol × fase), como las
- * devuelve `GET /api/projects/:id`. Así el cutover de la Fase 7 es cambiar el origen,
- * no reescribir las agregaciones.
+ * Dos origenes, los dos ya existentes:
+ *   · `GET /api/kpis/sold-vs-executed`  vendido contra ejecutado por proyecto (KPI-01/08)
+ *   · `GET /api/kpis/utilization`       el segmento por tecnico (KPI-02)
  *
- * ponytail: el mock vive aquí y no en data.ts porque es de esta pantalla y de nadie
- * más; data.ts guarda lo de bitácora, notas, gastos y auditoría.
+ * LA ASIMETRIA DE LA FASE, que hay que conocer para leer el grafico: el VENDIDO tiene
+ * fase porque el Excel la trae en los bloques del contrato; el EJECUTADO casi nunca,
+ * porque la hoja diaria no la registra. Esas jornadas salen como «sin fase» en vez de
+ * repartirse a ojo. El total por proyecto si es fiable, que es lo que se negocia.
  */
-type MockPhase = 'MONTAJE' | 'COLLAUDO';
-interface MockRow {
-  role: string;
-  phase: MockPhase;
-  sold: number;
-  executed: number;
-}
-interface MockProject {
-  id: string;
-  name: string;
-  normalHours: number;
-  rows: MockRow[];
-}
-
-const STD = 8; // horas de una jornada estándar
-const FASES: MockPhase[] = ['MONTAJE', 'COLLAUDO'];
-const ROLES = ['Mecánico', 'Meccatronico', 'Eléctrico'];
-
-const mock = (
-  id: string, name: string, normalHours: number, s: number[][], e: number[][],
-): MockProject => ({
-  id, name, normalHours,
-  rows: FASES.flatMap((phase, f) =>
-    ROLES.map((role, r) => ({ role, phase, sold: s[f][r], executed: e[f][r] }))),
-});
-
-const PROJECTS: MockProject[] = [
-  mock('p1', 'Molino Cibao Bocel — RD', 1120, [[22, 14, 10], [8, 12, 6]], [[19, 14, 8], [3, 5, 2]]),
-  mock('p2', 'Lucchetti Chile', 2400, [[30, 18, 16], [12, 16, 10]], [[31, 17, 16], [12, 15, 9]]),
-  mock('p3', 'Pastificio Bariloche — AR', 640, [[16, 10, 8], [6, 8, 4]], [[5, 3, 2], [0, 0, 0]]),
-  mock('p4', 'Barilla USA — Ames', 3600, [[40, 26, 22], [18, 22, 14]], [[38, 24, 20], [16, 20, 12]]),
-];
-
-/** La utilización por técnico se calculará desde la bitácora; hoy es del mock. */
-const TECHS = [
-  { n: 'Ivan Cortés', util: 88 },
-  { n: 'Leomar Klein', util: 76 },
-  { n: 'Marco Ferro', util: 92 },
-  { n: 'Diego Salas', util: 64 },
-  { n: 'Anahí Rueda', util: 81 },
-];
+type Fase = 'MONTAJE' | 'COLLAUDO';
+const FASES: Fase[] = ['MONTAJE', 'COLLAUDO'];
+/** Horas de una jornada estandar, para el grafico de horas. */
+const STD = 8;
 
 type Medida = 'sold' | 'executed';
-const suma = (rows: MockRow[], k: Medida) => rows.reduce((a, r) => a + r[k], 0);
-const totalP = (p: MockProject, k: Medida) => suma(p.rows, k);
-const porFase = (p: MockProject, k: Medida, ph: MockPhase) =>
-  suma(p.rows.filter((r) => r.phase === ph), k);
+const porFase = (p: SoldProject, k: Medida, ph: Fase) =>
+  p.rows.filter((r) => r.phase === ph).reduce((a, r) => a + r[k], 0);
 
 function palette() {
   const el = document.querySelector('.fava');
@@ -88,8 +53,12 @@ export default function Kpis() {
   const rolesRef = useRef<HTMLDivElement>(null);
   const charts = useRef<Record<string, echarts.ECharts>>({});
 
-  const projects = PROJECTS;
-  const per = projects.map((p) => ({ sold: totalP(p, 'sold'), done: totalP(p, 'executed'), nh: p.normalHours }));
+  // El anio lo elige la cuadricula (KPI-07) mas abajo; aqui se mira todo el historico.
+  const { data: vendido, error: errV } = useApiData(() => getSoldVsExecuted(null), [state.dataVersion]);
+  const { data: util, error: errU } = useApiData(() => getUtilization(null), [state.dataVersion]);
+
+  const projects = vendido ?? [];
+  const per = projects.map((p) => ({ sold: p.sold, done: p.executed, nh: p.normalHours ?? 0 }));
   const tot = per.reduce(
     (a: { sold: number; done: number; nh: number; exec: number }, p) =>
       ({ sold: a.sold + p.sold, done: a.done + p.done, nh: a.nh + p.nh, exec: a.exec + p.done * STD }),
@@ -98,7 +67,13 @@ export default function Kpis() {
   const overtime = Math.max(0, tot.exec - tot.nh);
   // `act` sigue alimentando las gráficas mock de abajo; el promedio de utilización que
   // salía de aquí murió con la tarjeta que lo mostraba: ahora lo calcula el servidor.
-  const act = TECHS;
+  // El segmento por tecnico sale de la utilizacion, que ya calcula el servidor: dias
+  // productivos y porcentaje. Antes eran cinco nombres inventados.
+  const act = (util?.technicians ?? []).map((x) => ({
+    n: x.technicianName,
+    util: x.utilizationPct ?? 0,
+    dias: x.productive,
+  }));
   const avgProg = tot.sold ? Math.round((tot.done / tot.sold) * 100) : 0;
 
   useEffect(() => {
@@ -141,11 +116,11 @@ export default function Kpis() {
         const names = projects.map((p) => p.name.split(' —')[0]);
         opt = {
           ...base(), grid, xAxis: catAxis(names), yAxis: valAxis(t.days_unit),
-          series: [bar(t.kpi_sold, projects.map((p) => totalP(p, 'sold')), P.primary), bar(t.kpi_done, projects.map((p) => totalP(p, 'executed')), P.accent)],
+          series: [bar(t.kpi_sold, projects.map((p) => p.sold), P.primary), bar(t.kpi_done, projects.map((p) => p.executed), P.accent)],
         };
       } else if (seg === 'tech') {
         const names = act.map((x) => x.n.split(' ')[0] + ' ' + (x.n.split(' ')[1] || '').charAt(0));
-        const days = act.map((x) => state.notes.filter((n) => n.tech === x.n).reduce((a, n) => a + n.days, 0));
+        const days = act.map((x) => x.dias);
         opt = {
           ...base(), grid: { ...grid, right: 46 }, xAxis: catAxis(names),
           yAxis: [valAxis(t.reg_days), { type: 'value', name: '%', min: 0, max: 100, axisLabel: { ...axisText, formatter: '{value}%' }, splitLine: { show: false } }],
@@ -156,7 +131,7 @@ export default function Kpis() {
         };
       } else {
         const lbl = [t.montaje, t.colaudo];
-        const sp = (k: Medida, ph: MockPhase) => projects.reduce((a, p) => a + porFase(p, k, ph), 0);
+        const sp = (k: Medida, ph: Fase) => projects.reduce((a, p) => a + porFase(p, k, ph), 0);
         opt = {
           ...base(), grid, xAxis: catAxis(lbl), yAxis: valAxis(t.days_unit),
           series: [
@@ -175,7 +150,7 @@ export default function Kpis() {
       hrs.setOption(
         {
           ...base(), grid, xAxis: catAxis(names), yAxis: valAxis('h'),
-          series: [bar(t.k_hours_norm, projects.map((p) => p.normalHours), P.info), bar(t.k_hours_exec, projects.map((p) => totalP(p, 'executed') * STD), P.accent)],
+          series: [bar(t.k_hours_norm, projects.map((p) => p.normalHours ?? 0), P.info), bar(t.k_hours_exec, projects.map((p) => p.executed * STD), P.accent)],
         },
         true,
       );
@@ -184,12 +159,17 @@ export default function Kpis() {
 
     const rls = getC('roles', rolesRef.current);
     if (rls) {
-      const rl: Record<string, string> = { Mecánico: t.mechanic, Meccatronico: t.mecatronic, Eléctrico: t.electric };
-      const data = ROLES.map((r, i) => ({
-        name: rl[r] ?? r,
-        value: projects.reduce((a, p) => a + suma(p.rows.filter((x) => x.role === r), 'executed'), 0),
-        itemStyle: { color: [P.primary, P.accent, P.info][i] },
-      }));
+      // Los roles salen de los DATOS, no de una lista fija de tres: el catalogo real
+      // tiene dieciocho y cual aparece depende de quien trabajo.
+      const porRol = new Map<string, number>();
+      for (const p of projects)
+        for (const r of p.rows) porRol.set(r.role, (porRol.get(r.role) ?? 0) + r.executed);
+      const paleta = [P.primary, P.accent, P.info, P.ok, P.warn];
+      const data = [...porRol.entries()]
+        .filter(([, v]) => v > 0)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, value], i) => ({ name, value, itemStyle: { color: paleta[i % paleta.length] } }));
       rls.setOption(
         {
           textStyle: { fontFamily: 'Roboto' },
@@ -201,7 +181,7 @@ export default function Kpis() {
       );
       rls.resize();
     }
-  }, [state.kpiSeg, state.lang, state.theme, state.notes, movil, state.density]);
+  }, [state.kpiSeg, state.lang, state.theme, projects, act, movil, state.density]);
 
   useEffect(() => {
     const onResize = () => Object.values(charts.current).forEach((c) => { if (c && !c.isDisposed()) c.resize(); });
@@ -316,6 +296,12 @@ export default function Kpis() {
       </CardContent>
     </Card>
   );
+
+  // Va DESPUES de los hooks a proposito: adelantarlo saltaria los useEffect y React
+  // se queja. Un fallo del API tiene que decirse; pintar ceros seria dar por bueno
+  // un tablero vacio, que es justo lo que esta pantalla llevaba haciendo con el mock.
+  if (errV || errU) return <ApiState error={errV ?? errU} label={t.err_load} />;
+  if (!vendido || !util) return <ApiState error={null} label={t.loading} />;
 
   return (
     <div className="flex flex-col gap-4">
