@@ -10,7 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ApiState, chip, filterBy, initials, inputStyle } from '../ui';
+import { ApiState, FiltroVigencia, chip, filterBy, initials, inputStyle, porVigencia } from '../ui';
+import type { Vigencia } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
@@ -33,6 +34,9 @@ export default function Techs() {
   const movil = useIsMobile();
   const [form, setForm] = useState<Form | null>(null);
   const [errSave, setErrSave] = useState<string | null>(null);
+  // Mismo criterio que en Proyectos: se muestran los activos y el recuento dice
+  // cuantos quedan fuera, para que la lista corta no parezca una lista incompleta.
+  const [vigencia, setVigencia] = useState<Vigencia>('activos');
 
   // El maestro y el catálogo de roles en paralelo: el selector del formulario sale
   // del catálogo (CAT-02), no de una lista cableada.
@@ -44,7 +48,7 @@ export default function Techs() {
   if (error) return <ApiState error={error} label={t.err_load} />;
   if (!data) return <ApiState error={null} label={t.loading} />;
 
-  const rows = filterBy(data.techs, state.search, (tc) => tc.fullName + ' ' + tc.roleTypeName);
+  const rows = filterBy(porVigencia(data.techs, vigencia), state.search, (tc) => tc.fullName + ' ' + tc.roleTypeName);
   // El endpoint devuelve activos e inactivos: filtra el selector, no la lista.
   const rolesElegibles = activos(data.roleTypes);
 
@@ -162,6 +166,8 @@ export default function Techs() {
         </CardHeader>
         {formulario}
         <CardContent className="p-3 flex flex-col gap-2.5">
+        <FiltroVigencia valor={vigencia} onChange={setVigencia} items={data.techs} t={t} />
+
           {rows.map((tc) => (
             <div key={tc.id} className={`border border-border rounded-card p-3.5 ${tc.isActive ? '' : 'opacity-55'}`}>
               <div className="flex items-center gap-2.5">
@@ -196,6 +202,9 @@ export default function Techs() {
         {addBtn}
       </CardHeader>
       {formulario}
+      <div className="px-4 py-3 border-b">
+        <FiltroVigencia valor={vigencia} onChange={setVigencia} items={data.techs} t={t} />
+      </div>
       <CardContent className="p-0 overflow-x-auto">
         <Table>
           <TableHeader>

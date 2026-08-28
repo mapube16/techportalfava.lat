@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { hi } from '../icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -9,7 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ApiState, chip, filterBy, money, nf } from '../ui';
+import { ApiState, FiltroVigencia, chip, filterBy, money, nf, porVigencia } from '../ui';
+import type { Vigencia } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { useApiData } from '../lib/api/useApiData';
@@ -24,6 +26,9 @@ export default function Projects() {
   const { state, t, go, patch } = useApp();
   const movil = useIsMobile();
   const { data, error } = useApiData(listProjects, [state.dataVersion]);
+  // Por defecto SOLO los activos: hoy son 5 de 23, y una lista con 18 filas apagadas
+  // esconde las que importan. El recuento del filtro dice cuantas quedan fuera.
+  const [vigencia, setVigencia] = useState<Vigencia>('activos');
 
   const addBtn = (
     <Button onClick={() => patch({ projOpen: true })} className="min-h-11 md:min-h-9">
@@ -35,7 +40,7 @@ export default function Projects() {
   if (error) return <ApiState error={error} label={t.err_load} />;
   if (!data) return <ApiState error={null} label={t.loading} />;
 
-  const rows = filterBy(data, state.search, (p) =>
+  const rows = filterBy(porVigencia(data, vigencia), state.search, (p) =>
     [p.name, p.clientName, p.contractNumber, p.machineCodes.join(' '), p.country].join(' '));
 
   const openProject = (id: string) => {
@@ -57,6 +62,8 @@ export default function Projects() {
           {addBtn}
         </CardHeader>
         <CardContent className="p-3 flex flex-col gap-2.5">
+        <FiltroVigencia valor={vigencia} onChange={setVigencia} items={data} t={t} />
+
           {rows.length ? (
             rows.map((p) => (
               <div
@@ -99,6 +106,9 @@ export default function Projects() {
         <CardTitle>{t.t_projects}</CardTitle>
         {addBtn}
       </CardHeader>
+      <div className="px-4 py-3 border-b">
+        <FiltroVigencia valor={vigencia} onChange={setVigencia} items={data} t={t} />
+      </div>
       <CardContent className="p-0 overflow-x-auto">
         <Table>
           <TableHeader>

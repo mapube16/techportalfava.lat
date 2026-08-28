@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 import { CONCEPTS, LOCALE } from './i18n';
 import type { Dict } from './i18n';
 import type { Lang, NoteStatus } from './types';
@@ -188,3 +189,62 @@ export const filterBy = <T,>(list: T[], q: string, keyFn: (it: T) => string): T[
   if (!query) return list;
   return list.filter((it) => keyFn(it).toLowerCase().includes(query));
 };
+
+/** Activos / Inactivos / Todos. Se llama «vigencia» y no «estado» para no chocar con el
+    de la NOTA (`NoteStatus`), que es otra cosa y ya se llama asi en media app. */
+export type Vigencia = 'activos' | 'inactivos' | 'todos';
+
+/**
+ * El filtro de vigencia, con el RECUENTO a la vista.
+ *
+ * El numero no es decoracion. Por defecto se muestran solo los activos, y sin decir
+ * cuantos quedan fuera la pantalla parece incompleta: alguien que ayer veia 23
+ * proyectos y hoy ve 5 necesita leer «Inactivos 18» para entender que no se perdio
+ * nada. Es la misma razon por la que la utilizacion informa de los dias futuros que
+ * descarta en vez de descontarlos en silencio.
+ *
+ * Mismo aspecto que los filtros de la bandeja (`Inbox`): pastillas con el activo en
+ * solido. Un desplegable para tres opciones seria un clic de mas.
+ */
+export function FiltroVigencia<T extends { isActive: boolean }>({
+  valor,
+  onChange,
+  items,
+  t,
+}: {
+  valor: Vigencia;
+  onChange: (v: Vigencia) => void;
+  items: T[];
+  t: Dict;
+}) {
+  const n = {
+    activos: items.filter((i) => i.isActive).length,
+    inactivos: items.filter((i) => !i.isActive).length,
+    todos: items.length,
+  };
+  const opciones: [Vigencia, string][] = [
+    ['activos', t.active],
+    ['inactivos', t.inactive],
+    ['todos', t.st_all],
+  ];
+  return (
+    <div className="flex gap-2 flex-wrap">
+      {opciones.map(([k, label]) => (
+        <Button
+          key={k}
+          variant={valor === k ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => onChange(k)}
+          className="min-h-11 md:min-h-8"
+        >
+          {label}
+          <span className="tabular-nums opacity-70">{n[k]}</span>
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+/** El filtro en si. Fuera del componente para poder aplicarlo antes del buscador. */
+export const porVigencia = <T extends { isActive: boolean }>(items: T[], v: Vigencia): T[] =>
+  v === 'todos' ? items : items.filter((i) => i.isActive === (v === 'activos'));
