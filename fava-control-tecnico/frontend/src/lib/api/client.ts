@@ -1,6 +1,6 @@
 import { getToken } from '../auth/msal';
 import { getDevToken } from '../auth/dev';
-import type { Role } from '../../types';
+import type { Lang, Role } from '../../types';
 
 // Tipos escritos a mano: en Fase 1 el contrato son 4 interfaces.
 // El codegen desde OpenAPI llega en Fase 2, cuando haya ~20 endpoints.
@@ -11,6 +11,8 @@ export interface ApiUser {
   email: string;
   roles: Role[];
   technicianId: string | null;
+  /** Idioma de SUS correos. El botón del encabezado lo persiste con `setMyLang`. */
+  lang: Lang;
 }
 
 export interface EntraIdentity {
@@ -106,6 +108,10 @@ export async function apiBlob(path: string): Promise<Blob> {
 }
 
 export const getMe = () => apiFetch<MeResponse>('/me');
+
+/** Persiste el idioma del botón del encabezado: los correos se escriben en el servidor
+    y hasta ahora el idioma vivía solo en el estado de React. */
+export const setMyLang = (lang: Lang) => apiSend<{ lang: Lang }>('/me/lang', 'PUT', { lang });
 export const requestAccess = () => apiFetch<void>('/access-requests', { method: 'POST' });
 export const listAccessRequests = () => apiFetch<AccessRequest[]>('/access-requests');
 export const dismissAccessRequest = (id: string) =>

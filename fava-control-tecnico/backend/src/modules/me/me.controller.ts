@@ -1,8 +1,11 @@
-import { Controller, Get, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Put, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { AllowUnprovisioned } from '../../common/auth/allow-unprovisioned.decorator';
+import { CurrentUser } from '../../common/auth/current-user.decorator';
+import { LANGS } from '../../common/notifications/plantillas';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { Role } from '../../generated/prisma/enums';
+import type { UserModel } from '../../generated/prisma/models';
 
 /**
  * Contrato consumido literalmente por frontend/src/lib/api/client.ts.
@@ -17,6 +20,8 @@ export type MeResponse =
         email: string;
         roles: Role[];
         technicianId: string | null;
+        /** Idioma de sus correos (Fase 9). 'es' | 'it' | 'pt'. */
+        lang: string;
       };
     }
   | { status: 'not_invited'; entra: { displayName: string; email: string }; requestPending: boolean }
@@ -36,8 +41,8 @@ export class MeController {
   @AllowUnprovisioned()
   async me(@Req() req: Request): Promise<MeResponse> {
     if (req.user) {
-      const { id, displayName, email, roles, technicianId } = req.user;
-      return { status: 'ok', user: { id, displayName, email, roles, technicianId } };
+      const { id, displayName, email, roles, technicianId, lang } = req.user;
+      return { status: 'ok', user: { id, displayName, email, roles, technicianId, lang } };
     }
 
     // biome-ignore lint: el guard garantiza req.entra en toda ruta con token.
@@ -55,5 +60,27 @@ export class MeController {
       entra: identidad,
       requestPending: solicitud?.status === 'pending',
     };
+  }
+
+  /**
+   * Fase 9 — persistir el idioma que el usuario ya elige con el boton del encabezado.
+   *
+   * Existe porque los correos se escriben desde el SERVIDOR y hasta ahora el idioma
+   * vivia solo en el estado de React: la app sabia hablar italiano y el correo no.
+   * Se rellena SOLO, con el uso, en vez de pedirle a nadie que rellene una columna.
+   *
+   * Sin `@Roles`: cambiar el idioma de UNO MISMO no es una capacidad de admin, y el id
+   * sale del token, nunca del cuerpo.
+   */
+  @Put('lang')
+  async fijarIdioma(@CurrentUser() actor: UserModel, @Body() body: { lang?: unknown }) {
+    const lang = String(body?.lang ?? '');
+    // Se valida aqui ADEMAS del CHECK del motor: un 400 dice cual es el problema y un
+    // 23514 de Postgres sale como 500 sin explicar nada.
+    if (!(LANGS as readonly string[]).includes(lang))
+      throw new BadRequestException('IDIOMA_INVALIDO');
+
+    await this.prisma.client.user.update({ where: { id: actor.id }, data: { lang } });
+    return { lang };
   }
 }

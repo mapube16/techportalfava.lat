@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { AuditService } from '../../common/audit/audit.service';
 import { EDITABLES } from '../../common/estados';
+import { NotificationsService } from '../../common/notifications/notifications.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { aDate, aTexto } from '../daily-entries/fecha';
 import { renderizarNota } from './nota-pdf';
@@ -105,6 +106,7 @@ export class WeeklyNotesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly notif: NotificationsService,
   ) {}
 
   /**
@@ -538,6 +540,15 @@ export class WeeklyNotesService {
       after: { status: destino },
       reason: opciones.reason ?? null,
     });
+
+    // Fase 9. Solo estas dos: `submit` y `reopen` no le dicen nada nuevo al técnico
+    // (una la hizo él, la otra le devuelve la nota a editable y ya la verá).
+    //
+    // Esto ENCOLA, no envía: el POST a Graph no puede ocurrir aquí dentro. La
+    // transacción de la petición retiene una conexión del pool de 10 con timeout de
+    // 10 s, y una llamada de red lenta lo agota antes que la CPU (ver `rls.interceptor`).
+    if (action === 'approve' || action === 'return')
+      await this.notif.avisarTransicion(nota, action, opciones.reason);
 
     return plana(nota);
   }

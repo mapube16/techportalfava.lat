@@ -43,6 +43,7 @@ const TABLAS_TX = [
   'daily_entries',
   'weekly_notes',
   'audit_log',
+  'notifications',
   'order_sold_days',
   'orders',
   'projects',

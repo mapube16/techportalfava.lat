@@ -31,6 +31,11 @@ const prismaFalso = {
 const registrar = jest.fn().mockResolvedValue(undefined);
 const auditFalso = { registrar } as never;
 
+/** Fase 9: `transicionar` encola un aviso al aprobar y al devolver. Aqui no se prueba
+    el aviso (eso es `recordatorios.spec.ts` y el e2e), solo que no estorba. */
+const avisarTransicion = jest.fn().mockResolvedValue(undefined);
+const notifFalso = { avisarTransicion } as never;
+
 const actor = { id: 'u-1', name: 'Admin Uno' };
 
 /** Superconjunto de todo lo que `weeklyNote.findUnique` puede pedir en el archivo: un
@@ -75,7 +80,7 @@ describe('WeeklyNotesService', () => {
     jest.clearAllMocks();
     dailyEntryFindMany.mockResolvedValue([]);
     conceptFindMany.mockResolvedValue([{ code: 'DC', labelEs: 'Día completo' }]);
-    service = new WeeklyNotesService(prismaFalso, auditFalso);
+    service = new WeeklyNotesService(prismaFalso, auditFalso, notifFalso);
   });
 
   describe('gastos', () => {

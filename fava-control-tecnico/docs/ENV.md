@@ -30,6 +30,12 @@ fallo intermitente en producción).
 | `PORT` | no | `3000` | Railway lo inyecta solo. En local no hace falta tocarlo |
 | `DEV_AUTH_ENABLED` | no | `false` | **Temporal.** `true` enciende el login de desarrollo. Solo acepta `true` o `false`: cualquier otro valor no arranca. Ver [§ Login de desarrollo temporal](#login-de-desarrollo-temporal) |
 | `DEV_AUTH_PASSWORD` | 🔴 sí | — | Contraseña compartida de ese login. Obligatoria y de **12 caracteres o más** si el flag está encendido; sin ella el proceso no arranca. No existe valor por defecto |
+| `NOTIF_TRANSPORT` | no | `console` | Por dónde salen los avisos. `console` los imprime sin tocar la red; `graph` los manda de verdad. Sólo esos dos valores: cualquier otro no arranca. Ver [§ Avisos por correo](#avisos-por-correo) |
+| `NOTIF_TZ` | no | `America/Bogota` | Zona IANA en la que se leen «viernes» y «las 16:00». Una sola para todo el sistema |
+| `NOTIF_FROM` | no | — | Buzón remitente. **Obligatoria con `graph`** |
+| `ENTRA_MAIL_CLIENT_ID` | no | — | Client ID del registro **dedicado al correo**. NO es `ENTRA_API_CLIENT_ID`. **Obligatoria con `graph`** |
+| `ENTRA_CLIENT_SECRET` | 🔴 sí | — | Secreto de ESE registro, para el flujo client-credentials de Graph. **Obligatoria con `graph`** |
+| `APP_BASE_URL` | no | — | Raíz pública de la app, para el enlace del correo. **Obligatoria con `graph`** |
 
 **Por qué dos URLs de base de datos.** El rol que Railway entrega
 (`postgres`) es superusuario y dueño de las tablas: **salta RLS sin dejar ningún
@@ -131,6 +137,42 @@ pantallas. Si la app está asegurada por Microsoft, esa banda no aparece.
   reinicio cierra todas las sesiones abiertas.
 - El botón de Microsoft sigue en la pantalla, pero **no funciona con este modo
   encendido**: el keyset local sustituye al de Microsoft, no se suma.
+
+---
+
+## Avisos por correo
+
+Cuatro avisos: nota devuelta y nota aprobada (al instante, al técnico), «tu semana
+está sin enviar» (viernes 16:00 y domingo 12:00) y el resumen de los lunes a los
+admins. Las horas se leen en `NOTIF_TZ`.
+
+**`NOTIF_TRANSPORT=console` es el estado por defecto y no es un modo degradado.** El
+aviso se encola igual en la tabla `notifications`, con su asunto y su cuerpo ya
+renderizados; lo único que no ocurre es la llamada a Graph. Sirve para tres cosas a la
+vez: los tests, el `--dry` del cron, y desplegar la fase entera **antes** de que Entra
+conceda nada. Lo que se mandaría se consulta con:
+
+```sql
+SELECT kind, to_email, subject, status FROM notifications ORDER BY created_at DESC;
+```
+
+### Encender el correo de verdad
+
+Hace falta, por este orden:
+
+1. **`Mail.Send` como permiso de APLICACIÓN** de Microsoft Graph sobre un registro **dedicado al correo** (no el del API),
+   con consentimiento de administrador. Requiere Global Administrator, Cloud
+   Application Administrator o Privileged Role Administrator — **ser administrador de
+   Exchange no basta**.
+2. Un **client secret** en ese registro → `ENTRA_MAIL_CLIENT_ID` + `ENTRA_CLIENT_SECRET`.
+3. ⚠️ **`New-ApplicationAccessPolicy`** de Exchange Online acotando ese app id al único
+   buzón de `NOTIF_FROM`. Sin esto, `Mail.Send` de aplicación permite enviar **desde
+   cualquier buzón del tenant**, incluido el del director general. Nadie lo acota por
+   defecto. Se comprueba con `Test-ApplicationAccessPolicy`.
+4. Poner las tres variables y `NOTIF_TRANSPORT=graph`. **Cero cambios de código.**
+
+Sin las cuatro, el proceso **no arranca** en vez de descubrir a las 16:01 del viernes que
+le falta el secreto — un aviso perdido que nadie ve hasta el lunes.
 
 ---
 

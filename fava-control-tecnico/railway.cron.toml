@@ -1,0 +1,46 @@
+# Config-as-code del SEGUNDO servicio: el cron de los avisos (Fase 9).
+#
+# MISMA TRAMPA QUE railway.toml, y aqui muerde igual: Railway NO aplica el Root
+# Directory al archivo de configuracion. En Service -> Settings -> Config-as-code hay
+# que escribir la ruta ABSOLUTA desde la raiz del repositorio:
+#
+#     /fava-control-tecnico/railway.cron.toml
+#
+# El Root Directory del servicio SI es `/fava-control-tecnico`. Con la ruta relativa,
+# Railway no encuentra el archivo, no avisa, y despliega con los valores por defecto
+# del dashboard — que en un cron significa que no corre nunca y nadie se entera.
+#
+# POR QUE UN SERVICIO APARTE Y NO UN CRON DENTRO DE LA APP: `railway.toml` fija
+# `numReplicas = 1` por el rate limit en memoria. Hoy un cron in-process funcionaria,
+# pero el dia que alguien suba las replicas, cada aviso saldria N veces — y no hay nada
+# en el codigo que lo impida ni que lo recuerde. Un servicio con `cronSchedule` corre
+# una sola vez por definicion.
+#
+# VARIABLES: comparte con el servicio `app` DATABASE_URL, APP_DB_PASSWORD,
+# ENTRA_TENANT_ID, ENTRA_API_CLIENT_ID y las cinco de NOTIF_*. La lista cerrada vive en
+# docs/ENV.md; ninguna existe solo en el dashboard (regla dura del proyecto).
+# NO necesita MIGRATE_DATABASE_URL: este servicio nunca hace DDL.
+
+[build]
+builder = "RAILPACK"
+# Solo el backend: el cron no sirve el frontend y compilar vite aqui son 40 s por deploy
+# para producir algo que nadie pide. Se conserva el guarda-rail de fechas porque este
+# servicio es precisamente el que calcula «de que semana hablamos».
+buildCommand = "npm run check:fecha-servidor && npm -w backend run build"
+
+[deploy]
+startCommand = "npm -w backend run notificar"
+
+# Cada 5 minutos, en UTC (Railway no acepta zona aqui). La hora "de verdad" la decide
+# NOTIF_TZ dentro del proceso: el script mira si esta en una de sus tres ventanas.
+# Doce evaluaciones por hora son inofensivas — la unique `dedupe_key` absorbe las
+# repeticiones en el motor. El tic frecuente lo necesita el DRENADO de todas formas.
+cronSchedule = "*/5 * * * *"
+
+# Un cron termina. Sin esto Railway lo reiniciaria en bucle al salir con exito.
+restartPolicyType = "NEVER"
+
+# SIN preDeployCommand a proposito: las migraciones las corre el servicio `app`. Dos
+# servicios lanzando `migrate deploy` a la vez es una carrera que no hace falta tener.
+#
+# SIN healthcheckPath: no hay proceso escuchando, es un script que arranca y muere.

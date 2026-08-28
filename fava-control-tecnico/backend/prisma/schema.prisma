@@ -72,6 +72,12 @@ model User {
   roles    Role[]
   isActive Boolean @default(true) @map("is_active")
 
+  /// Idioma de SUS correos: 'es' | 'it' | 'pt'. Los tres que ya habla la interfaz.
+  /// No es un enum de Postgres como `role` porque un idioma nuevo es una traduccion
+  /// mas, no una decision de negocio bloqueada; el dominio cerrado lo pone un CHECK
+  /// en la migracion, que se cambia sin tocar el tipo.
+  lang String @default("es")
+
   /// Un usuario <-> un tecnico. De aqui sale la GUC `app.technician_id` que aisla
   /// la bitacora, asi que dos usuarios apuntando al mismo tecnico serian dos
   /// identidades con la misma bitacora: @unique lo impide en el motor.
@@ -364,6 +370,65 @@ model AuditLog {
   @@index([entity, entityId])
   @@index([createdAt])
   @@map("audit_log")
+}
+
+/// El buzon de salida de los avisos por correo.
+///
+/// Quien dispara el aviso NO envia: escribe una fila. El envio lo hace el cron
+/// (`scripts/notificar.ts`) en otro proceso. Es obligado, no una preferencia de
+/// estilo: `RlsInterceptor` abre UNA transaccion por peticion y prohibe I/O externo
+/// dentro (pool de 10, timeout de 10 s); un POST a Graph dentro de `transicionar()`
+/// agota el pool y acaba en P2028.
+///
+/// Y de paso resuelve lo que un envio directo no puede: «no me llego el aviso» deja
+/// de ser indepurable. Mismo criterio que `audit_log`.
+model Notification {
+  id String @id @default(uuid()) @db.Uuid
+
+  /// La idempotencia, y esta en el MOTOR: se inserta con `createMany({ skipDuplicates })`
+  /// -> ON CONFLICT DO NOTHING. Un cron que corra dos veces en la misma ventana no manda
+  /// dos correos, y no hay que acordarse de comprobarlo en ningun sitio.
+  /// Formato: '<kind>:<id>:<discriminante>'. Ver `plantillas.ts`.
+  dedupeKey String @unique @map("dedupe_key")
+
+  /// 'note_returned' | 'note_approved' | 'week_missing' | 'admin_digest'
+  kind String
+
+  /// El destinatario congelado. Se guarda el correo y no solo el id porque el aviso
+  /// tiene que seguir siendo legible aunque el usuario cambie de direccion o se borre
+  /// — mismo motivo por el que `audit_log` guarda `actor_name`.
+  toEmail String  @map("to_email")
+  /// Sin FK a `users`, igual que `audit_log.actor_id`: un Restrict impediria dar de
+  /// baja a quien recibio un aviso.
+  toUserId String? @map("to_user_id") @db.Uuid
+
+  /// El idioma con el que se RENDERIZO, que puede no ser el que el usuario tenga hoy.
+  lang String
+
+  /// Renderizado al encolar, no al enviar. Asi la fila es autosuficiente: el envio no
+  /// hace joins, y queda escrito que se mando EXACTAMENTE.
+  subject  String
+  bodyText String @map("body_text")
+
+  /// pending | sending | sent | failed
+  status   String  @default("pending")
+  attempts Int     @default(0)
+  /// Cuando lo reclamo el drenador. Un proceso que muere a mitad deja la fila en
+  /// 'sending' para siempre; con esto se puede recuperar pasado un rato.
+  claimedAt DateTime? @map("claimed_at")
+  lastError String?   @map("last_error")
+
+  /// De que se hablaba, para poder rastrear. 'weekly_note' + el id de la nota.
+  entity   String?
+  entityId String? @map("entity_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  sentAt    DateTime? @map("sent_at")
+
+  /// El indice del drenador: `WHERE status = 'pending' ORDER BY created_at`.
+  @@index([status, createdAt])
+  @@index([entity, entityId])
+  @@map("notifications")
 }
 
 // ─────────────────────────── Fase 2: maestros y catalogos ───────────────────────────

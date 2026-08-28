@@ -294,6 +294,112 @@ Si aparece uno, es un bug.
 
 ---
 
+## Registro C — `FAVA Avisos` (correo saliente, Fase 9)
+
+Los registros A y B son **delegados**: la app actúa en nombre de quien inició sesión. El
+correo es otra cosa — el cron escribe cuando no hay nadie conectado, así que la app
+actúa **en su propio nombre**. Eso es un permiso de **aplicación**, y es el primero del
+tenant.
+
+**Registro aparte, no colgado del A.** El registro del API es un *resource server*: su
+trabajo es validar tokens que entran. Convertirlo además en cliente confidencial con
+secreto y permisos de aplicación mezcla dos papeles opuestos. Y como la Application
+Access Policy de Exchange se ata a un AppId, con uno dedicado se revoca el envío de
+correo sin tocar el login de nadie.
+
+> **Esto NO obliga al cutover de Entra.** Mientras `DEV_AUTH_ENABLED=true`, el keyset
+> local sustituye al de Microsoft (`jwks.provider.ts`) y `dev-auth.service.ts` fabrica el
+> token con el `ENTRA_TENANT_ID` que haya. Crear este registro y encender el correo deja
+> el login compartido funcionando igual. Son dos cosas independientes.
+
+### C.1 — Crear el registro
+
+Entra admin center → **Applications** → **App registrations** → **New registration**.
+
+| Campo | Valor |
+|---|---|
+| Name | `FAVA Avisos` |
+| Supported account types | **Accounts in this organizational directory only** (single tenant) |
+| Redirect URI | **vacío** — nadie inicia sesión contra esta app; no hay navegador que redirigir |
+
+Copiar de *Overview* el **Application (client) ID** → `ENTRA_MAIL_CLIENT_ID`.
+
+### C.2 — El permiso
+
+*API permissions* → **Add a permission** → **Microsoft Graph** → **Application
+permissions** (⚠️ **no** *Delegated*) → buscar `Mail.Send` → *Add permissions*.
+
+Después, **`Grant admin consent for <tenant>`**. Sin ese botón el permiso figura en la
+lista pero **no está concedido**: el token sale sin el rol y el envío falla con `403`
+sin decir que falta el consentimiento.
+
+De paso, quitar el `User.Read` **delegado** que el portal añade solo: esta app no actúa
+en nombre de ningún usuario y no lo usa nunca.
+
+> Requiere **Global Administrator**, **Cloud Application Administrator** o **Privileged
+> Role Administrator**. Ser administrador de Exchange **no basta** — el portal te deja
+> llegar hasta el botón y solo entonces falla, que es lo que hace caro el error.
+
+### C.3 — El secreto
+
+*Certificates & secrets* → **New client secret**. Descripción `railway`, caducidad la que
+permita la política de FAVA.
+
+El valor **solo se ve una vez** y no se puede recuperar: cópialo en ese momento a
+`ENTRA_CLIENT_SECRET`. Anota la fecha de caducidad — un secreto vencido apaga los avisos
+en silencio, y nadie se entera hasta que alguien pregunta por qué no le llegó el correo.
+
+### C.4 — ⛔ Acotar el buzón. El paso que nadie hace por defecto
+
+`Mail.Send` como permiso de aplicación permite enviar **desde cualquier buzón del
+tenant**: el del director, el de recursos humanos, el de facturación. Concederlo sin
+acotar es darle a la app la capacidad de suplantar por correo a toda la empresa.
+
+Se acota con una **Application Access Policy** de Exchange Online. Es PowerShell, no
+portal:
+
+```powershell
+Install-Module ExchangeOnlineManagement -Scope CurrentUser   # solo la primera vez
+Connect-ExchangeOnline
+
+New-ApplicationAccessPolicy `
+  -AppId <ENTRA_MAIL_CLIENT_ID> `
+  -PolicyScopeGroupId techportal@favalatinoamerica.com `
+  -AccessRight RestrictAccess `
+  -Description "FAVA Control Tecnico: solo puede enviar desde el buzon de avisos"
+```
+
+Y **comprobar las dos direcciones**, que es donde se ve si acota de verdad:
+
+```powershell
+# El buzón de avisos -> Granted
+Test-ApplicationAccessPolicy -Identity techportal@favalatinoamerica.com -AppId <ENTRA_MAIL_CLIENT_ID>
+
+# CUALQUIER otro buzón -> Denied. Si sale Granted, la política no está acotando nada.
+Test-ApplicationAccessPolicy -Identity otra.persona@favalatinoamerica.com -AppId <ENTRA_MAIL_CLIENT_ID>
+```
+
+La política tarda **hasta una hora** en propagarse; hasta entonces `Test-` puede mentir.
+
+### C.5 — Encender
+
+Poner en los dos servicios de Railway (`app` y el cron):
+
+```
+ENTRA_MAIL_CLIENT_ID = <client id del registro C>
+ENTRA_CLIENT_SECRET  = <el secreto de C.3>
+NOTIF_FROM           = techportal@favalatinoamerica.com
+APP_BASE_URL         = https://<dominio de la app>
+NOTIF_TRANSPORT      = graph
+```
+
+**Cero cambios de código.** Hasta ese momento los avisos se encolan igual en la tabla
+`notifications`, que es como se comprueba a quién se le habría escrito antes de
+escribirle a nadie. El arranque exige las cuatro primeras si `NOTIF_TRANSPORT=graph`: si
+falta una, el proceso muere al arrancar y no a las 16:01 del viernes.
+
+---
+
 ## Fuentes
 
 - [Configure an application to expose a web API](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-configure-app-expose-web-apis)

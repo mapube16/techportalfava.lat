@@ -21,6 +21,9 @@ const CAMPOS = {
   roles: true,
   isActive: true,
   technicianId: true,
+  /// Fase 9: el idioma de sus correos. Lo fija el propio usuario con el boton del
+  /// encabezado (PUT /api/me/lang); aqui se expone para que Usuarios pueda verlo.
+  lang: true,
 } as const;
 
 const esAdmin = (roles: Role[]) => roles.some((r) => r === 'A' || r === 'S');

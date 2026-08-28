@@ -35,8 +35,42 @@ const envSchema = z
       .transform((v) => v === 'true'),
     /** Contraseña compartida del login de desarrollo. Sin default: ver el refine. */
     DEV_AUTH_PASSWORD: z.string().optional(),
+
+    /**
+     * Fase 9 — por donde salen los avisos.
+     *
+     * `console` los imprime y los marca enviados sin tocar la red: es a la vez el
+     * dry-run, el modo de los tests y el estado en el que se despliega la fase entera
+     * ANTES de que Entra conceda nada. Encender el correo de verdad es cambiar esta
+     * variable, sin tocar codigo.
+     *
+     * Enum cerrado por el mismo motivo que DEV_AUTH_ENABLED: un typo ('Graph', 'grahp')
+     * mata el arranque en vez de dejar en silencio los avisos en modo consola durante
+     * un mes, que es un fallo que nadie mira.
+     */
+    NOTIF_TRANSPORT: z.enum(['console', 'graph']).default('console'),
+    /** El buzon remitente. Obligatoria con `graph`: ver el refine. */
+    NOTIF_FROM: z.string().optional(),
+    /**
+     * El registro DEDICADO al correo, distinto del que valida los tokens de entrada.
+     * Separado a proposito: el registro del API es un resource server, y hacerlo
+     * ademas cliente confidencial con permisos de aplicacion mezcla dos papeles. Y la
+     * Application Access Policy de Exchange se ata a un AppId — con uno dedicado se
+     * revoca el envio de correo sin tocar el login de nadie.
+     */
+    ENTRA_MAIL_CLIENT_ID: z.string().optional(),
+    /** Secreto de ESE registro, para el flujo client-credentials de Graph. */
+    ENTRA_CLIENT_SECRET: z.string().optional(),
+    /**
+     * La zona en la que se leen «viernes» y «las 16:00». UNA sola para todo el sistema:
+     * no hay zona horaria por tecnico y anadirla seria una columna mas y dos entradas de
+     * cron. Nombre IANA porque `Intl` sabe de horario de verano y un desfase fijo no.
+     */
+    NOTIF_TZ: z.string().min(1).default('America/Bogota'),
+    /** Raiz publica de la app, para el enlace del correo. Obligatoria con `graph`. */
+    APP_BASE_URL: z.string().optional(),
   })
-  // Validacion cruzada: encender el modo sin contraseña fuerte no arranca.
+  // Validacion cruzada: encender un modo sin lo que ese modo necesita no arranca.
   .superRefine((v, ctx) => {
     if (v.DEV_AUTH_ENABLED && (v.DEV_AUTH_PASSWORD ?? '').length < DEV_AUTH_MIN_PASSWORD) {
       ctx.addIssue({
@@ -44,6 +78,25 @@ const envSchema = z
         path: ['DEV_AUTH_PASSWORD'],
         message: `con DEV_AUTH_ENABLED=true es obligatoria y de ${DEV_AUTH_MIN_PASSWORD} caracteres o mas (no hay valor por defecto)`,
       });
+    }
+    // Las tres que solo hacen falta para hablar con Graph. Se exigen al arrancar y no
+    // en el primer envio: un cron que descubre a las 16:01 del viernes que le falta el
+    // secreto es un aviso perdido que nadie ve hasta el lunes.
+    if (v.NOTIF_TRANSPORT === 'graph') {
+      const exigidas = [
+        'NOTIF_FROM',
+        'ENTRA_MAIL_CLIENT_ID',
+        'ENTRA_CLIENT_SECRET',
+        'APP_BASE_URL',
+      ] as const;
+      for (const clave of exigidas) {
+        if (!v[clave])
+          ctx.addIssue({
+            code: 'custom',
+            path: [clave],
+            message: 'con NOTIF_TRANSPORT=graph es obligatoria',
+          });
+      }
     }
   });
 

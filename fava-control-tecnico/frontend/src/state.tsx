@@ -5,7 +5,7 @@ import { D } from './i18n';
 import type { Dict } from './i18n';
 import { initAuth, login as msalLogin, logout as msalLogout } from './lib/auth/msal';
 import { devLogin as devSignIn, devLogout, getDevToken } from './lib/auth/dev';
-import { getMe, setUnauthorizedHandler } from './lib/api/client';
+import { getMe, setMyLang, setUnauthorizedHandler } from './lib/api/client';
 import type { MeResponse } from './lib/api/client';
 import type {
   AuditRow, DayEntry, Density, Expense, Lang, Note, Role, Route, Theme, ToastData,
@@ -152,6 +152,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     patch({
       sessionStatus: 'ok', me, myRoles: roles, loggedIn: true, loading: false,
       role, route: FIRST_ROUTE[role], onboard: !seen, onboardStep: 0,
+      // El idioma vuelve del servidor: elegirlo una vez vale para todos los
+      // dispositivos, y es el mismo con el que se le escriben los correos.
+      lang: me.user.lang,
     });
   };
 
@@ -261,7 +264,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toggleLang = () => {
     const langs = Object.keys(D) as Lang[];
     const i = langs.indexOf(stateRef.current.lang);
-    patch({ lang: langs[(i + 1) % langs.length] });
+    const lang = langs[(i + 1) % langs.length];
+    patch({ lang });
+    // Y se guarda en el servidor, que es de donde salen los correos de la Fase 9. La
+    // interfaz cambia al instante y no espera a la respuesta: si la llamada falla, lo
+    // que se pierde es el idioma del PRÓXIMO correo, no la traducción de la pantalla.
+    if (stateRef.current.loggedIn) void setMyLang(lang).catch(() => {});
   };
 
   const approve = (id: string) => {

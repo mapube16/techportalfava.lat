@@ -47,6 +47,28 @@ export function aDate(s: unknown): Date {
 /** Date (medianoche UTC, tal y como lo devuelve un @db.Date) -> 'YYYY-MM-DD'. */
 export const aTexto = (d: Date): string => d.toISOString().slice(0, 10);
 
+const DIA_MS = 86_400_000;
+
+/** 'YYYY-MM-DD' + n dias -> 'YYYY-MM-DD'. Aritmetica en UTC, nunca componentes locales. */
+export const sumarDias = (s: string, n: number): string =>
+  aTexto(new Date(new Date(`${s}T00:00:00Z`).getTime() + n * DIA_MS));
+
+/**
+ * Lunes de la semana ISO a la que pertenece `s`.
+ *
+ * `getUTCDay()` da 0 el domingo, asi que `(dow + 6) % 7` convierte a «dias desde el
+ * lunes» (lunes=0 ... domingo=6) y restarlos aterriza en el lunes. Es UTCDay y no Day
+ * por lo de siempre: el getter local leeria el huso del proceso y en Italia devolveria
+ * el dia anterior.
+ *
+ * Existia ya dos veces —`frontend/src/lib/fecha.ts` y el script one-off
+ * `prisma/migrate-notas.ts`— pero ninguna es importable desde un modulo del backend.
+ * Esta es la del backend, y vive aqui y no en `common/notifications` porque es la misma
+ * clase de cosa que `aDate`/`aTexto`: la semana ISO no es asunto de los avisos.
+ */
+export const lunesDe = (s: string): string =>
+  sumarDias(s, -((new Date(`${s}T00:00:00Z`).getUTCDay() + 6) % 7));
+
 /**
  * Ventana de registro, con TOLERANCIA DE HUSO en vez de una zona configurada.
  *

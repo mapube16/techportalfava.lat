@@ -24,7 +24,19 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const RAIZ = join(import.meta.dirname, '..', 'backend', 'src', 'modules', 'daily-entries');
+/**
+ * Los directorios vigilados. No es todo `backend/src` a proposito: hoy
+ * `weekly-notes.service.ts` tiene un `new Date()` legitimo sin marcar, y ampliarlo
+ * entero pondria el build en rojo por una limpieza que no toca aqui. Se anade el
+ * directorio de cada modulo que calcule fechas de trabajo.
+ *
+ * `common/notifications` esta dentro porque el reloj del cron decide DE QUE SEMANA
+ * habla cada aviso: un getter local ahi manda el recordatorio de la semana equivocada
+ * al este de UTC, o sea en Italia, que es justo donde estan los tecnicos.
+ */
+const RAICES = ['modules/daily-entries', 'common/notifications'].map((r) =>
+  join(import.meta.dirname, '..', 'backend', 'src', ...r.split('/')),
+);
 
 /**
  * Todos los `.ts` del modulo de bitacora MENOS los `*.spec.ts`: una suite de husos
@@ -62,16 +74,25 @@ const textoDeLinea = (src, i) => src.split('\n')[linea(src, i) - 1] ?? '';
  */
 const seSalta = (texto) => /^\s*(\*|\/\/|\/\*)/.test(texto) || texto.includes('// fecha-ok:');
 
-if (!existsSync(RAIZ)) {
-  console.error(`No existe ${RAIZ}: el modulo de bitacora se movio y este guarda-rail dejo de vigilar nada.`);
-  process.exit(1);
+for (const raiz of RAICES) {
+  if (!existsSync(raiz)) {
+    console.error(`No existe ${raiz}: el modulo se movio y este guarda-rail dejo de vigilar nada.`);
+    process.exit(1);
+  }
 }
 
-const ARCHIVOS = readdirSync(RAIZ).filter(esFuente).sort();
+// `[directorio, archivo]` para que el mensaje de error diga cual de los dos modulos es.
+const ARCHIVOS = RAICES.flatMap((raiz) =>
+  readdirSync(raiz)
+    .filter(esFuente)
+    .sort()
+    .map((f) => [raiz, f]),
+);
 const hallazgos = [];
 
-for (const rel of ARCHIVOS) {
-  const src = readFileSync(join(RAIZ, rel), 'utf8');
+for (const [raiz, nombre] of ARCHIVOS) {
+  const rel = `${raiz.split(/[\\/]/).pop()}/${nombre}`;
+  const src = readFileSync(join(raiz, nombre), 'utf8');
 
   /**
    * ponytail: `[^)]*` no es un parser — corta en el primer `)`, asi que
