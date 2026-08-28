@@ -1,3 +1,4 @@
+import type { PrismaClient } from '../../generated/prisma/client';
 import { aDate, sumarDias } from '../../modules/daily-entries/fecha';
 import { type Aviso, alcanzable, enlaceApp } from './notifications.service';
 
@@ -81,16 +82,16 @@ export function faltantes(tecnicos: TecnicoConUsuario[], grupos: GrupoDias[]): F
   };
 }
 
-/** Lo que el cron necesita de Prisma. Estructural: no ata este archivo al cliente generado. */
-export interface ClienteLectura {
-  technician: { findMany(args: unknown): Promise<TecnicoConUsuario[]> };
-  dailyEntry: { groupBy(args: unknown): Promise<GrupoDias[]> };
-  user: {
-    findMany(args: unknown): Promise<
-      { id: string; email: string; displayName: string; lang: string; isActive: boolean }[]
-    >;
-  };
-}
+/**
+ * Lo que el cron necesita de Prisma: las tres delegaciones y nada mas.
+ *
+ * `Pick` del cliente generado y NO una interfaz escrita a mano. Lo intente al reves y
+ * no compila: las firmas de Prisma son genericas (`findMany<T extends Args>`) y una
+ * version simplificada con `args: unknown` no es asignable desde el cliente real. Con
+ * `Pick` valen los dos llamadores — el `PrismaClient` del script y el `tx` de una
+ * transaccion, que conserva esas mismas delegaciones.
+ */
+export type ClienteLectura = Pick<PrismaClient, 'technician' | 'dailyEntry' | 'user'>;
 
 /**
  * Lee quien no envio la semana que empieza en `lunes`.
