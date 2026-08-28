@@ -26,7 +26,16 @@ import { lunesDe, sumarDias } from '../src/modules/daily-entries/fecha';
 
 const PROYECTO = 'ZZ DEMO - Pasta Nova';
 const COMMESSAS = ['DEMO-A', 'DEMO-B'];
-const TECNICOS = ['Camilo Cruz', 'Ivan Cortes', 'Leomar Klein'];
+/**
+ * Tecnicos PROPIOS de la demo, no los reales. Aprendido a golpes: la primera version
+ * ponia jornadas de Camilo, Ivan y Leomar en fechas que TAMBIEN estan en el Excel, y
+ * `migrate-excel.ts` borra-y-reinserta el historico sin tocar las filas ajenas
+ * (`source_sheet IS NULL`). Al reinsertar chocaba contra UNIQUE(technician_id, date),
+ * la migracion moria a mitad y dejaba la base con la mitad del historico.
+ *
+ * Con tecnicos propios el choque es imposible: no aparecen en ninguna hoja del Excel.
+ */
+const TECNICOS = ['ZZ DEMO Ana Rossi', 'ZZ DEMO Bruno Sala', 'ZZ DEMO Carla Neri'];
 
 /** El historico del Excel viene sin descripcion en 6.573 de 6.574 filas, asi que la
     Nota sale en blanco. Estas son las que hacen que el PDF se vea como el papel real. */
@@ -65,6 +74,7 @@ async function main() {
       });
       await prisma.order.deleteMany({ where: { projectId: proyecto.id } });
       await prisma.project.delete({ where: { id: proyecto.id } });
+      await prisma.technician.deleteMany({ where: { fullName: { in: TECNICOS } } });
       console.log(
         `borrado: ${n.count} notas, ${d.count} jornadas, ${v.count} dias vendidos, ` +
           `${ords.length} ordenes, 1 proyecto`,
@@ -83,8 +93,16 @@ async function main() {
     if (!maquina || !moneda)
       throw new Error('faltan catalogos: corre antes `npm -w backend run db:seed`');
 
+    // Se crean si no estan. `roleType` sale del catalogo real para que el cargo que
+    // imprime la Nota sea uno de los de FAVA y no un invento.
+    const cargo = await prisma.roleType.findFirst({ orderBy: { name: 'asc' } });
+    if (!cargo) throw new Error('no hay roles de tecnico en el catalogo');
+    for (const nombre of TECNICOS)
+      if (!(await prisma.technician.findFirst({ where: { fullName: nombre } })))
+        await prisma.technician.create({
+          data: { fullName: nombre, roleTypeId: cargo.id, employmentType: 'INTERNO' },
+        });
     const tecnicos = await prisma.technician.findMany({ where: { fullName: { in: TECNICOS } } });
-    if (!tecnicos.length) throw new Error('no encuentro los tecnicos de la demo');
 
     if (dry) {
       console.log(`crearia "${PROYECTO}", 2 ordenes, 12 lineas de dias vendidos,`);

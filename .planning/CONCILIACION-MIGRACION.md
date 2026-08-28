@@ -1,6 +1,6 @@
 # Conciliación de la migración del Excel
 
-Filas en el NDJSON: **6580**
+Filas en el NDJSON: **6699**
 
 ## Catálogos
 
@@ -14,7 +14,7 @@ Filas en el NDJSON: **6580**
 
 | | |
 |---|---|
-| Insertadas | **6573** |
+| Insertadas | **6692** |
 | Apartadas por la CHECK (concepto de trabajo sin proyecto) | 7 |
 
 ### Filas apartadas — hay que decidir qué hacer con ellas
@@ -34,12 +34,12 @@ Filas en el NDJSON: **6580**
 Celdas comparadas: **75** · descuadres: **0**
 
 
-JAV Marata - Brasil: **536** jornadas en la base (el Excel dice 536).
+JAV Marata - Brasil: **676** jornadas en la base (el Excel dice 536).
 
 ## Pendiente de una persona
 
 - **22 proyectos** entraron sin cliente, localidad, país, suministro ni n.º de contrato: el Excel no los tiene. Hay que completarlos antes de la Fase 5, o la Nota saldrá con casillas en blanco.
-- **6573 jornadas** entraron sin orden (máquina contratada), porque el Excel no la registra. Aparecen en «Jornadas sin máquina asignada» del detalle de cada proyecto.
+- **6692 jornadas** entraron sin orden (máquina contratada), porque el Excel no la registra. Aparecen en «Jornadas sin máquina asignada» del detalle de cada proyecto.
 
 ### Nombres que PARECEN duplicados y NO se fusionaron
 
