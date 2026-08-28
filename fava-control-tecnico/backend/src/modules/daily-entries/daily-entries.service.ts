@@ -144,6 +144,24 @@ export class DailyEntriesService {
    * Y no hay salida: un P2002 dentro de la $transaction del RlsInterceptor la deja
    * abortada (verificado: P2039 al cerrar), asi que no se puede capturar y reintentar.
    */
+  /**
+   * La misma jornada en VARIOS dias. Se apoya en `guardar` una vez por fecha en vez de
+   * componer un upsert masivo: asi la validacion de ventana, la de orden-pertenece-al-
+   * proyecto y el bloqueo BIT-05 son EXACTAMENTE los mismos que en el guardado de uno.
+   * Dos caminos con reglas parecidas es como se acaba pudiendo escribir por la puerta
+   * de atras lo que la principal prohibe.
+   */
+  async guardarVarios(
+    technicianId: string,
+    dias: { date: string; description: string | null }[],
+    comun: Jornada,
+  ) {
+    const escritas: Awaited<ReturnType<DailyEntriesService['guardar']>>[] = [];
+    for (const d of dias)
+      escritas.push(await this.guardar(technicianId, d.date, { ...comun, description: d.description }));
+    return escritas;
+  }
+
   async guardar(technicianId: string, fecha: string, datos: Jornada) {
     const date = aDate(fecha);
 

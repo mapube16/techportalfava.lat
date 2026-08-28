@@ -8,9 +8,9 @@ import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getCatalogs } from '../lib/api/catalogs';
 import { listProjects } from '../lib/api/projects';
-import { getWeek, putEntry } from '../lib/api/dailyEntries';
+import { getWeek, putEntries } from '../lib/api/dailyEntries';
 import type { ConceptCode } from '../lib/api/dailyEntries';
-import { hoyLocal } from '../lib/fecha';
+import { diasDeSemana, hoyLocal, lunesDe } from '../lib/fecha';
 
 /**
  * Los conceptos que la CHECK `de_proyecto_por_concepto` deja ir SIN proyecto. Es la
@@ -18,6 +18,10 @@ import { hoyLocal } from '../lib/fecha';
  * al técnico no le dice nada. Aquí sirve para no pedirle un proyecto que no tiene.
  */
 const SIN_PROYECTO: ConceptCode[] = ['LR', 'NR', 'IL'];
+
+/** Inicial del dia, indexada por `getUTCDay()` (0 = domingo). Las fechas son
+    'YYYY-MM-DD' leidas en UTC, nunca en el huso del movil (ver lib/fecha.ts). */
+const DIA_CORTO = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
 /** «En Fabrica» solo tiene sentido en día completo y festivo: es su modificador. */
 const ADMITE_FABRICA: ConceptCode[] = ['DC', 'DFD'];
@@ -29,8 +33,19 @@ export default function LogDayDrawer() {
   const [orderId, setOrderId] = useState('');
   const [concept, setConcept] = useState<ConceptCode>('DC');
   const [inFactory, setInFactory] = useState(false);
-  const [desc, setDesc] = useState('');
+  /**
+   * Los dias que se van a escribir. Empieza con uno —el que se abrio— y el tecnico
+   * puede marcar mas: un montaje son cinco dias con el MISMO proyecto, orden y
+   * concepto, y lo unico que cambia es la descripcion. Rellenarlos de uno en uno,
+   * reeligiendo los tres selectores cada vez, es la razon por la que 6.573 de las
+   * 6.574 jornadas del historico del Excel vienen sin descripcion: salia caro.
+   */
+  const [dias, setDias] = useState<string[]>([state.logDate ?? hoyLocal()]);
+  /** Una descripcion por dia. Es lo unico que NO se comparte. */
+  const [descs, setDescs] = useState<Record<string, string>>({});
   const [descError, setDescError] = useState(false);
+  const desc = descs[fecha] ?? '';
+  const setDesc = (v: string) => setDescs((d) => ({ ...d, [fecha]: v }));
   const [errApi, setErrApi] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
@@ -57,8 +72,17 @@ export default function LogDayDrawer() {
     setOrderId(existente.orderId ?? '');
     if (existente.conceptCode) setConcept(existente.conceptCode);
     setInFactory(existente.inFactory);
-    setDesc(existente.description ?? '');
-  }, [existente]);
+    setDescs((d) => ({ ...d, [fecha]: existente.description ?? '' }));
+  }, [existente, fecha]);
+
+  // Cambiar la fecha del selector mueve el dia «principal» y lo mantiene marcado.
+  const cambiarFecha = (f: string) => {
+    setFecha(f);
+    setDias((ds) => (ds.includes(f) ? ds : [...ds, f].sort()));
+  };
+  const semana = diasDeSemana(lunesDe(fecha));
+  const alternar = (f: string) =>
+    setDias((ds) => (ds.includes(f) ? ds.filter((x) => x !== f) : [...ds, f].sort()));
 
   const close = () => patch({ logOpen: false, logDate: null });
 
@@ -69,7 +93,10 @@ export default function LogDayDrawer() {
   const exigeProyecto = !SIN_PROYECTO.includes(concept);
 
   const save = () => {
-    if (!desc.trim()) {
+    const elegidos = dias.length ? dias : [fecha];
+    // Sin descripcion en ALGUNO de los dias elegidos no se guarda: un dia en blanco
+    // dentro de un guardado masivo es justo el agujero que esto viene a cerrar.
+    if (elegidos.some((f) => !(descs[f] ?? '').trim())) {
       setDescError(true);
       return;
     }
@@ -80,16 +107,18 @@ export default function LogDayDrawer() {
     }
     setErrApi(null);
     setGuardando(true);
-    putEntry(fecha, {
-      projectId: projectId || null,
-      // La orden es opcional aunque haya proyecto: puede no estar creada todavía, y
-      // bloquear la captura por eso dejaría al técnico sin poder registrar su día.
-      orderId: orderId || null,
-      conceptCode: concept,
-      phase: null,
-      inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
-      description: desc.trim(),
-    })
+    putEntries(
+      elegidos.map((f) => ({ date: f, description: (descs[f] ?? '').trim() })),
+      {
+        projectId: projectId || null,
+        // La orden es opcional aunque haya proyecto: puede no estar creada todavía, y
+        // bloquear la captura por eso dejaría al técnico sin poder registrar su día.
+        orderId: orderId || null,
+        conceptCode: concept,
+        phase: null,
+        inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
+      },
+    )
       .then(() => {
         close();
         refresh();
@@ -134,8 +163,37 @@ export default function LogDayDrawer() {
 
           {field(
             t.log_date,
-            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={inputStyle} />,
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => cambiarFecha(e.target.value)}
+              className={inputStyle}
+            />,
           )}
+
+          {/* Los siete dias de esa semana. Marcar varios escribe la MISMA jornada en
+              todos —mismo proyecto, orden y concepto— y deja una descripcion por dia,
+              que es lo unico que cambia entre el lunes y el martes de un montaje. */}
+          <div className="mb-3.5 flex gap-1.5 flex-wrap">
+            {semana.map((f) => {
+              const on = dias.includes(f);
+              return (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => alternar(f)}
+                  aria-pressed={on}
+                  className={`min-h-11 md:min-h-9 px-3 rounded-md text-[12.5px] font-semibold border cursor-pointer transition-colors ${
+                    on
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-muted text-muted-foreground border-border hover:bg-surface-3'
+                  }`}
+                >
+                  {DIA_CORTO[new Date(`${f}T00:00:00Z`).getUTCDay()]} {f.slice(8)}
+                </button>
+              );
+            })}
+          </div>
 
           {field(
             t.log_project,
@@ -240,19 +298,35 @@ export default function LogDayDrawer() {
             </label>
           ) : null}
 
-          {field(
-            t.log_desc,
-            <textarea
-              value={desc}
-              onChange={(e) => {
-                setDesc(e.target.value);
-                if (descError && e.target.value.trim()) setDescError(false);
-              }}
-              placeholder={t.log_desc_ph}
-              className={`${descError ? inputError : inputStyle} min-h-24 resize-y`}
-            />,
-            descError,
-          )}
+          {dias.length <= 1
+            ? field(
+                t.log_desc,
+                <textarea
+                  value={desc}
+                  onChange={(e) => {
+                    setDesc(e.target.value);
+                    if (descError && e.target.value.trim()) setDescError(false);
+                  }}
+                  placeholder={t.log_desc_ph}
+                  className={`${descError ? inputError : inputStyle} min-h-24 resize-y`}
+                />,
+                descError,
+              )
+            : dias.map((f) =>
+                field(
+                  `${t.log_desc} · ${DIA_CORTO[new Date(`${f}T00:00:00Z`).getUTCDay()]} ${f.slice(8)}`,
+                  <textarea
+                    value={descs[f] ?? ''}
+                    onChange={(e) => {
+                      setDescs((d) => ({ ...d, [f]: e.target.value }));
+                      if (descError && e.target.value.trim()) setDescError(false);
+                    }}
+                    placeholder={t.log_desc_ph}
+                    className={`${descError && !(descs[f] ?? '').trim() ? inputError : inputStyle} min-h-16 resize-y`}
+                  />,
+                  descError && !(descs[f] ?? '').trim(),
+                ),
+              )}
 
           {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
 

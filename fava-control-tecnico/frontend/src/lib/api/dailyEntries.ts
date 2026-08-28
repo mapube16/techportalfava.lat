@@ -58,3 +58,14 @@ export const getWeek = (from: string, to: string) =>
  */
 export const putEntry = (date: string, body: EntryInput) =>
   apiSend<Entry>(`/daily-entries/${date}`, 'PUT', body);
+
+/**
+ * BIT-06 — la misma jornada en VARIOS dias, cada uno con su descripcion.
+ *
+ * Todo o nada: el servidor escribe dentro de la transaccion de la peticion, asi que si
+ * un dia esta bloqueado no se queda media semana escrita.
+ */
+export const putEntries = (
+  days: { date: string; description: string | null }[],
+  body: Omit<EntryInput, 'description'>,
+) => apiSend<Entry[]>('/daily-entries', 'PUT', { ...body, days });

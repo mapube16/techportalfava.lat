@@ -17,6 +17,36 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** El cuerpo de la Nota Semanal imprime esto: 2000 caracteres son 25 lineas de PDF. */
 const DESCRIPCION_MAX = 2000;
 
+/** Una semana. Mas dias no es «rellenar la semana», es otra cosa que nadie ha pedido. */
+const DIAS_MAX = 7;
+
+/**
+ * Los dias del guardado MASIVO: cada uno con SU descripcion, y el resto de la jornada
+ * (proyecto, orden, concepto) compartido.
+ *
+ * La descripcion va por dia y no compartida porque es justo lo unico que cambia entre
+ * el lunes y el martes de un mismo montaje. Compartirla obligaria a reabrir el cajon
+ * dia por dia para corregirla, que es exactamente la friccion que esto viene a quitar.
+ *
+ * `days` y no `date`: el validador de la jornada rechaza `date` en el cuerpo a
+ * proposito, y esto no debe saltarselo.
+ */
+function dias(valor: unknown): { date: string; description: string | null }[] {
+  if (!Array.isArray(valor) || !valor.length) throw new BadRequestException('DIAS_INVALIDOS');
+  if (valor.length > DIAS_MAX) throw new BadRequestException('DEMASIADOS_DIAS');
+
+  const lista = valor.map((v) => {
+    const d = v as Record<string, unknown>;
+    if (!d || typeof d.date !== 'string') throw new BadRequestException('FECHA_INVALIDA');
+    return { date: d.date, description: descripcion(d.description) };
+  });
+  // Repetido seria escribir dos veces el mismo dia en la misma peticion: el ultimo
+  // ganaria en silencio y el tecnico no sabria cual quedo.
+  if (new Set(lista.map((d) => d.date)).size !== lista.length)
+    throw new BadRequestException('DIAS_REPETIDOS');
+  return lista;
+}
+
 /**
  * Los campos que el SERVIDOR gobierna. Aceptarlos y descartarlos en silencio dejaria
  * creer al cliente que se guardaron (mismo criterio que `CAMPO_CALCULADO_NO_ADMITIDO`
@@ -92,6 +122,27 @@ export class DailyEntriesController {
     @Query('to') to?: string,
   ) {
     return this.service.semana(this.service.tecnicoDe(actor), from, to);
+  }
+
+  /**
+   * BIT-06 — la MISMA jornada en varios dias de una vez.
+   *
+   * Un montaje es cinco dias seguidos en el mismo proyecto, la misma orden y el mismo
+   * concepto; lo unico que cambia es la descripcion. Obligar a abrir el cajon cinco
+   * veces y reelegir todo cada vez es la razon por la que 6.573 de las 6.574 jornadas
+   * del historico del Excel vienen SIN descripcion: rellenar salia caro.
+   *
+   * TODO O NADA, y sin escribir una linea para conseguirlo: `RlsInterceptor` ya envuelve
+   * la peticion entera en UNA transaccion, asi que si el cuarto dia esta bloqueado
+   * (BIT-05) los tres anteriores se deshacen solos. Media semana escrita seria peor que
+   * ninguna, porque el tecnico no sabria por donde iba.
+   */
+  @Put()
+  guardarVarios(@CurrentUser() actor: UserModel, @Body() body: Cuerpo) {
+    const technicianId = this.service.tecnicoDe(actor);
+    // `jornada` valida y descarta lo compartido; la descripcion de cada dia viaja en
+    // `days` y pisa la del cuerpo, que aqui no significa nada.
+    return this.service.guardarVarios(technicianId, dias(body?.days), jornada(body));
   }
 
   @Put(':date')
