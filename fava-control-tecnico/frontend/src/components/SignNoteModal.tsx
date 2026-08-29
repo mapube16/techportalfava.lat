@@ -18,13 +18,20 @@ import type { Gasto, WeeklyNote } from '../lib/api/weeklyNotes';
  * en dos obras la misma semana salen dos notas con dos clientes distintos. Un cliente
  * no puede firmar el trabajo del otro.
  *
+ * QUÉ ES ESTA FIRMA. El consentimiento del técnico sobre la hoja que acaba de enviar:
+ * es el acto que cierra el envío, no un trámite posterior. Por eso el diálogo se abre
+ * solo al enviar la semana y por eso el lienzo es lo primero que se ve.
+ *
  * FIRMA SOLO EL TÉCNICO. Aquí hubo un segundo lienzo para el cliente y estorbaba: la
  * casilla del PDF se llama «TIMBRE Y FIRMA DEL CLIENTE» y un timbre es de tinta, así
  * que ese recuadro se imprime vacío y se firma sobre el papel, como siempre. Pedirle al
  * técnico que le pase el móvil al cliente doblaba el alto del diálogo —la firma propia
  * quedaba fuera de pantalla— para capturar algo que igualmente había que estampar.
  *
- * Los gastos se guardan ANTES de firmar, en su propia petición: son un recurso aparte
+ * LOS GASTOS VAN PLEGADOS Y DEBAJO. La mayoría de semanas no tiene ninguno; tenerlos
+ * abiertos y arriba hacía que lo excepcional tapara lo obligatorio.
+ *
+ * Se guardan ANTES de firmar, en su propia petición: son un recurso aparte
  * (`PUT /expenses`) y el servidor los bloquea en cuanto la nota tiene firma, así que
  * este es literalmente el último momento en que se pueden escribir.
  */
@@ -204,16 +211,11 @@ export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onC
             <span className="font-semibold text-foreground">{nota.projectName}</span> · {nota.clientName} · {nota.weekStart}
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            {tablaGastos(t.expenses, gastos, setGastos)}
-            {tablaGastos(t.advances, anticipos, setAnticipos)}
-          </div>
-
-          {/* FUERA de la rejilla de dos columnas. Dentro era su tercer hijo, así que
-              caía en la celda izquierda de la segunda fila: las miniaturas salían
-              apretadas en media anchura con el hueco de al lado vacío. */}
-          <ReceiptsBlock noteId={nota.id} />
-
+          {/* LA FIRMA VA PRIMERA porque es lo obligatorio: valida el consentimiento del
+              técnico sobre la hoja que acaba de enviar. Estaba debajo de las tablas de
+              gasto y era el orden al revés — quien abría esto se encontraba un
+              formulario de gastos y tenía que bajar a buscar lo único que hay que
+              hacer sí o sí. */}
           {bloque(t.sign_technician, tecnico, setTecnico, hayTrazoT, () => { setLimpiarT((v) => v + 1); setHayTrazoT(false); }, limpiarT, () => setHayTrazoT(true), refT)}
 
           {/* La aceptación EXPLÍCITA de la declaración: sin esto el trazo es un dibujo,
@@ -225,6 +227,25 @@ export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onC
               <div className="text-[11.5px] text-muted-foreground mt-0.5">{t.sign_declaration_accept}</div>
             </div>
           </label>
+
+          {/* PLEGADOS. La mayoría de semanas no tiene ningún gasto, y hasta ahora esas
+              tablas eran lo primero y lo más grande del diálogo. `details` nativo: no
+              hace falta estado ni librería para abrir y cerrar una sección. */}
+          <details className="border border-border rounded-xl overflow-hidden">
+            <summary className="cursor-pointer select-none px-3.5 py-3 text-[12.5px] font-semibold hover:bg-muted">
+              {t.expenses} · {t.receipts}
+            </summary>
+            <div className="px-3.5 pb-3.5 pt-1 flex flex-col gap-3">
+              <div className="grid gap-3 md:grid-cols-2">
+                {tablaGastos(t.expenses, gastos, setGastos)}
+                {tablaGastos(t.advances, anticipos, setAnticipos)}
+              </div>
+              {/* FUERA de la rejilla de dos columnas. Dentro era su tercer hijo, así que
+                  caía en la celda izquierda de la segunda fila: las miniaturas salían
+                  apretadas en media anchura con el hueco de al lado vacío. */}
+              <ReceiptsBlock noteId={nota.id} />
+            </div>
+          </details>
 
           {err ? <FieldError msg={`${t.err_save}: ${err}`} /> : null}
 
