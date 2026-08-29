@@ -73,6 +73,8 @@ const ES: Record<string, string> = {
   // ── Técnicos, usuarios y accesos ──
   TECNICO_NO_ENCONTRADO: 'Ese técnico ya no existe. Recarga la pantalla.',
   TECNICO_INEXISTENTE: 'Ese técnico no existe.',
+  TECNICO_SIN_CORREO: 'Ese técnico no tiene correo, así que no hay a dónde mandarle la invitación. Añádeselo en su ficha y vuelve a intentarlo.',
+  TECNICO_INACTIVO: 'Ese técnico está desactivado. Actívalo antes de darle acceso.',
   ROL_TECNICO_INEXISTENTE: 'Ese cargo no existe en el catálogo.',
   USUARIO_NO_ENCONTRADO: 'Ese usuario ya no existe. Recarga la pantalla.',
   EMAIL_YA_REGISTRADO: 'Ya hay un usuario con ese correo.',
@@ -151,6 +153,8 @@ const IT: Record<string, string> = {
 
   TECNICO_NO_ENCONTRADO: 'Quel tecnico non esiste più. Ricarica la schermata.',
   TECNICO_INEXISTENTE: 'Quel tecnico non esiste.',
+  TECNICO_SIN_CORREO: 'Quel tecnico non ha email, quindi non c’è dove mandare l’invito. Aggiungila alla sua scheda e riprova.',
+  TECNICO_INACTIVO: 'Quel tecnico è disattivato. Attivalo prima di dargli accesso.',
   ROL_TECNICO_INEXISTENTE: 'Quel ruolo non esiste nel catalogo.',
   USUARIO_NO_ENCONTRADO: 'Quell’utente non esiste più. Ricarica la schermata.',
   EMAIL_YA_REGISTRADO: 'C’è già un utente con quella email.',
@@ -227,6 +231,8 @@ const PT: Record<string, string> = {
 
   TECNICO_NO_ENCONTRADO: 'Esse técnico não existe mais. Recarregue a tela.',
   TECNICO_INEXISTENTE: 'Esse técnico não existe.',
+  TECNICO_SIN_CORREO: 'Esse técnico não tem e-mail, então não há para onde mandar o convite. Adicione na ficha dele e tente de novo.',
+  TECNICO_INACTIVO: 'Esse técnico está desativado. Ative antes de dar acesso.',
   ROL_TECNICO_INEXISTENTE: 'Esse cargo não existe no catálogo.',
   USUARIO_NO_ENCONTRADO: 'Esse usuário não existe mais. Recarregue a tela.',
   EMAIL_YA_REGISTRADO: 'Já existe um usuário com esse e-mail.',

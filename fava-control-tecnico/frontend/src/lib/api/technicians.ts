@@ -27,6 +27,10 @@ export interface TechnicianInput {
   employmentType: EmploymentType;
 }
 
+/** CAT-02c: crea la cuenta si falta y le manda el correo de bienvenida. */
+export const invitarTecnico = (id: string) =>
+  apiSend<{ userId: string; email: string }>(`/technicians/${id}/invitar`, 'POST');
+
 /** Activos e inactivos, ORDER BY fullName. */
 export const listTechnicians = () => apiFetch<Technician[]>('/technicians');
 

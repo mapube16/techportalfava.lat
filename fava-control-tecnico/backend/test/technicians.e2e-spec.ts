@@ -351,4 +351,77 @@ describe('technicians: alta sin Entra y baja que conserva la historia (CAT-02)',
     expect(invitado.body.technicianId).toBe(t.id);
   });
 
+
+  // ── CAT-02c: invitar desde la ficha del tecnico ──
+
+  it('invitar crea la cuenta, la vincula y ENCOLA el correo', async () => {
+    const t = await ownerClient.technician.create({
+      data: {
+        fullName: 'Recien Llegado',
+        roleTypeId: ROL_TEST,
+        employmentType: 'INTERNO',
+        email: 'llegado@favalatinoamerica.com',
+      },
+    });
+
+    const res = await http()
+      .post(`/api/technicians/${t.id}/invitar`)
+      .set(auth(tokenAdmin))
+      .expect(201);
+    expect(res.body.email).toBe('llegado@favalatinoamerica.com');
+
+    const u = await ownerClient.user.findUniqueOrThrow({
+      where: { email: 'llegado@favalatinoamerica.com' },
+    });
+    // Rol 'T' y solo 'T': dar acceso a un tecnico es dar acceso a SU semana.
+    expect(u.roles).toEqual(['T']);
+    expect(u.technicianId).toBe(t.id);
+    // Sin identidad: la fija el primer login con Entra, no la invitacion.
+    expect(u.entraOid).toBeNull();
+
+    const avisos = await ownerClient.notification.findMany({ where: { toUserId: u.id } });
+    expect(avisos).toHaveLength(1);
+    expect(avisos[0].kind).toBe('invitacion');
+    expect(avisos[0].subject).toContain('acceso');
+    // NADIE ha mandado nada todavia: encolar no es enviar. Eso lo hace el cron.
+    expect(avisos[0].status).toBe('pending');
+  });
+
+  it('reinvitar NO duplica la cuenta y encola OTRO correo: los correos se pierden', async () => {
+    const t = await ownerClient.technician.create({
+      data: {
+        fullName: 'Dos Veces',
+        roleTypeId: ROL_TEST,
+        employmentType: 'INTERNO',
+        email: 'dosveces@favalatinoamerica.com',
+      },
+    });
+    const uno = await http().post(`/api/technicians/${t.id}/invitar`).set(auth(tokenAdmin)).expect(201);
+    const dos = await http().post(`/api/technicians/${t.id}/invitar`).set(auth(tokenAdmin)).expect(201);
+
+    expect(dos.body.userId).toBe(uno.body.userId);
+    expect(await ownerClient.user.count({ where: { email: 'dosveces@favalatinoamerica.com' } })).toBe(1);
+    expect(await ownerClient.notification.count({ where: { toUserId: uno.body.userId } })).toBe(2);
+  });
+
+  it('sin correo no hay a donde invitar: 400 con su motivo', async () => {
+    const t = await ownerClient.technician.create({
+      data: { fullName: 'Sin Correo', roleTypeId: ROL_TEST, employmentType: 'INTERNO' },
+    });
+    const res = await http().post(`/api/technicians/${t.id}/invitar`).set(auth(tokenAdmin)).expect(400);
+    expect(res.body.message).toBe('TECNICO_SIN_CORREO');
+  });
+
+  it('un tecnico raso no puede invitar a nadie', async () => {
+    const t = await ownerClient.technician.create({
+      data: {
+        fullName: 'Ajeno',
+        roleTypeId: ROL_TEST,
+        employmentType: 'INTERNO',
+        email: 'ajeno@favalatinoamerica.com',
+      },
+    });
+    await http().post(`/api/technicians/${t.id}/invitar`).set(auth(tokenTec)).expect(403);
+  });
+
 });

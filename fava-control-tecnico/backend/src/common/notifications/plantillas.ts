@@ -15,7 +15,17 @@
 export type Lang = 'es' | 'it' | 'pt';
 export const LANGS: readonly Lang[] = ['es', 'it', 'pt'];
 
-export type Kind = 'note_returned' | 'note_approved' | 'week_missing' | 'admin_digest';
+export type Kind =
+  | 'note_returned'
+  | 'note_approved'
+  | 'week_missing'
+  | 'admin_digest'
+  /**
+   * CAT-02c. El unico que NO lo dispara un reloj ni una transicion: lo manda un admin
+   * a proposito, pulsando «Invitar». Por eso no lleva ventana ni cron — y por eso
+   * ningun correo sale hasta que una persona decide que salga.
+   */
+  | 'invitacion';
 
 /** Lo que cada plantilla puede pintar. Todo opcional salvo el nombre. */
 export interface Datos {
@@ -29,6 +39,8 @@ export interface Datos {
   lista?: string[];
   /** admin_digest: cuantos no tienen correo con el que avisarles. */
   inalcanzables?: string[];
+  /** invitacion: quien le da el acceso. Un correo de una persona se lee distinto que uno de un sistema. */
+  invitadoPor?: string;
 }
 
 export interface Correo {
@@ -56,6 +68,22 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
         `Tu nota de la semana del ${d.semana} (${d.proyecto}) fue devuelta para que la corrijas.\n\n` +
         `Motivo:\n${d.comentario}\n` +
         enlace(d, 'Corrígela aquí') +
+        `\n${PIE.es}\n`,
+    }),
+    /**
+     * NO explica como crear una cuenta, porque no hay ninguna que crear: se entra con
+     * el Microsoft corporativo que la persona ya usa y el primer acceso la reconoce
+     * sola (`EntraGuard.vincular`). Un correo que dijera «registrate» mandaria a
+     * alguien a buscar un formulario que no existe.
+     */
+    invitacion: (d) => ({
+      subject: 'Tienes acceso a FAVA Control Técnico',
+      bodyText:
+        `Hola ${d.nombre}:\n\n` +
+        `${d.invitadoPor} te dio acceso a FAVA Control Técnico, donde vas a registrar tus días ` +
+        `de trabajo y firmar tu nota semanal.\n\n` +
+        `Entra con tu correo de FAVA. No tienes que crear ninguna contraseña.\n` +
+        enlace(d, 'Entrar') +
         `\n${PIE.es}\n`,
     }),
     note_approved: (d) => ({
@@ -99,6 +127,16 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
         enlace(d, 'Correggila qui') +
         `\n${PIE.it}\n`,
     }),
+    invitacion: (d) => ({
+      subject: 'Hai accesso a FAVA Control Técnico',
+      bodyText:
+        `Ciao ${d.nombre},\n\n` +
+        `${d.invitadoPor} ti ha dato accesso a FAVA Control Técnico, dove registrerai le tue ` +
+        `giornate di lavoro e firmerai la nota settimanale.\n\n` +
+        `Entra con la tua email FAVA. Non devi creare nessuna password.\n` +
+        enlace(d, 'Entra') +
+        `\n${PIE.it}\n`,
+    }),
     note_approved: (d) => ({
       subject: `La tua nota di ${d.proyecto} è stata approvata`,
       bodyText:
@@ -138,6 +176,16 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
         `A sua nota da semana de ${d.semana} (${d.proyecto}) foi devolvida para correção.\n\n` +
         `Motivo:\n${d.comentario}\n` +
         enlace(d, 'Corrija aqui') +
+        `\n${PIE.pt}\n`,
+    }),
+    invitacion: (d) => ({
+      subject: 'Você tem acesso ao FAVA Control Técnico',
+      bodyText:
+        `Olá ${d.nombre},\n\n` +
+        `${d.invitadoPor} liberou o seu acesso ao FAVA Control Técnico, onde você vai registrar ` +
+        `os seus dias de trabalho e assinar a nota semanal.\n\n` +
+        `Entre com o seu e-mail da FAVA. Não precisa criar nenhuma senha.\n` +
+        enlace(d, 'Entrar') +
         `\n${PIE.pt}\n`,
     }),
     note_approved: (d) => ({

@@ -6,7 +6,7 @@
  */
 import { LANGS, PLANTILLAS, type Kind, idioma, render } from './plantillas';
 
-const KINDS: Kind[] = ['note_returned', 'note_approved', 'week_missing', 'admin_digest'];
+const KINDS: Kind[] = ['note_returned', 'note_approved', 'week_missing', 'admin_digest', 'invitacion'];
 
 const DATOS = {
   nombre: 'Giuliano',
@@ -16,6 +16,7 @@ const DATOS = {
   enlace: 'https://ejemplo.test/',
   lista: ['Ivan Cortes', 'Leomar Klein'],
   inalcanzables: ['Camilo Cruz'],
+  invitadoPor: 'Andrea Scapin',
 };
 
 describe('plantillas de correo', () => {

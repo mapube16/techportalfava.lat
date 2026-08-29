@@ -82,6 +82,18 @@ export class TechniciansController {
     return this.service.listar();
   }
 
+  /**
+   * CAT-02c — darle acceso: crea la cuenta si falta y le manda el correo.
+   *
+   * @Roles de la clase: A y S, igual que el resto del maestro. Es ademas el UNICO
+   * correo de la aplicacion que sale porque una persona lo pide; los otros cuatro los
+   * dispara un reloj o una transicion.
+   */
+  @Post(':id/invitar')
+  invitar(@CurrentUser() actor: UserModel, @Param('id', ParseUUIDPipe) id: string) {
+    return this.service.invitar(id, actor.displayName);
+  }
+
   @Post()
   crear(@Body() body: Cuerpo) {
     return this.service.crear({

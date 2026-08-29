@@ -1,5 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { NotificationsService } from '../../common/notifications/notifications.service';
 import type { EmploymentType } from '../../generated/prisma/enums';
 
 /**
@@ -54,7 +60,55 @@ export interface DatosTecnico {
 
 @Injectable()
 export class TechniciansService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notif: NotificationsService,
+  ) {}
+
+  /**
+   * CAT-02c — dar acceso a un tecnico: crea su cuenta si no la tiene y le manda el correo.
+   *
+   * UN SOLO PASO. Antes eran tres pantallas —crear la ficha, invitar al usuario,
+   * acordarse de vincularlos— y ademas NADIE avisaba al invitado: la fila se creaba y
+   * la persona no se enteraba nunca. El usuario existia y jamas entraba.
+   *
+   * El rol es 'T' y solo 'T': dar acceso a un tecnico es dar acceso a SU semana. Un
+   * admin se invita desde la pantalla de Usuarios, donde se eligen los roles a
+   * conciencia, no de rebote desde el maestro de tecnicos.
+   */
+  async invitar(id: string, invitadoPor: string) {
+    const t = await this.prisma.client.technician.findUnique({
+      where: { id },
+      select: { id: true, fullName: true, email: true, isActive: true, user: { select: { id: true } } },
+    });
+    if (!t) throw new NotFoundException('TECNICO_NO_ENCONTRADO');
+    if (!t.email) throw new BadRequestException('TECNICO_SIN_CORREO');
+    if (!t.isActive) throw new ConflictException('TECNICO_INACTIVO');
+
+    // Reinvitar es legitimo y frecuente: el correo se pierde o se va a spam. Si ya
+    // tiene cuenta se reutiliza en vez de fallar.
+    const usuario =
+      t.user?.id != null
+        ? await this.prisma.client.user.findUniqueOrThrow({
+            where: { id: t.user.id },
+            select: { id: true, email: true, displayName: true, lang: true },
+          })
+        : await this.prisma.client.user.create({
+            data: {
+              email: t.email,
+              displayName: t.fullName,
+              roles: ['T'],
+              // La invitacion NO fija identidad: el primer login con un token cuyo
+              // claim de correo coincida escribe el entra_oid (EntraGuard.vincular).
+              entraOid: null,
+              technicianId: t.id,
+            },
+            select: { id: true, email: true, displayName: true, lang: true },
+          });
+
+    await this.notif.invitar({ userId: usuario.id, ...usuario }, invitadoPor);
+    return { userId: usuario.id, email: usuario.email };
+  }
 
   /**
    * Sin filtro por `isActive` a proposito: la lista muestra a los inactivos

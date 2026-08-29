@@ -18,7 +18,7 @@ import { codigo, useApiData } from '../lib/api/useApiData';
 import { activos, getCatalogs } from '../lib/api/catalogs';
 import { getUtilization } from '../lib/api/kpis';
 import {
-  createTechnician, listTechnicians, setTechnicianActive, updateTechnician,
+  createTechnician, invitarTecnico, listTechnicians, setTechnicianActive, updateTechnician,
 } from '../lib/api/technicians';
 import type { EmploymentType, Technician } from '../lib/api/technicians';
 
@@ -32,13 +32,15 @@ interface Form {
 }
 
 export default function Techs() {
-  const { state, t, errTexto } = useApp();
+  const { state, t, errTexto, showToast, refresh } = useApp();
   const movil = useIsMobile();
   const [form, setForm] = useState<Form | null>(null);
   const [errSave, setErrSave] = useState<string | null>(null);
   // Mismo criterio que en Proyectos: se muestran los activos y el recuento dice
   // cuantos quedan fuera, para que la lista corta no parezca una lista incompleta.
   const [vigencia, setVigencia] = useState<Vigencia>('activos');
+  /** El id del que se esta invitando: deshabilita SU boton, no todos. */
+  const [invitando, setInvitando] = useState<string | null>(null);
 
   // El maestro y el catálogo de roles en paralelo: el selector del formulario sale
   // del catálogo (CAT-02), no de una lista cableada.
@@ -198,8 +200,35 @@ export default function Techs() {
     <div className="px-4.5 py-2.5 text-xs text-warn">{errTexto(errSave)}</div>
   ) : null;
 
+  /**
+   * Invitar: crea la cuenta si falta y manda el correo.
+   *
+   * SOLO se ofrece a quien tiene correo y sigue activo — sin correo no hay a donde
+   * mandarlo. Se sigue ofreciendo con cuenta ya creada porque REINVITAR es el caso
+   * normal: los correos se pierden y se van a spam.
+   */
+  const invitar = (tc: Technician) => {
+    setErrSave(null);
+    setInvitando(tc.id);
+    invitarTecnico(tc.id)
+      .then(() => { showToast('invited'); refresh(); })
+      .catch((e: unknown) => setErrSave(codigo(e)))
+      .finally(() => setInvitando(null));
+  };
+
   const acciones = (tc: Technician) => (
     <>
+      {tc.email && tc.isActive ? (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => invitar(tc)}
+          disabled={invitando === tc.id}
+          className="min-h-11 md:min-h-9 mr-1.5"
+        >
+          {tc.userId ? t.tech_reinvite : t.tech_invite}
+        </Button>
+      ) : null}
       <Button variant="outline" size="icon" onClick={() => abrirEdicion(tc)} title={t.cat_edit} aria-label={t.cat_edit} className="size-11 md:size-9">
         <Dots w={16} />
       </Button>

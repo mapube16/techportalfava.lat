@@ -193,6 +193,37 @@ export class NotificationsService {
       },
     ]);
   }
+
+  /**
+   * CAT-02c — la invitacion, el UNICO aviso que dispara una persona a proposito.
+   *
+   * Los otros cuatro los lanza un reloj o una transicion de nota. Este lo pulsa un
+   * admin, y la diferencia es deliberada: el primer correo que recibe alguien que
+   * todavia no conoce la aplicacion se manda cuando toca, no cuando el sistema decide.
+   * Es tambien lo que permite construir esto sin apagar `NOTIF_TRANSPORT`: mientras
+   * nadie pulse, no sale nada.
+   *
+   * La `dedupeKey` lleva el instante A PROPOSITO. Reinvitar TIENE que volver a mandar
+   * el correo —los correos se pierden, se van a spam, la gente los borra— al reves que
+   * un aviso de nota, donde repetir seria ruido y por eso su clave es estable.
+   */
+  async invitar(
+    destino: { userId: string; email: string; displayName: string; lang: string },
+    invitadoPor: string,
+  ) {
+    await this.encolar([
+      {
+        kind: 'invitacion',
+        // Hace UNICA cada invitacion, para que reinvitar vuelva a mandar el correo en vez
+        // de chocar con el dedupe. Al reves que un aviso de nota, donde repetir es ruido.
+        dedupeKey: `invitacion:${destino.userId}:${new Date().toISOString()}`, // fecha-ok: es un instante, no una fecha de trabajo
+        para: destino,
+        datos: { invitadoPor, enlace: enlaceApp('/') },
+        entity: 'user',
+        entityId: destino.userId,
+      },
+    ]);
+  }
 }
 
 /**
