@@ -13,6 +13,7 @@ import { createTestApp, crearUsuario } from './helpers/app';
 import { ROL_TEST, TEC_A, TEC_B, appClient, disconnectAll, ownerClient, truncateAll } from './helpers/db';
 import { crearProyecto, crearTecnico } from './helpers/fixtures';
 import { signTestToken } from './helpers/tokens';
+import { LIMITE_CUERPO_JSON, RECIBO_MAX_BYTES } from '../src/config/limites';
 
 const OID_ADMIN = 'oid-notes-admin';
 const OID_ADMIN2 = 'oid-notes-admin2';
@@ -292,16 +293,22 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
       .toBe('TIPO_NO_ADMITIDO');
     expect((await subir({ label: 'x', mimeType: 'image/jpeg', dataBase64: '' }, 400)).body.message)
       .toBe('ARCHIVO_VACIO');
-    // 2 MB es el tope del comprobante y 4 MB el del cuerpo JSON, asi que 2,5 MB entra
-    // por el parser y lo rechaza el endpoint, que es lo que se quiere comprobar.
-    const grande = Buffer.alloc(2.5 * 1024 * 1024, 7).toString('base64');
-    expect((await subir({ label: 'x', mimeType: 'image/jpeg', dataBase64: grande }, 400)).body.message)
+    // Los tamaños salen de las CONSTANTES, no escritos a mano: con cifras fijas esta
+    // prueba se quedo obsoleta en cuanto subio el tope, que es el mismo desajuste que
+    // tenia rota la funcion. Uno justo por encima del comprobante lo rechaza el
+    // endpoint...
+    const pasado = Buffer.alloc(RECIBO_MAX_BYTES + 1024, 7).toString('base64');
+    expect((await subir({ label: 'x', mimeType: 'image/jpeg', dataBase64: pasado }, 400)).body.message)
       .toBe('ARCHIVO_DEMASIADO_GRANDE');
 
-    // Por encima del cuerpo JSON gana el parser y responde 413: no se puede validar un
-    // cuerpo que no se llega a leer. El cliente lo traduce al MISMO mensaje que el 400
-    // —ver codigoDeError en client.ts— para que el usuario lea una sola cosa.
-    await subir({ label: 'x', mimeType: 'image/jpeg', dataBase64: Buffer.alloc(5 * 1024 * 1024, 7).toString('base64') }, 413);
+    // ...y uno por encima del cuerpo JSON lo corta el parser con un 413, porque no se
+    // puede validar lo que no se llega a leer. El cliente lo traduce al MISMO mensaje
+    // que el 400 (ver codigoDeError en client.ts) para que el usuario lea una sola cosa.
+    const limiteCuerpo = Number(LIMITE_CUERPO_JSON.replace('mb', '')) * 1024 * 1024;
+    await subir(
+      { label: 'x', mimeType: 'image/jpeg', dataBase64: Buffer.alloc(limiteCuerpo, 7).toString('base64') },
+      413,
+    );
   });
 
   it('una nota FIRMADA ya no admite comprobantes: el PDF esta congelado', async () => {

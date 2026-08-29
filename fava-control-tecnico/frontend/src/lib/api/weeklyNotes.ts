@@ -178,10 +178,20 @@ export const uploadReceipt = (
 export const deleteReceipt = (noteId: string, receiptId: string) =>
   apiSend<Receipt[]>(`/weekly-notes/${noteId}/receipts/${receiptId}`, 'DELETE', undefined);
 
+/** Objetivo de tamaño para una foto ya reducida. Muy por debajo del tope del servidor
+    a propósito: así el técnico no depende de cuál sea ese número. */
+const OBJETIVO_BYTES = 1024 * 1024;
+
 /**
  * Reduce la foto ANTES de subirla, y no es un adorno: una foto de movil son 3-8 MB y
  * los bytes acaban en una columna de Postgres cuyo volumen tiene 5 GB. A 1600px de
  * lado mayor un ticket sigue siendo perfectamente legible y pesa ~300 KB.
+ *
+ * BAJA LA CALIDAD HASTA QUE CABE. Una sola pasada a 0,8 basta casi siempre, pero un
+ * movil de 108 MP con un ticket muy detallado se pasaba igual, y el tecnico se comia un
+ * error de tamaño en obra sin ninguna forma de arreglarlo desde el telefono. Tres
+ * intentos y se manda el mas pequeño: un ticket a 0,45 de calidad se lee perfectamente,
+ * y un comprobante ilegible es un problema mucho menor que uno que no se pudo subir.
  *
  * Devuelve base64 SIN la cabecera `data:`, que es lo que espera el servidor.
  */
@@ -200,7 +210,13 @@ export function reducirImagen(file: File, maxLado = 1600, calidad = 0.8): Promis
       const ctx = lienzo.getContext('2d');
       if (!ctx) return reject(new Error('SIN_CANVAS'));
       ctx.drawImage(img, 0, 0, lienzo.width, lienzo.height);
-      resolve(lienzo.toDataURL('image/jpeg', calidad).split(',')[1]);
+      let b64 = '';
+      for (const q of [calidad, 0.6, 0.45]) {
+        b64 = lienzo.toDataURL('image/jpeg', q).split(',')[1];
+        // base64 engorda un 33%: los bytes reales son 3/4 de la cadena.
+        if (b64.length * 0.75 <= OBJETIVO_BYTES) break;
+      }
+      resolve(b64);
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);

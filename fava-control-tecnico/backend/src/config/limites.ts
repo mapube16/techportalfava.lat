@@ -14,11 +14,20 @@
  */
 
 /**
- * 2 MB por comprobante. Un ticket escaneado y legible ocupa ~300 KB tras el
- * redimensionado del cliente; el margen es para el que suba un PDF del banco. Sin tope,
- * una foto de móvil sin redimensionar son 3-8 MB y el volumen de Postgres tiene 5 GB.
+ * 8 MB por comprobante.
+ *
+ * Eran 2 MB y se quedaban cortos justo donde importa: el cliente reduce las FOTOS, pero
+ * un PDF no se toca —no se puede recomprimir en el navegador— y el que sale de una app
+ * de escaneo o del banco pasa de 5 MB con facilidad. El técnico que se topaba con eso
+ * en obra no tenía forma de arreglarlo desde el móvil.
+ *
+ * El tope no decide cuánto se guarda: lo decide lo que se sube. Las fotos entran a ~1 MB
+ * porque el cliente baja la calidad hasta que caben (ver `reducirImagen`), así que 8 MB
+ * es un techo para el caso raro, no el tamaño esperado. Con 14 técnicos y la base en
+ * 11 MB de un volumen de 5 GB, el margen es amplio — pero es un dato que conviene mirar
+ * de vez en cuando, no una garantía eterna.
  */
-export const RECIBO_MAX_BYTES = 2 * 1024 * 1024;
+export const RECIBO_MAX_BYTES = 8 * 1024 * 1024;
 
 /**
  * El cuerpo JSON más grande que se acepta: el comprobante más el 33 % que engorda el
