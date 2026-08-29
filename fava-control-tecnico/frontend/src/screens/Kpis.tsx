@@ -89,8 +89,11 @@ export default function Kpis() {
   // productivos y porcentaje. Antes eran cinco nombres inventados.
   const act = (util?.technicians ?? []).map((x) => ({
     n: x.technicianName,
-    util: x.utilizationPct ?? 0,
+    // Redondeado AQUI: el tooltip decia «68.2» a secas, y un decimal sin unidad en un
+    // indicador de porcentaje es ruido que ademas parece otra escala.
+    util: Math.round(x.utilizationPct ?? 0),
     dias: x.productive,
+    activo: x.technicianActive,
   }));
   const avgProg = tot.sold ? Math.round((tot.done / tot.sold) * 100) : 0;
 
@@ -137,14 +140,43 @@ export default function Kpis() {
           series: [bar(t.kpi_sold, projects.map((p) => p.sold), P.primary), bar(t.kpi_done, projects.map((p) => p.executed), P.accent)],
         };
       } else if (seg === 'tech') {
-        const names = act.map((x) => x.n.split(' ')[0] + ' ' + (x.n.split(' ')[1] || '').charAt(0));
+        /**
+         * Nombre COMPLETO en el eje, rotado. El recorte «nombre + inicial» convertia a
+         * los tres tecnicos de demostracion en tres barras identicas rotuladas «ZZ D»:
+         * imposible saber cual es cual. hideOverlap ya gestiona el sitio.
+         */
+        const names = act.map((x) => x.n);
         const days = act.map((x) => x.dias);
         opt = {
-          ...base(), grid: { ...grid, right: 46 }, xAxis: catAxis(names),
+          ...base(),
+          grid: { ...grid, right: 46, bottom: 74 },
+          xAxis: { ...catAxis(names), axisLabel: { ...axisText, interval: 0, rotate: 32, hideOverlap: true } },
           yAxis: [valAxis(t.reg_days), { type: 'value', name: '%', min: 0, max: 100, axisLabel: { ...axisText, formatter: '{value}%' }, splitLine: { show: false } }],
           series: [
-            { ...bar(t.reg_days, days, P.primary), barMaxWidth: 30 },
-            { name: t.k_util_avg, type: 'line', yAxisIndex: 1, data: act.map((x) => x.util), smooth: true, symbol: 'circle', symbolSize: 8, itemStyle: { color: P.accent }, lineStyle: { color: P.accent, width: 2.6 } },
+            {
+              ...bar(t.reg_days, days, P.primary),
+              barMaxWidth: 30,
+              // El INACTIVO se ve distinto: su historia cuenta, pero mezclar a Marco
+              // Bosi (de baja) con los activos sin ninguna señal invita a comparar
+              // plantillas que ya no existen.
+              data: act.map((x) => ({
+                value: x.dias,
+                itemStyle: x.activo ? undefined : { color: P.border },
+              })),
+            },
+            {
+              name: t.k_util_avg,
+              type: 'line',
+              yAxisIndex: 1,
+              data: act.map((x) => x.util),
+              smooth: true,
+              symbol: 'circle',
+              symbolSize: 8,
+              itemStyle: { color: P.accent },
+              lineStyle: { color: P.accent, width: 2.6 },
+              // La unidad en el tooltip: «68» sin el % obligaba a adivinar la escala.
+              tooltip: { valueFormatter: (v: unknown) => String(v) + ' %' },
+            },
           ],
         };
       } else {
