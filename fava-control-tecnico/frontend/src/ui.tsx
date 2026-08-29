@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { CONCEPTS, LOCALE } from './i18n';
 import type { Dict } from './i18n';
 import type { Lang, NoteStatus } from './types';
+import { useApp } from './state';
 
 /**
  * Las primitivas de la interfaz, en Tailwind.
@@ -158,11 +159,21 @@ export function FieldError({ msg }: { msg: string }) {
 }
 
 /** Estado de carga / error de una pantalla cableada al API. */
+/**
+ * El estado de una carga: «cargando…» o el motivo del fallo.
+ *
+ * EL ERROR PASA POR `errTexto`. Aquí ponía `${label}: ${error}` y `error` es el codigo
+ * crudo del servidor (ver `useApiData`), asi que 13 pantallas escribian cosas como
+ * «No se pudo cargar: TOKEN_INVALIDO». Es el MISMO fallo que se arreglo en los errores
+ * de guardado, en la otra mitad de la aplicacion: alli se corrigio pantalla por
+ * pantalla y esta, que es un componente compartido, se quedo atras.
+ */
 export function ApiState({ error, label }: { error: string | null; label: string }) {
+  const { errTexto } = useApp();
   return (
     <Card>
       <div className={`p-row text-[13px] ${error ? 'text-warn' : 'text-ink-3'}`}>
-        {error ? `${label}: ${error}` : label}
+        {error ? `${label}: ${errTexto(error)}` : label}
       </div>
     </Card>
   );

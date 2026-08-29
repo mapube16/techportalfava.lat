@@ -62,15 +62,29 @@ const cubiertoPorRegla = (c) =>
 
 const huerfanos = [...codigos].filter((c) => !traducidos.has(c) && !cubiertoPorRegla(c)).sort();
 
-// ── 2. La forma del bug: `err_save` pegado a una variable ──
+// ── 2. La forma del bug: un rotulo de error pegado a una variable ──
+//
+// Vigila err_save Y err_load. La primera version solo miraba err_save —la mitad que se
+// arreglo pantalla por pantalla— y por eso dejo pasar `ApiState`, que hacia exactamente
+// lo mismo con err_load en 13 pantallas de golpe. Un guarda-rail que solo cubre el caso
+// que ya viste no es un guarda-rail, es un recordatorio.
 
-const PEGADO = /\{\s*t\.err_save\s*\}\s*:\s*[{$]|\$\{\s*t\.err_save\s*\}\s*:/;
+const PEGADO = /\{\s*t\.err_(save|load)\s*\}\s*:\s*[{$]|\$\{\s*t\.err_(save|load)\s*\}\s*:/;
 const pantallas = [];
 for (const ruta of fuentes(FRONT, ['.tsx'])) {
   if (PEGADO.test(readFileSync(ruta, 'utf8'))) {
     pantallas.push(ruta.slice(ruta.indexOf('frontend')));
   }
 }
+
+// ── 3. El componente compartido de estado de carga TIENE que traducir ──
+//
+// `ApiState` sale en 13 pantallas. Si vuelve a pintar el error sin pasarlo por
+// `errTexto` son 13 sitios a la vez, y ninguna pantalla se ve «mal» por separado — que
+// es justo por lo que estuvo roto sin que nadie lo notara.
+const ui = readFileSync(join(FRONT, 'ui.tsx'), 'utf8');
+const desde = ui.indexOf('export function ApiState');
+const sinTraducir = desde >= 0 && !ui.slice(desde, desde + 600).includes('errTexto(');
 
 // ── El veredicto ──
 
@@ -79,7 +93,7 @@ for (const ruta of fuentes(FRONT, ['.tsx'])) {
  * respuesta no es JSON de la app (el 404 por defecto de Express, una pagina del proxy).
  * Tienen mensaje a proposito y no sobran.
  */
-const DEL_CLIENTE = new Set(['RUTA_NO_ENCONTRADA', 'RESPUESTA_INESPERADA']);
+const DEL_CLIENTE = new Set(['RUTA_NO_ENCONTRADA', 'RESPUESTA_INESPERADA', 'ERROR_DE_RED']);
 
 const sobran = [...traducidos].filter((c) => !codigos.has(c) && !DEL_CLIENTE.has(c)).sort();
 console.log(
@@ -107,4 +121,11 @@ if (pantallas.length) {
   console.error('\nUsa errTexto(codigo) de useApp(): traduce y nunca deja el codigo a secas.');
 }
 
-if (huerfanos.length || pantallas.length) process.exit(1);
+if (sinTraducir) {
+  console.error(
+    '\nApiState pinta el error SIN pasarlo por errTexto. Son 13 pantallas de golpe: ' +
+      '«No se pudo cargar: TOKEN_INVALIDO» en vez de una frase.',
+  );
+}
+
+if (huerfanos.length || pantallas.length || sinTraducir) process.exit(1);

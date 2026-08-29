@@ -87,7 +87,8 @@ const ES: Record<string, string> = {
   SOLO_SUPER_ADMIN_DESACTIVA_ADMINS: 'Solo un Super Admin puede desactivar a un administrador.',
   CODIGO_NO_EDITABLE: 'El código de un concepto no se puede cambiar.',
 
-  // ── Los pone el cliente, no el servidor: la respuesta no era de la app ──
+  // ── Los pone el cliente, no el servidor ──
+  ERROR_DE_RED: 'No se pudo hablar con el servidor. Revisa la conexión y vuelve a intentarlo; lo que hayas escrito sigue aquí.',
   RUTA_NO_ENCONTRADA: 'Esa dirección ya no existe en el servidor. Recarga la página: puede que haya salido una versión nueva mientras la tenías abierta.',
   RESPUESTA_INESPERADA: 'El servidor respondió algo que la aplicación no entiende. Vuelve a intentarlo; si sigue igual, recarga la página.',
 
@@ -164,6 +165,7 @@ const IT: Record<string, string> = {
   SOLO_SUPER_ADMIN_DESACTIVA_ADMINS: 'Solo un Super Admin può disattivare un amministratore.',
   CODIGO_NO_EDITABLE: 'Il codice di un concetto non si può cambiare.',
 
+  ERROR_DE_RED: 'Impossibile contattare il server. Controlla la connessione e riprova; quello che hai scritto resta qui.',
   RUTA_NO_ENCONTRADA: 'Quell’indirizzo non esiste più sul server. Ricarica la pagina: potrebbe essere uscita una versione nuova mentre la tenevi aperta.',
   RESPUESTA_INESPERADA: 'Il server ha risposto qualcosa che l’applicazione non capisce. Riprova; se continua, ricarica la pagina.',
 
@@ -239,6 +241,7 @@ const PT: Record<string, string> = {
   SOLO_SUPER_ADMIN_DESACTIVA_ADMINS: 'Só um Super Admin pode desativar um administrador.',
   CODIGO_NO_EDITABLE: 'O código de um conceito não pode ser alterado.',
 
+  ERROR_DE_RED: 'Não foi possível falar com o servidor. Verifique a conexão e tente de novo; o que você escreveu continua aqui.',
   RUTA_NO_ENCONTRADA: 'Esse endereço não existe mais no servidor. Recarregue a página: pode ter saído uma versão nova enquanto estava aberta.',
   RESPUESTA_INESPERADA: 'O servidor respondeu algo que o aplicativo não entende. Tente de novo; se continuar, recarregue a página.',
 

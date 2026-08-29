@@ -285,6 +285,13 @@ export default function Kpis() {
     </Card>
   );
 
+  /** La celda de un delta: verde si queda por ejecutar, aviso si se paso de lo vendido. */
+  const celdaDelta = (v: number) => (
+    <td className={`${td} text-center font-mono font-bold ${v < 0 ? 'text-warn' : 'text-ok'}`}>
+      {(v > 0 ? '+' : '') + v}
+    </td>
+  );
+
   const chartTitle = { project: t.chart_main_project, tech: t.chart_main_tech, phase: t.chart_main_phase }[state.kpiSeg];
   const segBtn = (k: KpiSeg, l: string) => {
     const on = state.kpiSeg === k;
@@ -304,8 +311,16 @@ export default function Kpis() {
   const phaseRows = projects.map((p) => {
     const mS = porFase(p, 'sold', 'MONTAJE'), mD = porFase(p, 'executed', 'MONTAJE');
     const cS = porFase(p, 'sold', 'COLLAUDO'), cD = porFase(p, 'executed', 'COLLAUDO');
-    // Delta agregado del proyecto, con la convención correcta: vendido − ejecutado.
-    return { name: p.name, mS, mD, cS, cD, dl: mS + cS - (mD + cD) };
+    /**
+     * UN DELTA POR FASE, no uno agregado.
+     *
+     * Habia uno solo —vendido total menos ejecutado total— y escondia justo lo que esta
+     * tabla existe para enseñar: Lucchetti salia «+110» en verde, y por dentro son −2 de
+     * montaje (se paso de lo vendido) y +112 de collaudo (sin empezar). Dos historias
+     * opuestas fundidas en una cifra tranquilizadora, en una tabla que se titula «por
+     * fase». Convencion: vendido − ejecutado, o sea lo que queda por ejecutar.
+     */
+    return { name: p.name, mS, mD, cS, cD, dM: mS - mD, dC: cS - cD };
   });
 
   const byPhase = movil ? (
@@ -317,26 +332,25 @@ export default function Kpis() {
         {phaseRows.map((r) => {
           // El azul de MONTAJE y el naranja de MARCA de COLLAUDO son datos del dominio
           // (dos fases fijas), no una paleta que Tailwind pueda generar como clase.
-          const pair = (lbl: string, sold: number, done: number, color: string) => (
+          const pair = (lbl: string, sold: number, done: number, delta: number, color: string) => (
             <div className="flex-1 bg-muted border border-border rounded-lg px-2.5 py-2">
               <div className="text-[10.5px] font-bold tracking-wide uppercase" style={{ color }}>{lbl}</div>
               <div className="flex items-baseline gap-1.5 mt-1 font-mono">
                 <span className="text-lg font-bold">{done}</span>
                 <span className="text-xs text-muted-foreground">/ {sold}</span>
               </div>
+              <div className={`font-mono text-[11.5px] font-bold ${delta < 0 ? 'text-warn' : 'text-ok'}`}>
+                {(delta > 0 ? '+' : '') + delta}
+              </div>
             </div>
           );
           return (
             <div key={r.name} className="border border-border rounded-card p-3">
-              <div className="flex justify-between items-center mb-2.5">
-                <span className="text-[13.5px] font-bold">{r.name}</span>
-                <span className={`font-mono font-bold text-[13px] ${r.dl < 0 ? 'text-warn' : 'text-ok'}`}>
-                  {(r.dl > 0 ? '+' : '') + r.dl}
-                </span>
-              </div>
+              {/* Sin cifra agregada en la cabecera: era la que fundia las dos fases. */}
+              <div className="text-[13.5px] font-bold mb-2.5">{r.name}</div>
               <div className="flex gap-2">
-                {pair(t.montaje, r.mS, r.mD, 'var(--primary)')}
-                {pair(t.colaudo, r.cS, r.cD, 'var(--accent)')}
+                {pair(t.montaje, r.mS, r.mD, r.dM, 'var(--primary)')}
+                {pair(t.colaudo, r.cS, r.cD, r.dC, 'var(--accent)')}
               </div>
             </div>
           );
@@ -352,7 +366,11 @@ export default function Kpis() {
         <table className="w-full border-collapse text-[13px]">
           <thead>
             <tr>
-              {[t.col_project, t.montaje + ' ' + t.kpi_sold, t.montaje + ' ' + t.kpi_done, t.colaudo + ' ' + t.kpi_sold, t.colaudo + ' ' + t.kpi_done, 'Delta'].map((c, i) => (
+              {/* Agrupadas POR FASE (vendido, ejecutado, delta) y no todos los vendidos
+                  seguidos: asi cada bloque de tres se lee como una frase. */}
+              {[t.col_project,
+                t.montaje + ' ' + t.kpi_sold, t.montaje + ' ' + t.kpi_done, 'Δ ' + t.montaje,
+                t.colaudo + ' ' + t.kpi_sold, t.colaudo + ' ' + t.kpi_done, 'Δ ' + t.colaudo].map((c, i) => (
                 <th key={i} className={`${th} ${i ? 'text-center' : 'text-left'}`}>{c}</th>
               ))}
             </tr>
@@ -361,12 +379,12 @@ export default function Kpis() {
             {phaseRows.map((r) => (
               <tr key={r.name} className="border-t border-border">
                 <td className={`${td} font-semibold`}>{r.name}</td>
-                {[r.mS, r.mD, r.cS, r.cD].map((v, j) => (
-                  <td key={j} className={`${td} text-center font-mono`}>{v}</td>
-                ))}
-                <td className={`${td} text-center font-mono font-bold ${r.dl < 0 ? 'text-warn' : 'text-ok'}`}>
-                  {(r.dl > 0 ? '+' : '') + r.dl}
-                </td>
+                <td className={`${td} text-center font-mono`}>{r.mS}</td>
+                <td className={`${td} text-center font-mono`}>{r.mD}</td>
+                {celdaDelta(r.dM)}
+                <td className={`${td} text-center font-mono`}>{r.cS}</td>
+                <td className={`${td} text-center font-mono`}>{r.cD}</td>
+                {celdaDelta(r.dC)}
               </tr>
             ))}
           </tbody>
