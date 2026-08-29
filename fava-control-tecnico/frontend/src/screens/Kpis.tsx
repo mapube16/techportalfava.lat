@@ -273,10 +273,16 @@ export default function Kpis() {
 
   // El color es un dato (positivo/negativo/neutro), no una paleta finita: se queda en
   // `style` porque Tailwind no puede generar una clase por valor en tiempo de ejecución.
-  const kcard = (label: string, val: string, sub: string, color?: string) => (
-    <Card>
+  /**
+   * `ayuda` es la definicion del indicador, visible al pasar el raton. El modelo es
+   * UtilizationCard, que imprime su regla en pantalla: un numero sin su definicion es
+   * un numero suelto — «Avance global» no significa nada hasta saber que un proyecto
+   * grande pesa mas que uno pequeño. El subrayado punteado avisa de que hay algo.
+   */
+  const kcard = (label: string, val: string, sub: string, color?: string, ayuda?: string) => (
+    <Card title={ayuda} className={ayuda ? 'cursor-help' : undefined}>
       <CardContent>
-        <div className="text-[11.5px] text-muted-foreground font-semibold uppercase tracking-wide">{label}</div>
+        <div className={`text-[11.5px] text-muted-foreground font-semibold uppercase tracking-wide ${ayuda ? 'underline decoration-dotted underline-offset-4' : ''}`}>{label}</div>
         <div className="text-[27px] font-bold font-cond mt-1 leading-tight" style={{ color: color || 'var(--text)' }}>
           {val}
         </div>
@@ -416,10 +422,10 @@ export default function Kpis() {
       </div>
 
       <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(148px,1fr))' }}>
-        {kcard(t.k_hours_norm, tot.nh ? nf(tot.nh) + ' h' : '—', t.of_contract, 'var(--info)')}
-        {kcard(t.k_hours_exec, nf(tot.exec) + ' h', overtime > 0 ? '+' + nf(overtime) + ' ' + t.k_overtime.toLowerCase() : '—', 'var(--accent)')}
-        {kcard(t.kpi_sold + ' / ' + t.kpi_done, tot.sold + ' / ' + tot.done, t.days_unit, 'var(--primary)')}
-        {kcard(t.k_progress, avgProg + '%', tot.done + ' / ' + tot.sold + ' ' + t.days_unit, avgProg >= 100 ? 'var(--ok)' : 'var(--text)')}
+        {kcard(t.k_hours_norm, tot.nh ? nf(tot.nh) + ' h' : '—', t.of_contract, 'var(--info)', t.h_hours_norm)}
+        {kcard(t.k_hours_exec, nf(tot.exec) + ' h', overtime > 0 ? '+' + nf(overtime) + ' ' + t.k_overtime.toLowerCase() : '—', 'var(--accent)', t.h_hours_exec)}
+        {kcard(t.kpi_sold + ' / ' + t.kpi_done, tot.sold + ' / ' + tot.done, t.days_unit, 'var(--primary)', t.h_sold_done)}
+        {kcard(t.k_progress, avgProg + '%', tot.done + ' / ' + tot.sold + ' ' + t.days_unit, avgProg >= 100 ? 'var(--ok)' : 'var(--text)', t.h_progress)}
       </div>
 
       <Card className="p-0 gap-0 overflow-hidden">

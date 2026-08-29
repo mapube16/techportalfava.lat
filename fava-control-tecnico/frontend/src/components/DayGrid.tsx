@@ -62,11 +62,11 @@ const FIJA = 'sticky left-0 z-10 bg-card min-w-[230px]';
  * que se perdió al retirarlo. Es CSS, no un componente, así que se reproduce entero:
  * `border-t-4` sobre el color de marca.
  */
-function Metrica({ etiqueta, valor }: { etiqueta: string; valor: string }) {
+function Metrica({ etiqueta, valor, ayuda }: { etiqueta: string; valor: string; ayuda?: string }) {
   return (
-    <Card className="border-t-4 border-t-primary">
+    <Card title={ayuda} className={`border-t-4 border-t-primary ${ayuda ? 'cursor-help' : ''}`}>
       <CardContent>
-        <p className="text-sm text-muted-foreground">{etiqueta}</p>
+        <p className={`text-sm text-muted-foreground ${ayuda ? 'underline decoration-dotted underline-offset-4' : ''}`}>{etiqueta}</p>
         <p className="text-3xl font-semibold tabular-nums mt-1">{valor}</p>
       </CardContent>
     </Card>
@@ -217,12 +217,13 @@ export default function DayGrid() {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Metrica etiqueta={t.grid_kpi_days} valor={g.total.toLocaleString('es-CL')} />
+        <Metrica etiqueta={t.grid_kpi_days} valor={g.total.toLocaleString('es-CL')} ayuda={t.h_grid_days} />
         <Metrica
           etiqueta={t.grid_kpi_projects}
           valor={String(g.projects.filter((p) => p.projectId).length)}
+          ayuda={t.h_grid_projects}
         />
-        <Metrica etiqueta={t.grid_kpi_techs} valor={String(tecnicos)} />
+        <Metrica etiqueta={t.grid_kpi_techs} valor={String(tecnicos)} ayuda={t.h_grid_techs} />
       </div>
 
       <Card className="p-0 gap-0 overflow-hidden">
