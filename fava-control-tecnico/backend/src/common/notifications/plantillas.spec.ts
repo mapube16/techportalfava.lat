@@ -113,4 +113,27 @@ describe('plantillas de correo', () => {
     expect(bodyHtml).toContain('alt="FAVA LatinoAmérica"');
   });
 
+
+  // ── La fecha: el detalle que delata que lo escribio una maquina ──
+
+  describe.each(LANGS)('fechas %s', (lang) => {
+    it.each(KINDS)('%s no deja escapar el ISO de la base de datos', (kind) => {
+      const { subject, bodyText, bodyHtml } = render(kind, lang, DATOS);
+      // `2026-08-24` es el formato de una columna, no el de un documento. La aplicacion
+      // escribe «24 ago – 30 ago 2026» en la cabecera de la semana y el correo hablaba
+      // otro idioma que el resto del producto.
+      const iso = /\d{4}-\d{2}-\d{2}/;
+      expect(subject).not.toMatch(iso);
+      expect(bodyText).not.toMatch(iso);
+      expect(bodyHtml).not.toMatch(iso);
+    });
+  });
+
+  it('la semana se escribe de lunes a domingo, sin correrse de dia', () => {
+    // Se calcula en UTC a proposito: el lunes llega como fecha pura y construirlo en
+    // local lo correria un dia entero al este de Greenwich.
+    const { bodyText } = render('week_missing', 'es', DATOS);
+    expect(bodyText).toContain('24 ago – 30 ago 2026');
+  });
+
 });

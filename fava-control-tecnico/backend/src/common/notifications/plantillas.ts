@@ -84,6 +84,34 @@ export interface Correo {
 
 type Plantilla = (d: Datos) => { subject: string; cuerpo: Cuerpo };
 
+const MESES: Record<Lang, string[]> = {
+  es: ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
+  it: ['', 'gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'],
+  pt: ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'],
+};
+
+/**
+ * La semana como la escribe una persona: «24 ago – 30 ago 2026».
+ *
+ * Llegaba el lunes en ISO —`2026-08-24`— y se pintaba tal cual, en el asunto y en la
+ * rejilla. Ese es el formato de una columna de base de datos, no el de un documento:
+ * basta para que un correo parezca generado por una maquina en vez de escrito por una
+ * empresa. La aplicacion ya lo escribe asi en la cabecera de «Mi semana»; el correo
+ * hablaba otro idioma que el resto del producto.
+ *
+ * Se calcula el domingo sumando seis dias en UTC: el lunes viene como fecha pura y sin
+ * huso, y construirlo en local lo correria un dia al este de Greenwich.
+ */
+function semanaLegible(iso: string | undefined, lang: Lang): string {
+  if (!iso) return '';
+  const lunes = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(lunes.getTime())) return iso;
+  const domingo = new Date(lunes.getTime() + 6 * 86_400_000);
+  const m = MESES[lang];
+  const dia = (d: Date) => `${d.getUTCDate()} ${m[d.getUTCMonth() + 1]}`;
+  return `${dia(lunes)} – ${dia(domingo)} ${domingo.getUTCFullYear()}`;
+}
+
 /** El pie va en todos: dice quien escribe y que no se conteste. */
 const PIE: Record<Lang, string> = {
   es: 'FAVA Control Técnico — mensaje automático, no respondas a este correo.',
@@ -290,18 +318,21 @@ function aHtml(c: Cuerpo, d: Datos, lang: Lang): string {
 const T: Record<Lang, Record<Kind, Plantilla>> = {
   es: {
     note_returned: (d) => ({
-      subject: `Tu nota de ${d.proyecto} fue devuelta`,
+      subject: `Nota devuelta — ${d.proyecto}`,
       cuerpo: {
-        saludo: `Hola ${d.nombre}:`,
+        // «Hola, X:» con coma. Sin ella es un error de puntuacion, y un correo que
+        // representa a la empresa ante sus tecnicos —y de rebote ante sus clientes—
+        // no puede empezar con una falta en el primer renglon.
+        saludo: `Hola, ${d.nombre}:`,
         // El proyecto y la semana salen de la frase y suben a la rejilla: identificar
         // el documento es trabajo del encabezado, no de una oracion con parentesis.
         datos: [
           { rotulo: 'Proyecto', valor: d.proyecto ?? '' },
-          { rotulo: 'Semana', valor: d.semana ?? '' },
+          { rotulo: 'Semana', valor: semanaLegible(d.semana, 'es') },
         ],
-        parrafos: ['Tu nota fue devuelta para que la corrijas.'],
+        parrafos: ['Su nota semanal fue devuelta para corrección.'],
         destacado: `Motivo: ${d.comentario}`,
-        boton: 'Corrígela aquí',
+        boton: 'Corregir la nota',
       },
     }),
     /**
@@ -311,45 +342,51 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
      * alguien a buscar un formulario que no existe — por eso eso va en el DESTACADO.
      */
     invitacion: (d) => ({
-      subject: 'Tienes acceso a FAVA Control Técnico',
+      subject: 'Acceso a FAVA Control Técnico',
       cuerpo: {
-        saludo: `Hola ${d.nombre}:`,
+        saludo: `Hola, ${d.nombre}:`,
         parrafos: [
-          `${d.invitadoPor} te dio acceso a FAVA Control Técnico, donde vas a registrar tus días de trabajo y firmar tu nota semanal.`,
+          `${d.invitadoPor} le ha dado acceso a FAVA Control Técnico, donde registrará sus días de trabajo y firmará su nota semanal.`,
         ],
-        destacado: 'Entra con tu correo de FAVA. No tienes que crear ninguna contraseña.',
-        boton: 'Entrar',
+        destacado: 'Ingrese con su correo de FAVA. No necesita crear una contraseña.',
+        boton: 'Ingresar',
       },
     }),
     note_approved: (d) => ({
-      subject: `Tu nota de ${d.proyecto} fue aprobada`,
+      subject: `Nota aprobada — ${d.proyecto}`,
       cuerpo: {
-        saludo: `Hola ${d.nombre}:`,
+        saludo: `Hola, ${d.nombre}:`,
         datos: [
           { rotulo: 'Proyecto', valor: d.proyecto ?? '' },
-          { rotulo: 'Semana', valor: d.semana ?? '' },
+          { rotulo: 'Semana', valor: semanaLegible(d.semana, 'es') },
         ],
-        parrafos: ['Tu nota quedó aprobada. No tienes que hacer nada más.'],
-        boton: 'Verla',
+        parrafos: ['Su nota semanal fue aprobada. No requiere ninguna acción de su parte.'],
+        boton: 'Ver la nota',
       },
     }),
     week_missing: (d) => ({
-      subject: `Tu semana del ${d.semana} está sin enviar`,
+      subject: `Semana sin enviar — ${semanaLegible(d.semana, 'es')}`,
       cuerpo: {
-        saludo: `Hola ${d.nombre}:`,
-        datos: [{ rotulo: 'Semana', valor: d.semana ?? '' }],
+        saludo: `Hola, ${d.nombre}:`,
+        datos: [{ rotulo: 'Semana', valor: semanaLegible(d.semana, 'es') }],
         parrafos: [
-          'Sigue sin enviar. Mientras no la envíes, no se puede aprobar ni firmar.',
-          'Si la registras ahora te acordarás de lo que hiciste; el lunes ya no.',
+          'Su semana aún no ha sido enviada. Hasta que la envíe no puede aprobarse ni firmarse.',
+          // La idea util del original, sin el tono de entrenador que tenia: «si la
+          // registras ahora te acordaras de lo que hiciste; el lunes ya no» daba
+          // consejos de memoria a un profesional. Esto dice lo mismo como un hecho.
+          'Registrarla antes del cierre evita tener que reconstruirla de memoria.',
         ],
-        boton: 'Enviarla',
+        boton: 'Enviar la semana',
       },
     }),
     admin_digest: (d) => ({
-      subject: `${d.lista?.length ?? 0} técnicos no enviaron la semana del ${d.semana}`,
+      subject: `${d.lista?.length ?? 0} técnicos sin enviar — ${semanaLegible(d.semana, 'es')}`,
       cuerpo: {
-        saludo: `Semana del ${d.semana}.`,
-        parrafos: [],
+        // Aqui iba la fecha en el hueco del SALUDO, que no es un saludo. La semana
+        // baja a la rejilla, que es donde se identifica un documento.
+        saludo: `Hola, ${d.nombre}:`,
+        datos: [{ rotulo: 'Semana', valor: semanaLegible(d.semana, 'es') }],
+        parrafos: ['Estos técnicos no han enviado su semana:'],
         listas: [
           { titulo: `Sin enviar (${d.lista?.length ?? 0})`, items: d.lista ?? [] },
           ...(d.inalcanzables?.length
@@ -368,58 +405,59 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
 
   it: {
     note_returned: (d) => ({
-      subject: `La tua nota di ${d.proyecto} è stata restituita`,
+      subject: `Nota restituita — ${d.proyecto}`,
       cuerpo: {
-        saludo: `Ciao ${d.nombre},`,
+        saludo: `Gentile ${d.nombre},`,
         datos: [
           { rotulo: 'Progetto', valor: d.proyecto ?? '' },
-          { rotulo: 'Settimana', valor: d.semana ?? '' },
+          { rotulo: 'Settimana', valor: semanaLegible(d.semana, 'it') },
         ],
-        parrafos: ['La tua nota è stata restituita per essere corretta.'],
+        parrafos: ['La Sua nota settimanale è stata restituita per la correzione.'],
         destacado: `Motivo: ${d.comentario}`,
-        boton: 'Correggila qui',
+        boton: 'Correggere la nota',
       },
     }),
     invitacion: (d) => ({
-      subject: 'Hai accesso a FAVA Control Técnico',
+      subject: 'Accesso a FAVA Control Técnico',
       cuerpo: {
-        saludo: `Ciao ${d.nombre},`,
+        saludo: `Gentile ${d.nombre},`,
         parrafos: [
-          `${d.invitadoPor} ti ha dato accesso a FAVA Control Técnico, dove registrerai le tue giornate di lavoro e firmerai la nota settimanale.`,
+          `${d.invitadoPor} Le ha dato accesso a FAVA Control Técnico, dove registrerà le Sue giornate di lavoro e firmerà la nota settimanale.`,
         ],
-        destacado: 'Entra con la tua email FAVA. Non devi creare nessuna password.',
-        boton: 'Entra',
+        destacado: 'Acceda con la Sua email FAVA. Non è necessario creare una password.',
+        boton: 'Accedere',
       },
     }),
     note_approved: (d) => ({
-      subject: `La tua nota di ${d.proyecto} è stata approvata`,
+      subject: `Nota approvata — ${d.proyecto}`,
       cuerpo: {
-        saludo: `Ciao ${d.nombre},`,
+        saludo: `Gentile ${d.nombre},`,
         datos: [
           { rotulo: 'Progetto', valor: d.proyecto ?? '' },
-          { rotulo: 'Settimana', valor: d.semana ?? '' },
+          { rotulo: 'Settimana', valor: semanaLegible(d.semana, 'it') },
         ],
-        parrafos: ['La tua nota è stata approvata. Non devi fare altro.'],
-        boton: 'Vedila',
+        parrafos: ['La Sua nota settimanale è stata approvata. Non è richiesta alcuna azione.'],
+        boton: 'Vedere la nota',
       },
     }),
     week_missing: (d) => ({
-      subject: `La tua settimana del ${d.semana} non è stata inviata`,
+      subject: `Settimana non inviata — ${semanaLegible(d.semana, 'it')}`,
       cuerpo: {
-        saludo: `Ciao ${d.nombre},`,
-        datos: [{ rotulo: 'Settimana', valor: d.semana ?? '' }],
+        saludo: `Gentile ${d.nombre},`,
+        datos: [{ rotulo: 'Settimana', valor: semanaLegible(d.semana, 'it') }],
         parrafos: [
-          'Non è ancora stata inviata. Finché non la invii non può essere approvata né firmata.',
-          'Se la registri adesso ti ricordi cosa hai fatto; lunedì non più.',
+          'La Sua settimana non è ancora stata inviata. Finché non viene inviata non può essere approvata né firmata.',
+          'Registrarla prima della chiusura evita di doverla ricostruire a memoria.',
         ],
-        boton: 'Inviala',
+        boton: 'Inviare la settimana',
       },
     }),
     admin_digest: (d) => ({
-      subject: `${d.lista?.length ?? 0} tecnici non hanno inviato la settimana del ${d.semana}`,
+      subject: `${d.lista?.length ?? 0} tecnici senza inviare — ${semanaLegible(d.semana, 'it')}`,
       cuerpo: {
-        saludo: `Settimana del ${d.semana}.`,
-        parrafos: [],
+        saludo: `Gentile ${d.nombre},`,
+        datos: [{ rotulo: 'Settimana', valor: semanaLegible(d.semana, 'it') }],
+        parrafos: ['Questi tecnici non hanno inviato la loro settimana:'],
         listas: [
           { titulo: `Non inviate (${d.lista?.length ?? 0})`, items: d.lista ?? [] },
           ...(d.inalcanzables?.length
@@ -431,65 +469,66 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
               ]
             : []),
         ],
-        boton: 'Apri la posta in arrivo',
+        boton: 'Aprire la posta in arrivo',
       },
     }),
   },
 
   pt: {
     note_returned: (d) => ({
-      subject: `A sua nota de ${d.proyecto} foi devolvida`,
+      subject: `Nota devolvida — ${d.proyecto}`,
       cuerpo: {
-        saludo: `Olá ${d.nombre},`,
+        saludo: `Olá, ${d.nombre},`,
         datos: [
           { rotulo: 'Projeto', valor: d.proyecto ?? '' },
-          { rotulo: 'Semana', valor: d.semana ?? '' },
+          { rotulo: 'Semana', valor: semanaLegible(d.semana, 'pt') },
         ],
-        parrafos: ['A sua nota foi devolvida para correção.'],
+        parrafos: ['A sua nota semanal foi devolvida para correção.'],
         destacado: `Motivo: ${d.comentario}`,
-        boton: 'Corrija aqui',
+        boton: 'Corrigir a nota',
       },
     }),
     invitacion: (d) => ({
-      subject: 'Você tem acesso ao FAVA Control Técnico',
+      subject: 'Acesso ao FAVA Control Técnico',
       cuerpo: {
-        saludo: `Olá ${d.nombre},`,
+        saludo: `Olá, ${d.nombre},`,
         parrafos: [
-          `${d.invitadoPor} liberou o seu acesso ao FAVA Control Técnico, onde você vai registrar os seus dias de trabalho e assinar a nota semanal.`,
+          `${d.invitadoPor} liberou o seu acesso ao FAVA Control Técnico, onde registrará os seus dias de trabalho e assinará a sua nota semanal.`,
         ],
-        destacado: 'Entre com o seu e-mail da FAVA. Não precisa criar nenhuma senha.',
+        destacado: 'Entre com o seu e-mail da FAVA. Não é necessário criar uma senha.',
         boton: 'Entrar',
       },
     }),
     note_approved: (d) => ({
-      subject: `A sua nota de ${d.proyecto} foi aprovada`,
+      subject: `Nota aprovada — ${d.proyecto}`,
       cuerpo: {
-        saludo: `Olá ${d.nombre},`,
+        saludo: `Olá, ${d.nombre},`,
         datos: [
           { rotulo: 'Projeto', valor: d.proyecto ?? '' },
-          { rotulo: 'Semana', valor: d.semana ?? '' },
+          { rotulo: 'Semana', valor: semanaLegible(d.semana, 'pt') },
         ],
-        parrafos: ['A sua nota foi aprovada. Não precisa fazer mais nada.'],
-        boton: 'Ver',
+        parrafos: ['A sua nota semanal foi aprovada. Nenhuma ação é necessária.'],
+        boton: 'Ver a nota',
       },
     }),
     week_missing: (d) => ({
-      subject: `A sua semana de ${d.semana} não foi enviada`,
+      subject: `Semana sem enviar — ${semanaLegible(d.semana, 'pt')}`,
       cuerpo: {
-        saludo: `Olá ${d.nombre},`,
-        datos: [{ rotulo: 'Semana', valor: d.semana ?? '' }],
+        saludo: `Olá, ${d.nombre},`,
+        datos: [{ rotulo: 'Semana', valor: semanaLegible(d.semana, 'pt') }],
         parrafos: [
-          'Continua sem ser enviada. Enquanto não a enviar, não pode ser aprovada nem assinada.',
-          'Se registar agora ainda se lembra do que fez; na segunda-feira já não.',
+          'A sua semana ainda não foi enviada. Enquanto não for enviada, não pode ser aprovada nem assinada.',
+          'Registrá-la antes do fechamento evita ter que reconstruí-la de memória.',
         ],
-        boton: 'Enviar',
+        boton: 'Enviar a semana',
       },
     }),
     admin_digest: (d) => ({
-      subject: `${d.lista?.length ?? 0} técnicos não enviaram a semana de ${d.semana}`,
+      subject: `${d.lista?.length ?? 0} técnicos sem enviar — ${semanaLegible(d.semana, 'pt')}`,
       cuerpo: {
-        saludo: `Semana de ${d.semana}.`,
-        parrafos: [],
+        saludo: `Olá, ${d.nombre},`,
+        datos: [{ rotulo: 'Semana', valor: semanaLegible(d.semana, 'pt') }],
+        parrafos: ['Estes técnicos não enviaram a sua semana:'],
         listas: [
           { titulo: `Sem enviar (${d.lista?.length ?? 0})`, items: d.lista ?? [] },
           ...(d.inalcanzables?.length
