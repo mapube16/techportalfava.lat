@@ -73,6 +73,8 @@ interface Pendiente {
   to_email: string;
   subject: string;
   body_text: string;
+  /** Fase 9b. `null` en lo encolado antes de que existiera: eso se manda como texto. */
+  body_html: string | null;
   attempts: number;
 }
 
@@ -100,7 +102,7 @@ async function drenar(): Promise<void> {
          LIMIT ${LOTE}
          FOR UPDATE SKIP LOCKED
       )
-      RETURNING id, to_email, subject, body_text, attempts`,
+      RETURNING id, to_email, subject, body_text, body_html, attempts`,
   );
 
   if (!lote.length) return;
@@ -113,6 +115,7 @@ async function drenar(): Promise<void> {
       toEmail: n.to_email,
       subject: n.subject,
       bodyText: n.body_text,
+      bodyHtml: n.body_html,
     });
     const agotado = r.permanente || n.attempts + 1 >= MAX_INTENTOS;
     await conContexto((tx) =>

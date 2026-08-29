@@ -448,6 +448,10 @@ model Notification {
   /// hace joins, y queda escrito que se mando EXACTAMENTE.
   subject  String
   bodyText String @map("body_text")
+  /// El mismo aviso en HTML. Los DOS viajan: hay clientes que bloquean el HTML y ahi
+  /// el texto es lo unico que llega. Nullable por las filas encoladas antes de que
+  /// existiera la columna, que se mandan como texto y esta bien que asi sea.
+  bodyHtml String? @map("body_html")
 
   /// pending | sending | sent | failed
   status   String  @default("pending")

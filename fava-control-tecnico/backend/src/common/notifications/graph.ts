@@ -61,6 +61,8 @@ export async function enviarPorGraph(n: {
   toEmail: string;
   subject: string;
   bodyText: string;
+  /** Fase 9b. Ausente en los avisos encolados antes de que existiera: van como texto. */
+  bodyHtml?: string | null;
 }): Promise<Resultado> {
   try {
     const r = await fetch(
@@ -74,7 +76,18 @@ export async function enviarPorGraph(n: {
         body: JSON.stringify({
           message: {
             subject: n.subject,
-            body: { contentType: 'Text', content: n.bodyText },
+            /**
+             * HTML si lo hay, texto si no.
+             *
+             * Graph acepta UN cuerpo, no las dos partes de un multipart/alternative:
+             * no se puede mandar HTML con el texto de reserva por debajo. Asi que la
+             * eleccion se hace aqui, y el texto sigue guardado en la fila — es lo que
+             * se manda para todo lo encolado antes de que existiera el HTML, y lo que
+             * queda como registro legible de lo que se dijo.
+             */
+            body: n.bodyHtml
+              ? { contentType: 'HTML', content: n.bodyHtml }
+              : { contentType: 'Text', content: n.bodyText },
             toRecipients: [{ emailAddress: { address: n.toEmail } }],
           },
           // Deja copia en Enviados del buzon: es lo que permite a Andrea comprobar
@@ -108,5 +121,10 @@ export function enviarPorConsola(n: { toEmail: string; subject: string }): Resul
   return { ok: true };
 }
 
-export const enviarCorreo = (n: { toEmail: string; subject: string; bodyText: string }) =>
+export const enviarCorreo = (n: {
+  toEmail: string;
+  subject: string;
+  bodyText: string;
+  bodyHtml?: string | null;
+}) =>
   env.NOTIF_TRANSPORT === 'graph' ? enviarPorGraph(n) : Promise.resolve(enviarPorConsola(n));

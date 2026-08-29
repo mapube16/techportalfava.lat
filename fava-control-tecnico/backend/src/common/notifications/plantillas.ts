@@ -1,15 +1,22 @@
 /**
- * Los textos de los avisos, en los tres idiomas que ya habla la interfaz.
+ * Los correos que manda la aplicacion: QUE dicen, en tres idiomas, y como se pintan.
  *
- * DUPLICADOS a proposito respecto de `frontend/src/i18n.ts`, y no compartidos:
- * el backend no puede importar de `frontend/src` (tsconfig y build separados), y un
- * paquete de workspace para veinte cadenas es mas superficie que la duplicacion.
- * Lo que impide que deriven en la direccion que importa es el CHECK
- * `users_lang_valido` de la migracion: no puede llegar un idioma que no este aqui.
- * `plantillas.spec.ts` cubre la otra direccion (que las tres tengan las mismas claves).
+ * UNA FUENTE, DOS SALIDAS. Cada plantilla devuelve una ESTRUCTURA —saludo, parrafos,
+ * un destacado, una lista, un boton— y de ahi salen el texto plano y el HTML. Escribir
+ * los dos a mano habria sido escribir quince correos dos veces (5 avisos x 3 idiomas),
+ * y el dia que alguien corrigiera una frase la corregiria en uno solo: el que no lee
+ * nadie se quedaria atras y nadie se enteraria hasta recibirlo.
  *
- * Texto plano, sin HTML: el cuerpo son cuatro lineas y un enlace, y un correo en texto
- * no se rompe en ningun cliente ni acaba en spam por el maquetado.
+ * EL TEXTO PLANO NO ES UN RESTO. Va SIEMPRE como alternativa: hay clientes que
+ * bloquean HTML, y un correo que solo es HTML se ve vacio en ellos.
+ *
+ * EL HTML VIVE CON LAS REGLAS DEL CORREO, que no son las de la web:
+ *   · Maquetado con <table>. Outlook usa el motor de Word: flexbox y grid no existen.
+ *   · Todo el CSS EN LINEA. Gmail tira los <style> del head.
+ *   · Sin imagenes ni fuentes remotas: muchos clientes las bloquean y el correo tiene
+ *     que funcionar igual, asi que el membrete es texto.
+ *   · El boton es un <a> con relleno: un <button> no se pinta.
+ *   · Fondos explicitos en todo lo que lleve texto, o el modo oscuro lo deja ilegible.
  */
 
 export type Lang = 'es' | 'it' | 'pt';
@@ -43,12 +50,33 @@ export interface Datos {
   invitadoPor?: string;
 }
 
+/**
+ * Lo que un aviso DICE, sin decidir como se ve.
+ *
+ * Es la pieza que permite tener texto y HTML sin escribirlos dos veces. Deliberadamente
+ * pobre: cinco huecos y ni uno mas. En cuanto una plantilla necesite algo que no cabe
+ * aqui, la respuesta correcta es discutir si ese correo debe decir eso, no ampliar la
+ * estructura hasta que quepa cualquier cosa.
+ */
+interface Cuerpo {
+  /** «Hola Marco:» — con su puntuacion, que cambia por idioma. */
+  saludo: string;
+  parrafos: string[];
+  /** Lo que no se puede pasar por alto: el motivo de una devolucion, «no hay contraseña». */
+  destacado?: string;
+  /** Listas con titulo. El resumen de los lunes lleva dos: los que faltan y los inalcanzables. */
+  listas?: { titulo: string; items: string[] }[];
+  /** El texto del boton. El destino sale de `datos.enlace`; sin enlace no se pinta. */
+  boton?: string;
+}
+
 export interface Correo {
   subject: string;
   bodyText: string;
+  bodyHtml: string;
 }
 
-type Plantilla = (d: Datos) => Correo;
+type Plantilla = (d: Datos) => { subject: string; cuerpo: Cuerpo };
 
 /** El pie va en todos: dice quien escribe y que no se conteste. */
 const PIE: Record<Lang, string> = {
@@ -57,177 +85,322 @@ const PIE: Record<Lang, string> = {
   pt: 'FAVA Control Técnico — mensagem automática, não responda a este e-mail.',
 };
 
-const enlace = (d: Datos, texto: string) => (d.enlace ? `\n${texto}: ${d.enlace}\n` : '\n');
+// ── Los colores de la aplicacion, no unos inventados para el correo ──
+const AZUL = '#104a78';
+const TEXTO = '#132330';
+const SUAVE = '#5b6b7a';
+const FONDO = '#eef2f5';
+const PAPEL = '#ffffff';
+const BORDE = '#dde3e9';
+const NARANJA = '#e86c00';
+const TIPO = "Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif";
+
+/**
+ * Escapa lo que va dentro del HTML. TODO lo que pinta un correo sale de la base —
+ * nombres de proyecto, comentarios de devolucion escritos por un admin— y un `<` suelto
+ * en un motivo de devolucion romperia la maqueta o algo peor.
+ */
+const esc = (s: string) =>
+  s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+// ── Salida 1: texto plano ──
+
+function aTexto(c: Cuerpo, d: Datos, lang: Lang): string {
+  const partes = [c.saludo, '', ...c.parrafos];
+  if (c.destacado) partes.push('', c.destacado);
+  for (const l of c.listas ?? []) {
+    partes.push('', `${l.titulo}:`, ...l.items.map((i) => `  · ${i}`));
+  }
+  if (c.boton && d.enlace) partes.push('', `${c.boton}: ${d.enlace}`);
+  partes.push('', PIE[lang]);
+  return partes.join('\n') + '\n';
+}
+
+// ── Salida 2: HTML ──
+
+const parrafo = (t: string) =>
+  `<p style="margin:0 0 14px;font:16px/1.6 ${TIPO};color:${TEXTO};">${esc(t)}</p>`;
+
+/** El aviso que no se puede pasar por alto: barra de color a la izquierda y fondo propio. */
+const destacado = (t: string) =>
+  `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">` +
+  `<tr><td style="background:${FONDO};border-left:4px solid ${NARANJA};padding:14px 16px;` +
+  `font:16px/1.55 ${TIPO};color:${TEXTO};">${esc(t)}</td></tr></table>`;
+
+const lista = (titulo: string, items: string[]) =>
+  `<p style="margin:0 0 8px;font:13px/1.4 ${TIPO};color:${SUAVE};` +
+  `text-transform:uppercase;letter-spacing:.05em;font-weight:700;">${esc(titulo)}</p>` +
+  `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">` +
+  items
+    .map(
+      (i) =>
+        `<tr><td style="padding:7px 0;border-bottom:1px solid ${BORDE};` +
+        `font:15px/1.4 ${TIPO};color:${TEXTO};">${esc(i)}</td></tr>`,
+    )
+    .join('') +
+  `</table>`;
+
+/** `<a>` y no `<button>`: un boton de formulario no se pinta en la mayoria de clientes. */
+const boton = (texto: string, href: string) =>
+  `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 4px;">` +
+  `<tr><td style="background:${AZUL};border-radius:6px;">` +
+  `<a href="${esc(href)}" style="display:inline-block;padding:13px 26px;font:600 16px/1 ${TIPO};` +
+  `color:${PAPEL};text-decoration:none;">${esc(texto)}</a>` +
+  `</td></tr></table>` +
+  // El enlace en claro debajo: si el boton no se pinta o alguien reenvia el correo en
+  // texto, la direccion tiene que seguir estando.
+  `<p style="margin:10px 0 0;font:13px/1.5 ${TIPO};color:${SUAVE};word-break:break-all;">${esc(href)}</p>`;
+
+function aHtml(c: Cuerpo, d: Datos, lang: Lang): string {
+  const dentro =
+    `<p style="margin:0 0 16px;font:600 18px/1.4 ${TIPO};color:${TEXTO};">${esc(c.saludo)}</p>` +
+    c.parrafos.map(parrafo).join('') +
+    (c.destacado ? destacado(c.destacado) : '') +
+    (c.listas ?? []).map((l) => lista(l.titulo, l.items)).join('') +
+    (c.boton && d.enlace ? boton(c.boton, d.enlace) : '');
+
+  return (
+    `<!doctype html><html lang="${lang}"><head><meta charset="utf-8">` +
+    `<meta name="viewport" content="width=device-width"></head>` +
+    `<body style="margin:0;padding:0;background:${FONDO};">` +
+    // La tabla exterior centra en Outlook, que ignora `margin:auto`.
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${FONDO};">` +
+    `<tr><td align="center" style="padding:28px 12px;">` +
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" ` +
+    `style="width:100%;max-width:600px;background:${PAPEL};border:1px solid ${BORDE};border-radius:10px;">` +
+    // Membrete de TEXTO: una imagen remota la bloquean la mitad de los clientes y
+    // dejaria el correo empezando por un hueco.
+    `<tr><td style="background:${AZUL};padding:18px 28px;border-radius:9px 9px 0 0;">` +
+    `<span style="font:700 17px/1.2 ${TIPO};color:${PAPEL};letter-spacing:.01em;">FAVA</span>` +
+    `<span style="font:400 17px/1.2 ${TIPO};color:#b9d3e8;"> Control Técnico</span>` +
+    `</td></tr>` +
+    `<tr><td style="padding:26px 28px 22px;">${dentro}</td></tr>` +
+    `<tr><td style="padding:16px 28px 20px;border-top:1px solid ${BORDE};">` +
+    `<p style="margin:0;font:13px/1.5 ${TIPO};color:${SUAVE};">${esc(PIE[lang])}</p>` +
+    `</td></tr></table></td></tr></table></body></html>`
+  );
+}
+
+// ── Que dice cada aviso ──
 
 const T: Record<Lang, Record<Kind, Plantilla>> = {
   es: {
     note_returned: (d) => ({
       subject: `Tu nota de ${d.proyecto} fue devuelta`,
-      bodyText:
-        `Hola ${d.nombre}:\n\n` +
-        `Tu nota de la semana del ${d.semana} (${d.proyecto}) fue devuelta para que la corrijas.\n\n` +
-        `Motivo:\n${d.comentario}\n` +
-        enlace(d, 'Corrígela aquí') +
-        `\n${PIE.es}\n`,
+      cuerpo: {
+        saludo: `Hola ${d.nombre}:`,
+        parrafos: [
+          `Tu nota de la semana del ${d.semana} (${d.proyecto}) fue devuelta para que la corrijas.`,
+        ],
+        destacado: `Motivo: ${d.comentario}`,
+        boton: 'Corrígela aquí',
+      },
     }),
     /**
      * NO explica como crear una cuenta, porque no hay ninguna que crear: se entra con
      * el Microsoft corporativo que la persona ya usa y el primer acceso la reconoce
      * sola (`EntraGuard.vincular`). Un correo que dijera «registrate» mandaria a
-     * alguien a buscar un formulario que no existe.
+     * alguien a buscar un formulario que no existe — por eso eso va en el DESTACADO.
      */
     invitacion: (d) => ({
       subject: 'Tienes acceso a FAVA Control Técnico',
-      bodyText:
-        `Hola ${d.nombre}:\n\n` +
-        `${d.invitadoPor} te dio acceso a FAVA Control Técnico, donde vas a registrar tus días ` +
-        `de trabajo y firmar tu nota semanal.\n\n` +
-        `Entra con tu correo de FAVA. No tienes que crear ninguna contraseña.\n` +
-        enlace(d, 'Entrar') +
-        `\n${PIE.es}\n`,
+      cuerpo: {
+        saludo: `Hola ${d.nombre}:`,
+        parrafos: [
+          `${d.invitadoPor} te dio acceso a FAVA Control Técnico, donde vas a registrar tus días de trabajo y firmar tu nota semanal.`,
+        ],
+        destacado: 'Entra con tu correo de FAVA. No tienes que crear ninguna contraseña.',
+        boton: 'Entrar',
+      },
     }),
     note_approved: (d) => ({
       subject: `Tu nota de ${d.proyecto} fue aprobada`,
-      bodyText:
-        `Hola ${d.nombre}:\n\n` +
-        `Tu nota de la semana del ${d.semana} (${d.proyecto}) quedó aprobada. No tienes que hacer nada más.\n` +
-        enlace(d, 'Verla') +
-        `\n${PIE.es}\n`,
+      cuerpo: {
+        saludo: `Hola ${d.nombre}:`,
+        parrafos: [
+          `Tu nota de la semana del ${d.semana} (${d.proyecto}) quedó aprobada. No tienes que hacer nada más.`,
+        ],
+        boton: 'Verla',
+      },
     }),
     week_missing: (d) => ({
       subject: `Tu semana del ${d.semana} está sin enviar`,
-      bodyText:
-        `Hola ${d.nombre}:\n\n` +
-        `La semana del ${d.semana} sigue sin enviar. Mientras no la envíes, no se puede aprobar ni firmar.\n\n` +
-        `Si la registras ahora te acordarás de lo que hiciste; el lunes ya no.\n` +
-        enlace(d, 'Enviarla') +
-        `\n${PIE.es}\n`,
+      cuerpo: {
+        saludo: `Hola ${d.nombre}:`,
+        parrafos: [
+          `La semana del ${d.semana} sigue sin enviar. Mientras no la envíes, no se puede aprobar ni firmar.`,
+          'Si la registras ahora te acordarás de lo que hiciste; el lunes ya no.',
+        ],
+        boton: 'Enviarla',
+      },
     }),
     admin_digest: (d) => ({
       subject: `${d.lista?.length ?? 0} técnicos no enviaron la semana del ${d.semana}`,
-      bodyText:
-        `Semana del ${d.semana}.\n\n` +
-        `Sin enviar (${d.lista?.length ?? 0}):\n${(d.lista ?? []).map((n) => `  · ${n}`).join('\n')}\n` +
-        (d.inalcanzables?.length
-          ? `\nAdemás, ${d.inalcanzables.length} sin correo registrado — a estos no se les pudo avisar:\n` +
-            `${d.inalcanzables.map((n) => `  · ${n}`).join('\n')}\n`
-          : '') +
-        enlace(d, 'Abrir la bandeja') +
-        `\n${PIE.es}\n`,
+      cuerpo: {
+        saludo: `Semana del ${d.semana}.`,
+        parrafos: [],
+        listas: [
+          { titulo: `Sin enviar (${d.lista?.length ?? 0})`, items: d.lista ?? [] },
+          ...(d.inalcanzables?.length
+            ? [
+                {
+                  titulo: `Sin correo registrado (${d.inalcanzables.length}) — a estos no se les pudo avisar`,
+                  items: d.inalcanzables,
+                },
+              ]
+            : []),
+        ],
+        boton: 'Abrir la bandeja',
+      },
     }),
   },
 
   it: {
     note_returned: (d) => ({
       subject: `La tua nota di ${d.proyecto} è stata restituita`,
-      bodyText:
-        `Ciao ${d.nombre},\n\n` +
-        `La tua nota della settimana del ${d.semana} (${d.proyecto}) è stata restituita per essere corretta.\n\n` +
-        `Motivo:\n${d.comentario}\n` +
-        enlace(d, 'Correggila qui') +
-        `\n${PIE.it}\n`,
+      cuerpo: {
+        saludo: `Ciao ${d.nombre},`,
+        parrafos: [
+          `La tua nota della settimana del ${d.semana} (${d.proyecto}) è stata restituita per essere corretta.`,
+        ],
+        destacado: `Motivo: ${d.comentario}`,
+        boton: 'Correggila qui',
+      },
     }),
     invitacion: (d) => ({
       subject: 'Hai accesso a FAVA Control Técnico',
-      bodyText:
-        `Ciao ${d.nombre},\n\n` +
-        `${d.invitadoPor} ti ha dato accesso a FAVA Control Técnico, dove registrerai le tue ` +
-        `giornate di lavoro e firmerai la nota settimanale.\n\n` +
-        `Entra con la tua email FAVA. Non devi creare nessuna password.\n` +
-        enlace(d, 'Entra') +
-        `\n${PIE.it}\n`,
+      cuerpo: {
+        saludo: `Ciao ${d.nombre},`,
+        parrafos: [
+          `${d.invitadoPor} ti ha dato accesso a FAVA Control Técnico, dove registrerai le tue giornate di lavoro e firmerai la nota settimanale.`,
+        ],
+        destacado: 'Entra con la tua email FAVA. Non devi creare nessuna password.',
+        boton: 'Entra',
+      },
     }),
     note_approved: (d) => ({
       subject: `La tua nota di ${d.proyecto} è stata approvata`,
-      bodyText:
-        `Ciao ${d.nombre},\n\n` +
-        `La tua nota della settimana del ${d.semana} (${d.proyecto}) è stata approvata. Non devi fare altro.\n` +
-        enlace(d, 'Vedila') +
-        `\n${PIE.it}\n`,
+      cuerpo: {
+        saludo: `Ciao ${d.nombre},`,
+        parrafos: [
+          `La tua nota della settimana del ${d.semana} (${d.proyecto}) è stata approvata. Non devi fare altro.`,
+        ],
+        boton: 'Vedila',
+      },
     }),
     week_missing: (d) => ({
       subject: `La tua settimana del ${d.semana} non è stata inviata`,
-      bodyText:
-        `Ciao ${d.nombre},\n\n` +
-        `La settimana del ${d.semana} non è ancora stata inviata. Finché non la invii non può essere approvata né firmata.\n\n` +
-        `Se la registri adesso ti ricordi cosa hai fatto; lunedì non più.\n` +
-        enlace(d, 'Inviala') +
-        `\n${PIE.it}\n`,
+      cuerpo: {
+        saludo: `Ciao ${d.nombre},`,
+        parrafos: [
+          `La settimana del ${d.semana} non è ancora stata inviata. Finché non la invii non può essere approvata né firmata.`,
+          'Se la registri adesso ti ricordi cosa hai fatto; lunedì non più.',
+        ],
+        boton: 'Inviala',
+      },
     }),
     admin_digest: (d) => ({
       subject: `${d.lista?.length ?? 0} tecnici non hanno inviato la settimana del ${d.semana}`,
-      bodyText:
-        `Settimana del ${d.semana}.\n\n` +
-        `Non inviate (${d.lista?.length ?? 0}):\n${(d.lista ?? []).map((n) => `  · ${n}`).join('\n')}\n` +
-        (d.inalcanzables?.length
-          ? `\nInoltre, ${d.inalcanzables.length} senza email registrata — questi non sono stati avvisati:\n` +
-            `${d.inalcanzables.map((n) => `  · ${n}`).join('\n')}\n`
-          : '') +
-        enlace(d, 'Apri la posta in arrivo') +
-        `\n${PIE.it}\n`,
+      cuerpo: {
+        saludo: `Settimana del ${d.semana}.`,
+        parrafos: [],
+        listas: [
+          { titulo: `Non inviate (${d.lista?.length ?? 0})`, items: d.lista ?? [] },
+          ...(d.inalcanzables?.length
+            ? [
+                {
+                  titulo: `Senza email registrata (${d.inalcanzables.length}) — questi non sono stati avvisati`,
+                  items: d.inalcanzables,
+                },
+              ]
+            : []),
+        ],
+        boton: 'Apri la posta in arrivo',
+      },
     }),
   },
 
   pt: {
     note_returned: (d) => ({
       subject: `A sua nota de ${d.proyecto} foi devolvida`,
-      bodyText:
-        `Olá ${d.nombre},\n\n` +
-        `A sua nota da semana de ${d.semana} (${d.proyecto}) foi devolvida para correção.\n\n` +
-        `Motivo:\n${d.comentario}\n` +
-        enlace(d, 'Corrija aqui') +
-        `\n${PIE.pt}\n`,
+      cuerpo: {
+        saludo: `Olá ${d.nombre},`,
+        parrafos: [
+          `A sua nota da semana de ${d.semana} (${d.proyecto}) foi devolvida para correção.`,
+        ],
+        destacado: `Motivo: ${d.comentario}`,
+        boton: 'Corrija aqui',
+      },
     }),
     invitacion: (d) => ({
       subject: 'Você tem acesso ao FAVA Control Técnico',
-      bodyText:
-        `Olá ${d.nombre},\n\n` +
-        `${d.invitadoPor} liberou o seu acesso ao FAVA Control Técnico, onde você vai registrar ` +
-        `os seus dias de trabalho e assinar a nota semanal.\n\n` +
-        `Entre com o seu e-mail da FAVA. Não precisa criar nenhuma senha.\n` +
-        enlace(d, 'Entrar') +
-        `\n${PIE.pt}\n`,
+      cuerpo: {
+        saludo: `Olá ${d.nombre},`,
+        parrafos: [
+          `${d.invitadoPor} liberou o seu acesso ao FAVA Control Técnico, onde você vai registrar os seus dias de trabalho e assinar a nota semanal.`,
+        ],
+        destacado: 'Entre com o seu e-mail da FAVA. Não precisa criar nenhuma senha.',
+        boton: 'Entrar',
+      },
     }),
     note_approved: (d) => ({
       subject: `A sua nota de ${d.proyecto} foi aprovada`,
-      bodyText:
-        `Olá ${d.nombre},\n\n` +
-        `A sua nota da semana de ${d.semana} (${d.proyecto}) foi aprovada. Não precisa fazer mais nada.\n` +
-        enlace(d, 'Ver') +
-        `\n${PIE.pt}\n`,
+      cuerpo: {
+        saludo: `Olá ${d.nombre},`,
+        parrafos: [
+          `A sua nota da semana de ${d.semana} (${d.proyecto}) foi aprovada. Não precisa fazer mais nada.`,
+        ],
+        boton: 'Ver',
+      },
     }),
     week_missing: (d) => ({
       subject: `A sua semana de ${d.semana} não foi enviada`,
-      bodyText:
-        `Olá ${d.nombre},\n\n` +
-        `A semana de ${d.semana} continua sem ser enviada. Enquanto não a enviar, não pode ser aprovada nem assinada.\n\n` +
-        `Se registar agora ainda se lembra do que fez; na segunda-feira já não.\n` +
-        enlace(d, 'Enviar') +
-        `\n${PIE.pt}\n`,
+      cuerpo: {
+        saludo: `Olá ${d.nombre},`,
+        parrafos: [
+          `A semana de ${d.semana} continua sem ser enviada. Enquanto não a enviar, não pode ser aprovada nem assinada.`,
+          'Se registar agora ainda se lembra do que fez; na segunda-feira já não.',
+        ],
+        boton: 'Enviar',
+      },
     }),
     admin_digest: (d) => ({
       subject: `${d.lista?.length ?? 0} técnicos não enviaram a semana de ${d.semana}`,
-      bodyText:
-        `Semana de ${d.semana}.\n\n` +
-        `Sem enviar (${d.lista?.length ?? 0}):\n${(d.lista ?? []).map((n) => `  · ${n}`).join('\n')}\n` +
-        (d.inalcanzables?.length
-          ? `\nAlém disso, ${d.inalcanzables.length} sem e-mail registado — estes não puderam ser avisados:\n` +
-            `${d.inalcanzables.map((n) => `  · ${n}`).join('\n')}\n`
-          : '') +
-        enlace(d, 'Abrir a caixa') +
-        `\n${PIE.pt}\n`,
+      cuerpo: {
+        saludo: `Semana de ${d.semana}.`,
+        parrafos: [],
+        listas: [
+          { titulo: `Sem enviar (${d.lista?.length ?? 0})`, items: d.lista ?? [] },
+          ...(d.inalcanzables?.length
+            ? [
+                {
+                  titulo: `Sem e-mail registado (${d.inalcanzables.length}) — estes não puderam ser avisados`,
+                  items: d.inalcanzables,
+                },
+              ]
+            : []),
+        ],
+        boton: 'Abrir a caixa de entrada',
+      },
     }),
   },
 };
 
-/** Idioma valido o `es`. El CHECK de la migracion lo garantiza, pero el historico
-    o un `lang` leido de otro sitio no tienen por que: mejor castellano que undefined. */
-export const idioma = (v: string | null | undefined): Lang =>
-  (LANGS as readonly string[]).includes(v ?? '') ? (v as Lang) : 'es';
+export const PLANTILLAS = T;
+
+/**
+ * El idioma guardado, o español si trae cualquier otra cosa.
+ *
+ * Acepta `unknown` a proposito: el valor viene de una columna, y un `null` o un
+ * `pt-BR` tienen que caer a castellano en vez de reventar el envio de un correo.
+ */
+export const idioma = (s: unknown): Lang => (LANGS.includes(s as Lang) ? (s as Lang) : 'es');
 
 export function render(kind: Kind, lang: Lang, datos: Datos): Correo {
-  return T[lang][kind](datos);
+  const { subject, cuerpo } = T[lang][kind](datos);
+  return { subject, bodyText: aTexto(cuerpo, datos, lang), bodyHtml: aHtml(cuerpo, datos, lang) };
 }
-
-/** Solo para el test que compara las tres lenguas. */
-export const PLANTILLAS = T;

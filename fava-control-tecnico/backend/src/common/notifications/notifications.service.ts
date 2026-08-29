@@ -42,6 +42,7 @@ interface FilaNotif {
   lang: string;
   subject: string;
   bodyText: string;
+  bodyHtml: string;
   entity: string | null;
   entityId: string | null;
 }
@@ -78,7 +79,7 @@ export async function encolarEn(cliente: ClienteNotif, avisos: Aviso[]): Promise
     skipDuplicates: true,
     data: escribibles.map((a) => {
       const lang = idioma(a.para.lang);
-      const { subject, bodyText } = render(a.kind, lang, {
+      const { subject, bodyText, bodyHtml } = render(a.kind, lang, {
         ...a.datos,
         nombre: a.para.displayName,
       });
@@ -90,6 +91,7 @@ export async function encolarEn(cliente: ClienteNotif, avisos: Aviso[]): Promise
         lang,
         subject,
         bodyText,
+        bodyHtml,
         entity: a.entity ?? null,
         entityId: a.entityId ?? null,
       };

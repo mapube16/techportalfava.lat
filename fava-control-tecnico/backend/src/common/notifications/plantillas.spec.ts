@@ -56,4 +56,43 @@ describe('plantillas de correo', () => {
     expect(idioma('pt-BR')).toBe('es');
     expect(idioma(null)).toBe('es');
   });
+
+  // ── El HTML: las reglas del correo no son las de la web ──
+
+  describe.each(LANGS)('html %s', (lang) => {
+    it.each(KINDS)('%s cumple lo que exige un cliente de correo', (kind) => {
+      const { bodyHtml, bodyText } = render(kind, lang, DATOS);
+
+      // Sin <style> en el head: Gmail lo tira y el correo saldria en blanco y negro.
+      expect(bodyHtml).not.toMatch(/<style/i);
+      // Sin nada remoto: la mitad de los clientes lo bloquean y quedaria un hueco.
+      expect(bodyHtml).not.toMatch(/<img|<link|@import/i);
+      // Maquetado con tablas: Outlook usa el motor de Word, flexbox no existe.
+      expect(bodyHtml).toMatch(/<table/);
+      expect(bodyHtml).not.toMatch(/display:\s*flex|display:\s*grid/);
+      // Un <button> no se pinta en la mayoria de clientes; el boton es un <a>.
+      expect(bodyHtml).not.toMatch(/<button/i);
+      expect(bodyHtml).not.toMatch(/undefined|NaN|\[object/);
+      // El texto plano SIEMPRE va: hay clientes que bloquean HTML por completo.
+      expect(bodyText.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('el HTML escapa lo que escribe una persona: un motivo con < no rompe la maqueta', () => {
+    const { bodyHtml } = render('note_returned', 'es', {
+      ...DATOS,
+      comentario: '<script>alert(1)</script> falta el martes',
+    });
+    expect(bodyHtml).not.toContain('<script>');
+    expect(bodyHtml).toContain('&lt;script&gt;');
+  });
+
+  it('sin enlace no se pinta boton, en los dos formatos', () => {
+    const sinEnlace = { ...DATOS, enlace: undefined };
+    const { bodyHtml, bodyText } = render('week_missing', 'es', sinEnlace);
+    // Un boton que no lleva a ningun sitio es peor que ninguno.
+    expect(bodyHtml).not.toContain('href=');
+    expect(bodyText).not.toContain('http');
+  });
+
 });
