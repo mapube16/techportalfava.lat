@@ -134,16 +134,27 @@ export class WeeklyNotesService {
     });
     if (!jornadas.length) throw new BadRequestException('SEMANA_VACIA');
 
-    // Reenviar lo ya aprobado sería reabrirlo por la puerta de atrás.
-    const bloqueadas = jornadas.filter((j) => !EDITABLES.includes(j.status));
-    if (bloqueadas.length) throw new ConflictException('SEMANA_NO_EDITABLE');
+    // Se envía SOLO lo editable. Una semana puede tener un proyecto ya aprobado y otro
+    // que el técnico registró después —dos proyectos distintos no se estorban—, y
+    // bloquearla entera por el primero dejaba esos días nuevos sin ninguna forma de
+    // salir. Si no queda nada editable es que la semana ya se envió: ahí sí es un 409.
+    const enviables = jornadas.filter((j) => EDITABLES.includes(j.status));
+    if (!enviables.length) throw new ConflictException('SEMANA_NO_EDITABLE');
 
     const tecnico = await c.technician.findUnique({
       where: { id: technicianId },
       select: { roleTypeId: true },
     });
 
-    const proyectos = [...new Set(jornadas.map((j) => j.projectId).filter(Boolean))] as string[];
+    const proyectos = [...new Set(enviables.map((j) => j.projectId).filter(Boolean))] as string[];
+
+    // Lo que sigue prohibido: colgar un día nuevo de un proyecto cuya nota YA está
+    // aprobada. El upsert de abajo la devolvería a 'submitted', y eso es reabrir por la
+    // puerta de atrás. Reabrir es del admin, con su motivo y su rastro en audit_log.
+    const yaAprobadas = await c.weeklyNote.count({
+      where: { technicianId, weekStart, projectId: { in: proyectos }, status: 'approved' },
+    });
+    if (yaAprobadas) throw new ConflictException('SEMANA_NO_EDITABLE');
     const notas: ReturnType<typeof plana>[] = [];
 
     for (const projectId of proyectos) {
@@ -156,7 +167,14 @@ export class WeeklyNotesService {
         select: NOTA,
       });
       await c.dailyEntry.updateMany({
-        where: { technicianId, projectId, date: { gte: weekStart, lte: fin } },
+        // El filtro de estado no sobra: sin él, un día ya cerrado del mismo proyecto
+        // volvería a 'submitted' de rebote.
+        where: {
+          technicianId,
+          projectId,
+          date: { gte: weekStart, lte: fin },
+          status: { in: EDITABLES },
+        },
         data: { status: 'submitted' },
       });
       await this.audit.registrar({
@@ -172,7 +190,12 @@ export class WeeklyNotesService {
 
     // Los días sin proyecto cierran con la semana: ver el comentario del método.
     await c.dailyEntry.updateMany({
-      where: { technicianId, projectId: null, date: { gte: weekStart, lte: fin } },
+      where: {
+        technicianId,
+        projectId: null,
+        date: { gte: weekStart, lte: fin },
+        status: { in: EDITABLES },
+      },
       data: { status: 'approved' },
     });
 

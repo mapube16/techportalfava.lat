@@ -147,6 +147,50 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     expect(res.body.message).toBe('SEMANA_VACIA');
   });
 
+  /**
+   * El caso de la captura del 2026-08-29: la semana tenía Pasta Nova ya APROBADA y dos
+   * días nuevos de OTROS proyectos. El guardia miraba la semana entera y devolvía
+   * SEMANA_NO_EDITABLE, así que esos días no tenían ninguna forma de salir. Nunca.
+   */
+  it('un proyecto ya aprobado NO bloquea los días nuevos de otro proyecto', async () => {
+    const viejo = await crearProyecto({ name: 'AAA ya aprobado' });
+    await jornada({ projectId: viejo.id, date: '2026-03-02' });
+    const nota = (await enviar()).body[0];
+    await http().post(`/api/weekly-notes/${nota.id}/approve`).set(auth(tokenAdmin)).expect(201);
+
+    const nuevo = await crearProyecto({ name: 'BBB registrado después' });
+    await jornada({ projectId: nuevo.id, date: '2026-03-06' });
+
+    const { body } = await enviar();
+
+    expect(body).toHaveLength(1);
+    expect(body[0].projectName).toBe('BBB registrado después');
+    // Y lo aprobado no se mueve de sitio: ni la nota ni sus jornadas.
+    const antes = await ownerClient.weeklyNote.findUniqueOrThrow({ where: { id: nota.id } });
+    expect(antes.status).toBe('approved');
+    expect(
+      await ownerClient.dailyEntry.count({ where: { projectId: viejo.id, status: 'approved' } }),
+    ).toBe(1);
+  });
+
+  it('un día nuevo del MISMO proyecto aprobado sí se rechaza: reabrir es del admin', async () => {
+    const p = await crearProyecto();
+    await jornada({ projectId: p.id, date: '2026-03-02' });
+    const nota = (await enviar()).body[0];
+    await http().post(`/api/weekly-notes/${nota.id}/approve`).set(auth(tokenAdmin)).expect(201);
+
+    // Colgar el viernes de una nota ya aprobada la devolvería a 'submitted' por detrás.
+    await jornada({ projectId: p.id, date: '2026-03-06' });
+    expect((await enviar(409)).body.message).toBe('SEMANA_NO_EDITABLE');
+  });
+
+  it('reenviar una semana en la que no queda nada editable sigue siendo 409', async () => {
+    const p = await crearProyecto();
+    await jornada({ projectId: p.id, date: '2026-03-02' });
+    await enviar();
+    expect((await enviar(409)).body.message).toBe('SEMANA_NO_EDITABLE');
+  });
+
   // ── BIT-05: enviado = solo lectura ──
 
   it('al enviar, los días quedan bloqueados; al devolver, vuelven a ser editables', async () => {

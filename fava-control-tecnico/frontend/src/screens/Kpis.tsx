@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ApiState, nf, td, th } from '../ui';
+import { ApiState, FiltroVigencia, nf, porVigencia, td, th } from '../ui';
+import type { Vigencia } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { useApiData } from '../lib/api/useApiData';
@@ -57,7 +58,19 @@ export default function Kpis() {
   const { data: vendido, error: errV } = useApiData(() => getSoldVsExecuted(null), [state.dataVersion]);
   const { data: util, error: errU } = useApiData(() => getUtilization(null), [state.dataVersion]);
 
-  const projects = vendido ?? [];
+  /**
+   * Por defecto SOLO los proyectos vigentes, igual que en Proyectos y Técnicos.
+   *
+   * De 23 proyectos hay 5 activos: sin filtrar, las barras las dominaba obra terminada
+   * hace meses y el tablero respondía a una pregunta que nadie hace. El contador de las
+   * pastillas dice cuántos quedan fuera, que es lo que evita que parezca que faltan datos.
+   *
+   * Afecta a las cuatro tarjetas y a las gráficas de vendido/ejecutado. NO toca la
+   * cuadrícula ni la utilización: esas se agregan por técnico, no por proyecto, y las
+   * filtra su propio año.
+   */
+  const [vigencia, setVigencia] = useState<Vigencia>('activos');
+  const projects = porVigencia(vendido ?? [], vigencia);
   const per = projects.map((p) => ({ sold: p.sold, done: p.executed, nh: p.normalHours ?? 0 }));
   const tot = per.reduce(
     (a: { sold: number; done: number; nh: number; exec: number }, p) =>
@@ -313,6 +326,11 @@ export default function Kpis() {
 
       {/* Sin año: todo el histórico, igual que la cuadrícula al abrir. */}
       <UtilizationCard year={null} />
+
+      <div className="flex items-center justify-between flex-wrap gap-2.5">
+        <div className="text-sm font-bold">{t.kpi_sold + ' / ' + t.kpi_done}</div>
+        <FiltroVigencia valor={vigencia} onChange={setVigencia} items={vendido} t={t} />
+      </div>
 
       <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(148px,1fr))' }}>
         {kcard(t.k_hours_norm, nf(tot.nh) + ' h', t.of_contract, 'var(--info)')}

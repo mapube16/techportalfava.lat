@@ -24,6 +24,29 @@ export const ROL_TEST = '33333333-3333-4333-8333-333333333333';
 export const CUR_TEST = 'TST';
 export const MAQ_TEST = '44444444-4444-4444-8444-444444444444';
 
+/**
+ * EL SEGURO. `truncateAll()` hace TRUNCATE de projects, technicians, users y las
+ * jornadas: contra la base equivocada no es un test que falla, es la produccion
+ * borrada. Y la base equivocada es facil de tener — un `.env` apuntado al proxy
+ * publico de Railway para revisar algo en local deja la trampa armada y en silencio.
+ *
+ * Solo se admite un host local. No hay variable para saltarselo a proposito: si algun
+ * dia hace falta correr los e2e contra un servidor remoto, que quien lo necesite venga
+ * a borrar estas lineas y vea lo que esta desactivando.
+ */
+for (const [nombre, url] of [
+  ['MIGRATE_DATABASE_URL', env.MIGRATE_DATABASE_URL],
+  ['DATABASE_URL', env.DATABASE_URL],
+]) {
+  const host = new URL(url).hostname;
+  if (!['localhost', '127.0.0.1', '::1', 'db', 'postgres'].includes(host)) {
+    throw new Error(
+      `Los e2e TRUNCAN la base y ${nombre} apunta a ${host}, que no es local. ` +
+        'Levanta el Postgres de docker-compose y apunta el .env ahi antes de correrlos.',
+    );
+  }
+}
+
 /** Owner: DDL, siembra de fixtures y limpieza. Salta RLS a proposito. */
 export const ownerClient = new PrismaClient({
   adapter: new PrismaPg({ connectionString: env.MIGRATE_DATABASE_URL }),
