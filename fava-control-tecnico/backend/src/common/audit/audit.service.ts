@@ -58,17 +58,37 @@ export class AuditService {
   }
 
   /**
-   * AUD-02. Filtro opcional por entidad para «enséñame la historia de ESTA nota», que
-   * es como se usa el visor cuando algo no cuadra.
+   * AUD-02. Filtros opcionales: por entidad para «enséñame la historia de ESTA nota»,
+   * por acción y por rango de fechas para «enséñame las devoluciones de julio».
+   *
+   * Se filtra AQUÍ y no en el navegador porque el visor solo se trae las últimas 200
+   * filas: filtrar sobre esas 200 respondería «no hay devoluciones en julio» cuando la
+   * verdad es «julio no cabía en la página». Un log que miente por recorte no sirve.
    *
    * `take` con techo: sin él, un año de operación se trae entero al navegador.
    */
-  async listar(filtro: { entity?: string; entityId?: string; take?: number }) {
+  async listar(filtro: {
+    entity?: string;
+    entityId?: string;
+    action?: string;
+    desde?: string;
+    hasta?: string;
+    take?: number;
+  }) {
     const take = Math.min(Math.max(filtro.take ?? 100, 1), 500);
+    // El rango llega como dos INSTANTES ISO, no como dos fechas: el log guarda UTC y el
+    // que filtra piensa en su reloj, asi que quien sabe en que huso esta —el navegador—
+    // es quien convierte. Aqui no hay aritmetica de calendario que equivocar.
+    const rango = {
+      ...(filtro.desde ? { gte: new Date(filtro.desde) } : {}),
+      ...(filtro.hasta ? { lte: new Date(filtro.hasta) } : {}),
+    };
     const filas = await this.prisma.client.auditLog.findMany({
       where: {
         ...(filtro.entity ? { entity: filtro.entity } : {}),
         ...(filtro.entityId ? { entityId: filtro.entityId } : {}),
+        ...(filtro.action ? { action: filtro.action } : {}),
+        ...(Object.keys(rango).length ? { createdAt: rango } : {}),
       },
       orderBy: { createdAt: 'desc' },
       take,

@@ -64,6 +64,12 @@ interface Cuerpo {
   parrafos: string[];
   /** Lo que no se puede pasar por alto: el motivo de una devolucion, «no hay contraseña». */
   destacado?: string;
+  /**
+   * Los datos de cabecera, en rejilla, como los del encabezado de la Nota: rotulo a la
+   * izquierda y valor sobre relleno azul. No es decoracion — es lo que identifica de
+   * que nota habla el correo, y estaba metido a presion dentro de una frase.
+   */
+  datos?: { rotulo: string; valor: string }[];
   /** Listas con titulo. El resumen de los lunes lleva dos: los que faltan y los inalcanzables. */
   listas?: { titulo: string; items: string[] }[];
   /** El texto del boton. El destino sale de `datos.enlace`; sin enlace no se pinta. */
@@ -85,14 +91,26 @@ const PIE: Record<Lang, string> = {
   pt: 'FAVA Control Técnico — mensagem automática, não responda a este e-mail.',
 };
 
-// ── Los colores de la aplicacion, no unos inventados para el correo ──
-const AZUL = '#104a78';
+/**
+ * LOS COLORES DE LA NOTA, no unos elegidos para el correo.
+ *
+ * Salen de `nota-pdf.ts`, que ya dejo escrito lo que hay que entender aqui: «el papel
+ * de FAVA es una hoja de calculo: rejilla continua de bordes finos, membrete y titulo
+ * en la misma banda de arriba, y los valores sobre relleno azul».
+ *
+ * La primera version de este correo era una tarjeta blanca con esquinas redondeadas,
+ * un recuadro gris con barra naranja y un boton redondo — el correo transaccional que
+ * manda todo el mundo. Decia lo mismo y no se parecia a nada de FAVA. El tecnico que
+ * lo abre firma ese documento todas las semanas: que el correo se parezca al papel no
+ * es un capricho estetico, es lo que hace que se reconozca en dos segundos.
+ */
+const AZUL = '#1f4e79';
+const RELLENO = '#dce9f6';
 const TEXTO = '#132330';
 const SUAVE = '#5b6b7a';
 const FONDO = '#eef2f5';
 const PAPEL = '#ffffff';
-const BORDE = '#dde3e9';
-const NARANJA = '#e86c00';
+const BORDE = '#a9bed4';
 const TIPO = "Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif";
 
 /**
@@ -110,7 +128,10 @@ const esc = (s: string) =>
 // ── Salida 1: texto plano ──
 
 function aTexto(c: Cuerpo, d: Datos, lang: Lang): string {
-  const partes = [c.saludo, '', ...c.parrafos];
+  const partes = [c.saludo, ''];
+  for (const x of c.datos ?? []) partes.push(`${x.rotulo}: ${x.valor}`);
+  if (c.datos?.length) partes.push('');
+  partes.push(...c.parrafos);
   if (c.destacado) partes.push('', c.destacado);
   for (const l of c.listas ?? []) {
     partes.push('', `${l.titulo}:`, ...l.items.map((i) => `  · ${i}`));
@@ -125,11 +146,33 @@ function aTexto(c: Cuerpo, d: Datos, lang: Lang): string {
 const parrafo = (t: string) =>
   `<p style="margin:0 0 14px;font:16px/1.6 ${TIPO};color:${TEXTO};">${esc(t)}</p>`;
 
-/** El aviso que no se puede pasar por alto: barra de color a la izquierda y fondo propio. */
+/**
+ * Lo que no se puede pasar por alto: sobre el relleno azul de la Nota y dentro de la
+ * rejilla, no en un recuadro gris con una barra de color al lado — eso ultimo es el
+ * adorno que lleva cualquier correo transaccional y no dice nada de este documento.
+ */
 const destacado = (t: string) =>
-  `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">` +
-  `<tr><td style="background:${FONDO};border-left:4px solid ${NARANJA};padding:14px 16px;` +
-  `font:16px/1.55 ${TIPO};color:${TEXTO};">${esc(t)}</td></tr></table>`;
+  `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 22px;border-collapse:collapse;">` +
+  `<tr><td style="background:${RELLENO};border:1px solid ${BORDE};padding:13px 15px;` +
+  `font:16px/1.5 ${TIPO};color:${AZUL};">${esc(t)}</td></tr></table>`;
+
+/**
+ * La rejilla de cabecera: rotulo a la izquierda, valor sobre relleno azul. Es celda por
+ * celda el encabezado del papel, y por eso los bordes van continuos y a un pixel.
+ */
+const rejilla = (filas: { rotulo: string; valor: string }[]) =>
+  `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 22px;border-collapse:collapse;">` +
+  filas
+    .map(
+      (x) =>
+        `<tr><td width="34%" style="border:1px solid ${BORDE};padding:9px 12px;background:${PAPEL};` +
+        `font:600 12px/1.35 ${TIPO};color:${SUAVE};text-transform:uppercase;letter-spacing:.06em;` +
+        `vertical-align:top;">${esc(x.rotulo)}</td>` +
+        `<td style="border:1px solid ${BORDE};padding:9px 12px;background:${RELLENO};` +
+        `font:600 15px/1.35 ${TIPO};color:${AZUL};">${esc(x.valor)}</td></tr>`,
+    )
+    .join('') +
+  `</table>`;
 
 const lista = (titulo: string, items: string[]) =>
   `<p style="margin:0 0 8px;font:13px/1.4 ${TIPO};color:${SUAVE};` +
@@ -147,7 +190,7 @@ const lista = (titulo: string, items: string[]) =>
 /** `<a>` y no `<button>`: un boton de formulario no se pinta en la mayoria de clientes. */
 const boton = (texto: string, href: string) =>
   `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 4px;">` +
-  `<tr><td style="background:${AZUL};border-radius:6px;">` +
+  `<tr><td style="background:${AZUL};">` +
   `<a href="${esc(href)}" style="display:inline-block;padding:13px 26px;font:600 16px/1 ${TIPO};` +
   `color:${PAPEL};text-decoration:none;">${esc(texto)}</a>` +
   `</td></tr></table>` +
@@ -188,18 +231,26 @@ function origen(d: Datos): string | null {
  */
 function membrete(d: Datos): string {
   const base = origen(d);
+  // Membrete Y titulo en la MISMA banda de arriba, como el papel: el logotipo a la
+  // izquierda y el nombre del documento a la derecha, separados por la rejilla.
   const blanco =
-    `<tr><td style="background:${PAPEL};padding:20px 28px 16px;border-radius:9px 9px 0 0;">` +
+    `<tr><td style="background:${PAPEL};border-bottom:1px solid ${BORDE};padding:0;">` +
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">` +
+    `<tr><td style="padding:16px 20px;vertical-align:middle;">` +
     (base
-      ? `<img src="${esc(base)}/email/logo.png" width="150" height="76" alt="FAVA LatinoAmérica" ` +
-        `style="display:block;border:0;width:150px;height:auto;">`
-      : `<span style="font:700 17px/1.2 ${TIPO};color:${AZUL};">FAVA</span>` +
-        `<span style="font:400 17px/1.2 ${TIPO};color:${SUAVE};"> Control Técnico</span>`) +
-    `</td></tr>`;
+      ? `<img src="${esc(base)}/email/logo.png" width="132" height="67" alt="FAVA LatinoAmérica" ` +
+        `style="display:block;border:0;width:132px;height:auto;">`
+      : `<span style="font:700 16px/1.2 ${TIPO};color:${AZUL};">FAVA LatinoAmérica</span>`) +
+    `</td>` +
+    `<td align="right" style="padding:16px 20px;vertical-align:middle;` +
+    `font:600 11.5px/1.35 ${TIPO};color:${SUAVE};text-transform:uppercase;letter-spacing:.1em;">` +
+    `Control Técnico</td></tr></table></td></tr>`;
 
+  // Mas baja que antes: es una banda que enmarca, no un cartel. A 180px competia con
+  // el contenido y hacia que el correo empezara por una foto de stock.
   const foto = base
     ? `<tr><td style="background:${AZUL};font-size:0;line-height:0;">` +
-      `<img src="${esc(base)}/email/hero.jpg" width="600" height="180" alt="" ` +
+      `<img src="${esc(base)}/email/hero.jpg" width="600" height="112" alt="" ` +
       `style="display:block;border:0;width:100%;max-width:600px;height:auto;"></td></tr>`
     : '';
 
@@ -209,6 +260,7 @@ function membrete(d: Datos): string {
 function aHtml(c: Cuerpo, d: Datos, lang: Lang): string {
   const dentro =
     `<p style="margin:0 0 16px;font:600 18px/1.4 ${TIPO};color:${TEXTO};">${esc(c.saludo)}</p>` +
+    (c.datos?.length ? rejilla(c.datos) : '') +
     c.parrafos.map(parrafo).join('') +
     (c.destacado ? destacado(c.destacado) : '') +
     (c.listas ?? []).map((l) => lista(l.titulo, l.items)).join('') +
@@ -221,11 +273,13 @@ function aHtml(c: Cuerpo, d: Datos, lang: Lang): string {
     // La tabla exterior centra en Outlook, que ignora `margin:auto`.
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${FONDO};">` +
     `<tr><td align="center" style="padding:28px 12px;">` +
+    // Sin esquinas redondeadas: esto es un documento, y el papel de FAVA es una hoja
+    // de calculo. Las esquinas redondas son de la tarjeta de una aplicacion.
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" ` +
-    `style="width:100%;max-width:600px;background:${PAPEL};border:1px solid ${BORDE};border-radius:10px;">` +
+    `style="width:100%;max-width:600px;background:${PAPEL};border:1px solid ${BORDE};border-collapse:collapse;">` +
     membrete(d) +
-    `<tr><td style="padding:26px 28px 22px;">${dentro}</td></tr>` +
-    `<tr><td style="padding:16px 28px 20px;border-top:1px solid ${BORDE};">` +
+    `<tr><td style="padding:24px 20px 20px;">${dentro}</td></tr>` +
+    `<tr><td style="padding:14px 20px 16px;border-top:1px solid ${BORDE};background:${FONDO};">` +
     `<p style="margin:0;font:13px/1.5 ${TIPO};color:${SUAVE};">${esc(PIE[lang])}</p>` +
     `</td></tr></table></td></tr></table></body></html>`
   );
@@ -239,9 +293,13 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
       subject: `Tu nota de ${d.proyecto} fue devuelta`,
       cuerpo: {
         saludo: `Hola ${d.nombre}:`,
-        parrafos: [
-          `Tu nota de la semana del ${d.semana} (${d.proyecto}) fue devuelta para que la corrijas.`,
+        // El proyecto y la semana salen de la frase y suben a la rejilla: identificar
+        // el documento es trabajo del encabezado, no de una oracion con parentesis.
+        datos: [
+          { rotulo: 'Proyecto', valor: d.proyecto ?? '' },
+          { rotulo: 'Semana', valor: d.semana ?? '' },
         ],
+        parrafos: ['Tu nota fue devuelta para que la corrijas.'],
         destacado: `Motivo: ${d.comentario}`,
         boton: 'Corrígela aquí',
       },
@@ -267,9 +325,11 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
       subject: `Tu nota de ${d.proyecto} fue aprobada`,
       cuerpo: {
         saludo: `Hola ${d.nombre}:`,
-        parrafos: [
-          `Tu nota de la semana del ${d.semana} (${d.proyecto}) quedó aprobada. No tienes que hacer nada más.`,
+        datos: [
+          { rotulo: 'Proyecto', valor: d.proyecto ?? '' },
+          { rotulo: 'Semana', valor: d.semana ?? '' },
         ],
+        parrafos: ['Tu nota quedó aprobada. No tienes que hacer nada más.'],
         boton: 'Verla',
       },
     }),
@@ -277,8 +337,9 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
       subject: `Tu semana del ${d.semana} está sin enviar`,
       cuerpo: {
         saludo: `Hola ${d.nombre}:`,
+        datos: [{ rotulo: 'Semana', valor: d.semana ?? '' }],
         parrafos: [
-          `La semana del ${d.semana} sigue sin enviar. Mientras no la envíes, no se puede aprobar ni firmar.`,
+          'Sigue sin enviar. Mientras no la envíes, no se puede aprobar ni firmar.',
           'Si la registras ahora te acordarás de lo que hiciste; el lunes ya no.',
         ],
         boton: 'Enviarla',
@@ -310,9 +371,11 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
       subject: `La tua nota di ${d.proyecto} è stata restituita`,
       cuerpo: {
         saludo: `Ciao ${d.nombre},`,
-        parrafos: [
-          `La tua nota della settimana del ${d.semana} (${d.proyecto}) è stata restituita per essere corretta.`,
+        datos: [
+          { rotulo: 'Progetto', valor: d.proyecto ?? '' },
+          { rotulo: 'Settimana', valor: d.semana ?? '' },
         ],
+        parrafos: ['La tua nota è stata restituita per essere corretta.'],
         destacado: `Motivo: ${d.comentario}`,
         boton: 'Correggila qui',
       },
@@ -332,9 +395,11 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
       subject: `La tua nota di ${d.proyecto} è stata approvata`,
       cuerpo: {
         saludo: `Ciao ${d.nombre},`,
-        parrafos: [
-          `La tua nota della settimana del ${d.semana} (${d.proyecto}) è stata approvata. Non devi fare altro.`,
+        datos: [
+          { rotulo: 'Progetto', valor: d.proyecto ?? '' },
+          { rotulo: 'Settimana', valor: d.semana ?? '' },
         ],
+        parrafos: ['La tua nota è stata approvata. Non devi fare altro.'],
         boton: 'Vedila',
       },
     }),
@@ -342,8 +407,9 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
       subject: `La tua settimana del ${d.semana} non è stata inviata`,
       cuerpo: {
         saludo: `Ciao ${d.nombre},`,
+        datos: [{ rotulo: 'Settimana', valor: d.semana ?? '' }],
         parrafos: [
-          `La settimana del ${d.semana} non è ancora stata inviata. Finché non la invii non può essere approvata né firmata.`,
+          'Non è ancora stata inviata. Finché non la invii non può essere approvata né firmata.',
           'Se la registri adesso ti ricordi cosa hai fatto; lunedì non più.',
         ],
         boton: 'Inviala',
@@ -375,9 +441,11 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
       subject: `A sua nota de ${d.proyecto} foi devolvida`,
       cuerpo: {
         saludo: `Olá ${d.nombre},`,
-        parrafos: [
-          `A sua nota da semana de ${d.semana} (${d.proyecto}) foi devolvida para correção.`,
+        datos: [
+          { rotulo: 'Projeto', valor: d.proyecto ?? '' },
+          { rotulo: 'Semana', valor: d.semana ?? '' },
         ],
+        parrafos: ['A sua nota foi devolvida para correção.'],
         destacado: `Motivo: ${d.comentario}`,
         boton: 'Corrija aqui',
       },
@@ -397,9 +465,11 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
       subject: `A sua nota de ${d.proyecto} foi aprovada`,
       cuerpo: {
         saludo: `Olá ${d.nombre},`,
-        parrafos: [
-          `A sua nota da semana de ${d.semana} (${d.proyecto}) foi aprovada. Não precisa fazer mais nada.`,
+        datos: [
+          { rotulo: 'Projeto', valor: d.proyecto ?? '' },
+          { rotulo: 'Semana', valor: d.semana ?? '' },
         ],
+        parrafos: ['A sua nota foi aprovada. Não precisa fazer mais nada.'],
         boton: 'Ver',
       },
     }),
@@ -407,8 +477,9 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
       subject: `A sua semana de ${d.semana} não foi enviada`,
       cuerpo: {
         saludo: `Olá ${d.nombre},`,
+        datos: [{ rotulo: 'Semana', valor: d.semana ?? '' }],
         parrafos: [
-          `A semana de ${d.semana} continua sem ser enviada. Enquanto não a enviar, não pode ser aprovada nem assinada.`,
+          'Continua sem ser enviada. Enquanto não a enviar, não pode ser aprovada nem assinada.',
           'Se registar agora ainda se lembra do que fez; na segunda-feira já não.',
         ],
         boton: 'Enviar',

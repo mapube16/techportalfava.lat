@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { hi } from '../icons';
-import { ApiState, Card, CardHead, filterBy, td, th } from '../ui';
+import { ApiState, Card, CardHead, filterBy, ghostBtn, inputStyle, td, th } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { useApiData } from '../lib/api/useApiData';
@@ -7,6 +8,7 @@ import { listAudit } from '../lib/api/weeklyNotes';
 import { describir } from '../lib/auditoria';
 import type { AuditRow } from '../lib/api/weeklyNotes';
 import type { Dict } from '../i18n';
+import type { Route } from '../types';
 
 /**
  * AUD-02 — el visor del Super Admin.
@@ -79,10 +81,175 @@ function Que({ fila, t }: { fila: AuditRow; t: Dict }) {
   );
 }
 
+/**
+ * El nombre lleva a su ficha.
+ *
+ * «Techportal (pruebas)» es una CUENTA, y hasta aquí era texto muerto: para saber quién
+ * es ese que aprobó había que irse a Usuarios y buscarlo a mano. No hace falta un
+ * enrutador nuevo — la aplicación navega con `go` y todas esas pantallas filtran por el
+ * mismo buscador global, así que llevarlo puesto es el enlace.
+ */
+function Enlace({ texto, ruta, busca, className = '' }: {
+  texto: string;
+  ruta: Route;
+  busca: string;
+  className?: string;
+}) {
+  const { patch, go } = useApp();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        patch({ search: busca });
+        go(ruta);
+      }}
+      className={`text-left underline-offset-2 hover:underline hover:text-primary ${className}`}
+    >
+      {texto}
+    </button>
+  );
+}
+
+/**
+ * A dónde lleva la columna SOBRE. `null` = a ningún sitio: el rastro apunta a algo que
+ * ya no está, y un enlace a una ficha que no existe promete más de lo que puede dar.
+ *
+ * El nombre del proyecto es la primera mitad de la etiqueta que arma `audit.service.ts`
+ * («proyecto · semana»); la bandeja busca por técnico y proyecto, no por fecha.
+ */
+const destino = (a: AuditRow): [Route, string] | null => {
+  if (!a.entityLabel) return null;
+  if (a.entity === 'weekly_note') return ['allnotes', a.entityLabel.split(' · ')[0]];
+  if (a.entity === 'technician') return ['techs', a.entityLabel];
+  return null;
+};
+
+/** La columna SOBRE: la ficha enlazada, o una raya si el rastro se quedó sin ella. */
+function Sobre({ fila }: { fila: AuditRow }) {
+  const d = destino(fila);
+  if (!d) return fila.entityLabel ? <>{fila.entityLabel}</> : <span className="font-normal text-ink-3">—</span>;
+  return <Enlace texto={fila.entityLabel as string} ruta={d[0]} busca={d[1]} />;
+}
+
+/**
+ * Los filtros. Van al SERVIDOR, no al array ya cargado: la pantalla se trae las últimas
+ * 200 filas, así que filtrar aquí respondería «no hay devoluciones en julio» cuando la
+ * verdad sería «julio no cabía en la página».
+ *
+ * Desplegable y dos `<input type="date">` nativos: un calendario propio serían tres
+ * dependencias para lo que el navegador ya hace, y en el móvil lo hace mejor.
+ *
+ * Por ACCIÓN y por FECHA y nada más: por actor y por proyecto ya busca el buscador de
+ * arriba, que filtra sobre lo mismo.
+ */
+function Filtros({
+  accion,
+  setAccion,
+  desde,
+  setDesde,
+  hasta,
+  setHasta,
+  t,
+}: {
+  accion: string;
+  setAccion: (v: string) => void;
+  desde: string;
+  setDesde: (v: string) => void;
+  hasta: string;
+  setHasta: (v: string) => void;
+  t: Dict;
+}) {
+  const acciones: [string, string][] = [
+    ['submit', t.aud_submit],
+    ['approve', t.aud_approve],
+    ['return', t.aud_return],
+    ['reopen', t.aud_reopen],
+    ['sign', t.aud_sign],
+    ['update', t.aud_update],
+    ['deactivate', t.aud_deactivate],
+  ];
+  const puesto = accion || desde || hasta;
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <select
+        value={accion}
+        onChange={(e) => setAccion(e.target.value)}
+        className={`${inputStyle} w-[190px]`}
+        aria-label={t.col_action}
+      >
+        <option value="">{t.aud_all_actions}</option>
+        {acciones.map(([k, label]) => (
+          <option key={k} value={k}>{label}</option>
+        ))}
+      </select>
+      <input
+        type="date"
+        value={desde}
+        max={hasta || undefined}
+        onChange={(e) => setDesde(e.target.value)}
+        className={`${inputStyle} w-[150px]`}
+        aria-label={t.date_from}
+        title={t.date_from}
+      />
+      <input
+        type="date"
+        value={hasta}
+        min={desde || undefined}
+        onChange={(e) => setHasta(e.target.value)}
+        className={`${inputStyle} w-[150px]`}
+        aria-label={t.date_to}
+        title={t.date_to}
+      />
+      {/* Solo cuando hay algo que quitar. `type="date"` no trae un borrado decente en
+          todos los navegadores, y sin esto un filtro puesto por error se queda puesto. */}
+      {puesto ? (
+        <button
+          type="button"
+          className={ghostBtn}
+          onClick={() => {
+            setAccion('');
+            setDesde('');
+            setHasta('');
+          }}
+        >
+          {t.aud_clear}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * El input da 'YYYY-MM-DD' en el reloj del lector y el log guarda instantes UTC. La
+ * conversión se hace aquí, que es el único sitio que sabe en qué huso está: «hasta el
+ * 29» tiene que incluir el 29 entero, no cortarlo a medianoche de otro país.
+ */
+const desdeIso = (d: string) => (d ? new Date(`${d}T00:00:00`).toISOString() : undefined);
+const hastaIso = (d: string) => (d ? new Date(`${d}T23:59:59.999`).toISOString() : undefined);
+
 export default function Audit() {
   const { state, t } = useApp();
   const movil = useIsMobile();
-  const { data, error } = useApiData(() => listAudit({ take: 200 }), [state.dataVersion]);
+  const [accion, setAccion] = useState('');
+  const [desde, setDesde] = useState('');
+  const [hasta, setHasta] = useState('');
+  // `data` conserva lo anterior mientras llega lo nuevo, así que cambiar un filtro no
+  // parpadea a «Cargando…» ni se lleva por delante la barra.
+  const { data, error } = useApiData(
+    () => listAudit({ take: 200, action: accion, from: desdeIso(desde), to: hastaIso(hasta) }),
+    [state.dataVersion, accion, desde, hasta],
+  );
+  const filtros = (
+    <Filtros
+      accion={accion}
+      setAccion={setAccion}
+      desde={desde}
+      setDesde={setDesde}
+      hasta={hasta}
+      setHasta={setHasta}
+      t={t}
+    />
+  );
 
   if (error) return <ApiState error={error} label={t.err_load} />;
   if (!data) return <ApiState error={null} label={t.loading} />;
@@ -99,8 +266,12 @@ export default function Audit() {
   if (!list.length) {
     return (
       <Card>
-        <CardHead title={t.t_audit} />
-        <div className="p-8 text-center text-[13px] text-ink-3">{t.audit_empty}</div>
+        <CardHead title={t.t_audit} right={filtros} />
+        {/* Con un filtro puesto, «todavía no hay movimientos» sería falso: los hay,
+            pero fuera de lo pedido. */}
+        <div className="p-8 text-center text-[13px] text-ink-3">
+          {accion || desde || hasta || state.search ? t.empty_list : t.audit_empty}
+        </div>
       </Card>
     );
   }
@@ -108,14 +279,20 @@ export default function Audit() {
   if (movil) {
     return (
       <Card>
-        <CardHead title={t.t_audit} />
+        <CardHead title={t.t_audit} right={filtros} />
         <div className="p-3 flex flex-col gap-2.5">
           {list.map((a) => (
             <div key={a.id} className="border border-line rounded-card p-3">
               <div className="flex items-start gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13.5px] font-bold">{a.actorName}</div>
-                  {a.entityLabel ? <div className="text-xs text-ink-3">{a.entityLabel}</div> : null}
+                  <div className="text-[13.5px] font-bold">
+                    <Enlace texto={a.actorName} ruta="users" busca={a.actorName} />
+                  </div>
+                  {a.entityLabel ? (
+                    <div className="text-xs text-ink-3">
+                      <Sobre fila={a} />
+                    </div>
+                  ) : null}
                 </div>
                 <span className="shrink-0 font-mono text-[11px] text-ink-3">{cuando(a.createdAt)}</span>
               </div>
@@ -131,7 +308,7 @@ export default function Audit() {
 
   return (
     <Card>
-      <CardHead title={t.t_audit} />
+      <CardHead title={t.t_audit} right={filtros} />
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px]">
           <thead>
@@ -145,7 +322,7 @@ export default function Audit() {
             {list.map((a) => (
               <tr key={a.id} className="border-t border-line align-top">
                 <td className={`${td} font-semibold`}>
-                  {a.actorName}
+                  <Enlace texto={a.actorName} ruta="users" busca={a.actorName} />
                   {/* CAT-06: quién aprobó en nombre de quién. Es justo el caso que
                       alguien viene a mirar aquí meses después. */}
                   {a.onBehalfOfId ? (
@@ -158,7 +335,7 @@ export default function Audit() {
                 {/* De QUÉ nota (o de qué técnico) se habla. El TIPO de fila ya no se
                     pinta aquí: la frase de al lado dice «la nota» o «el técnico». */}
                 <td className={`${td} font-semibold`}>
-                  {a.entityLabel ?? <span className="font-normal text-ink-3">—</span>}
+                  <Sobre fila={a} />
                 </td>
                 <td className={`${td} whitespace-nowrap font-mono text-xs text-ink-2`}>
                   {cuando(a.createdAt)}

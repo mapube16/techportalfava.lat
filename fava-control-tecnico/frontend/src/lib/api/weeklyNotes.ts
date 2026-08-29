@@ -140,10 +140,23 @@ export interface AuditRow {
 }
 
 /** Solo Super Admin. El log no se escribe desde el cliente: no existe POST. */
-export const listAudit = (p: { entity?: string; entityId?: string; take?: number } = {}) => {
+export const listAudit = (
+  p: {
+    entity?: string;
+    entityId?: string;
+    action?: string;
+    /** Instantes ISO, no fechas: los calcula la pantalla, que sabe en qué huso está. */
+    from?: string;
+    to?: string;
+    take?: number;
+  } = {},
+) => {
   const q = new URLSearchParams();
   if (p.entity) q.set('entity', p.entity);
   if (p.entityId) q.set('entityId', p.entityId);
+  if (p.action) q.set('action', p.action);
+  if (p.from) q.set('from', p.from);
+  if (p.to) q.set('to', p.to);
   if (p.take) q.set('take', String(p.take));
   const s = q.toString();
   return apiFetch<AuditRow[]>(`/audit${s ? `?${s}` : ''}`);
