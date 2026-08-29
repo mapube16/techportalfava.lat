@@ -16,7 +16,7 @@ import type { Role } from '../types';
 // Solicitudes creadas desde la pantalla «sin acceso», vía GET/PATCH /api/access-requests.
 // El feed de notificaciones in-app es Fase 7 (RT-02): aquí solo aterrizan en la lista.
 function AccessRequests() {
-  const { state, t } = useApp();
+  const { state, t, errTexto } = useApp();
   const [reqs, setReqs] = useState<AccessRequest[] | null>(null);
 
   useEffect(() => {
@@ -78,7 +78,7 @@ function AccessRequests() {
 }
 
 export default function Users() {
-  const { state, t, patch } = useApp();
+  const { state, t, patch, errTexto } = useApp();
   const [errLink, setErrLink] = useState<string | null>(null);
   // El color de cada rol es dato de dominio (T/A/S), no una paleta que Tailwind pueda
   // generar como clase: el naranja de A es el de MARCA (`accent-brand`), no el `accent`
@@ -147,7 +147,7 @@ export default function Users() {
             {t.btn_invite}
           </Button>
         </CardHeader>
-        {errLink ? <div className="px-4.5 py-2 text-xs text-warn">{t.err_save}: {errLink}</div> : null}
+        {errLink ? <div className="px-4.5 py-2 text-xs text-warn">{errTexto(errLink)}</div> : null}
         <CardContent className="p-0">
           {rows.map((u, i) => (
             <div

@@ -31,7 +31,7 @@ export default function ReceiptsBlock({
   noteId: string;
   soloLectura?: boolean;
 }) {
-  const { t } = useApp();
+  const { t, errTexto } = useApp();
   const [lista, setLista] = useState<Receipt[] | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
   /**
@@ -201,7 +201,7 @@ export default function ReceiptsBlock({
         </div>
       )}
 
-      {err ? <FieldError msg={`${t.err_save}: ${err}`} /> : null}
+      {err ? <FieldError msg={errTexto(err)} /> : null}
     </div>
   );
 }

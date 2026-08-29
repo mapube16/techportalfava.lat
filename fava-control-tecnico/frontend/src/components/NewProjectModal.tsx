@@ -34,7 +34,7 @@ interface Errors {
 }
 
 export default function NewProjectModal() {
-  const { t, patch, go, refresh, showToast } = useApp();
+  const { t, patch, go, refresh, showToast, errTexto } = useApp();
   const [name, setName] = useState('');
   const [client, setClient] = useState('');
   const [nit, setNit] = useState('');
@@ -211,7 +211,7 @@ export default function NewProjectModal() {
             )}
           </div>
 
-          {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
+          {errApi ? <FieldError msg={errTexto(errApi)} /> : null}
 
           <div className="flex gap-2.5 justify-end mt-1">
             <Button variant="outline" onClick={close} className="min-h-11 md:min-h-9">

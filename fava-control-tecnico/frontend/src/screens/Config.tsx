@@ -45,7 +45,7 @@ interface CatalogCardProps {
  * los registros históricos lo siguen usando.
  */
 function CatalogCard(p: CatalogCardProps) {
-  const { t } = useApp();
+  const { t, errTexto } = useApp();
   const [editando, setEditando] = useState<string | null>(null);
   const [uno, setUno] = useState('');
   const [dos, setDos] = useState('');
@@ -145,14 +145,14 @@ function CatalogCard(p: CatalogCardProps) {
             ) : null}
           </div>
         ) : null}
-        {err ? <div className="text-xs text-warn pb-2">{t.err_save}: {err}</div> : null}
+        {err ? <div className="text-xs text-warn pb-2">{errTexto(err)}</div> : null}
       </CardContent>
     </Card>
   );
 }
 
 export default function Config() {
-  const { state, t } = useApp();
+  const { state, t, errTexto } = useApp();
   const movil = useIsMobile();
   // Los permisos son del servidor (403 para quien no sea S); esto solo evita ofrecer
   // controles que no van a funcionar.
@@ -240,7 +240,7 @@ export default function Config() {
                 )}
               </div>
             ))}
-            {err ? <div className="text-xs text-warn pb-2">{t.err_save}: {err}</div> : null}
+            {err ? <div className="text-xs text-warn pb-2">{errTexto(err)}</div> : null}
           </CardContent>
         </Card>
 

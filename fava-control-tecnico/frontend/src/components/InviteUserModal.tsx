@@ -11,7 +11,7 @@ import { listTechnicians } from '../lib/api/technicians';
 import type { Role } from '../types';
 
 export default function InviteUserModal() {
-  const { state, t, patch, refresh, showToast } = useApp();
+  const { state, t, patch, refresh, showToast, errTexto } = useApp();
   const [name, setName] = useState('');
   const [mail, setMail] = useState('');
   const [roles, setRoles] = useState<Role[]>(['T']);
@@ -142,7 +142,7 @@ export default function InviteUserModal() {
             </select>
           </label>
 
-          {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
+          {errApi ? <FieldError msg={errTexto(errApi)} /> : null}
 
           <div className="flex gap-2.5 justify-end mt-1">
             <Button variant="outline" onClick={close} className="min-h-11 md:min-h-9">

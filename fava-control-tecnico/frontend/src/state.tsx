@@ -6,6 +6,7 @@ import type { Dict } from './i18n';
 import { initAuth, login as msalLogin, logout as msalLogout } from './lib/auth/msal';
 import { devLogin as devSignIn, devLogout, getDevToken } from './lib/auth/dev';
 import { getMe, setMyLang, setUnauthorizedHandler } from './lib/api/client';
+import { textoError } from './lib/errores';
 import type { MeResponse } from './lib/api/client';
 import type {
   AuditRow, DayEntry, Density, Expense, Lang, Note, Role, Route, Theme, ToastData,
@@ -117,6 +118,14 @@ export interface AppCtx {
   patch: (p: Partial<AppState>) => void;
   go: (r: Route) => void;
   showToast: (kind: string) => void;
+  /**
+   * El código de error del servidor, en cristiano y en el idioma de la sesión.
+   *
+   * Vive en el contexto y no como import suelto para que ninguna pantalla tenga que
+   * andar pasando `state.lang`: son 35 sitios que muestran errores y el idioma no es
+   * asunto suyo.
+   */
+  errTexto: (codigo: string) => string;
   /** Recargar las listas que leen del API (ver `dataVersion`). */
   refresh: () => void;
   inboxCount: () => number;
@@ -316,8 +325,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     patch({ onboard: false, onboardStep: 0 });
   };
 
+  const errTexto = (codigo: string) => textoError(codigo, state.lang);
+
   const value: AppCtx = {
-    state, t, patch, go, showToast, refresh, inboxCount, login, devLogin, logout, goInbox,
+    state, t, patch, go, showToast, errTexto, refresh, inboxCount, login, devLogin, logout, goInbox,
     toggleTheme, toggleLang, approve, returnNote, resend, closeOnboard,
   };
 

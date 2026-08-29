@@ -19,7 +19,7 @@ import type { MatrixRow, Order, Phase } from '../lib/api/projects';
 const clave = (orderId: string, r: MatrixRow) => `${orderId}|${r.roleTypeId}|${r.phase ?? ''}`;
 
 export default function ProjectDetail() {
-  const { state, t, go, showToast } = useApp();
+  const { state, t, go, showToast, errTexto } = useApp();
   const movil = useIsMobile();
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [celdas, setCeldas] = useState<Record<string, 'saving' | 'error'>>({});
@@ -243,7 +243,7 @@ export default function ProjectDetail() {
           <Button onClick={anadirOrden} disabled={!nueva.label.trim()} className="min-h-11 md:min-h-9">
             {hi('plus', { w: 14 })} {t.order_add}
           </Button>
-          {errOrden ? <div className="text-xs text-warn w-full">{t.err_save}: {errOrden}</div> : null}
+          {errOrden ? <div className="text-xs text-warn w-full">{errTexto(errOrden)}</div> : null}
         </CardContent>
       </Card>
 

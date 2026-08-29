@@ -139,7 +139,11 @@ export class WeeklyNotesService {
     // bloquearla entera por el primero dejaba esos días nuevos sin ninguna forma de
     // salir. Si no queda nada editable es que la semana ya se envió: ahí sí es un 409.
     const enviables = jornadas.filter((j) => EDITABLES.includes(j.status));
-    if (!enviables.length) throw new ConflictException('SEMANA_NO_EDITABLE');
+    // DOS CODIGOS y no uno: `SEMANA_NO_EDITABLE` tapaba estas dos causas, que piden
+    // cosas distintas de quien las lee. Esta es «ya la mandaste»; la de abajo es «ese
+    // proyecto esta aprobado». Con un solo codigo no habia forma de escribir un mensaje
+    // util, y al usuario le llegaba el identificador crudo.
+    if (!enviables.length) throw new ConflictException('SEMANA_YA_ENVIADA');
 
     const tecnico = await c.technician.findUnique({
       where: { id: technicianId },
@@ -154,7 +158,7 @@ export class WeeklyNotesService {
     const yaAprobadas = await c.weeklyNote.count({
       where: { technicianId, weekStart, projectId: { in: proyectos }, status: 'approved' },
     });
-    if (yaAprobadas) throw new ConflictException('SEMANA_NO_EDITABLE');
+    if (yaAprobadas) throw new ConflictException('PROYECTO_YA_APROBADO');
     const notas: ReturnType<typeof plana>[] = [];
 
     for (const projectId of proyectos) {

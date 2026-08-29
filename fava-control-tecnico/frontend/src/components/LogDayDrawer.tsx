@@ -27,7 +27,7 @@ const DIA_CORTO = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 const ADMITE_FABRICA: ConceptCode[] = ['DC', 'DFD'];
 
 export default function LogDayDrawer() {
-  const { state, t, patch, showToast, refresh } = useApp();
+  const { state, t, patch, showToast, refresh, errTexto } = useApp();
   const [fecha, setFecha] = useState(state.logDate ?? hoyLocal());
   const [projectId, setProjectId] = useState('');
   const [orderId, setOrderId] = useState('');
@@ -328,7 +328,7 @@ export default function LogDayDrawer() {
                 ),
               )}
 
-          {errApi ? <FieldError msg={`${t.err_save}: ${errApi}`} /> : null}
+          {errApi ? <FieldError msg={errTexto(errApi)} /> : null}
 
           <Button
             onClick={save}

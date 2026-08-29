@@ -196,14 +196,14 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
 
     // Colgar el viernes de una nota ya aprobada la devolvería a 'submitted' por detrás.
     await jornada({ projectId: p.id, date: '2026-03-06' });
-    expect((await enviar(409)).body.message).toBe('SEMANA_NO_EDITABLE');
+    expect((await enviar(409)).body.message).toBe('PROYECTO_YA_APROBADO');
   });
 
   it('reenviar una semana en la que no queda nada editable sigue siendo 409', async () => {
     const p = await crearProyecto();
     await jornada({ projectId: p.id, date: '2026-03-02' });
     await enviar();
-    expect((await enviar(409)).body.message).toBe('SEMANA_NO_EDITABLE');
+    expect((await enviar(409)).body.message).toBe('SEMANA_YA_ENVIADA');
   });
 
   /**

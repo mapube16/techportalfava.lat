@@ -30,7 +30,7 @@ interface Form {
 }
 
 export default function Techs() {
-  const { state, t } = useApp();
+  const { state, t, errTexto } = useApp();
   const movil = useIsMobile();
   const [form, setForm] = useState<Form | null>(null);
   const [errSave, setErrSave] = useState<string | null>(null);
@@ -140,10 +140,10 @@ export default function Techs() {
       <Button variant="outline" onClick={() => { setForm(null); setErrSave(null); }} className="min-h-11 md:min-h-9">
         {t.btn_cancel}
       </Button>
-      {errSave ? <span className="text-xs text-warn">{t.err_save}: {errSave}</span> : null}
+      {errSave ? <span className="text-xs text-warn">{errTexto(errSave)}</span> : null}
     </div>
   ) : errSave ? (
-    <div className="px-4.5 py-2.5 text-xs text-warn">{t.err_save}: {errSave}</div>
+    <div className="px-4.5 py-2.5 text-xs text-warn">{errTexto(errSave)}</div>
   ) : null;
 
   const acciones = (tc: Technician) => (

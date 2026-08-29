@@ -58,7 +58,7 @@ export default function SignNoteModal({
   /** Solo tras firmar de verdad. Deja al padre encadenar la siguiente nota del envio. */
   onSigned?: () => void;
 }) {
-  const { t, showToast, refresh } = useApp();
+  const { t, showToast, refresh, errTexto } = useApp();
   const [tecnico, setTecnico] = useState<Firmante>({ ...FIRMANTE_VACIO, nombre: nota.technicianName });
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [anticipos, setAnticipos] = useState<Gasto[]>([]);
@@ -256,7 +256,7 @@ export default function SignNoteModal({
             </div>
           </details>
 
-          {err ? <FieldError msg={`${t.err_save}: ${err}`} /> : null}
+          {err ? <FieldError msg={errTexto(err)} /> : null}
 
           <div className="flex gap-2.5 justify-end">
             <Button variant="outline" onClick={onClose} className="min-h-11 md:min-h-9">

@@ -70,7 +70,7 @@ const PUNTO: Record<NoteStatus, string> = {
 
 /** Los 7 días de la nota. Se piden aparte: es lo que el admin lee para decidir. */
 function Dias({ nota, lang, dias }: { nota: WeeklyNote; lang: Lang; dias: string[] }) {
-  const { t } = useApp();
+  const { t, errTexto } = useApp();
   const { data } = useApiData(() => noteDays(nota.id), [nota.id]);
   const porFecha = new Map((data ?? []).map((e) => [e.date, e]));
   // Días registrados pero SIN una sola descripción: es el histórico del Excel, que no
@@ -124,7 +124,7 @@ function Dias({ nota, lang, dias }: { nota: WeeklyNote; lang: Lang; dias: string
  * apruebe la primera nota real, esa nota también vive aquí.
  */
 export default function Inbox({ archivo = false }: { archivo?: boolean }) {
-  const { state, t, patch, showToast, refresh } = useApp();
+  const { state, t, patch, showToast, refresh, errTexto } = useApp();
   const movil = useIsMobile();
   const [selNote, setSelNote] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -280,7 +280,7 @@ export default function Inbox({ archivo = false }: { archivo?: boolean }) {
       <Dias nota={cur} lang={state.lang} dias={diasDeSemana(cur.weekStart)} />
 
       {err ? (
-        <div className="px-4.5 py-2.5 text-[12.5px] text-warn">{t.err_save}: {err}</div>
+        <div className="px-4.5 py-2.5 text-[12.5px] text-warn">{errTexto(err)}</div>
       ) : null}
 
       <div className="flex gap-2.5 px-4.5 py-3.5 border-t border-border justify-end flex-wrap">

@@ -14,7 +14,7 @@ import { returnNote } from '../lib/api/weeklyNotes';
  * aunque el servicio se equivoque.
  */
 export default function ReturnModal() {
-  const { state, t, patch, showToast, refresh } = useApp();
+  const { state, t, patch, showToast, refresh, errTexto } = useApp();
   const [comment, setComment] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -57,7 +57,7 @@ export default function ReturnModal() {
           placeholder={t.return_ph}
           className="w-full min-h-24 resize-y border border-input rounded-lg p-3 font-sans text-base md:text-sm bg-muted text-foreground outline-none focus:border-primary"
         />
-        {err ? <FieldError msg={`${t.err_save}: ${err}`} /> : null}
+        {err ? <FieldError msg={errTexto(err)} /> : null}
         <div className="flex gap-2.5 justify-end mt-4">
           <Button variant="outline" onClick={close} className="min-h-11 md:min-h-9">
             {t.btn_cancel}

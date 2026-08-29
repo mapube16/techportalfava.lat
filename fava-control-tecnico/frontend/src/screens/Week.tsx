@@ -7,6 +7,7 @@ import { getWeek } from '../lib/api/dailyEntries';
 import { listNotes, submitWeek } from '../lib/api/weeklyNotes';
 import type { WeeklyNote } from '../lib/api/weeklyNotes';
 import SignNoteModal from '../components/SignNoteModal';
+import AvisoModal from '../components/AvisoModal';
 import type { Entry } from '../lib/api/dailyEntries';
 import { diasDeSemana, hoyLocal, lunesDe, sumarDias } from '../lib/fecha';
 
@@ -25,7 +26,7 @@ const MES_ES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep
 const MES_IT = ['', 'gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
 
 export default function Week() {
-  const { state, t, patch, showToast, refresh } = useApp();
+  const { state, t, patch, showToast, refresh, errTexto } = useApp();
   /** Lunes de la semana visible. `null` = la de hoy, que se resuelve al renderizar. */
   const [lunes, setLunes] = useState<string | null>(null);
   const [errEnvio, setErrEnvio] = useState<string | null>(null);
@@ -193,11 +194,6 @@ export default function Week() {
 
       <div className="flex gap-3 flex-wrap justify-end items-center">
         <div className="flex-1 text-xs text-muted-foreground min-w-[200px]">{t.gen_pdf_note}</div>
-        {errEnvio ? (
-          <div className="text-xs text-warn w-full text-right">
-            {t.err_save}: {errEnvio}
-          </div>
-        ) : null}
         <Button
           onClick={() => {
             // NOTA-01: el servidor deriva UNA NOTA POR PROYECTO. El técnico no elige
@@ -223,6 +219,14 @@ export default function Week() {
           {t.btn_submit} →
         </Button>
       </div>
+
+      {/* No poder enviar la semana no es un campo mal escrito: es un cambio de plan
+          («ya está enviada», «ese proyecto está aprobado y lo tiene que reabrir un
+          administrador»). Iba en una línea roja al pie del botón y con el código
+          interno del servidor por todo texto. */}
+      {errEnvio ? (
+        <AvisoModal titulo={t.err_save} mensaje={errTexto(errEnvio)} onClose={() => setErrEnvio(null)} />
+      ) : null}
 
       {aFirmar ? (
         <SignNoteModal
