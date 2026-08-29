@@ -89,11 +89,22 @@ export default function SignNoteModal({
     const previo = gs.length || as.length ? setNoteExpenses(nota.id, gs, as) : Promise.resolve(null);
 
     previo
-      .then(() =>
+      .then((guardada) =>
         signNote(
           nota.id,
           { signerName: tecnico.nombre.trim(), signerDocument: tecnico.documento.trim() || undefined, signerRole: tecnico.cargo.trim() || undefined, declarationAccepted: true, imagePng: pngT },
-          nota.updatedAt,
+          /**
+           * El `updatedAt` DE DESPUES de guardar los gastos, no el que traia la nota al
+           * abrirse el dialogo.
+           *
+           * `PUT /expenses` escribe en la nota y le mueve el `updated_at`; firmar con el
+           * viejo hacia saltar el control de concurrencia y devolvia NOTA_MODIFICADA.
+           * Efecto: cualquier nota CON gastos era imposible de firmar, y el tecnico veia
+           * un 409 justo despues de que sus gastos se guardaran bien. Sin gastos no habia
+           * peticion previa y por eso funcionaba — el fallo solo aparecia al usar la
+           * mitad de la pantalla que el propio dialogo existe para rellenar.
+           */
+          guardada?.updatedAt ?? nota.updatedAt,
         ),
       )
       .then(() => {

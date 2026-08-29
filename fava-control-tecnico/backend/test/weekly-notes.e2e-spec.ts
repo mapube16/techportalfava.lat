@@ -332,6 +332,50 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     expect(res.body.message).toBe('NOTA_FIRMADA');
   });
 
+  /**
+   * El caso que rompia la firma en produccion el 2026-08-29.
+   *
+   * El dialogo guarda los gastos y firma a continuacion. `PUT /expenses` escribe en la
+   * nota y le mueve el `updated_at`, asi que firmar con el que se leyo ANTES hacia
+   * saltar el control de concurrencia: NOTA_MODIFICADA. Resultado, cualquier nota con
+   * gastos era imposible de firmar — justo la mitad de la pantalla para la que existe
+   * el dialogo. Sin gastos no habia peticion previa y por eso parecia funcionar.
+   */
+  it('guardar gastos y firmar seguido: el updatedAt tiene que ser el de despues', async () => {
+    const p = await crearProyecto();
+    await jornada({ projectId: p.id, date: '2026-03-02' });
+    const nota = (await enviar()).body[0];
+
+    const conGastos = await http()
+      .put(`/api/weekly-notes/${nota.id}/expenses`)
+      .set(auth(tokenTec))
+      .send({ gastosTecnico: [{ descripcion: 'Peaje', valor: '50000' }], anticiposCliente: [] })
+      .expect(200);
+    // Guardar gastos MUEVE el updated_at: si esto deja de ser cierto, el bug no puede
+    // volver y esta prueba sobra.
+    expect(conGastos.body.updatedAt).not.toBe(nota.updatedAt);
+
+    const firma = {
+      technician: { signerName: 'ZZ DEMO Bruno Sala', declarationAccepted: true, imagePng: PNG_FIRMA },
+    };
+
+    // Con el viejo: 409, que es exactamente lo que veia el tecnico.
+    const rechazada = await http()
+      .post(`/api/weekly-notes/${nota.id}/sign`)
+      .set(auth(tokenTec))
+      .send({ ...firma, expectedUpdatedAt: nota.updatedAt })
+      .expect(409);
+    expect(rechazada.body.message).toBe('NOTA_MODIFICADA');
+
+    // Con el de despues de guardar: firma.
+    const ok = await http()
+      .post(`/api/weekly-notes/${nota.id}/sign`)
+      .set(auth(tokenTec))
+      .send({ ...firma, expectedUpdatedAt: conGastos.body.updatedAt })
+      .expect(201);
+    expect(ok.body.signed).toBe(true);
+  });
+
   // ── BIT-05: enviado = solo lectura ──
 
   it('al enviar, los días quedan bloqueados; al devolver, vuelven a ser editables', async () => {
