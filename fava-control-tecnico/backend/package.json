@@ -15,6 +15,7 @@
     "demo:datos": "tsx scripts/demo-datos.ts",
     "smoke": "tsx scripts/smoke.ts",
     "notificar": "tsx scripts/notificar.ts",
+    "correo:prueba": "tsx scripts/correo-prueba.ts",
     "migrate:excel": "tsx prisma/migrate-excel.ts",
     "migrate:ordenes": "tsx prisma/migrate-ordenes.ts",
     "migrate:vendido": "tsx prisma/migrate-vendido.ts",

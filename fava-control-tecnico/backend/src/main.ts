@@ -41,9 +41,35 @@ async function bootstrap() {
   // El puente de redireccion de MSAL v5 NO puede llevar Cross-Origin-Opener-Policy:
   // el browsing context group swap corta el canal de vuelta a la app principal.
   const bridge = helmet({ contentSecurityPolicy, crossOriginOpenerPolicy: false });
-  app.use((req: Request, res: Response, next: NextFunction) =>
-    (req.path === '/redirect.html' ? bridge : base)(req, res, next),
-  );
+
+  /**
+   * Las imagenes de los correos, y SOLO ellas, se sirven a cualquier origen.
+   *
+   * Helmet pone `Cross-Origin-Resource-Policy: same-origin` en todo, que significa
+   * literalmente «ningun origen distinto puede usar esto». Un correo se abre en
+   * outlook.office.com o en mail.google.com y pide la imagen aqui: el navegador la
+   * rechaza obedeciendo ese encabezado. Por eso `curl` las baja perfectamente y el
+   * correo llegaba con el logotipo roto — el recurso estaba bien, el permiso no.
+   *
+   * Las imagenes de un correo son, por definicion, de otro origen.
+   *
+   * Acotado a `/email/`: el resto del sitio conserva el mismo-origen, que es lo que
+   * evita que otra pagina incruste el PDF de una nota o el logotipo de la aplicacion.
+   * Y con cache larga, que son dos ficheros que no cambian y los proxys de correo
+   * vuelven a pedirlos por cada destinatario.
+   */
+  const correo = helmet({
+    contentSecurityPolicy,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  });
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith('/email/')) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+      return correo(req, res, next);
+    }
+    return (req.path === '/redirect.html' ? bridge : base)(req, res, next);
+  });
 
   await app.listen(env.PORT, '0.0.0.0');
 }
