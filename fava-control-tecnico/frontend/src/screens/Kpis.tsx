@@ -77,7 +77,12 @@ export default function Kpis() {
       ({ sold: a.sold + p.sold, done: a.done + p.done, nh: a.nh + p.nh, exec: a.exec + p.done * STD }),
     { sold: 0, done: 0, nh: 0, exec: 0 },
   );
-  const overtime = Math.max(0, tot.exec - tot.nh);
+  /**
+   * Sin horas de contrato NO hay sobretiempo que calcular. Con `tot.nh` a 0 esta resta
+   * daba que todas las horas ejecutadas eran extra, y la tarjeta anunciaba «+43.264
+   * horas extra» con toda la seriedad del mundo. Un cero no es un contrato de cero horas.
+   */
+  const overtime = tot.nh ? Math.max(0, tot.exec - tot.nh) : 0;
   // `act` sigue alimentando las gráficas mock de abajo; el promedio de utilización que
   // salía de aquí murió con la tarjeta que lo mostraba: ahora lo calcula el servidor.
   // El segmento por tecnico sale de la utilizacion, que ya calcula el servidor: dias
@@ -159,11 +164,71 @@ export default function Kpis() {
 
     const hrs = getC('hours', hoursRef.current);
     if (hrs) {
-      const names = projects.map((p) => p.name.split(' —')[0]);
+      /**
+       * AVANCE POR PROYECTO, no las horas de contrato.
+       *
+       * Aquí había «horas normales vs. ejecutadas» y la serie azul era 0 en todas las
+       * barras: de 23 proyectos hay UNO con `normal_hours`, y es el de demostración.
+       * La naranja tampoco decía nada nuevo — días ejecutados × 8, la misma forma que
+       * la gráfica de arriba con otra escala. Una comparación contra nada.
+       *
+       * El porcentaje sí se puede calcular con lo que hay, y es lo que no se veía en
+       * ningún sitio: la tabla de fases da el delta en días absolutos, y con proyectos
+       * de 168 y de 1.193 días vendidos esos números no se comparan entre sí. Barras
+       * horizontales porque los nombres son largos y en vertical se rotan hasta ser
+       * ilegibles, que es lo que pasaba en la captura.
+       */
+      const avance = projects
+        // Sin vendido no hay denominador. Pintar 0% diría «no se ha avanzado» cuando lo
+        // que falta es cargar la venta: es justo la clase de mentira que se quitó.
+        .filter((p) => p.sold > 0)
+        .map((p) => ({
+          n: p.name.split(' —')[0],
+          pct: Math.round((p.executed / p.sold) * 100),
+          done: p.executed,
+          sold: p.sold,
+        }))
+        .sort((a, b) => a.pct - b.pct);
       hrs.setOption(
         {
-          ...base(), grid, xAxis: catAxis(names), yAxis: valAxis('h'),
-          series: [bar(t.k_hours_norm, projects.map((p) => p.normalHours ?? 0), P.info), bar(t.k_hours_exec, projects.map((p) => p.executed * STD), P.accent)],
+          ...base(),
+          legend: { show: false },
+          tooltip: {
+            trigger: 'item',
+            backgroundColor: P.surface, borderColor: P.border, borderWidth: 1,
+            textStyle: { color: P.text, fontSize: 12 },
+            formatter: (p: { dataIndex: number }) => {
+              const r = avance[p.dataIndex];
+              return `${r.n}<br/>${r.pct}% · ${r.done}/${r.sold} ${t.days_unit}`;
+            },
+          },
+          // Sitio a la izquierda para el nombre del proyecto, que ahora va horizontal.
+          grid: { left: 150, right: 40, top: 18, bottom: 34 },
+          xAxis: { ...valAxis('%'), axisLabel: { ...axisText, formatter: '{value}%' } },
+          yAxis: {
+            type: 'category',
+            data: avance.map((r) => r.n),
+            axisTick: { show: false },
+            axisLine: { lineStyle: { color: P.border } },
+            axisLabel: { ...axisText, width: 138, overflow: 'truncate' },
+          },
+          series: [
+            {
+              type: 'bar', barMaxWidth: 22,
+              data: avance.map((r) => ({
+                value: r.pct,
+                // Pasarse de lo vendido es la única lectura que exige mirar: color propio.
+                itemStyle: { color: r.pct > 100 ? P.warn : P.primary, borderRadius: [0, 3, 3, 0] },
+              })),
+              label: { show: true, position: 'right', color: P.text2, fontSize: 11, formatter: '{c}%' },
+              markLine: {
+                silent: true, symbol: 'none',
+                lineStyle: { color: P.text3, type: 'dashed', width: 1 },
+                label: { show: false },
+                data: [{ xAxis: 100 }],
+              },
+            },
+          ],
         },
         true,
       );
@@ -333,7 +398,7 @@ export default function Kpis() {
       </div>
 
       <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(148px,1fr))' }}>
-        {kcard(t.k_hours_norm, nf(tot.nh) + ' h', t.of_contract, 'var(--info)')}
+        {kcard(t.k_hours_norm, tot.nh ? nf(tot.nh) + ' h' : '—', t.of_contract, 'var(--info)')}
         {kcard(t.k_hours_exec, nf(tot.exec) + ' h', overtime > 0 ? '+' + nf(overtime) + ' ' + t.k_overtime.toLowerCase() : '—', 'var(--accent)')}
         {kcard(t.kpi_sold + ' / ' + t.kpi_done, tot.sold + ' / ' + tot.done, t.days_unit, 'var(--primary)')}
         {kcard(t.k_progress, avgProg + '%', tot.done + ' / ' + tot.sold + ' ' + t.days_unit, avgProg >= 100 ? 'var(--ok)' : 'var(--text)')}
