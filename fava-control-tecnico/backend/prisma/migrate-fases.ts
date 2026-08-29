@@ -67,6 +67,32 @@ const IGNORAR: { hoja: string; fila: number; motivo: string }[] = [
   },
 ];
 
+const clave = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+
+/**
+ * Dos nombres se «parecen» si comparten prefijo largo o difieren en una letra.
+ *
+ * COPIADA de `migrate-vendido.ts` en vez de importada, y no por pereza: aquel modulo
+ * llama a su `main()` en el ultimo renglon, asi que un `import` desde aqui CORRERIA la
+ * migracion del vendido como efecto de leer una funcion. Doce lineas duplicadas salen
+ * mas baratas que ese fuego.
+ */
+function pareceA(a: string, b: string): boolean {
+  const [x, y] = [clave(a), clave(b)];
+  if (x === y) return true;
+  const corto = Math.min(x.length, y.length);
+  if (corto >= 5 && (x.startsWith(y.slice(0, 5)) || y.startsWith(x.slice(0, 5)))) return true;
+  if (Math.abs(x.length - y.length) > 1) return false;
+  let dif = 0;
+  for (let i = 0, j = 0; i < x.length || j < y.length; i++, j++) {
+    if (x[i] === y[j]) continue;
+    if (++dif > 1) return false;
+    if (x.length > y.length) j--;
+    else if (y.length > x.length) i--;
+  }
+  return dif === 1;
+}
+
 async function main() {
   const seco = process.argv.includes('--dry');
   const prisma = new PrismaClient({
@@ -125,7 +151,15 @@ async function main() {
     }
 
     // ── 3. Decidir, contar y (si toca) escribir ──
-    const decididos: { id: string; nombre: string; fase: Phase; filas: number }[] = [];
+    const decididos: {
+      id: string;
+      nombre: string;
+      fase: Phase;
+      /** Jornadas del Excel en ese proyecto. No cambia entre pasadas. */
+      delExcel: number;
+      /** Las que esta pasada escribe. En la segunda ejecucion es 0, y debe serlo. */
+      pendientes: number;
+    }[] = [];
     const mezclados: { nombre: string; fases: string }[] = [];
 
     for (const [projectId, { nombre, fases }] of fasesPorProyecto) {
@@ -133,21 +167,25 @@ async function main() {
         mezclados.push({ nombre, fases: [...fases].join(' + ') });
         continue;
       }
-      const filas = await prisma.dailyEntry.count({
-        where: { projectId, phase: null, sourceSheet: { not: null } },
-      });
-      decididos.push({ id: projectId, nombre, fase: [...fases][0], filas });
+      const donde = { projectId, sourceSheet: { not: null } };
+      const [delExcel, pendientes] = await Promise.all([
+        prisma.dailyEntry.count({ where: donde }),
+        prisma.dailyEntry.count({ where: { ...donde, phase: null } }),
+      ]);
+      decididos.push({ id: projectId, nombre, fase: [...fases][0], delExcel, pendientes });
     }
-    decididos.sort((a, b) => b.filas - a.filas);
+    decididos.sort((a, b) => b.delExcel - a.delExcel);
 
-    const total = decididos.reduce((s, d) => s + d.filas, 0);
+    const total = decididos.reduce((s, d) => s + d.pendientes, 0);
 
     di('## Qué se escribe');
     di();
-    di('| Proyecto | Fase | Jornadas |');
-    di('|---|---|---:|');
-    for (const d of decididos) di(`| ${d.nombre} | \`${d.fase}\` | ${d.filas} |`);
-    di(`| **Total** | | **${total}** |`);
+    di('| Proyecto | Fase | Jornadas del Excel | Sin fase (se escriben) |');
+    di('|---|---|---:|---:|');
+    for (const d of decididos) {
+      di(`| ${d.nombre} | \`${d.fase}\` | ${d.delExcel} | ${d.pendientes} |`);
+    }
+    di(`| **Total** | | | **${total}** |`);
     di();
 
     if (mezclados.length) {
@@ -158,6 +196,81 @@ async function main() {
       di(
         '> Aquí la fase por proyecto ya no vale y hay que cruzar por técnico. Se dejan ' +
           'intactos a propósito: media asignación es peor que ninguna.',
+      );
+      di();
+    }
+
+    // ── 3b. Donde el rol de la bitácora contradice a la hoja ──
+    //
+    // Esta seccion existe porque la regla por proyecto YA se equivoco una vez y en
+    // silencio: en Cibao, Andrea apunto los 77 dias de Ivan Cortes en la linea de
+    // MONTAJE/`Elettricista`, pero la bitacora registra esos mismos dias con el `Tipo`
+    // = `Software`, y `Sofware` solo aparece bajo COLLAUDO en todo el libro. La hoja
+    // dice montaje y el registro diario dice software: es una contradiccion real, no la
+    // resuelve un script, y enterrarla habria dejado un tablero que miente con
+    // seguridad. Aqui sale nombrada para que una persona la decida.
+    const fasesDeRol = new Map<string, Set<Phase>>();
+    for (const f of todas) {
+      if (!f.rol?.trim() || ignorada(f)) continue;
+      const s = fasesDeRol.get(clave(f.rol)) ?? new Set<Phase>();
+      s.add(f.fase);
+      fasesDeRol.set(clave(f.rol), s);
+    }
+
+    /**
+     * Agrupado por (proyecto, rol de la bitácora): un mismo rol puede parecerse a
+     * VARIOS de la hoja —`Software` casa con `sofware` y con `softwerista`, y las dos
+     * son de collaudo— y repetir la fila tres veces no añade nada. Se listan juntos.
+     */
+    const dudosos = new Map<
+      string,
+      { proyecto: string; rol: string; hojas: Set<string>; fases: Set<Phase>; puesta: Phase; dias: number }
+    >();
+    for (const d of decididos) {
+      const roles = await prisma.$queryRaw<{ rol: string; n: bigint }[]>`
+        SELECT rt.name AS rol, COUNT(*) AS n
+          FROM daily_entries de
+          JOIN role_types rt ON rt.id = de.role_type_id
+         WHERE de.project_id = ${d.id}::uuid AND de.source_sheet IS NOT NULL
+         GROUP BY rt.name`;
+      for (const r of roles) {
+        for (const [rolHoja, fases] of fasesDeRol) {
+          // Solo canta si el rol se parece a uno de la hoja Y ese rol NUNCA aparece en
+          // la fase que le acabamos de poner. `Meccanico` vive en las dos fases, asi
+          // que no dice nada y no ensucia el informe.
+          if (!pareceA(r.rol, rolHoja) || fases.has(d.fase)) continue;
+          const k = `${d.id}|${r.rol}`;
+          const e = dudosos.get(k) ?? {
+            proyecto: d.nombre,
+            rol: r.rol,
+            hojas: new Set<string>(),
+            fases: new Set<Phase>(),
+            puesta: d.fase,
+            dias: Number(r.n),
+          };
+          e.hojas.add(rolHoja);
+          for (const f of fases) e.fases.add(f);
+          dudosos.set(k, e);
+        }
+      }
+    }
+
+    if (dudosos.size) {
+      di('## Revisar: el rol de la bitácora no cuadra con la fase asignada');
+      di();
+      di('| Proyecto | Rol en la bitácora | Rol(es) en la hoja | Solo aparecen en | Se le puso | Días |');
+      di('|---|---|---|---|---|---:|');
+      for (const x of dudosos.values()) {
+        const hojas = [...x.hojas].map((h) => `\`${h}\``).join(', ');
+        di(
+          `| ${x.proyecto} | \`${x.rol}\` | ${hojas} | ${[...x.fases].join(', ')} | \`${x.puesta}\` | ${x.dias} |`,
+        );
+      }
+      di();
+      di(
+        '> No se cambia nada por esto: la hoja de proyecto es hoy el registro de FAVA y ' +
+          'es la que manda. Pero la contradicción es real y quien lea el tablero tiene ' +
+          'derecho a saber que esos días penden de un hilo.',
       );
       di();
     }

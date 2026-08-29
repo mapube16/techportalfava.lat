@@ -1,6 +1,6 @@
 # Fase de las jornadas históricas (MIG-03)
 
-Líneas en el NDJSON: **56**
+Líneas en el NDJSON: **56** _(simulación: no se escribe)_
 
 ## Líneas descartadas a mano
 
@@ -10,13 +10,21 @@ Quedan **23** líneas con commessa y ejecutado > 0. Las de `J Macedo Brasil- fin
 
 ## Qué se escribe
 
-| Proyecto | Fase | Jornadas |
-|---|---|---:|
-| JAV Marata - Brasil | `MONTAJE` | 676 |
-| LUCCHETTI CHILE SA | `MONTAJE` | 260 |
-| MOLINO CIBAO BOCEL - RD | `MONTAJE` | 196 |
-| Pasta Sole  - ARGENTINA | `MONTAJE` | 196 |
-| **Total** | | **1328** |
+| Proyecto | Fase | Jornadas del Excel | Sin fase (se escriben) |
+|---|---|---:|---:|
+| JAV Marata - Brasil | `MONTAJE` | 676 | 0 |
+| LUCCHETTI CHILE SA | `MONTAJE` | 260 | 0 |
+| MOLINO CIBAO BOCEL - RD | `MONTAJE` | 196 | 0 |
+| Pasta Sole  - ARGENTINA | `MONTAJE` | 196 | 0 |
+| **Total** | | | **0** |
+
+## Revisar: el rol de la bitácora no cuadra con la fase asignada
+
+| Proyecto | Rol en la bitácora | Rol(es) en la hoja | Solo aparecen en | Se le puso | Días |
+|---|---|---|---|---|---:|
+| MOLINO CIBAO BOCEL - RD | `Software` | `sofware`, `softwerista` | COLLAUDO | `MONTAJE` | 77 |
+
+> No se cambia nada por esto: la hoja de proyecto es hoy el registro de FAVA y es la que manda. Pero la contradicción es real y quien lea el tablero tiene derecho a saber que esos días penden de un hilo.
 
 ## Lo que dice el resultado
 
