@@ -16,6 +16,7 @@ import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { activos, getCatalogs } from '../lib/api/catalogs';
+import { getUtilization } from '../lib/api/kpis';
 import {
   createTechnician, listTechnicians, setTechnicianActive, updateTechnician,
 } from '../lib/api/technicians';
@@ -41,14 +42,52 @@ export default function Techs() {
   // El maestro y el catálogo de roles en paralelo: el selector del formulario sale
   // del catálogo (CAT-02), no de una lista cableada.
   const { data, setData, error } = useApiData(async () => {
-    const [techs, cat] = await Promise.all([listTechnicians(), getCatalogs()]);
-    return { techs, roleTypes: cat.roleTypes };
+    // La utilizacion viaja con el maestro: una tercera peticion EN PARALELO, no una
+    // cascada. La columna llevaba un guion fijo y un comentario que prometia el dato
+    // «en la Fase 7» — hecha hace tiempo, y el tablero de KPIs ya lo sirve. Solo
+    // faltaba conectarla.
+    const [techs, cat, util] = await Promise.all([
+      listTechnicians(),
+      getCatalogs(),
+      getUtilization(null),
+    ]);
+    return { techs, roleTypes: cat.roleTypes, util: util.technicians };
   }, [state.dataVersion]);
 
   if (error) return <ApiState error={error} label={t.err_load} />;
   if (!data) return <ApiState error={null} label={t.loading} />;
 
   const rows = filterBy(porVigencia(data.techs, vigencia), state.search, (tc) => tc.fullName + ' ' + tc.roleTypeName);
+  const utilPorTecnico = new Map(data.util.map((u) => [u.technicianId, u]));
+
+  /**
+   * El porcentaje CON los dias que lo sustentan, nunca el numero solo.
+   *
+   * Es de TODO el historico, y «Luca Carraro 18 %» leido a secas suena a alguien
+   * ocioso; lo que dice es que de sus 104 dias registrados, 85 son libres o no
+   * remunerados. Con «18 % · 104 dias» al lado la cifra se puede pesar.
+   *
+   * Sin dias disponibles no hay porcentaje y se queda el guion: un 0 % seria una cifra
+   * falsa, no un dato vacio.
+   */
+  const celdaUtil = (id: string) => {
+    const u = utilPorTecnico.get(id);
+    if (!u || u.utilizationPct === null) {
+      return (
+        <TableCell className="text-muted-foreground" title={t.tech_no_util}>
+          —
+        </TableCell>
+      );
+    }
+    return (
+      <TableCell>
+        <span className="font-mono font-semibold">{u.utilizationPct}%</span>
+        <span className="ml-2 text-[11.5px] text-muted-foreground">
+          {u.denominator} {t.days_unit}
+        </span>
+      </TableCell>
+    );
+  };
   // El endpoint devuelve activos e inactivos: filtra el selector, no la lista.
   const rolesElegibles = activos(data.roleTypes);
 
@@ -230,9 +269,7 @@ export default function Techs() {
                 </TableCell>
                 <TableCell>{tc.roleTypeName}</TableCell>
                 <TableCell>{empleoChip(tc)}</TableCell>
-                {/* La utilización sale de la bitácora, que llega en la Fase 3 y se agrega
-                    en la Fase 7. Una barra al 0 % sería una cifra falsa, no un dato vacío. */}
-                <TableCell className="text-muted-foreground" title={t.tech_no_util}>—</TableCell>
+                {celdaUtil(tc.id)}
                 <TableCell>{activePill(tc.isActive)}</TableCell>
                 <TableCell className="text-right whitespace-nowrap">{acciones(tc)}</TableCell>
               </TableRow>
