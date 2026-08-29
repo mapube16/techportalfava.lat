@@ -148,6 +148,8 @@ describe('users: escalada de roles y anti-lockout (AUTH-02)', () => {
       'email',
       'id',
       'isActive',
+      // Fase 9: la pantalla Usuarios lo muestra para saber en que idioma escribirle.
+      'lang',
       'roles',
       'technicianId',
     ]);

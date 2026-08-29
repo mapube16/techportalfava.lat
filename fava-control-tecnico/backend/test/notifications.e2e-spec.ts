@@ -111,10 +111,22 @@ describe('notificaciones (e2e)', () => {
     expect(f.inalcanzables.map((t) => t.id)).toContain(TEC_B);
   });
 
-  it('fava_app no puede BORRAR un aviso: no hay politica de DELETE', async () => {
+  it('fava_app no puede BORRAR un aviso: el privilegio no existe', async () => {
     await comoAdmin((tx) => encolarEn(tx, [aviso('week_missing:borrar:1:vie')]));
-    // Sin politica, el DELETE afecta 0 filas en vez de fallar: el historico se conserva.
-    await comoAdmin((tx) => tx.notification.deleteMany({}));
+
+    /**
+     * FALLA, no filtra en silencio.
+     *
+     * La prueba esperaba que el DELETE afectara 0 filas —lo que haria una politica RLS
+     * sin regla de DELETE— y lo que pasa es un 42501 del motor: la migracion nunca
+     * concedio el privilegio, asi que Postgres corta antes de mirar ninguna politica.
+     * Es MAS estricto que lo que se estaba comprobando, y por eso la prueba correcta es
+     * esta: exigir el error, no la ausencia de efecto. Comprobado en produccion — el rol
+     * tiene INSERT, SELECT y UPDATE sobre `notifications`, y ni rastro de DELETE.
+     */
+    await expect(comoAdmin((tx) => tx.notification.deleteMany({}))).rejects.toThrow(/42501/);
+
+    // Y el aviso sigue ahi, que es lo que de verdad importa del historico.
     expect(await comoAdmin((tx) => tx.notification.count())).toBe(1);
   });
 });

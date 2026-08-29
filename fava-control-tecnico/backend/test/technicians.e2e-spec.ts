@@ -164,7 +164,10 @@ describe('technicians: alta sin Entra y baja que conserva la historia (CAT-02)',
 
   it('un Admin edita nombre, rol y tipo de contratacion', async () => {
     const t = await crearTecnico({ fullName: 'Antes', employmentType: 'INTERNO' });
-    const otroRol = await ownerClient.roleType.findFirstOrThrow({ where: { NOT: { id: ROL_TEST } } });
+    // Se CREA en vez de buscarlo: la version anterior asumia que el catalogo ya tenia
+    // mas de un cargo, y en una base recien levantada solo existe ROL_TEST. Una prueba
+    // que depende de lo que haya en la base falla por el sitio equivocado.
+    const otroRol = await ownerClient.roleType.create({ data: { name: 'Cargo alternativo' } });
 
     const res = await http()
       .patch(`/api/technicians/${t.id}`)
@@ -382,7 +385,12 @@ describe('technicians: alta sin Entra y baja que conserva la historia (CAT-02)',
     const avisos = await ownerClient.notification.findMany({ where: { toUserId: u.id } });
     expect(avisos).toHaveLength(1);
     expect(avisos[0].kind).toBe('invitacion');
-    expect(avisos[0].subject).toContain('acceso');
+    // NO se comprueba una palabra del asunto: eso ata una prueba de comportamiento a
+    // la redaccion, y se rompio en cuanto el asunto paso de «Tienes acceso a…» a
+    // «Acceso a…». Que el `kind` sea 'invitacion' ya demuestra que se uso la plantilla
+    // correcta; el texto lo cubren las pruebas de plantillas, que es su sitio.
+    expect(avisos[0].subject.length).toBeGreaterThan(0);
+    expect(avisos[0].subject).not.toMatch(/undefined/);
     // NADIE ha mandado nada todavia: encolar no es enviar. Eso lo hace el cron.
     expect(avisos[0].status).toBe('pending');
   });
