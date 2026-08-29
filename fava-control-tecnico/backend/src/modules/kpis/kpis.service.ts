@@ -180,6 +180,11 @@ export class KpisService {
           LEFT JOIN projects p ON p.id = de.project_id
          WHERE de.status IN ('submitted', 'approved')
            AND de.concept_code IS NOT NULL
+           -- El Excel llego con 1.025 dias FUTUROS pre-rellenados (948 sin proyecto).
+           -- «Dias registrados» debe contar trabajo hecho, no calendario por venir:
+           -- la utilizacion ya los excluia (y los reporta como futureExcluded), la
+           -- cuadricula los sumaba como si nada y las dos pantallas se contradecian.
+           AND de.date <= CURRENT_DATE
            AND (${year}::int IS NULL OR EXTRACT(YEAR FROM de.date)::int = ${year}::int)
          GROUP BY 1, 2, 3, 4, 5, 6
       `,
@@ -408,6 +413,10 @@ export class KpisService {
        WHERE de.project_id IS NOT NULL
          AND de.status IN ('submitted', 'approved')
          AND de.concept_code IS NOT NULL
+         -- Un dia futuro NO es un dia ejecutado: sin este filtro, 77 dias del Excel
+         -- pre-rellenado inflaban el «ejecutado» y el avance por proyecto — es decir,
+         -- el numero con el que se negocia contra el vendido.
+         AND de.date <= CURRENT_DATE
          AND (${year}::int IS NULL OR EXTRACT(YEAR FROM de.date)::int = ${year}::int)
        GROUP BY 1, 2, 3
     `;

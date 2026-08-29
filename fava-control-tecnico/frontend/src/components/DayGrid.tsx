@@ -109,7 +109,16 @@ export default function DayGrid() {
       </TableCell>
     ));
 
-  const tecnicos = g.projects.reduce((n, p) => n + p.technicians.length, 0);
+  /**
+   * Técnicos DISTINTOS, no pares proyecto-técnico.
+   *
+   * Sumaba `technicians.length` de cada proyecto, así que quien trabajó en cinco obras
+   * contaba cinco veces: la tarjeta decía 67 donde la verdad son 16. Y el error no se
+   * ve — 67 es un número plausible junto a «6.700 días» y nadie lo cuestiona hasta que
+   * intenta cuadrarlo con la lista de Técnicos, que tiene dieciséis filas.
+   */
+  const tecnicos = new Set(g.projects.flatMap((p) => p.technicians.map((t) => t.technicianId)))
+    .size;
 
   /**
    * Exporta lo que se está viendo a CSV, con el mismo desglose elegido.
