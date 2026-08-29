@@ -83,9 +83,21 @@ async function codigoDeError(res: Response): Promise<string> {
     if (typeof msg === 'string') return msg;
     if (Array.isArray(msg)) return msg.join(', ');
   } catch {
-    /* no era JSON: se devuelve tal cual */
+    /* no era JSON: cae abajo */
   }
-  return texto || res.statusText;
+  /**
+   * Lo que llega aquí NO lo escribió esta aplicación.
+   *
+   * Antes se devolvía `texto` tal cual, y el usuario acabó leyendo en pantalla
+   * `Cannot POST /api/weekly-notes/9a6f…/receipts` — el 404 por defecto de Express,
+   * en inglés y con la ruta interna dentro. Lo mismo valía para una página de error
+   * del proxy o un HTML de mantenimiento.
+   *
+   * Se convierte en un código propio, que `textoError` sí sabe traducir. El cuerpo
+   * crudo no se pierde: va a la consola, que es donde sirve.
+   */
+  if (texto) console.error('respuesta no JSON del servidor:', res.status, texto.slice(0, 300));
+  return res.status === 404 ? 'RUTA_NO_ENCONTRADA' : 'RESPUESTA_INESPERADA';
 }
 
 /** POST/PATCH/PUT con cuerpo JSON: el `JSON.stringify` estaba copiado en cada llamada. */

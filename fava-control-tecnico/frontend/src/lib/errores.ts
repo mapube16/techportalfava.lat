@@ -86,6 +86,10 @@ const ES: Record<string, string> = {
   SOLO_SUPER_ADMIN_DESACTIVA_ADMINS: 'Solo un Super Admin puede desactivar a un administrador.',
   CODIGO_NO_EDITABLE: 'El código de un concepto no se puede cambiar.',
 
+  // ── Los pone el cliente, no el servidor: la respuesta no era de la app ──
+  RUTA_NO_ENCONTRADA: 'Esa dirección ya no existe en el servidor. Recarga la página: puede que haya salido una versión nueva mientras la tenías abierta.',
+  RESPUESTA_INESPERADA: 'El servidor respondió algo que la aplicación no entiende. Vuelve a intentarlo; si sigue igual, recarga la página.',
+
   // ── Sesión y permisos ──
   CREDENCIALES_INVALIDAS: 'Correo o contraseña incorrectos.',
   TOKEN_AUSENTE: 'Tu sesión no llegó al servidor. Vuelve a entrar.',
@@ -158,6 +162,9 @@ const IT: Record<string, string> = {
   SOLO_SUPER_ADMIN_DESACTIVA_ADMINS: 'Solo un Super Admin può disattivare un amministratore.',
   CODIGO_NO_EDITABLE: 'Il codice di un concetto non si può cambiare.',
 
+  RUTA_NO_ENCONTRADA: 'Quell’indirizzo non esiste più sul server. Ricarica la pagina: potrebbe essere uscita una versione nuova mentre la tenevi aperta.',
+  RESPUESTA_INESPERADA: 'Il server ha risposto qualcosa che l’applicazione non capisce. Riprova; se continua, ricarica la pagina.',
+
   CREDENCIALES_INVALIDAS: 'Email o password errate.',
   TOKEN_AUSENTE: 'La tua sessione non è arrivata al server. Rientra.',
   TOKEN_INVALIDO: 'La tua sessione è scaduta. Rientra.',
@@ -228,6 +235,9 @@ const PT: Record<string, string> = {
   SOLO_SUPER_ADMIN_ASIGNA_ADMIN: 'Só um Super Admin pode dar o papel de administrador.',
   SOLO_SUPER_ADMIN_DESACTIVA_ADMINS: 'Só um Super Admin pode desativar um administrador.',
   CODIGO_NO_EDITABLE: 'O código de um conceito não pode ser alterado.',
+
+  RUTA_NO_ENCONTRADA: 'Esse endereço não existe mais no servidor. Recarregue a página: pode ter saído uma versão nova enquanto estava aberta.',
+  RESPUESTA_INESPERADA: 'O servidor respondeu algo que o aplicativo não entende. Tente de novo; se continuar, recarregue a página.',
 
   CREDENCIALES_INVALIDAS: 'E-mail ou senha incorretos.',
   TOKEN_AUSENTE: 'Sua sessão não chegou ao servidor. Entre de novo.',

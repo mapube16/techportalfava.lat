@@ -74,7 +74,14 @@ for (const ruta of fuentes(FRONT, ['.tsx'])) {
 
 // ── El veredicto ──
 
-const sobran = [...traducidos].filter((c) => !codigos.has(c)).sort();
+/**
+ * Codigos que NO vienen del backend: los pone `codigoDeError` en client.ts cuando la
+ * respuesta no es JSON de la app (el 404 por defecto de Express, una pagina del proxy).
+ * Tienen mensaje a proposito y no sobran.
+ */
+const DEL_CLIENTE = new Set(['RUTA_NO_ENCONTRADA', 'RESPUESTA_INESPERADA']);
+
+const sobran = [...traducidos].filter((c) => !codigos.has(c) && !DEL_CLIENTE.has(c)).sort();
 console.log(
   `${codigos.size} codigos en el backend · ${traducidos.size} con mensaje · ` +
     `${codigos.size - huerfanos.length - [...codigos].filter((c) => traducidos.has(c)).length} por regla de sufijo`,
