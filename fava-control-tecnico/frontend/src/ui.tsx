@@ -279,7 +279,7 @@ export function Ayuda({ texto }: { texto: string }) {
       </button>
       <span
         role="tooltip"
-        className="hidden group-hover/ayuda:block group-focus-within/ayuda:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 z-50 rounded-lg border border-border bg-card text-card-foreground shadow-pop px-3 py-2.5 text-[12.5px] leading-relaxed font-normal normal-case tracking-normal text-left pointer-events-none"
+        className="hidden group-hover/ayuda:block group-focus-within/ayuda:block absolute top-full left-1/2 -translate-x-1/2 mt-2 w-60 z-50 rounded-lg border border-border bg-card text-card-foreground shadow-pop px-3 py-2.5 text-[12.5px] leading-relaxed font-normal normal-case tracking-normal text-left pointer-events-none"
       >
         {texto}
       </span>
