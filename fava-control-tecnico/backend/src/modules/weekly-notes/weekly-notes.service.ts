@@ -478,7 +478,13 @@ export class WeeklyNotesService {
     id: string,
     datos: {
       technician: FirmaEntrada;
-      client: FirmaEntrada;
+      /**
+       * OPCIONAL desde 2026-08-29. El cliente ya no firma en el móvil del técnico: la
+       * casilla del PDF se llama «TIMBRE Y FIRMA DEL CLIENTE» y un timbre es de tinta,
+       * así que se imprime vacía y se firma en el papel. `casillaFirma(undefined)` ya
+       * dibujaba ese hueco — no hizo falta tocar el generador.
+       */
+      client: FirmaEntrada | null;
       expectedUpdatedAt?: string;
       ip: string | null;
       userAgent: string | null;
@@ -497,7 +503,11 @@ export class WeeklyNotesService {
 
     const fecha = aTexto(new Date());
     const bytes = await renderizarNota(
-      await this.datosParaPdf(id, { tecnico: datos.technician.imagePng, cliente: datos.client.imagePng, fecha }),
+      await this.datosParaPdf(id, {
+        tecnico: datos.technician.imagePng,
+        cliente: datos.client?.imagePng,
+        fecha,
+      }),
     );
     const sha256 = createHash('sha256').update(bytes).digest('hex');
 
@@ -505,10 +515,16 @@ export class WeeklyNotesService {
     // `Uint8Array<ArrayBuffer>` a secas. `new Uint8Array(bytes)` copia a un buffer
     // plano y cierra la diferencia — no hay forma más corta que siga tipando bien.
     await c.notePdf.create({ data: { noteId: id, version: nota.version, bytes: new Uint8Array(bytes), sha256 } });
-    for (const [kind, f] of [
-      ['technician', datos.technician],
-      ['client', datos.client],
-    ] as const) {
+    // Se guarda la firma que HAYA. Sin cliente digital solo hay una fila, y eso es lo
+    // correcto: `note_signatures` es el registro de quien firmo de verdad, no un
+    // formulario con dos huecos que rellenar.
+    const firmas = (
+      [
+        ['technician', datos.technician],
+        ['client', datos.client],
+      ] as const
+    ).filter((x): x is readonly ['technician' | 'client', FirmaEntrada] => x[1] != null);
+    for (const [kind, f] of firmas) {
       await c.noteSignature.create({
         data: {
           noteId: id,

@@ -85,16 +85,13 @@ export interface FirmaEntrada {
 }
 
 /**
- * Las dos firmas viajan JUNTAS porque el PDF se renderiza una sola vez con ambas
- * casillas estampadas: firmar es atómico o no es. El servidor congela los bytes y
- * devuelve la nota ya marcada como firmada.
+ * Firma el TÉCNICO. `client` sigue existiendo en el contrato del servidor y se valida
+ * igual de duro si llega, pero la app ya no lo manda: la casilla del PDF es «TIMBRE Y
+ * FIRMA DEL CLIENTE», el timbre es de tinta y el recuadro se imprime vacío para
+ * firmarlo en el papel.
  */
-export const signNote = (
-  id: string,
-  technician: FirmaEntrada,
-  client: FirmaEntrada,
-  expectedUpdatedAt: string,
-) => apiSend<WeeklyNote>(`/weekly-notes/${id}/sign`, 'POST', { technician, client, expectedUpdatedAt });
+export const signNote = (id: string, technician: FirmaEntrada, expectedUpdatedAt: string) =>
+  apiSend<WeeklyNote>(`/weekly-notes/${id}/sign`, 'POST', { technician, expectedUpdatedAt });
 
 /** Un día de la nota, tal cual se pinta. Menos campos que la bitácora: aquí solo se lee. */
 export interface DiaNota {

@@ -297,7 +297,9 @@ export class WeeklyNotesController {
   firmar(@CurrentUser() actor: UserModel, @Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo, @Req() req: Request) {
     return this.service.firmar(quien(actor), id, {
       technician: firma(body?.technician, 'FIRMA_TECNICO'),
-      client: firma(body?.client, 'FIRMA_CLIENTE'),
+      // Si viene, se valida igual de duro; si no viene, no pasa nada. El cliente firma
+      // el papel impreso, no el movil del tecnico.
+      client: body?.client == null ? null : firma(body.client, 'FIRMA_CLIENTE'),
       expectedUpdatedAt: esperado(body),
       ip: req.ip ?? null,
       userAgent: req.headers['user-agent'] ?? null,

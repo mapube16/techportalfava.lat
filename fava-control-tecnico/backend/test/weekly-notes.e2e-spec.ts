@@ -21,6 +21,21 @@ const OID_TEC = 'oid-notes-tec';
 
 /** Lunes real: la derivación agrupa de lunes a domingo. */
 const LUNES = '2026-03-02';
+/** Un PNG real y > 100 caracteres en base64: el servidor rechaza trazos mas cortos. */
+const PNG_FIRMA =
+    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAC20lEQVR4nA3SMWgVOACA4eBykxIHoWiHoNCDThHFK3' +
+    'RoBikdKpfhiYOHhE4WHIJDB8EScelQJOAiIlyGN7zJi4OCoJKh4Cbh4eBmNrE4ZFAo8uC/zN/6CSEEUgiUEGghMEJg' +
+    'hcAJgReCMDwOT8Pz8DK8Dm/D+3AhpEDKP1DyDFqew8hlrLyEk6t4eZkg14hygyQ3yfIGRU6o8jZN7tDlLkIogVRnUG' +
+    'oZrVYxag2rNnFqglc7BOWJap+kDsnqOUXNqOoNTR3R1RwhtEDqcyi9itYbGD3B6l2c3sfrpwQ9I+r3JD0n628UvaDq' +
+    'szS9QtfrCGEE0iyjzBraTDDGY80hzszw5ohgGtEsSGaJbK5SjKWaezRzQDdThLACaS+h7Cba7mLsIdb+h7NzvP1FsE' +
+    'tEu06yd8j2EcVOqfYjzR7T7WmEcALpVlFugnb7GDfDujnOLfBuheAs0T0guSnZfaK4E6q7SHPbdLeHEF4g/WWU30H7' +
+    'pxh/hPW/cH4F728R/AHRvyX5Y7K/QPHbVP+Q5l/S/VeECONBWEMFjw4zTGjYsIQLFh8OCKEQwwkpaHK4SwmJGr7Qgq' +
+    'SHrfEgjgdxAxX30fE9Ji6wcR0XH+DjW0I8Ica/SHGPHF9T4k9qvEKL9+nx1XiQxoO0iUqH6DTHpCVsuoNLU3w6JiRN' +
+    'THuk9I6cTlHSFjU9oaXP9HR+PMjjQb6Bys/R+RsmX8XmR7j8CZ8vEPJdYn5NyqfI+W9KfkHN32n5Gj0/Hg/KeFAmqD' +
+    'JDlwWmWGyZ4soJvmwTSiKWn6SyRS4vKKVTy3VaeUYvP8aDOh7U26j6Bl3PYuo9bP2Iqxfx9SGhfiHWK6T6hFy/U+p1' +
+    'av2XVn/T683xoI0HbQfVjtBtBdMOsO0Y17bx7SWhSWK7T2qfye0apT2jtt+09g+9fRgP+njQd1F9ju7rmD7F9tO4vo' +
+    'fvXwl9i9hfkfp5cn9M6T+o/Satf6D3P/kf+F5b31UXfdIAAAAASUVORK5CYII=';
+
 
 describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)', () => {
   let app: INestApplication;
@@ -189,6 +204,41 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     await jornada({ projectId: p.id, date: '2026-03-02' });
     await enviar();
     expect((await enviar(409)).body.message).toBe('SEMANA_NO_EDITABLE');
+  });
+
+  /**
+   * NOTA-04 — firma SOLO el técnico.
+   *
+   * El cliente tenía su propio lienzo y se quitó el 2026-08-29: la casilla del PDF se
+   * llama «TIMBRE Y FIRMA DEL CLIENTE», el timbre es de tinta, y ese recuadro se
+   * imprime vacío para firmarlo sobre el papel. El contrato del servidor sigue
+   * aceptando la firma del cliente si algún día llega, pero ya no la exige — y esto
+   * es lo único que lo demuestra.
+   */
+  it('se firma con la firma del técnico SOLA, y queda una firma, no dos', async () => {
+    const p = await crearProyecto();
+    await jornada({ projectId: p.id, date: '2026-03-02' });
+    const nota = (await enviar()).body[0];
+
+    const res = await http()
+      .post(`/api/weekly-notes/${nota.id}/sign`)
+      .set(auth(tokenTec))
+      .send({
+        technician: {
+          signerName: 'ZZ DEMO Bruno Sala',
+          declarationAccepted: true,
+          imagePng: PNG_FIRMA,
+        },
+        expectedUpdatedAt: nota.updatedAt,
+      })
+      .expect(201);
+
+    expect(res.body.signed).toBe(true);
+    const firmas = await ownerClient.noteSignature.findMany({ where: { noteId: nota.id } });
+    expect(firmas).toHaveLength(1);
+    expect(firmas[0].kind).toBe('technician');
+    // El PDF se congela en el mismo acto: sin bytes no hay nada que descargar después.
+    expect(await ownerClient.notePdf.count({ where: { noteId: nota.id } })).toBe(1);
   });
 
   // ── BIT-05: enviado = solo lectura ──

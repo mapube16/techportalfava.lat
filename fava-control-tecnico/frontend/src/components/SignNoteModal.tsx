@@ -18,8 +18,11 @@ import type { Gasto, WeeklyNote } from '../lib/api/weeklyNotes';
  * en dos obras la misma semana salen dos notas con dos clientes distintos. Un cliente
  * no puede firmar el trabajo del otro.
  *
- * Las dos firmas se mandan JUNTAS porque el servidor renderiza el PDF una sola vez con
- * ambas casillas estampadas y lo congela: no existe una nota «firmada a medias».
+ * FIRMA SOLO EL TÉCNICO. Aquí hubo un segundo lienzo para el cliente y estorbaba: la
+ * casilla del PDF se llama «TIMBRE Y FIRMA DEL CLIENTE» y un timbre es de tinta, así
+ * que ese recuadro se imprime vacío y se firma sobre el papel, como siempre. Pedirle al
+ * técnico que le pase el móvil al cliente doblaba el alto del diálogo —la firma propia
+ * quedaba fuera de pantalla— para capturar algo que igualmente había que estampar.
  *
  * Los gastos se guardan ANTES de firmar, en su propia petición: son un recurso aparte
  * (`PUT /expenses`) y el servidor los bloquea en cuanto la nota tiene firma, así que
@@ -35,32 +38,27 @@ interface Firmante {
 
 const FIRMANTE_VACIO: Firmante = { nombre: '', documento: '', cargo: '' };
 
-/** Cuatro filas fijas, como las tablas del PDF. Las vacías no se mandan. */
-const CUATRO = [0, 1, 2, 3];
+/** Tope de filas por tabla: las cuatro que imprime el PDF. */
+const MAX_GASTOS = 4;
 
 export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onClose: () => void }) {
   const { t, showToast, refresh } = useApp();
   const [tecnico, setTecnico] = useState<Firmante>({ ...FIRMANTE_VACIO, nombre: nota.technicianName });
-  const [cliente, setCliente] = useState<Firmante>(FIRMANTE_VACIO);
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [anticipos, setAnticipos] = useState<Gasto[]>([]);
   const [acepta, setAcepta] = useState(false);
   const [hayTrazoT, setHayTrazoT] = useState(false);
-  const [hayTrazoC, setHayTrazoC] = useState(false);
   const [limpiarT, setLimpiarT] = useState(0);
-  const [limpiarC, setLimpiarC] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [firmando, setFirmando] = useState(false);
 
   const refT = useRef<SignatureHandle>(null);
-  const refC = useRef<SignatureHandle>(null);
 
-  const listo = tecnico.nombre.trim() && cliente.nombre.trim() && hayTrazoT && hayTrazoC && acepta;
+  const listo = tecnico.nombre.trim() && hayTrazoT && acepta;
 
   const firmar = () => {
     const pngT = refT.current?.toPng();
-    const pngC = refC.current?.toPng();
-    if (!pngT || !pngC) {
+    if (!pngT) {
       setErr(t.sign_missing);
       return;
     }
@@ -79,7 +77,6 @@ export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onC
         signNote(
           nota.id,
           { signerName: tecnico.nombre.trim(), signerDocument: tecnico.documento.trim() || undefined, signerRole: tecnico.cargo.trim() || undefined, declarationAccepted: true, imagePng: pngT },
-          { signerName: cliente.nombre.trim(), signerDocument: cliente.documento.trim() || undefined, signerRole: cliente.cargo.trim() || undefined, declarationAccepted: true, imagePng: pngC },
           nota.updatedAt,
         ),
       )
@@ -138,38 +135,50 @@ export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onC
     </div>
   );
 
-  /** Las 4 filas de una tabla de gastos. Fijas, como las imprime el PDF. */
-  const tablaGastos = (titulo: string, filas: Gasto[], set: (xs: Gasto[]) => void) => (
-    <div>
-      <div className="text-xs font-semibold text-muted-foreground mb-1.5">{titulo}</div>
-      <div className="flex flex-col gap-2">
-        {CUATRO.map((i) => (
-          <div key={i} className="grid grid-cols-[1fr_110px] gap-2">
-            <input
-              value={filas[i]?.descripcion ?? ''}
-              onChange={(e) => {
-                const xs = CUATRO.map((k) => filas[k] ?? { descripcion: '', valor: '' });
-                xs[i] = { ...xs[i], descripcion: e.target.value };
-                set(xs);
-              }}
-              placeholder={t.exp_desc}
-              className={inputStyle}
-            />
-            <input
-              value={filas[i]?.valor ?? ''}
-              onChange={(e) => {
-                const xs = CUATRO.map((k) => filas[k] ?? { descripcion: '', valor: '' });
-                xs[i] = { ...xs[i], valor: e.target.value };
-                set(xs);
-              }}
-              placeholder={t.exp_val}
-              className={`${inputStyle} font-mono`}
-            />
-          </div>
-        ))}
+  /**
+   * Una tabla de gastos: las filas con algo escrito, más UNA vacía. Tope de cuatro,
+   * que son las que imprime el PDF.
+   *
+   * Antes se pintaban las cuatro siempre. Entre las dos tablas eran OCHO casillas
+   * vacías ocupando la mitad del diálogo, y como el lienzo de firma va debajo, quien
+   * abría esto veía un formulario de gastos y ni rastro de dónde firmar. Casi nadie
+   * apunta cuatro gastos; todos pasaban por delante de ellos.
+   */
+  const tablaGastos = (titulo: string, filas: Gasto[], set: (xs: Gasto[]) => void) => {
+    const llenas = filas.filter((g) => g.descripcion.trim() || g.valor.trim()).length;
+    const visibles = Math.min(llenas + 1, MAX_GASTOS);
+    const cambiar = (i: number, campo: 'descripcion' | 'valor', v: string) => {
+      const xs = Array.from(
+        { length: MAX_GASTOS },
+        (_, k) => filas[k] ?? { descripcion: '', valor: '' },
+      );
+      xs[i] = { ...xs[i], [campo]: v };
+      set(xs);
+    };
+    return (
+      <div>
+        <div className="text-xs font-semibold text-muted-foreground mb-1.5">{titulo}</div>
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: visibles }, (_, i) => (
+            <div key={i} className="grid grid-cols-[1fr_110px] gap-2">
+              <input
+                value={filas[i]?.descripcion ?? ''}
+                onChange={(e) => cambiar(i, 'descripcion', e.target.value)}
+                placeholder={t.exp_desc}
+                className={inputStyle}
+              />
+              <input
+                value={filas[i]?.valor ?? ''}
+                onChange={(e) => cambiar(i, 'valor', e.target.value)}
+                placeholder={t.exp_val}
+                className={`${inputStyle} font-mono`}
+              />
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-60 bg-black/50 grid place-items-center p-5 fava-anim">
@@ -177,7 +186,10 @@ export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onC
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-[620px] bg-card rounded-2xl shadow-pop max-h-[92vh] overflow-y-auto fava-anim"
       >
-        <div className="flex items-start justify-between px-5.5 pt-5 pb-1">
+        {/* Pegada arriba: el diálogo se desplaza por dentro, y sin esto el título y la
+            X se iban de pantalla en cuanto bajabas a firmar — que es justo cuando uno
+            quiere poder cerrar. */}
+        <div className="sticky top-0 z-10 bg-card flex items-start justify-between px-5.5 pt-5 pb-1">
           <div>
             <div className="text-lg font-bold">{t.sign_modal_title}</div>
             <div className="text-[12.5px] text-muted-foreground mt-0.5 max-w-[420px]">{t.sign_modal_sub}</div>
@@ -195,13 +207,14 @@ export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onC
           <div className="grid gap-3 md:grid-cols-2">
             {tablaGastos(t.expenses, gastos, setGastos)}
             {tablaGastos(t.advances, anticipos, setAnticipos)}
-            {/* La foto del ticket, junto a su importe: se aprueban a la vez que la
-                semana, con el mismo boton. */}
-            <ReceiptsBlock noteId={nota.id} />
           </div>
 
+          {/* FUERA de la rejilla de dos columnas. Dentro era su tercer hijo, así que
+              caía en la celda izquierda de la segunda fila: las miniaturas salían
+              apretadas en media anchura con el hueco de al lado vacío. */}
+          <ReceiptsBlock noteId={nota.id} />
+
           {bloque(t.sign_technician, tecnico, setTecnico, hayTrazoT, () => { setLimpiarT((v) => v + 1); setHayTrazoT(false); }, limpiarT, () => setHayTrazoT(true), refT)}
-          {bloque(t.sign, cliente, setCliente, hayTrazoC, () => { setLimpiarC((v) => v + 1); setHayTrazoC(false); }, limpiarC, () => setHayTrazoC(true), refC)}
 
           {/* La aceptación EXPLÍCITA de la declaración: sin esto el trazo es un dibujo,
               y el servidor la exige (CHECK del motor incluido). */}
