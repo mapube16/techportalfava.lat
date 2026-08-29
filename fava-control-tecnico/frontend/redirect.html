@@ -2,13 +2,148 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Redirect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FAVA Control Técnico</title>
+    <!--
+      EL PUENTE COOP DE MSAL v5, y la primera pantalla que ve alguien tras autenticarse.
+
+      Era un `<p>` suelto: fondo blanco, Times New Roman, pegado a la esquina. Dura poco
+      —a veces menos de un segundo— pero es el instante EXACTO en que la persona vuelve
+      de Microsoft, y un salto a una pagina que parece rota siembra la duda de si el
+      acceso funciono.
+
+      TODO VA EN LINEA a proposito. Esta pagina tiene que pintarse antes de que llegue
+      ningun bundle: una hoja de estilos externa la dejaria en blanco justo el rato que
+      dura. Por eso tampoco lleva el logotipo como imagen — una peticion mas que puede
+      tardar mas que la propia redireccion.
+    -->
+    <style>
+      :root {
+        --papel: #eef2f5;
+        --carta: #ffffff;
+        --tinta: #132330;
+        --suave: #5b6b7a;
+        --azul: #104a78;
+        --borde: #dde3e9;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --papel: #0b131c;
+          --carta: #131f2b;
+          --tinta: #e6edf4;
+          --suave: #93a4b5;
+          --azul: #3f86c4;
+          --borde: #263544;
+        }
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--papel);
+        color: var(--tinta);
+        font-family: Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        display: grid;
+        place-items: center;
+      }
+      .caja {
+        text-align: center;
+        padding: 32px 28px;
+      }
+      .marca {
+        font-weight: 700;
+        font-size: 19px;
+        letter-spacing: 0.02em;
+        color: var(--azul);
+      }
+      .marca span {
+        font-weight: 400;
+        color: var(--suave);
+      }
+      .aro {
+        width: 34px;
+        height: 34px;
+        margin: 22px auto 14px;
+        border: 3px solid var(--borde);
+        border-top-color: var(--azul);
+        border-radius: 50%;
+        animation: giro 0.8s linear infinite;
+      }
+      @keyframes giro {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      /* Quien pidio menos movimiento ve un aro quieto, no uno girando sin parar. */
+      @media (prefers-reduced-motion: reduce) {
+        .aro {
+          animation: none;
+          border-top-color: var(--borde);
+        }
+      }
+      .estado {
+        font-size: 14px;
+        color: var(--suave);
+      }
+      .salida {
+        display: none;
+        margin-top: 18px;
+        font-size: 13.5px;
+        line-height: 1.55;
+        color: var(--suave);
+        max-width: 30ch;
+      }
+      .salida a {
+        color: var(--azul);
+        font-weight: 600;
+      }
+    </style>
   </head>
   <body>
-    <p>Procesando autenticación…</p>
+    <div class="caja">
+      <div class="marca">FAVA <span>Control Técnico</span></div>
+      <div class="aro" id="aro"></div>
+      <div class="estado" id="estado">Verificando tu acceso…</div>
+      <p class="salida" id="salida">
+        Esto está tardando más de lo normal.
+        <br /><a href="/">Volver a intentarlo</a>
+      </p>
+    </div>
+
     <script type="module">
       import { broadcastResponseToMainFrame } from '@azure/msal-browser/redirect-bridge';
-      broadcastResponseToMainFrame().catch((e) => console.error('redirect bridge', e));
+
+      const T = {
+        es: { estado: 'Verificando tu acceso…', lento: 'Esto está tardando más de lo normal.', volver: 'Volver a intentarlo' },
+        it: { estado: 'Verifica dell’accesso…', lento: 'Sta impiegando più del previsto.', volver: 'Riprovare' },
+        pt: { estado: 'Verificando o seu acesso…', lento: 'Está a demorar mais do que o normal.', volver: 'Tentar de novo' },
+      };
+      const lang = (navigator.language || 'es').slice(0, 2);
+      const t = T[lang] ?? T.es;
+      document.documentElement.lang = lang in T ? lang : 'es';
+      document.getElementById('estado').textContent = t.estado;
+      const salida = document.getElementById('salida');
+      salida.innerHTML = `${t.lento}<br><a href="/">${t.volver}</a>`;
+
+      /**
+       * LA SALIDA. Antes, si el puente fallaba, el error se iba a la consola y la
+       * persona se quedaba mirando esta pagina para siempre, sin nada que pulsar.
+       * A los ocho segundos aparece una salida — y tambien si simplemente tarda, que
+       * en una obra con mala cobertura pasa.
+       */
+      const rendirse = setTimeout(() => {
+        document.getElementById('aro').style.display = 'none';
+        salida.style.display = 'block';
+      }, 8000);
+
+      broadcastResponseToMainFrame().catch((e) => {
+        clearTimeout(rendirse);
+        console.error('redirect bridge', e);
+        document.getElementById('aro').style.display = 'none';
+        salida.style.display = 'block';
+      });
     </script>
   </body>
 </html>
