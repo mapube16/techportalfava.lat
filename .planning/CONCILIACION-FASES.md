@@ -1,6 +1,6 @@
 # Fase de las jornadas históricas (MIG-03)
 
-Líneas en el NDJSON: **56** _(simulación: no se escribe)_
+Líneas en el NDJSON: **56**
 
 ## Líneas descartadas a mano
 
@@ -18,15 +18,11 @@ Quedan **23** líneas con commessa y ejecutado > 0. Las de `J Macedo Brasil- fin
 | Pasta Sole  - ARGENTINA | `MONTAJE` | 196 | 0 |
 | **Total** | | | **0** |
 
-## Revisar: el rol de la bitácora no cuadra con la fase asignada
+## Correcciones: la bitácora gana a la hoja
 
-| Proyecto | Rol en la bitácora | Rol(es) en la hoja | Solo aparecen en | Se le puso | Días |
-|---|---|---|---|---|---:|
-| MOLINO CIBAO BOCEL - RD | `Software` | `sofware`, `softwerista` | COLLAUDO | `MONTAJE` | 77 |
-
-> No se cambia nada por esto: la hoja de proyecto es hoy el registro de FAVA y es la que manda. Pero la contradicción es real y quien lea el tablero tiene derecho a saber que esos días penden de un hilo.
+- **MOLINO CIBAO BOCEL - RD** · `Software` → `COLLAUDO` — La hoja apunta los 77 dias de Ivan Cortes en MONTAJE/`Elettricista`, pero la bitacora los registra con `Tipo = Software` los 77, del 2026-06-15 al 2026-08-30, sin una sola excepcion. `sofware` y `softwerista` solo existen bajo COLLAUDO en todo el libro, y la hoja TIENE su fila `COLLAUDO/Sofware/Ivan Cortes` vacia con 35 dias vendidos. La otra plaza de `Elettricista` si cuadra: Andrea Scapin, 16 dias, y la bitacora lo confirma. En contra: 77 sobre 35 vendidos es pasarse el doble, y eso explica por que alguien cuadrando la hoja los parco donde caben (montaje vende 104) — pero explica el cuadre, no lo que se hizo. Pasarse es un dato que el tablero debe ENSEÑAR, no absorber. _(77 jornadas)_
 
 ## Lo que dice el resultado
 
-El collaudo está **vendido (659 días) y sin empezar** en los cuatro proyectos: ni una línea de las hojas le apunta ejecutado. La tabla por fase no estaba vacía por falta de datos, estaba vacía porque el collaudo todavía no se ha hecho — y eso sí es una lectura útil.
+Collaudo: **659 días vendidos, 77 ejecutados**. La tabla por fase no estaba vacía por falta de datos — estaba vacía porque la fase no se registraba en ningún sitio, y una vez puesta lo que enseña es que el collaudo apenas ha empezado. Eso sí es una lectura útil.
 

@@ -67,6 +67,31 @@ const IGNORAR: { hoja: string; fila: number; motivo: string }[] = [
   },
 ];
 
+/**
+ * Donde la hoja de proyecto pierde contra la bitacora, con la evidencia al lado.
+ *
+ * La hoja es una CONCILIACION que alguien cuadra a mano; la bitacora es el registro
+ * dia a dia. Cuando se contradicen gana el registro, pero solo con la contradiccion
+ * escrita aqui y verificable — nunca por regla automatica.
+ */
+const CORRECCIONES: { proyecto: string; rol: string; fase: Phase; motivo: string }[] = [
+  {
+    proyecto: 'MOLINO CIBAO BOCEL - RD',
+    rol: 'Software',
+    fase: 'COLLAUDO',
+    motivo:
+      'La hoja apunta los 77 dias de Ivan Cortes en MONTAJE/`Elettricista`, pero la ' +
+      'bitacora los registra con `Tipo = Software` los 77, del 2026-06-15 al 2026-08-30, ' +
+      'sin una sola excepcion. `sofware` y `softwerista` solo existen bajo COLLAUDO en ' +
+      'todo el libro, y la hoja TIENE su fila `COLLAUDO/Sofware/Ivan Cortes` vacia con ' +
+      '35 dias vendidos. La otra plaza de `Elettricista` si cuadra: Andrea Scapin, 16 ' +
+      'dias, y la bitacora lo confirma. En contra: 77 sobre 35 vendidos es pasarse el ' +
+      'doble, y eso explica por que alguien cuadrando la hoja los parco donde caben ' +
+      '(montaje vende 104) — pero explica el cuadre, no lo que se hizo. Pasarse es un ' +
+      'dato que el tablero debe ENSEÑAR, no absorber.',
+  },
+];
+
 const clave = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
 /**
@@ -238,7 +263,11 @@ async function main() {
           // Solo canta si el rol se parece a uno de la hoja Y ese rol NUNCA aparece en
           // la fase que le acabamos de poner. `Meccanico` vive en las dos fases, asi
           // que no dice nada y no ensucia el informe.
-          if (!pareceA(r.rol, rolHoja) || fases.has(d.fase)) continue;
+          // Lo que ya arregla una CORRECCION no es una duda abierta: no se repite aquí.
+          const corregido = CORRECCIONES.some(
+            (x) => x.proyecto === d.nombre && clave(x.rol) === clave(r.rol),
+          );
+          if (corregido || !pareceA(r.rol, rolHoja) || fases.has(d.fase)) continue;
           const k = `${d.id}|${r.rol}`;
           const e = dudosos.get(k) ?? {
             proyecto: d.nombre,
@@ -275,6 +304,40 @@ async function main() {
       di();
     }
 
+    // ── 3c. Las correcciones, que PISAN la fase del proyecto ──
+    const porNombre = new Map([...fasesPorProyecto].map(([id, v]) => [v.nombre, id]));
+    const correcciones: { texto: string; projectId: string; rol: string; fase: Phase; dias: number }[] =
+      [];
+    for (const x of CORRECCIONES) {
+      const projectId = porNombre.get(x.proyecto);
+      if (!projectId) {
+        di(`> ⚠️ La corrección de **${x.proyecto}** no encuentra el proyecto. Revísala.`);
+        di();
+        continue;
+      }
+      const [{ n }] = await prisma.$queryRaw<{ n: bigint }[]>`
+        SELECT COUNT(*) AS n
+          FROM daily_entries de
+          JOIN role_types rt ON rt.id = de.role_type_id
+         WHERE de.project_id = ${projectId}::uuid
+           AND de.source_sheet IS NOT NULL
+           AND lower(rt.name) = ${clave(x.rol)}`;
+      correcciones.push({
+        texto: `**${x.proyecto}** · \`${x.rol}\` → \`${x.fase}\` — ${x.motivo}`,
+        projectId,
+        rol: clave(x.rol),
+        fase: x.fase,
+        dias: Number(n),
+      });
+    }
+
+    if (correcciones.length) {
+      di('## Correcciones: la bitácora gana a la hoja');
+      di();
+      for (const c of correcciones) di(`- ${c.texto} _(${c.dias} jornadas)_`);
+      di();
+    }
+
     if (!seco) {
       await prisma.$transaction(async (tx) => {
         for (const d of decididos) {
@@ -283,21 +346,46 @@ async function main() {
             data: { phase: d.fase },
           });
         }
+        // DESPUES y sin filtrar por `phase: null`: una corrección pisa a propósito lo
+        // que la regla del proyecto acaba de poner, y tiene que valer también en una
+        // segunda pasada, cuando ya no queda nada nulo que escribir.
+        for (const c of correcciones) {
+          await tx.$executeRaw`
+            UPDATE daily_entries de
+               SET phase = ${c.fase}::phase
+              FROM role_types rt
+             WHERE rt.id = de.role_type_id
+               AND de.project_id = ${c.projectId}::uuid
+               AND de.source_sheet IS NOT NULL
+               AND lower(rt.name) = ${c.rol}`;
+        }
       });
     }
 
     // ── 4. El hallazgo, que es la mitad del valor de correr esto ──
-    const collaudo = todas
+    //
+    // Se cuenta contra la BASE y no contra el NDJSON. Con la cuenta sacada de las hojas
+    // este párrafo afirmaba «el collaudo está sin empezar» inmediatamente después de
+    // haber movido 77 jornadas a COLLAUDO: un informe que se contradice a sí mismo tres
+    // renglones más abajo no lo lee nadie dos veces.
+    const vendido = todas
       .filter((f) => f.commessa && f.fase === 'COLLAUDO' && !ignorada(f))
       .reduce((s, f) => s + (f.vendido ?? 0), 0);
+    const ejecutado = await prisma.dailyEntry.count({
+      where: {
+        phase: 'COLLAUDO',
+        sourceSheet: { not: null },
+        projectId: { in: decididos.map((d) => d.id) },
+      },
+    });
 
     di('## Lo que dice el resultado');
     di();
     di(
-      `El collaudo está **vendido (${collaudo} días) y sin empezar** en los cuatro ` +
-        'proyectos: ni una línea de las hojas le apunta ejecutado. La tabla por fase no ' +
-        'estaba vacía por falta de datos, estaba vacía porque el collaudo todavía no se ha ' +
-        'hecho — y eso sí es una lectura útil.',
+      `Collaudo: **${vendido} días vendidos, ${ejecutado} ejecutados**. La tabla por fase ` +
+        'no estaba vacía por falta de datos — estaba vacía porque la fase no se registraba ' +
+        'en ningún sitio, y una vez puesta lo que enseña es que el collaudo apenas ha ' +
+        'empezado. Eso sí es una lectura útil.',
     );
     di();
 
