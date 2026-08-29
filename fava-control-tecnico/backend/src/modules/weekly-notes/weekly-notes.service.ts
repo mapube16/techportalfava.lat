@@ -179,6 +179,78 @@ export class WeeklyNotesService {
     return notas;
   }
 
+  // ── NOTA-08b: los comprobantes de gasto ──
+
+  /**
+   * Los recibos de una nota, SIN los bytes. Listar no es descargar: traerse cuatro
+   * fotos para pintar cuatro nombres multiplicaria por mil el peso de la pantalla.
+   */
+  recibos(noteId: string) {
+    return this.prisma.client.expenseReceipt.findMany({
+      where: { noteId },
+      select: { id: true, label: true, mimeType: true, sizeBytes: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  /**
+   * Sube un comprobante. Se bloquea en cuanto la nota tiene firma, igual que los
+   * importes (`gastos`): lo que el cliente firmo ya no se toca.
+   */
+  async subirRecibo(
+    actorId: string,
+    noteId: string,
+    datos: { label: string; mimeType: string; bytes: Buffer },
+  ) {
+    const nota = await this.prisma.client.weeklyNote.findUnique({
+      where: { id: noteId },
+      select: { signedContentHash: true },
+    });
+    if (!nota) throw new NotFoundException('NOTA_NO_ENCONTRADA');
+    if (nota.signedContentHash) throw new ConflictException('NOTA_FIRMADA');
+
+    // `createMany` y no `create`, por lo mismo que `audit.service.ts:39`: el RETURNING
+    // exige SELECT sobre lo insertado, y no quiero que subir dependa de poder leer.
+    await this.prisma.client.expenseReceipt.createMany({
+      data: [{
+        noteId,
+        label: datos.label,
+        mimeType: datos.mimeType,
+        // Mismo motivo que en `firmar`: `Buffer` es Uint8Array<ArrayBufferLike> y
+        // Prisma 7 tipa `Bytes` como Uint8Array<ArrayBuffer> a secas.
+        bytes: new Uint8Array(datos.bytes),
+        // Medido aqui, no lo que diga el cliente: es lo que compara el CHECK del motor.
+        sizeBytes: datos.bytes.length,
+        uploadedById: actorId,
+      }],
+    });
+    return this.recibos(noteId);
+  }
+
+  /** Los bytes de UNO, para pintarlo en pantalla. */
+  async recibo(noteId: string, receiptId: string) {
+    const r = await this.prisma.client.expenseReceipt.findFirst({
+      where: { id: receiptId, noteId },
+      select: { bytes: true, mimeType: true, label: true },
+    });
+    if (!r) throw new NotFoundException('RECIBO_NO_ENCONTRADO');
+    return r;
+  }
+
+  /** Un comprobante no se corrige: se borra y se sube otro. Por eso no hay UPDATE ni
+      privilegio de UPDATE ni politica que lo permita. */
+  async borrarRecibo(noteId: string, receiptId: string) {
+    const nota = await this.prisma.client.weeklyNote.findUnique({
+      where: { id: noteId },
+      select: { signedContentHash: true },
+    });
+    if (!nota) throw new NotFoundException('NOTA_NO_ENCONTRADA');
+    if (nota.signedContentHash) throw new ConflictException('NOTA_FIRMADA');
+    await this.prisma.client.expenseReceipt.deleteMany({ where: { id: receiptId, noteId } });
+    return this.recibos(noteId);
+  }
+
+
   /**
    * La bandeja del admin y la lista del técnico son la MISMA consulta: RLS filtra.
    * Salvo cuando quien pregunta es admin Y técnico a la vez — ahí RLS no acota y el

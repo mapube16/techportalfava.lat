@@ -250,6 +250,7 @@ model WeeklyNote {
   roleType   RoleType?       @relation(fields: [roleTypeId], references: [id], onDelete: Restrict)
   pdfs       NotePdf[]
   signatures NoteSignature[]
+  receipts   ExpenseReceipt[]
 
   /// La clave natural de la derivacion: reenviar la misma semana NO duplica notas.
   @@unique([technicianId, weekStart, projectId])
@@ -296,6 +297,44 @@ model NotePdf {
 /// Lo que si se guarda es todo lo que hace defendible la electronica: quien firmo, con
 /// que documento, en que cargo, que acepto la declaracion, cuando SEGUN EL SERVIDOR
 /// (nunca segun el reloj del movil), desde donde y sobre que bytes exactos.
+/// NOTA-08b — el comprobante de un gasto: la foto del ticket.
+///
+/// CUELGA DE LA NOTA Y NO DE UNA LINEA de `gastos_tecnico`. Atarlo al indice del array
+/// seria fragil: se borra una linea, los indices bailan y el recibo queda apuntando a
+/// otro gasto. Como se aprueban JUNTOS —el mismo boton que aprueba la semana— saber
+/// que ticket respalda que renglon exacto no cambia ninguna decision; `label` basta.
+///
+/// LOS BYTES VIVEN EN LA COLUMNA, igual que `note_pdfs` y `note_signatures`. No hay
+/// bucket externo en este proyecto y meterlo por esto seria una dependencia y unas
+/// credenciales nuevas. La cuenta que SI hay que respetar: una foto de movil son 3-8 MB
+/// y el volumen tiene 5 GB, asi que el cliente la redimensiona antes de subir y el
+/// servidor rechaza lo que pase de `RECIBO_MAX_BYTES`. Con ~300 KB por ticket, trece
+/// tecnicos y tres tickets por semana son ~600 MB al ano.
+model ExpenseReceipt {
+  id     String @id @default(uuid()) @db.Uuid
+  noteId String @map("note_id") @db.Uuid
+
+  /// Que es: «botas», «peaje», «hotel». Lo escribe el tecnico al subirlo.
+  label String
+
+  /// 'image/jpeg' | 'image/png' | 'application/pdf'. Lista cerrada en el servicio.
+  mimeType  String @map("mime_type")
+  bytes     Bytes
+  /// Tamano ya guardado. Se guarda para poder listar sin traerse los bytes.
+  sizeBytes Int    @map("size_bytes")
+
+  /// Quien lo subio. Sin FK, mismo criterio que `audit_log.actor_id`.
+  uploadedById String?  @map("uploaded_by_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Restrict como el resto del esquema: un recibo es evidencia, y borrar la nota que
+  // lo respalda tiene que costar tanto como borrar su PDF o su firma.
+  note WeeklyNote @relation(fields: [noteId], references: [id], onDelete: Restrict)
+
+  @@index([noteId])
+  @@map("expense_receipts")
+}
+
 model NoteSignature {
   id     String @id @default(uuid()) @db.Uuid
   noteId String @map("note_id") @db.Uuid

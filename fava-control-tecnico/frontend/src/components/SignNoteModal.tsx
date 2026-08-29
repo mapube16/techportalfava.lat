@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { hi } from '../icons';
 import { FieldError, inputError, inputStyle } from '../ui';
 import { useApp } from '../state';
+import ReceiptsBlock from './ReceiptsBlock';
 import { codigo } from '../lib/api/useApiData';
 import SignatureBox from './SignatureBox';
 import type { SignatureHandle } from './SignatureBox';
@@ -194,6 +195,9 @@ export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onC
           <div className="grid gap-3 md:grid-cols-2">
             {tablaGastos(t.expenses, gastos, setGastos)}
             {tablaGastos(t.advances, anticipos, setAnticipos)}
+            {/* La foto del ticket, junto a su importe: se aprueban a la vez que la
+                semana, con el mismo boton. */}
+            <ReceiptsBlock noteId={nota.id} />
           </div>
 
           {bloque(t.sign_technician, tecnico, setTecnico, hayTrazoT, () => { setLimpiarT((v) => v + 1); setHayTrazoT(false); }, limpiarT, () => setHayTrazoT(true), refT)}

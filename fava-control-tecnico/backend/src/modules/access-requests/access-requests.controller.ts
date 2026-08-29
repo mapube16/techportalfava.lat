@@ -38,6 +38,19 @@ export class AccessRequestsController {
     return this.service.listar();
   }
 
+  /**
+   * Aprobar: crea la ficha de tecnico y el usuario en un solo paso. Los dos campos
+   * del body los decide quien aprueba, no quien solicito — el porque, en el servicio.
+   */
+  @Post(':id/approve')
+  @Roles('A', 'S')
+  aprobar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { roleTypeId?: string; employmentType?: string },
+  ) {
+    return this.service.aprobar(id, body?.roleTypeId ?? '', body?.employmentType ?? '');
+  }
+
   @Patch(':id')
   @Roles('A', 'S')
   descartar(@Param('id', ParseUUIDPipe) id: string, @Body() body: { status?: string }) {

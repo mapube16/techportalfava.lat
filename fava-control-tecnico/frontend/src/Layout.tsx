@@ -9,7 +9,6 @@ import { useIsMobile } from './lib/useIsMobile';
 import { useApiData } from './lib/api/useApiData';
 import { listNotes } from './lib/api/weeklyNotes';
 import type { Role, Route } from './types';
-import Home from './screens/Home';
 import Week from './screens/Week';
 import Notes from './screens/Notes';
 import Inbox from './screens/Inbox';
@@ -31,7 +30,6 @@ import Toast from './components/Toast';
 function Screen() {
   const { state } = useApp();
   switch (state.route) {
-    case 'home': return <Home />;
     case 'week': return <Week />;
     case 'notes': return <Notes />;
     case 'inbox': return <Inbox />;
@@ -135,7 +133,9 @@ export default function Layout() {
   const tiene = (r: Role) => state.myRoles.includes(r);
   const groups: { title: string; items: NavItem[] }[] = [];
   if (tiene('T')) {
-    groups.push({ title: t.grp_tecnico, items: [mk('home', 'home', 'home'), mk('week', 'week', 'doc'), mk('notes', 'notes', 'doc')] });
+    // Sin «Inicio»: era la lista de «Mis notas» con dos botones encima. El tecnico
+    // entra en su semana, que es donde trabaja, y «Mis notas» queda de archivo.
+    groups.push({ title: t.grp_tecnico, items: [mk('week', 'week', 'doc'), mk('notes', 'notes', 'doc')] });
   }
   if (tiene('A') || tiene('S')) {
     groups.push({
@@ -148,7 +148,7 @@ export default function Layout() {
   }
 
   const titleMap: Record<string, string> = {
-    home: t.t_home, week: t.t_week, notes: t.t_notes, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
+    week: t.t_week, notes: t.t_notes, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
     project: t.t_project, techs: t.t_techs, users: t.t_users, kpis: t.t_kpis, audit: t.t_audit, config: t.t_config,
   };
 

@@ -4,7 +4,9 @@ import { ApiState, Card, ConceptPill, StatusPill } from '../ui';
 import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getWeek } from '../lib/api/dailyEntries';
-import { submitWeek } from '../lib/api/weeklyNotes';
+import { listNotes, submitWeek } from '../lib/api/weeklyNotes';
+import type { WeeklyNote } from '../lib/api/weeklyNotes';
+import SignNoteModal from '../components/SignNoteModal';
 import type { Entry } from '../lib/api/dailyEntries';
 import { diasDeSemana, hoyLocal, lunesDe, sumarDias } from '../lib/fecha';
 
@@ -23,7 +25,7 @@ const MES_ES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep
 const MES_IT = ['', 'gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
 
 export default function Week() {
-  const { state, t, go, patch, showToast } = useApp();
+  const { state, t, patch, showToast, refresh } = useApp();
   /** Lunes de la semana visible. `null` = la de hoy, que se resuelve al renderizar. */
   const [lunes, setLunes] = useState<string | null>(null);
   const [errEnvio, setErrEnvio] = useState<string | null>(null);
@@ -33,6 +35,25 @@ export default function Week() {
   const dias = diasDeSemana(semana);
 
   const { data, error } = useApiData(() => getWeek(dias[0], dias[6]), [semana, state.dataVersion]);
+
+  /**
+   * Las notas que salieron de ESTA semana. Viven aqui y no solo en «Mis notas» porque
+   * son el resultado de los dias que se estan viendo: firmar mirando la semana que la
+   * origino es la unica forma de saber que se esta firmando.
+   *
+   * Y resuelve la objecion por la que estaban separadas: «una semana con dos proyectos
+   * produce dos notas con dos clientes y aqui no hay forma de decir cual firmas». Si la
+   * hay — cada tarjeta lleva el nombre de su proyecto.
+   */
+  const miTecnico = state.me?.status === 'ok' ? state.me.user.technicianId : null;
+  const { data: notas } = useApiData(
+    () => (miTecnico ? listNotes(undefined, miTecnico) : Promise.resolve([])),
+    [miTecnico, state.dataVersion],
+  );
+  const deLaSemana = (notas ?? []).filter((n) => n.weekStart.slice(0, 10) === semana);
+  /** La que se abre al pulsar «Firmar»; `state.firmarId` es la que llega recien enviada. */
+  const [firmandoLocal, setFirmandoLocal] = useState<WeeklyNote | null>(null);
+  const aFirmar = firmandoLocal ?? deLaSemana.find((n) => n.id === state.firmarId) ?? null;
 
   const mes = (iso: string) => (state.lang === 'it' ? MES_IT : MES_ES)[Number(iso.slice(5, 7))];
   const rotulo = `${diaDe(dias[0])} ${mes(dias[0])} – ${diaDe(dias[6])} ${mes(dias[6])} ${dias[6].slice(0, 4)}`;
@@ -127,10 +148,48 @@ export default function Week() {
         </div>
       </Card>
 
-      {/* Los gastos y la FIRMA ya no viven aquí: son de la NOTA, no de la semana. Una
-          semana con dos proyectos produce dos notas con dos clientes distintos, y aquí
-          no hay forma de decir cuál de los dos está firmando. Se hacen en «Mis notas»,
-          sobre la nota concreta, después de enviar. */}
+      {/* Las notas que produjo ESTA semana. Una por proyecto, cada una con su cliente,
+          su estado y su firma. Estuvieron en «Mis notas» con el argumento de que aquí
+          «no hay forma de decir cuál de los dos clientes estás firmando» — la hay:
+          cada tarjeta lleva el nombre de su proyecto, y encima se ven los días que la
+          originaron, que una lista aparte no puede enseñar. */}
+      {deLaSemana.length ? (
+        <div className="flex flex-col gap-2.5">
+          {deLaSemana.map((n) => (
+            <Card key={n.id}>
+              <div className="flex items-center gap-3 flex-wrap p-4">
+                <div className="flex-1 min-w-[180px]">
+                  <div className="text-[14px] font-bold">{n.projectName}</div>
+                  <div className="text-[12.5px] text-muted-foreground">{n.clientName}</div>
+                </div>
+                <StatusPill st={n.status} t={t} />
+                {/* Solo se firma lo ENVIADO y sin firma previa: el servidor rechaza lo
+                    demás, y ofrecer el botón igual sería prometer algo que no pasa. */}
+                {n.status === 'submitted' && !n.signed ? (
+                  <Button onClick={() => setFirmandoLocal(n)} className="min-h-11 md:min-h-9">
+                    {t.btn_signnote}
+                  </Button>
+                ) : null}
+                <Button
+                  variant="outline"
+                  onClick={() => patch({ pdfOpen: true, pdfNoteId: n.id, pdfSigned: n.signed })}
+                  className="min-h-11 md:min-h-9"
+                >
+                  {t.btn_pdf}
+                </Button>
+              </div>
+              {n.returnComment ? (
+                <div className="mx-4 mb-4 flex gap-2.5 bg-warn-tint border border-warn rounded-lg px-3 py-2.5">
+                  <div>
+                    <div className="text-xs font-bold text-warn">{t.returned_note}</div>
+                    <div className="text-[12.5px] text-muted-foreground mt-0.5">{n.returnComment}</div>
+                  </div>
+                </div>
+              ) : null}
+            </Card>
+          ))}
+        </div>
+      ) : null}
 
       <div className="flex gap-3 flex-wrap justify-end items-center">
         <div className="flex-1 text-xs text-muted-foreground min-w-[200px]">{t.gen_pdf_note}</div>
@@ -146,9 +205,13 @@ export default function Week() {
             setErrEnvio(null);
             setEnviando(true);
             submitWeek(semana)
-              .then(() => {
+              .then((creadas) => {
                 showToast('submitted');
-                go('notes');
+                // Se ENCADENA con la firma y NO se cambia de pantalla: el cliente esta
+                // delante justo ahora. Si la semana toco dos proyectos se abre la
+                // primera y las otras quedan abajo, cada una con su boton.
+                patch({ firmarId: creadas[0]?.id ?? null });
+                refresh();
               })
               .catch((e: unknown) => setErrEnvio(codigo(e)))
               .finally(() => setEnviando(false));
@@ -159,6 +222,16 @@ export default function Week() {
           {t.btn_submit} →
         </Button>
       </div>
+
+      {aFirmar ? (
+        <SignNoteModal
+          nota={aFirmar}
+          onClose={() => {
+            setFirmandoLocal(null);
+            if (state.firmarId) patch({ firmarId: null });
+          }}
+        />
+      ) : null}
     </div>
   );
 }

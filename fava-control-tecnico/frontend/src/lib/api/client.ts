@@ -89,8 +89,8 @@ async function codigoDeError(res: Response): Promise<string> {
 }
 
 /** POST/PATCH/PUT con cuerpo JSON: el `JSON.stringify` estaba copiado en cada llamada. */
-export const apiSend = <T>(path: string, method: 'POST' | 'PATCH' | 'PUT', body: unknown) =>
-  apiFetch<T>(path, { method, body: JSON.stringify(body) });
+export const apiSend = <T>(path: string, method: 'POST' | 'PATCH' | 'PUT' | 'DELETE', body?: unknown) =>
+  apiFetch<T>(path, { method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
 
 /**
  * Como `apiFetch` pero devuelve los bytes: el PDF de la Nota no es JSON y pasarlo por

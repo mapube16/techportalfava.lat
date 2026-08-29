@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { ApiState, ConceptPill, StatusPill, filterBy, mesCorto } from '../ui';
 import { useApp } from '../state';
+import ReceiptsBlock from '../components/ReceiptsBlock';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { approveNote, listNotes, noteDays } from '../lib/api/weeklyNotes';
@@ -295,6 +296,13 @@ export default function Inbox({ archivo = false }: { archivo?: boolean }) {
           {hi('eye', { w: 15 })}
           {t.btn_pdf}
         </Button>
+
+        {/* Los comprobantes del gasto, para MIRARLOS antes de decidir: se aprueban con
+            la semana y con el mismo boton, asi que tienen que estar aqui y no a un clic
+            de distancia. En solo lectura — quien los sube es el tecnico. */}
+        <div className="w-full">
+          <ReceiptsBlock noteId={cur.id} soloLectura />
+        </div>
 
         {/* Decidir es cosa de la cola. En el archivo no salen ni sobre una nota enviada:
             si Andrea quiere aprobarla, va a la Bandeja, que es donde se aprueba. */}

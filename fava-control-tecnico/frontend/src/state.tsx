@@ -16,7 +16,11 @@ export type KpiSeg = 'project' | 'tech' | 'phase';
 /** 'boot' = aún no sabemos; el resto lo dicta GET /api/me. */
 export type SessionStatus = 'boot' | 'anon' | 'ok' | 'not_invited' | 'deactivated';
 
-const FIRST_ROUTE: Record<Role, Route> = { T: 'home', A: 'inbox', S: 'kpis' };
+// El tecnico entra DONDE TRABAJA. Antes aterrizaba en «Inicio», que era la lista de
+// notas con dos botones encima y un contador roto («67 / 7», porque contaba notas de
+// todos los tiempos en vez de dias de la semana). No tenia ni un dato que no
+// estuviera en «Mis notas».
+const FIRST_ROUTE: Record<Role, Route> = { T: 'week', A: 'inbox', S: 'kpis' };
 // Si el usuario tiene varios roles, el más alto manda al entrar.
 const ROLE_RANK: Role[] = ['S', 'A', 'T'];
 
@@ -43,6 +47,13 @@ export interface AppState {
   projOpen: boolean;
   inviteOpen: boolean;
   /** La vista previa del PDF es SIEMPRE de una nota concreta: sin id no hay qué pintar. */
+  /**
+   * La nota que se abre PARA FIRMAR nada mas enviarla.
+   *
+   * Firmar es el momento con el cliente delante, y `submitWeek` YA devuelve las notas
+   * derivadas — el codigo las tiraba y mandaba al tecnico a otra pantalla a buscarlas.
+   */
+  firmarId: string | null;
   pdfOpen: boolean;
   pdfNoteId: string | null;
   /** Firmada = se piden los bytes congelados; si no, el borrador renderizado al vuelo. */
@@ -83,6 +94,7 @@ const initialState: AppState = {
   returnUpdatedAt: null,
   projOpen: false,
   inviteOpen: false,
+  firmarId: null,
   pdfOpen: false,
   pdfNoteId: null,
   pdfSigned: false,

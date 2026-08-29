@@ -149,3 +149,74 @@ export const listAudit = (p: { entity?: string; entityId?: string; take?: number
   const s = q.toString();
   return apiFetch<AuditRow[]>(`/audit${s ? `?${s}` : ''}`);
 };
+
+// NOTA-08b — los comprobantes de gasto: la foto del ticket.
+
+export interface Receipt {
+  id: string;
+  label: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+}
+
+export const listReceipts = (noteId: string) =>
+  apiFetch<Receipt[]>(`/weekly-notes/${noteId}/receipts`);
+
+/**
+  * Los bytes de un comprobante, para pintarlo.
+  *
+  * NO se puede poner la ruta en un `<img src>`: el endpoint va con Bearer y una etiqueta
+  * `img` no manda cabeceras, asi que devolveria 401 y saldria la imagen rota. Se trae
+  * con `apiBlob` —igual que el PDF firmado— y se pinta desde un objeto de URL.
+  */
+export const receiptBlob = (noteId: string, receiptId: string) =>
+  apiBlob(`/weekly-notes/${noteId}/receipts/${receiptId}`);
+
+export const uploadReceipt = (
+  noteId: string,
+  body: { label: string; mimeType: string; dataBase64: string },
+) => apiSend<Receipt[]>(`/weekly-notes/${noteId}/receipts`, 'POST', body);
+
+export const deleteReceipt = (noteId: string, receiptId: string) =>
+  apiSend<Receipt[]>(`/weekly-notes/${noteId}/receipts/${receiptId}`, 'DELETE', undefined);
+
+/**
+ * Reduce la foto ANTES de subirla, y no es un adorno: una foto de movil son 3-8 MB y
+ * los bytes acaban en una columna de Postgres cuyo volumen tiene 5 GB. A 1600px de
+ * lado mayor un ticket sigue siendo perfectamente legible y pesa ~300 KB.
+ *
+ * Devuelve base64 SIN la cabecera `data:`, que es lo que espera el servidor.
+ */
+export function reducirImagen(file: File, maxLado = 1600, calidad = 0.8): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // Un PDF no se redimensiona: se sube tal cual y el tope del servidor decide.
+    if (file.type === 'application/pdf') return resolve(leerBase64(file));
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const escala = Math.min(1, maxLado / Math.max(img.width, img.height));
+      const lienzo = document.createElement('canvas');
+      lienzo.width = Math.round(img.width * escala);
+      lienzo.height = Math.round(img.height * escala);
+      const ctx = lienzo.getContext('2d');
+      if (!ctx) return reject(new Error('SIN_CANVAS'));
+      ctx.drawImage(img, 0, 0, lienzo.width, lienzo.height);
+      resolve(lienzo.toDataURL('image/jpeg', calidad).split(',')[1]);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('IMAGEN_ILEGIBLE'));
+    };
+    img.src = url;
+  });
+}
+
+const leerBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(',')[1]);
+    fr.onerror = () => reject(new Error('LECTURA_FALLIDA'));
+    fr.readAsDataURL(file);
+  });

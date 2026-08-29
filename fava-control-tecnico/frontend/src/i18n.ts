@@ -121,7 +121,8 @@ const es = {
   col_actor: 'Actor', col_action: 'Acción', col_entity: 'Entidad', col_before: 'Antes', col_after: 'Después', col_when: 'Fecha',
   role_type: 'Tipo', mechanic: 'Mecánico', mecatronic: 'Meccatronico', electric: 'Eléctrico',
   export: 'Exportar', filter: 'Filtrar',
-  gen_pdf_note: 'Al enviar se crea una nota por proyecto. La firmas con el cliente desde «Mis notas».',
+  gen_pdf_note: 'Al enviar se crea una nota por proyecto y la firmas con el cliente aquí mismo.',
+  receipts: 'Comprobantes', receipt_add: 'Adjuntar comprobante', receipt_label: 'Qué es', receipt_label_ph: 'Botas, peaje, hotel…', receipt_too_big: 'La imagen pesa demasiado', receipt_none: 'Sin comprobantes',
   config_cat: 'Catálogos', config_concepts: 'Conceptos de jornada', config_currency: 'Monedas', config_general: 'General',
   sign_here: 'Firme aquí', sign_captured: 'Firma capturada', lang_label: 'Español', theme_dark: 'Oscuro', theme_light: 'Claro', lang_row: 'Idioma / Lingua', theme_row: 'Tema',
   // --- cutover de la Fase 2
@@ -280,7 +281,8 @@ const it: Dict = {
   col_actor: 'Attore', col_action: 'Azione', col_entity: 'Entità', col_before: 'Prima', col_after: 'Dopo', col_when: 'Data',
   role_type: 'Tipo', mechanic: 'Meccanico', mecatronic: 'Meccatronico', electric: 'Elettrico',
   export: 'Esporta', filter: 'Filtra',
-  gen_pdf_note: 'Inviando si crea una nota per progetto. La firmi con il cliente da «Le mie note».',
+  gen_pdf_note: 'Inviando si crea una nota per progetto e la firmi con il cliente qui stesso.',
+  receipts: 'Giustificativi', receipt_add: 'Allega giustificativo', receipt_label: 'Che cosè', receipt_label_ph: 'Scarpe, pedaggio, hotel…', receipt_too_big: 'Immagine troppo pesante', receipt_none: 'Nessun giustificativo',
   config_cat: 'Cataloghi', config_concepts: 'Concetti di giornata', config_currency: 'Valute', config_general: 'Generale',
   sign_here: 'Firma qui', sign_captured: 'Firma acquisita', lang_label: 'Italiano', theme_dark: 'Scuro', theme_light: 'Chiaro', lang_row: 'Idioma / Lingua', theme_row: 'Tema',
   // --- cutover della Fase 2
@@ -442,7 +444,8 @@ const pt: Dict = {
   col_actor: 'Autor', col_action: 'Ação', col_entity: 'Entidade', col_before: 'Antes', col_after: 'Depois', col_when: 'Data',
   role_type: 'Tipo', mechanic: 'Mecânico', mecatronic: 'Mecatrônico', electric: 'Elétrico',
   export: 'Exportar', filter: 'Filtrar',
-  gen_pdf_note: 'Ao enviar, cria-se uma nota por projeto. Você a assina com o cliente em «Minhas notas».',
+  gen_pdf_note: 'Ao enviar cria-se uma nota por projeto e você a assina com o cliente aqui mesmo.',
+  receipts: 'Comprovantes', receipt_add: 'Anexar comprovante', receipt_label: 'O que é', receipt_label_ph: 'Botas, pedágio, hotel…', receipt_too_big: 'A imagem está muito grande', receipt_none: 'Sem comprovantes',
   config_cat: 'Catálogos', config_concepts: 'Conceitos de jornada', config_currency: 'Moedas', config_general: 'Geral',
   sign_here: 'Assine aqui', sign_captured: 'Assinatura capturada', lang_label: 'Português', theme_dark: 'Escuro', theme_light: 'Claro', lang_row: 'Idioma / Lingua', theme_row: 'Tema',
   // --- cutover da Fase 2

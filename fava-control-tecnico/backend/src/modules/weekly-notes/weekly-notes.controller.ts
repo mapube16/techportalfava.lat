@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -23,6 +24,16 @@ import { WeeklyNotesService } from './weekly-notes.service';
 type Cuerpo = Record<string, unknown>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Lo que el visor de la app sabe pintar. Mismo dominio que el CHECK `er_tipo_admitido`. */
+const TIPOS_RECIBO = ['image/jpeg', 'image/png', 'application/pdf'];
+
+/**
+ * 2 MB por comprobante. Un ticket escaneado y legible ocupa ~300 KB tras el
+ * redimensionado del cliente; el margen es para el que suba un PDF del banco. Sin tope
+ * una foto de movil sin redimensionar son 3-8 MB y el volumen del Postgres tiene 5 GB.
+ */
+const RECIBO_MAX_BYTES = 2 * 1024 * 1024;
 
 
 /** El `updated_at` que el cliente leyo. Opcional, pero si viene tiene que ser un ISO. */
@@ -203,6 +214,66 @@ export class WeeklyNotesController {
     if (v !== null && (typeof v !== 'string' || !UUID.test(v)))
       throw new BadRequestException('ROL_TECNICO_INVALIDO');
     return this.service.fijarCargo(quien(actor), id, v as string | null);
+  }
+
+  // ── NOTA-08b: comprobantes de gasto ──
+
+  /** La lista, SIN bytes. Admin y técnico: RLS ya decide de quién es la nota. */
+  @Get(':id/receipts')
+  recibos(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.recibos(id);
+  }
+
+  /**
+   * Sube un comprobante. Base64 en JSON y no multipart, siguiendo a las firmas
+   * (`imagePng`): un parser de formularios seria una dependencia mas para el unico
+   * otro sitio del repo que sube bytes.
+   *
+   * EL TAMANO SE MIDE AQUI, sobre los bytes ya decodificados, no sobre la cadena que
+   * llega: base64 infla un 33 % y un tope sobre el texto dejaria pasar ficheros mas
+   * grandes de lo previsto. El motor lo vuelve a comprobar con `er_tamano_razonable`.
+   */
+  @Post(':id/receipts')
+  @Roles('T')
+  subirRecibo(
+    @CurrentUser() actor: UserModel,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: Cuerpo,
+  ) {
+    const label = texto(body?.label, 'ETIQUETA');
+    const mimeType = String(body?.mimeType ?? '');
+    if (!TIPOS_RECIBO.includes(mimeType)) throw new BadRequestException('TIPO_NO_ADMITIDO');
+
+    const b64 = typeof body?.dataBase64 === 'string' ? body.dataBase64 : '';
+    if (!b64) throw new BadRequestException('ARCHIVO_VACIO');
+    const bytes = Buffer.from(b64, 'base64');
+    if (!bytes.length) throw new BadRequestException('ARCHIVO_VACIO');
+    if (bytes.length > RECIBO_MAX_BYTES) throw new BadRequestException('ARCHIVO_DEMASIADO_GRANDE');
+
+    return this.service.subirRecibo(actor.id, id, { label, mimeType, bytes });
+  }
+
+  /** Los bytes de uno. Inline: es para verlo en la pantalla, no para bajarlo. */
+  @Get(':id/receipts/:receiptId')
+  async verRecibo(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('receiptId', ParseUUIDPipe) receiptId: string,
+    @Res() res: Response,
+  ) {
+    const r = await this.service.recibo(id, receiptId);
+    res.setHeader('Content-Type', r.mimeType);
+    res.setHeader('Content-Disposition', 'inline');
+    res.send(r.bytes);
+  }
+
+  /** Se borra y se sube otro: no hay UPDATE, ni privilegio ni politica. */
+  @Delete(':id/receipts/:receiptId')
+  @Roles('T')
+  borrarRecibo(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('receiptId', ParseUUIDPipe) receiptId: string,
+  ) {
+    return this.service.borrarRecibo(id, receiptId);
   }
 
   /** NOTA-08: recurso aparte, como el cargo — y con el mismo candado (se bloquea al firmar). */
