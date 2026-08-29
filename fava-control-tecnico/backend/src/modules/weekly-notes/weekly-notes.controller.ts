@@ -20,6 +20,7 @@ import { ESTADOS } from '../../common/estados';
 import type { Gasto } from './nota-pdf';
 import type { FirmaEntrada } from './weekly-notes.service';
 import { WeeklyNotesService } from './weekly-notes.service';
+import { RECIBO_MAX_BYTES } from '../../config/limites';
 
 type Cuerpo = Record<string, unknown>;
 
@@ -28,12 +29,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Lo que el visor de la app sabe pintar. Mismo dominio que el CHECK `er_tipo_admitido`. */
 const TIPOS_RECIBO = ['image/jpeg', 'image/png', 'application/pdf'];
 
-/**
- * 2 MB por comprobante. Un ticket escaneado y legible ocupa ~300 KB tras el
- * redimensionado del cliente; el margen es para el que suba un PDF del banco. Sin tope
- * una foto de movil sin redimensionar son 3-8 MB y el volumen del Postgres tiene 5 GB.
- */
-const RECIBO_MAX_BYTES = 2 * 1024 * 1024;
+// El tope vive en config/limites.ts junto al del cuerpo JSON, que se calcula de el:
+// separados se desincronizaron y NOTA-08b quedo rota.
+
 
 
 /** El `updated_at` que el cliente leyo. Opcional, pero si viene tiene que ser un ISO. */

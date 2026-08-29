@@ -241,6 +241,90 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     expect(await ownerClient.notePdf.count({ where: { noteId: nota.id } })).toBe(1);
   });
 
+  // ── NOTA-08b: los comprobantes de gasto ──
+  //
+  // No tenian NI UNA prueba. Es la ruta por la que sube la foto del ticket desde el
+  // movil de un tecnico, guarda bytes en Postgres y se cierra al firmar: exactamente
+  // el sitio donde un fallo silencioso se descubre tarde y con datos reales dentro.
+
+  it('sube, lista, devuelve los bytes y borra un comprobante', async () => {
+    const p = await crearProyecto();
+    await jornada({ projectId: p.id, date: '2026-03-02' });
+    const nota = (await enviar()).body[0];
+
+    const subida = await http()
+      .post(`/api/weekly-notes/${nota.id}/receipts`)
+      .set(auth(tokenTec))
+      .send({ label: 'Peaje', mimeType: 'image/jpeg', dataBase64: PNG_FIRMA })
+      .expect(201);
+    expect(subida.body).toHaveLength(1);
+    const recibo = subida.body[0];
+    expect(recibo.label).toBe('Peaje');
+    // El listado NO trae los bytes: cuatro fotos para pintar cuatro nombres
+    // multiplicarian por mil el peso de la pantalla.
+    expect(recibo.bytes).toBeUndefined();
+    expect(recibo.sizeBytes).toBeGreaterThan(0);
+
+    const bytes = await http()
+      .get(`/api/weekly-notes/${nota.id}/receipts/${recibo.id}`)
+      .set(auth(tokenTec))
+      .expect(200);
+    expect(bytes.body.length).toBe(recibo.sizeBytes);
+
+    // Andrea los ve para aprobar: el GET no es solo del tecnico.
+    expect((await http().get(`/api/weekly-notes/${nota.id}/receipts`).set(auth(tokenAdmin)).expect(200)).body).toHaveLength(1);
+
+    const tras = await http()
+      .delete(`/api/weekly-notes/${nota.id}/receipts/${recibo.id}`)
+      .set(auth(tokenTec))
+      .expect(200);
+    expect(tras.body).toHaveLength(0);
+  });
+
+  it('rechaza lo que no es imagen ni PDF, y lo que pesa de mas', async () => {
+    const p = await crearProyecto();
+    await jornada({ projectId: p.id, date: '2026-03-02' });
+    const nota = (await enviar()).body[0];
+    const subir = (cuerpo: Record<string, unknown>, esperado: number) =>
+      http().post(`/api/weekly-notes/${nota.id}/receipts`).set(auth(tokenTec)).send(cuerpo).expect(esperado);
+
+    expect((await subir({ label: 'x', mimeType: 'text/html', dataBase64: PNG_FIRMA }, 400)).body.message)
+      .toBe('TIPO_NO_ADMITIDO');
+    expect((await subir({ label: 'x', mimeType: 'image/jpeg', dataBase64: '' }, 400)).body.message)
+      .toBe('ARCHIVO_VACIO');
+    // 2 MB es el tope del comprobante y 4 MB el del cuerpo JSON, asi que 2,5 MB entra
+    // por el parser y lo rechaza el endpoint, que es lo que se quiere comprobar.
+    const grande = Buffer.alloc(2.5 * 1024 * 1024, 7).toString('base64');
+    expect((await subir({ label: 'x', mimeType: 'image/jpeg', dataBase64: grande }, 400)).body.message)
+      .toBe('ARCHIVO_DEMASIADO_GRANDE');
+
+    // Por encima del cuerpo JSON gana el parser y responde 413: no se puede validar un
+    // cuerpo que no se llega a leer. El cliente lo traduce al MISMO mensaje que el 400
+    // —ver codigoDeError en client.ts— para que el usuario lea una sola cosa.
+    await subir({ label: 'x', mimeType: 'image/jpeg', dataBase64: Buffer.alloc(5 * 1024 * 1024, 7).toString('base64') }, 413);
+  });
+
+  it('una nota FIRMADA ya no admite comprobantes: el PDF esta congelado', async () => {
+    const p = await crearProyecto();
+    await jornada({ projectId: p.id, date: '2026-03-02' });
+    const nota = (await enviar()).body[0];
+    await http()
+      .post(`/api/weekly-notes/${nota.id}/sign`)
+      .set(auth(tokenTec))
+      .send({
+        technician: { signerName: 'ZZ DEMO Bruno Sala', declarationAccepted: true, imagePng: PNG_FIRMA },
+        expectedUpdatedAt: nota.updatedAt,
+      })
+      .expect(201);
+
+    const res = await http()
+      .post(`/api/weekly-notes/${nota.id}/receipts`)
+      .set(auth(tokenTec))
+      .send({ label: 'Tarde', mimeType: 'image/jpeg', dataBase64: PNG_FIRMA })
+      .expect(409);
+    expect(res.body.message).toBe('NOTA_FIRMADA');
+  });
+
   // ── BIT-05: enviado = solo lectura ──
 
   it('al enviar, los días quedan bloqueados; al devolver, vuelven a ser editables', async () => {

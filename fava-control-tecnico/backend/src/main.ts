@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
+import { LIMITE_CUERPO_JSON } from './config/limites';
 import { AppModule } from './app.module';
 import { env } from './config/env';
 
@@ -31,6 +32,10 @@ async function bootstrap() {
   // (NOTA-04, evidencia de quién firmó) guardaría la IP interna del proxy, no la del
   // cliente. Un solo salto porque solo hay un proxy delante, no una cadena.
   app.set('trust proxy', 1);
+
+  // Sin esto Express usa su defecto de 100 KB y NOTA-08b no funciona. El porque
+  // entero, y de donde sale la cifra, en config/limites.ts.
+  app.useBodyParser('json', { limit: LIMITE_CUERPO_JSON });
 
   const base = helmet({ contentSecurityPolicy });
   // El puente de redireccion de MSAL v5 NO puede llevar Cross-Origin-Opener-Policy:

@@ -97,7 +97,12 @@ async function codigoDeError(res: Response): Promise<string> {
    * crudo no se pierde: va a la consola, que es donde sirve.
    */
   if (texto) console.error('respuesta no JSON del servidor:', res.status, texto.slice(0, 300));
-  return res.status === 404 ? 'RUTA_NO_ENCONTRADA' : 'RESPUESTA_INESPERADA';
+  if (res.status === 404) return 'RUTA_NO_ENCONTRADA';
+  // 413: el cuerpo se paso del limite y el parser lo corto ANTES de enrutar, asi que
+  // el servidor no llego a dar su 'ARCHIVO_DEMASIADO_GRANDE'. Es el mismo problema del
+  // usuario —una foto que pesa de mas— y merece el mismo mensaje, no uno en ingles.
+  if (res.status === 413) return 'ARCHIVO_DEMASIADO_GRANDE';
+  return 'RESPUESTA_INESPERADA';
 }
 
 /** POST/PATCH/PUT con cuerpo JSON: el `JSON.stringify` estaba copiado en cada llamada. */
