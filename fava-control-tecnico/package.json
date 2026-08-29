@@ -10,12 +10,13 @@
     "node": ">=22.12 <23"
   },
   "scripts": {
-    "build": "npm run check:no-free-text && npm run check:fecha-servidor && npm run check:iconos && npm -w frontend run build && npm -w backend run build",
+    "build": "npm run check:no-free-text && npm run check:fecha-servidor && npm run check:iconos && npm run check:interpolacion && npm -w frontend run build && npm -w backend run build",
     "start": "npm -w backend run start:prod",
     "db:bootstrap": "npm -w backend run db:bootstrap",
     "check:no-free-text": "node scripts/check-no-free-text.mjs",
     "check:fecha-servidor": "node scripts/check-fecha-servidor.mjs",
-    "check:iconos": "node scripts/check-iconos.mjs"
+    "check:iconos": "node scripts/check-iconos.mjs",
+    "check:interpolacion": "node scripts/check-interpolacion.mjs"
   },
   "devDependencies": {
     "railway": "^3.11.0"

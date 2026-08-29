@@ -408,7 +408,7 @@ export class KpisService {
        WHERE de.project_id IS NOT NULL
          AND de.status IN ('submitted', 'approved')
          AND de.concept_code IS NOT NULL
-         AND (${'${year}'}::int IS NULL OR EXTRACT(YEAR FROM de.date)::int = ${'${year}'}::int)
+         AND (${year}::int IS NULL OR EXTRACT(YEAR FROM de.date)::int = ${year}::int)
        GROUP BY 1, 2, 3
     `;
 
@@ -423,7 +423,7 @@ export class KpisService {
 
     return proyectos.map((p) => {
       const filas = new Map<string, FilaVendidoEjecutado>();
-      const clave = (role: string, phase: string | null) => `${'${role}'}|${'${phase ?? ""}'}`;
+      const clave = (role: string, phase: string | null) => `${role}|${phase ?? ''}`;
       const tocar = (role: string, phase: string | null) => {
         const k = clave(role, phase);
         let f = filas.get(k);
