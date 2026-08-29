@@ -66,6 +66,13 @@ export interface AppState {
   onboardStep: number;
   selProject: string;
   /**
+   * La nota que hay que dejar seleccionada al entrar en el archivo. La pone el visor de
+   * auditoria, que es el unico sitio que sabe de QUE nota habla la fila: sin esto el
+   * enlace llevaba al proyecto y la bandeja abria la primera de la lista, asi que todas
+   * las filas de un mismo proyecto terminaban en la misma nota.
+   */
+  selNote: string | null;
+  /**
    * Contador que las pantallas cableadas al API llevan en las deps de su carga.
    * Un modal que crea algo lo incrementa (`refresh()`) y la lista de detrás se
    * recarga. Es lo que sustituye a los arrays de mocks que vivían aquí.
@@ -105,6 +112,7 @@ const initialState: AppState = {
   onboard: false,
   onboardStep: 0,
   selProject: '',
+  selNote: null,
   dataVersion: 0,
   notes: NOTES.map((n) => ({ ...n })),
   week: WEEK,

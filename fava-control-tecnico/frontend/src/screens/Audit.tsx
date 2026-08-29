@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { hi } from '../icons';
 import { ApiState, Card, CardHead, filterBy, ghostBtn, inputStyle, td, th } from '../ui';
 import { useApp } from '../state';
@@ -50,7 +51,7 @@ const cuando = (iso: string) => {
 function Original({ fila, t }: { fila: AuditRow; t: Dict }) {
   return (
     <details className="mt-1">
-      <summary className="cursor-pointer select-none text-[11px] text-ink-3 hover:text-ink-2">
+      <summary className="w-fit cursor-pointer select-none text-[11px] text-ink-3 hover:text-ink-2">
         {t.aud_raw}
       </summary>
       <pre className="mt-1 max-w-[460px] whitespace-pre-wrap break-all rounded-md bg-surface-2 p-2 font-mono text-[11px] leading-snug text-ink-2">
@@ -89,10 +90,12 @@ function Que({ fila, t }: { fila: AuditRow; t: Dict }) {
  * enrutador nuevo — la aplicación navega con `go` y todas esas pantallas filtran por el
  * mismo buscador global, así que llevarlo puesto es el enlace.
  */
-function Enlace({ texto, ruta, busca, className = '' }: {
+function Enlace({ texto, ruta, busca, nota = null, className = '' }: {
   texto: string;
   ruta: Route;
   busca: string;
+  /** La nota EXACTA de la fila. El buscador solo acota al proyecto. */
+  nota?: string | null;
   className?: string;
 }) {
   const { patch, go } = useApp();
@@ -100,7 +103,7 @@ function Enlace({ texto, ruta, busca, className = '' }: {
     <button
       type="button"
       onClick={() => {
-        patch({ search: busca });
+        patch({ search: busca, selNote: nota });
         go(ruta);
       }}
       className={`text-left underline-offset-2 hover:underline hover:text-primary ${className}`}
@@ -128,7 +131,14 @@ const destino = (a: AuditRow): [Route, string] | null => {
 function Sobre({ fila }: { fila: AuditRow }) {
   const d = destino(fila);
   if (!d) return fila.entityLabel ? <>{fila.entityLabel}</> : <span className="font-normal text-ink-3">—</span>;
-  return <Enlace texto={fila.entityLabel as string} ruta={d[0]} busca={d[1]} />;
+  return (
+    <Enlace
+      texto={fila.entityLabel as string}
+      ruta={d[0]}
+      busca={d[1]}
+      nota={fila.entity === 'weekly_note' ? fila.entityId : null}
+    />
+  );
 }
 
 /**
@@ -136,6 +146,12 @@ function Sobre({ fila }: { fila: AuditRow }) {
  * 200 filas, así que filtrar aquí respondería «no hay devoluciones en julio» cuando la
  * verdad sería «julio no cabía en la página».
  *
+ * ESCONDIDOS DETRÁS DE UN BOTÓN. Puestos en la cabecera ocupaban tres filas y le comían
+ * media pantalla a lo que se viene a leer, que son las filas. Un filtro se usa de vez en
+ * cuando; lo que tiene que estar siempre a la vista es si hay alguno puesto —el punto—
+ * para que nadie lea una lista recortada creyéndola entera.
+ *
+ * `<details>` otra vez, como el registro original: sin estado, sin librería de popover.
  * Desplegable y dos `<input type="date">` nativos: un calendario propio serían tres
  * dependencias para lo que el navegador ya hace, y en el móvil lo hace mejor.
  *
@@ -169,53 +185,71 @@ function Filtros({
     ['deactivate', t.aud_deactivate],
   ];
   const puesto = accion || desde || hasta;
+  const campo = (etiqueta: string, control: ReactNode) => (
+    <label className="flex flex-col gap-1">
+      <span className="text-[11px] font-semibold text-ink-3">{etiqueta}</span>
+      {control}
+    </label>
+  );
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <select
-        value={accion}
-        onChange={(e) => setAccion(e.target.value)}
-        className={`${inputStyle} w-[190px]`}
-        aria-label={t.col_action}
+    <details className="relative">
+      <summary
+        className={`${ghostBtn} list-none [&::-webkit-details-marker]:hidden`}
+        aria-label={t.aud_filters}
       >
-        <option value="">{t.aud_all_actions}</option>
-        {acciones.map(([k, label]) => (
-          <option key={k} value={k}>{label}</option>
-        ))}
-      </select>
-      <input
-        type="date"
-        value={desde}
-        max={hasta || undefined}
-        onChange={(e) => setDesde(e.target.value)}
-        className={`${inputStyle} w-[150px]`}
-        aria-label={t.date_from}
-        title={t.date_from}
-      />
-      <input
-        type="date"
-        value={hasta}
-        min={desde || undefined}
-        onChange={(e) => setHasta(e.target.value)}
-        className={`${inputStyle} w-[150px]`}
-        aria-label={t.date_to}
-        title={t.date_to}
-      />
-      {/* Solo cuando hay algo que quitar. `type="date"` no trae un borrado decente en
-          todos los navegadores, y sin esto un filtro puesto por error se queda puesto. */}
-      {puesto ? (
-        <button
-          type="button"
-          className={ghostBtn}
-          onClick={() => {
-            setAccion('');
-            setDesde('');
-            setHasta('');
-          }}
-        >
-          {t.aud_clear}
-        </button>
-      ) : null}
-    </div>
+        {hi('funnel', { w: 14 })}
+        {t.aud_filters}
+        {/* Un punto y no un numero: lo que hay que saber de un vistazo es si la lista
+            esta recortada, no por cuantas cosas. */}
+        {puesto ? <span className="size-1.5 rounded-full bg-primary" /> : null}
+      </summary>
+      <div className="absolute right-0 top-full z-50 mt-1.5 flex w-[230px] flex-col gap-2.5 rounded-card border border-line bg-surface p-3 shadow-pop">
+        {campo(
+          t.col_action,
+          <select value={accion} onChange={(e) => setAccion(e.target.value)} className={inputStyle}>
+            <option value="">{t.aud_all_actions}</option>
+            {acciones.map(([k, label]) => (
+              <option key={k} value={k}>{label}</option>
+            ))}
+          </select>,
+        )}
+        {campo(
+          t.date_from,
+          <input
+            type="date"
+            value={desde}
+            max={hasta || undefined}
+            onChange={(e) => setDesde(e.target.value)}
+            className={inputStyle}
+          />,
+        )}
+        {campo(
+          t.date_to,
+          <input
+            type="date"
+            value={hasta}
+            min={desde || undefined}
+            onChange={(e) => setHasta(e.target.value)}
+            className={inputStyle}
+          />,
+        )}
+        {/* Solo cuando hay algo que quitar. `type="date"` no trae un borrado decente en
+            todos los navegadores, y sin esto un filtro puesto por error se queda puesto. */}
+        {puesto ? (
+          <button
+            type="button"
+            className={ghostBtn}
+            onClick={() => {
+              setAccion('');
+              setDesde('');
+              setHasta('');
+            }}
+          >
+            {t.aud_clear}
+          </button>
+        ) : null}
+      </div>
+    </details>
   );
 }
 

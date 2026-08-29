@@ -127,7 +127,9 @@ function Dias({ nota, lang, dias }: { nota: WeeklyNote; lang: Lang; dias: string
 export default function Inbox({ archivo = false }: { archivo?: boolean }) {
   const { state, t, patch, showToast, refresh, errTexto } = useApp();
   const movil = useIsMobile();
-  const [selNote, setSelNote] = useState<string | null>(null);
+  // Solo la seleccion INICIAL: quien llega desde la auditoria entra con su nota abierta,
+  // y a partir de ahi manda el clic.
+  const [selNote, setSelNote] = useState<string | null>(state.selNote);
   const [err, setErr] = useState<string | null>(null);
 
   const [estado, setEstado] = useState<NoteStatus | 'all'>('all');
