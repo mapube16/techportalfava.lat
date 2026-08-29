@@ -14,8 +14,8 @@ import { ApiState, FiltroVigencia, chip, filterBy, money, nf, porVigencia } from
 import type { Vigencia } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
-import { useApiData } from '../lib/api/useApiData';
-import { listProjects } from '../lib/api/projects';
+import { codigo, useApiData } from '../lib/api/useApiData';
+import { listProjects, setProjectActive } from '../lib/api/projects';
 import type { ProjectListItem } from '../lib/api/projects';
 
 /** El valor de contrato puede no estar cargado todavía: un 0 sería un dato falso. */
@@ -23,9 +23,11 @@ const valor = (p: ProjectListItem) =>
   p.contractValue == null ? '—' : money(p.contractValue, p.currencyCode ?? '');
 
 export default function Projects() {
-  const { state, t, go, patch } = useApp();
+  const { state, t, go, patch, errTexto } = useApp();
   const movil = useIsMobile();
-  const { data, error } = useApiData(listProjects, [state.dataVersion]);
+  const { data, setData, error } = useApiData(listProjects, [state.dataVersion]);
+  const [errActivo, setErrActivo] = useState<string | null>(null);
+  const [cambiando, setCambiando] = useState<string | null>(null);
   // Por defecto SOLO los activos: hoy son 5 de 23, y una lista con 18 filas apagadas
   // esconde las que importan. El recuento del filtro dice cuantas quedan fuera.
   const [vigencia, setVigencia] = useState<Vigencia>('activos');
@@ -42,6 +44,25 @@ export default function Projects() {
 
   const rows = filterBy(porVigencia(data, vigencia), state.search, (p) =>
     [p.name, p.clientName, p.contractNumber, p.machineCodes.join(' '), p.country].join(' '));
+
+  /**
+   * CAT-01: dar de baja un proyecto — mismo patrón que en Técnicos.
+   *
+   * El endpoint y el cliente (`setProjectActive`) existían desde la Fase 2 y NINGUNA
+   * pantalla los llamaba: los 18 proyectos inactivos de hoy hubo que apagarlos por
+   * SQL. Desactivar no borra nada — deja de ofrecerse en formularios nuevos y sale
+   * del filtro «Activos», y sus jornadas históricas siguen contando.
+   */
+  const conmutarActivo = (p: ProjectListItem) => {
+    setErrActivo(null);
+    setCambiando(p.id);
+    setProjectActive(p.id, !p.isActive)
+      .then((actualizado) =>
+        setData(data.map((x) => (x.id === p.id ? { ...x, isActive: actualizado.isActive } : x))),
+      )
+      .catch((e: unknown) => setErrActivo(codigo(e)))
+      .finally(() => setCambiando(null));
+  };
 
   const openProject = (id: string) => {
     patch({ selProject: id });
@@ -76,7 +97,21 @@ export default function Projects() {
                     <div className="text-sm font-bold">{p.name}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">{p.clientName} · {p.country}</div>
                   </div>
-                  <span className="text-primary shrink-0">→</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={cambiando === p.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        conmutarActivo(p);
+                      }}
+                      className="min-h-11"
+                    >
+                      {p.isActive ? t.cat_deactivate : t.cat_activate}
+                    </Button>
+                    <span className="text-primary">→</span>
+                  </div>
                 </div>
                 <div className="flex gap-4.5 mt-2.5 flex-wrap">
                   {meta(t.proj_contract_no, p.contractNumber)}
@@ -146,7 +181,23 @@ export default function Projects() {
                       ))}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right text-primary">→</TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    {/* stopPropagation: la fila entera navega al detalle, y sin esto
+                        desactivar te llevaría al proyecto que acabas de apagar. */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={cambiando === p.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        conmutarActivo(p);
+                      }}
+                      className="min-h-11 md:min-h-8 mr-2"
+                    >
+                      {p.isActive ? t.cat_deactivate : t.cat_activate}
+                    </Button>
+                    <span className="text-primary">→</span>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
@@ -159,6 +210,9 @@ export default function Projects() {
           </TableBody>
         </Table>
       </CardContent>
+      {errActivo ? (
+        <div className="px-4.5 py-2.5 text-[12.5px] text-warn">{errTexto(errActivo)}</div>
+      ) : null}
     </Card>
   );
 }
