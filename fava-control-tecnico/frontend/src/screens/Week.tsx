@@ -70,15 +70,17 @@ export default function Week() {
 
   const mover = (n: number) => setLunes(sumarDias(semana, n * 7));
 
-  /** El proyecto y la máquina salen de los DÍAS, no de una cabecera fija: en una misma
-      semana puede haber dos proyectos, que es un caso real del Excel. */
   const registrados = dias.map((d) => porFecha.get(d)).filter(Boolean) as Entry[];
-  const proyectos = [...new Set(registrados.map((e) => e.projectName).filter(Boolean))];
-  const maquinas = [...new Set(registrados.map((e) => e.machineCode).filter(Boolean))];
-  // Si toda la semana está en el mismo estado se muestra ése; si están mezclados es un
-  // borrador en curso, y decir «aprobada» mentiría sobre los días que aún no lo están.
+  /**
+   * El estado de la semana SOLO si es uno.
+   *
+   * Antes, con estados mezclados, se forzaba `'draft'`: la cabecera anunciaba
+   * «Borrador» sobre una semana con cuatro días aprobados y dos enviados, donde no
+   * había ni un borrador. Mezclada no hay un estado que contar, así que no se cuenta
+   * ninguno — cada nota lleva el suyo en su tarjeta, ahí abajo.
+   */
   const estados = new Set(registrados.map((e) => e.status));
-  const estado = estados.size === 1 ? [...estados][0] : 'draft';
+  const estado = estados.size === 1 ? [...estados][0] : null;
 
   const nav = (dir: -1 | 1, off: boolean) => (
     <Button
@@ -100,17 +102,17 @@ export default function Week() {
           <div className="flex items-center gap-2.5 min-w-0">
             {nav(-1, atrasBloqueado)}
             <div className="min-w-0">
+              {/* LA SEMANA, y punto. Aquí se listaban todos los proyectos de los siete
+                  días juntos con sus máquinas: con tres proyectos era un renglón de
+                  nombres que no decía de qué día era cada uno. Ese dato ahora va en la
+                  fila del día, que es donde se puede leer. */}
               <div className="text-sm font-bold truncate">
-                {proyectos.length ? proyectos.join(' · ') : t.week_no_project}
-              </div>
-              <div className="text-xs text-muted-foreground truncate">
                 {t.week_of} {rotulo}
-                {maquinas.length ? ` · ${maquinas.join(', ')}` : ''}
               </div>
             </div>
             {nav(1, adelanteBloqueado)}
           </div>
-          <StatusPill st={estado} t={t} />
+          {estado ? <StatusPill st={estado} t={t} /> : null}
         </div>
 
         <div>
@@ -136,6 +138,16 @@ export default function Week() {
                   )}
                 </div>
                 <div className="flex-1 text-[13px] text-muted-foreground leading-relaxed min-w-0">
+                  {/* De qué proyecto fue ESTE día. Sin esto, una semana en tres obras
+                      era una lista de descripciones sin dueño. */}
+                  {e?.projectName ? (
+                    <div className="text-[11.5px] font-semibold text-foreground truncate">
+                      {e.projectName}
+                      {e.machineCode ? (
+                        <span className="ml-2 font-normal text-muted-foreground">{e.machineCode}</span>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {e?.description ?? ''}
                   {/* La commessa distingue dos máquinas IGUALES del mismo proyecto: sin
                       ella la fila no dice a cuál de las dos fue el día. */}
