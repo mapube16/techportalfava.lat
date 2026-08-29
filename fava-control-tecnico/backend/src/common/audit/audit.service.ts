@@ -88,16 +88,32 @@ export class AuditService {
    * queda sin etiqueta: un rastro apunta a lo que hubo, y eso a veces ya no esta.
    */
   private async conEtiqueta<T extends { entity: string; entityId: string }>(filas: T[]) {
-    const ids = [...new Set(filas.filter((f) => f.entity === 'weekly_note').map((f) => f.entityId))];
-    if (!ids.length) return filas.map((f) => ({ ...f, entityLabel: null as string | null }));
+    const idsDe = (e: string) => [
+      ...new Set(filas.filter((f) => f.entity === e).map((f) => f.entityId)),
+    ];
+    const etiqueta = new Map<string, string>();
 
-    const notas = await this.prisma.client.weeklyNote.findMany({
-      where: { id: { in: ids } },
-      select: { id: true, weekStart: true, project: { select: { name: true } } },
-    });
-    const etiqueta = new Map(
-      notas.map((n) => [n.id, `${n.project.name} · ${n.weekStart.toISOString().slice(0, 10)}`]),
-    );
+    const notas = idsDe('weekly_note');
+    if (notas.length) {
+      const filasNota = await this.prisma.client.weeklyNote.findMany({
+        where: { id: { in: notas } },
+        select: { id: true, weekStart: true, project: { select: { name: true } } },
+      });
+      for (const n of filasNota)
+        etiqueta.set(n.id, `${n.project.name} · ${n.weekStart.toISOString().slice(0, 10)}`);
+    }
+
+    // CAT-06: «dio de baja al tecnico» sin decir a CUAL no responde la unica pregunta
+    // con la que se abre esta pantalla. Una consulta mas, no una por fila.
+    const tecnicos = idsDe('technician');
+    if (tecnicos.length) {
+      const filasTec = await this.prisma.client.technician.findMany({
+        where: { id: { in: tecnicos } },
+        select: { id: true, fullName: true },
+      });
+      for (const t of filasTec) etiqueta.set(t.id, t.fullName);
+    }
+
     return filas.map((f) => ({ ...f, entityLabel: etiqueta.get(f.entityId) ?? null }));
   }
 }

@@ -65,8 +65,17 @@ describe('plantillas de correo', () => {
 
       // Sin <style> en el head: Gmail lo tira y el correo saldria en blanco y negro.
       expect(bodyHtml).not.toMatch(/<style/i);
-      // Sin nada remoto: la mitad de los clientes lo bloquean y quedaria un hueco.
-      expect(bodyHtml).not.toMatch(/<img|<link|@import/i);
+      // Ni hojas de estilo ni fuentes remotas: eso no tiene respaldo posible.
+      expect(bodyHtml).not.toMatch(/<link|@import/i);
+      // Las imagenes SI, pero con red debajo. Outlook y Gmail las bloquean por defecto,
+      // asi que cada una lleva alt (el logotipo, con el nombre; la foto, vacio porque
+      // es decoracion y un lector de pantalla no debe leerla) y medidas en ATRIBUTOS,
+      // que es lo unico que Outlook mira para reservar el hueco.
+      for (const img of bodyHtml.match(/<img[^>]*>/g) ?? []) {
+        expect(img).toMatch(/ alt="/);
+        expect(img).toMatch(/ width="\d+"/);
+        expect(img).toMatch(/ height="\d+"/);
+      }
       // Maquetado con tablas: Outlook usa el motor de Word, flexbox no existe.
       expect(bodyHtml).toMatch(/<table/);
       expect(bodyHtml).not.toMatch(/display:\s*flex|display:\s*grid/);
@@ -93,6 +102,15 @@ describe('plantillas de correo', () => {
     // Un boton que no lleva a ningun sitio es peor que ninguno.
     expect(bodyHtml).not.toContain('href=');
     expect(bodyText).not.toContain('http');
+  });
+
+
+  it('con las imagenes bloqueadas el correo sigue diciendo de quien es', () => {
+    const { bodyHtml } = render('invitacion', 'es', DATOS);
+    // El alt del logotipo NO es decorativo: con las imagenes apagadas es lo unico que
+    // identifica al remitente, y un correo anonimo pidiendo que entres a un sitio es
+    // exactamente lo que la gente aprende a no abrir.
+    expect(bodyHtml).toContain('alt="FAVA LatinoAmérica"');
   });
 
 });

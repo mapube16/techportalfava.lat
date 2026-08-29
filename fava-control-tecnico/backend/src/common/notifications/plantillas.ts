@@ -155,6 +155,57 @@ const boton = (texto: string, href: string) =>
   // texto, la direccion tiene que seguir estando.
   `<p style="margin:10px 0 0;font:13px/1.5 ${TIPO};color:${SUAVE};word-break:break-all;">${esc(href)}</p>`;
 
+/**
+ * El origen desde el que se sirven las imagenes del correo.
+ *
+ * Sale del enlace que YA lleva el aviso, no de una variable nueva: las imagenes las
+ * sirve la misma aplicacion, asi que si sabemos a donde mandar al usuario sabemos de
+ * donde bajarlas. Sin enlace no se pintan — un correo con las imagenes rotas es peor
+ * que uno sin ellas.
+ */
+function origen(d: Datos): string | null {
+  if (!d.enlace) return null;
+  try {
+    return new URL(d.enlace).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * El membrete: el logotipo sobre blanco y la foto debajo.
+ *
+ * SOBRE BLANCO Y NO SOBRE EL AZUL porque el logotipo es azul oscuro: en la banda
+ * `#104a78` desapareceria. Va con su color real, que es como debe ir una marca.
+ *
+ * Y TODO ESTO ES PRESCINDIBLE. Outlook y Gmail bloquean las imagenes por defecto:
+ * media plantilla puede no llegar a verse nunca. Por eso el `alt` del logotipo es el
+ * nombre completo —con las imagenes apagadas se lee «FAVA LatinoAmérica», no un
+ * recuadro vacio— y la foto se omite entera si no hay de donde bajarla.
+ *
+ * `width` y `height` como ATRIBUTOS y no solo en el CSS: Outlook ignora el estilo al
+ * calcular el hueco y descoloca la maqueta.
+ */
+function membrete(d: Datos): string {
+  const base = origen(d);
+  const blanco =
+    `<tr><td style="background:${PAPEL};padding:20px 28px 16px;border-radius:9px 9px 0 0;">` +
+    (base
+      ? `<img src="${esc(base)}/email/logo.png" width="150" height="76" alt="FAVA LatinoAmérica" ` +
+        `style="display:block;border:0;width:150px;height:auto;">`
+      : `<span style="font:700 17px/1.2 ${TIPO};color:${AZUL};">FAVA</span>` +
+        `<span style="font:400 17px/1.2 ${TIPO};color:${SUAVE};"> Control Técnico</span>`) +
+    `</td></tr>`;
+
+  const foto = base
+    ? `<tr><td style="background:${AZUL};font-size:0;line-height:0;">` +
+      `<img src="${esc(base)}/email/hero.jpg" width="600" height="180" alt="" ` +
+      `style="display:block;border:0;width:100%;max-width:600px;height:auto;"></td></tr>`
+    : '';
+
+  return blanco + foto;
+}
+
 function aHtml(c: Cuerpo, d: Datos, lang: Lang): string {
   const dentro =
     `<p style="margin:0 0 16px;font:600 18px/1.4 ${TIPO};color:${TEXTO};">${esc(c.saludo)}</p>` +
@@ -172,12 +223,7 @@ function aHtml(c: Cuerpo, d: Datos, lang: Lang): string {
     `<tr><td align="center" style="padding:28px 12px;">` +
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" ` +
     `style="width:100%;max-width:600px;background:${PAPEL};border:1px solid ${BORDE};border-radius:10px;">` +
-    // Membrete de TEXTO: una imagen remota la bloquean la mitad de los clientes y
-    // dejaria el correo empezando por un hueco.
-    `<tr><td style="background:${AZUL};padding:18px 28px;border-radius:9px 9px 0 0;">` +
-    `<span style="font:700 17px/1.2 ${TIPO};color:${PAPEL};letter-spacing:.01em;">FAVA</span>` +
-    `<span style="font:400 17px/1.2 ${TIPO};color:#b9d3e8;"> Control Técnico</span>` +
-    `</td></tr>` +
+    membrete(d) +
     `<tr><td style="padding:26px 28px 22px;">${dentro}</td></tr>` +
     `<tr><td style="padding:16px 28px 20px;border-top:1px solid ${BORDE};">` +
     `<p style="margin:0;font:13px/1.5 ${TIPO};color:${SUAVE};">${esc(PIE[lang])}</p>` +
