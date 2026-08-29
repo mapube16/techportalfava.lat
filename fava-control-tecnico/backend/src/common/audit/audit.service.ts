@@ -73,6 +73,31 @@ export class AuditService {
       orderBy: { createdAt: 'desc' },
       take,
     });
-    return filas.map((f) => ({ ...f, createdAt: f.createdAt.toISOString() }));
+    return this.conEtiqueta(filas.map((f) => ({ ...f, createdAt: f.createdAt.toISOString() })));
+  }
+
+  /**
+   * De QUE nota habla cada fila, en cristiano.
+   *
+   * La tabla decia `weekly_note` y un UUID: nadie puede saber si eso es la nota de
+   * Cibao de agosto o la de Lucchetti de marzo. El log guarda el id porque es lo unico
+   * que NO cambia —el nombre de un proyecto se puede editar y el rastro debe seguir
+   * apuntando a la misma fila— asi que el nombre se resuelve AL LEER, no al escribir.
+   *
+   * Una consulta para todas las filas, no una por fila. Y si la nota ya no existe se
+   * queda sin etiqueta: un rastro apunta a lo que hubo, y eso a veces ya no esta.
+   */
+  private async conEtiqueta<T extends { entity: string; entityId: string }>(filas: T[]) {
+    const ids = [...new Set(filas.filter((f) => f.entity === 'weekly_note').map((f) => f.entityId))];
+    if (!ids.length) return filas.map((f) => ({ ...f, entityLabel: null as string | null }));
+
+    const notas = await this.prisma.client.weeklyNote.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, weekStart: true, project: { select: { name: true } } },
+    });
+    const etiqueta = new Map(
+      notas.map((n) => [n.id, `${n.project.name} · ${n.weekStart.toISOString().slice(0, 10)}`]),
+    );
+    return filas.map((f) => ({ ...f, entityLabel: etiqueta.get(f.entityId) ?? null }));
   }
 }

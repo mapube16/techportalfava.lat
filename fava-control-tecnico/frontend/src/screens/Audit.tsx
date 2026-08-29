@@ -28,11 +28,43 @@ const ACCION: Record<string, [icono: string, color: string]> = {
  * `{"status":"submitted"}` no se lee de un vistazo. Se aplana a `status: submitted`,
  * que es lo que alguien busca cuando abre esta pantalla porque algo no cuadra.
  */
+/** Un UUID entero no dice nada; sus 8 primeros bastan para cotejar dos filas. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Un sha256 son 64 caracteres que ocupan media fila y no se comparan a ojo. */
+const HEX_LARGO = /^[0-9a-f]{32,}$/i;
+
+/**
+ * Un valor del log, legible.
+ *
+ * ANTES ERA `String(x)` A SECAS, y eso destruia justo lo que hay que ver: el motor
+ * guarda `gastosTecnico: [{valor: "50000", descripcion: "asd"}]` —el cambio se lee
+ * perfectamente— y la pantalla escribia `[object Object]`. El dato estaba bien; el
+ * que lo pintaba lo tiraba a la basura.
+ *
+ * Recursiva porque los gastos son un array DE objetos: aplanar un solo nivel deja el
+ * mismo agujero un escalon mas abajo.
+ */
+const valor = (x: unknown): string => {
+  if (x === null || x === undefined || x === '') return '—';
+  if (Array.isArray(x)) return x.length ? x.map(valor).join(' · ') : '—';
+  if (typeof x === 'object') {
+    return Object.entries(x as Record<string, unknown>)
+      .map(([k, y]) => `${k} ${valor(y)}`)
+      .join(' ');
+  }
+  const t = String(x);
+  // Se acortan al pintar, no al guardar: el log conserva el hash entero, que es lo que
+  // le da valor como prueba.
+  if (UUID.test(t)) return t.slice(0, 8) + '…';
+  if (HEX_LARGO.test(t)) return t.slice(0, 12) + '…';
+  return t;
+};
+
 const resumir = (v: unknown): string => {
   if (v === null || v === undefined) return '—';
   if (typeof v !== 'object') return String(v);
   return Object.entries(v as Record<string, unknown>)
-    .map(([k, x]) => `${k}: ${x === null ? '—' : String(x)}`)
+    .map(([k, x]) => `${k}: ${valor(x)}`)
     .join(', ');
 };
 
@@ -54,7 +86,7 @@ export default function Audit() {
   const list = filterBy(
     data,
     state.search,
-    (a: AuditRow) => `${a.actorName} ${a.entity} ${a.action} ${a.reason ?? ''}`,
+    (a: AuditRow) => `${a.actorName} ${a.entity} ${a.entityLabel ?? ''} ${a.action} ${a.reason ?? ''}`,
   );
 
   if (!list.length) {
@@ -81,7 +113,7 @@ export default function Audit() {
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="text-[13.5px] font-bold">{a.actorName}</div>
-                    <div className="text-xs text-ink-3">{a.entity} · {a.action}</div>
+                    <div className="text-xs text-ink-3">{a.entityLabel ?? a.entity} · {a.action}</div>
                   </div>
                   <span className="text-[11px] text-ink-3 font-mono shrink-0">{cuando(a.createdAt)}</span>
                 </div>
@@ -128,7 +160,19 @@ export default function Audit() {
                       {a.action}
                     </span>
                   </td>
-                  <td className={td}>{a.entity}</td>
+                  <td className={td}>
+                    {/* De QUE nota se habla. La tabla decia solo «weekly_note», que es
+                        el tipo de fila, no cual: nadie podia saber si era la de Cibao
+                        de agosto o la de Lucchetti de marzo. */}
+                    {a.entityLabel ? (
+                      <>
+                        <div className="font-semibold">{a.entityLabel}</div>
+                        <div className="text-[11px] text-ink-3">{a.entity}</div>
+                      </>
+                    ) : (
+                      a.entity
+                    )}
+                  </td>
                   <td className={`${td} text-ink-3`}>{resumir(a.before)}</td>
                   <td className={`${td} font-semibold`}>{resumir(a.after)}</td>
                   <td className={`${td} text-warn max-w-[220px]`}>{a.reason ?? ''}</td>

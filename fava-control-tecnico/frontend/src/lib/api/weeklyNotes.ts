@@ -124,6 +124,8 @@ export const pendingNotes = (technicianId: string) =>
 // ── AUD-02 ──
 
 export interface AuditRow {
+  /** De QUÉ nota habla: «proyecto · semana». `null` si ya no existe o no es una nota. */
+  entityLabel?: string | null;
   id: string;
   actorId: string;
   actorName: string;
