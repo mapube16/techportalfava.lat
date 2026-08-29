@@ -599,7 +599,15 @@ export class WeeklyNotesService {
     const c = this.prisma.client;
     const actual = await c.weeklyNote.findUnique({
       where: { id },
-      select: { status: true, updatedAt: true, technicianId: true, weekStart: true, projectId: true, signedContentHash: true },
+      select: {
+        status: true,
+        updatedAt: true,
+        technicianId: true,
+        weekStart: true,
+        projectId: true,
+        signedContentHash: true,
+        sourceSheet: true,
+      },
     });
     if (!actual) throw new NotFoundException('NOTA_NO_ENCONTRADA');
 
@@ -613,6 +621,21 @@ export class WeeklyNotesService {
     // dejar rastro de que existió. Deshacer una nota firmada es lo mismo que deshacer
     // una aprobación (reopen) — Super Admin, con motivo, y sube la versión.
     if (destino === 'returned' && actual.signedContentHash) throw new ConflictException('NOTA_FIRMADA_USAR_REOPEN');
+
+    /**
+     * NO SE APRUEBA UNA NOTA SIN FIRMAR. La firma es el consentimiento del técnico
+     * sobre lo que declaró: aprobarla sin ella es dar por bueno un documento que nadie
+     * asumió, y ademas deja la nota sin PDF congelado que descargar — el documento que
+     * vale no llega a existir.
+     *
+     * SALVO LAS HISTÓRICAS. Las 498 notas que trajo `migrate-notas.ts` del Excel
+     * llevan `source_sheet` y jamás tuvieron firma digital: se firmaron en papel, si
+     * es que se firmaron. Exigírsela ahora las congelaría para siempre en un estado
+     * que nadie puede resolver. El discriminador es estructural y no una fecha a ojo:
+     * si vino del Excel, no se le pide; si la creó la app, sí.
+     */
+    if (destino === 'approved' && !actual.sourceSheet && !actual.signedContentHash)
+      throw new ConflictException('NOTA_SIN_FIRMA');
 
     const nota = await c.weeklyNote.update({
       where: { id },

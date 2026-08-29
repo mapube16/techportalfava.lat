@@ -15,6 +15,7 @@ import ReceiptsBlock from '../components/ReceiptsBlock';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { approveNote, listNotes, noteDays } from '../lib/api/weeklyNotes';
+import AvisoModal from '../components/AvisoModal';
 import type { NoteStatus, WeeklyNote } from '../lib/api/weeklyNotes';
 import { diasDeSemana } from '../lib/fecha';
 import type { Lang } from '../types';
@@ -279,8 +280,11 @@ export default function Inbox({ archivo = false }: { archivo?: boolean }) {
 
       <Dias nota={cur} lang={state.lang} dias={diasDeSemana(cur.weekStart)} />
 
+      {/* No poder aprobar no es un campo mal escrito: es que la nota le falta algo y
+          Andrea tiene que hacer otra cosa (devolverla, pedir la firma). Eso se lee
+          entero o no se lee — en un renglon al pie del boton se pasaba por alto. */}
       {err ? (
-        <div className="px-4.5 py-2.5 text-[12.5px] text-warn">{errTexto(err)}</div>
+        <AvisoModal titulo={t.err_save} mensaje={errTexto(err)} onClose={() => setErr(null)} />
       ) : null}
 
       <div className="flex gap-2.5 px-4.5 py-3.5 border-t border-border justify-end flex-wrap">

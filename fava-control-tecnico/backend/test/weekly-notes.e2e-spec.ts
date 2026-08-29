@@ -94,6 +94,23 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
   const enviar = (esperado = 201, token = tokenTec) =>
     http().post('/api/weekly-notes/submit').set(auth(token)).send({ weekStart: LUNES }).expect(esperado);
 
+  /**
+   * Firma la nota. Desde 2026-08-29 aprobar EXIGE firma (salvo las históricas del
+   * Excel), así que casi toda prueba que aprueba pasa por aquí. Devuelve la nota ya
+   * firmada: su `updatedAt` cambió y quien lo necesite tiene el bueno.
+   */
+  const firmar = async (nota: { id: string; updatedAt: string }) =>
+    (
+      await http()
+        .post(`/api/weekly-notes/${nota.id}/sign`)
+        .set(auth(tokenTec))
+        .send({
+          technician: { signerName: 'ZZ DEMO Bruno Sala', declarationAccepted: true, imagePng: PNG_FIRMA },
+          expectedUpdatedAt: nota.updatedAt,
+        })
+        .expect(201)
+    ).body as { id: string; updatedAt: string };
+
   const notas = async (token = tokenAdmin) =>
     (await http().get('/api/weekly-notes').set(auth(token)).expect(200)).body;
 
@@ -172,6 +189,7 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     const viejo = await crearProyecto({ name: 'AAA ya aprobado' });
     await jornada({ projectId: viejo.id, date: '2026-03-02' });
     const nota = (await enviar()).body[0];
+    await firmar(nota);
     await http().post(`/api/weekly-notes/${nota.id}/approve`).set(auth(tokenAdmin)).expect(201);
 
     const nuevo = await crearProyecto({ name: 'BBB registrado después' });
@@ -193,6 +211,7 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     const p = await crearProyecto();
     await jornada({ projectId: p.id, date: '2026-03-02' });
     const nota = (await enviar()).body[0];
+    await firmar(nota);
     await http().post(`/api/weekly-notes/${nota.id}/approve`).set(auth(tokenAdmin)).expect(201);
 
     // Colgar el viernes de una nota ya aprobada la devolvería a 'submitted' por detrás.
@@ -376,6 +395,55 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     expect(ok.body.signed).toBe(true);
   });
 
+  // ── NOTA-04: la firma es requisito para aprobar ──
+
+  it('no se aprueba una nota sin firmar', async () => {
+    const p = await crearProyecto();
+    await jornada({ projectId: p.id, date: '2026-03-02' });
+    const nota = (await enviar()).body[0];
+
+    const res = await http()
+      .post(`/api/weekly-notes/${nota.id}/approve`)
+      .set(auth(tokenAdmin))
+      .expect(409);
+    expect(res.body.message).toBe('NOTA_SIN_FIRMA');
+
+    await http()
+      .post(`/api/weekly-notes/${nota.id}/sign`)
+      .set(auth(tokenTec))
+      .send({
+        technician: { signerName: 'ZZ DEMO Bruno Sala', declarationAccepted: true, imagePng: PNG_FIRMA },
+        expectedUpdatedAt: nota.updatedAt,
+      })
+      .expect(201);
+
+    // Firmada, la misma aprobación pasa.
+    await http().post(`/api/weekly-notes/${nota.id}/approve`).set(auth(tokenAdmin)).expect(201);
+  });
+
+  /**
+   * Las 498 notas que `migrate-notas.ts` trajo del Excel no tienen ni pueden tener
+   * firma digital: se firmaron en papel. Exigírsela las dejaría congeladas para
+   * siempre en un estado que nadie puede resolver, asi que quedan exentas POR SU
+   * ORIGEN —`source_sheet`— y no por una fecha de corte escrita a mano.
+   */
+  it('una nota HISTÓRICA del Excel sí se aprueba sin firma', async () => {
+    const p = await crearProyecto();
+    await jornada({ projectId: p.id, date: '2026-03-02' });
+    const nota = (await enviar()).body[0];
+    await ownerClient.weeklyNote.update({
+      where: { id: nota.id },
+      data: { sourceSheet: '2026', sourceYear: 2026 },
+    });
+
+    const res = await http()
+      .post(`/api/weekly-notes/${nota.id}/approve`)
+      .set(auth(tokenAdmin))
+      .expect(201);
+    expect(res.body.status).toBe('approved');
+    expect(res.body.signed).toBe(false);
+  });
+
   // ── BIT-05: enviado = solo lectura ──
 
   it('al enviar, los días quedan bloqueados; al devolver, vuelven a ser editables', async () => {
@@ -409,6 +477,7 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     const p = await crearProyecto();
     await jornada({ projectId: p.id, date: '2026-03-02' });
     const nota = (await enviar()).body[0];
+    await firmar(nota);
 
     await http().post(`/api/weekly-notes/${nota.id}/approve`).set(auth(tokenAdmin)).expect(201);
     const res = await http().post(`/api/weekly-notes/${nota.id}/approve`).set(auth(tokenAdmin)).expect(409);
@@ -419,9 +488,11 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     const p = await crearProyecto();
     await jornada({ projectId: p.id, date: '2026-03-02' });
     const nota = (await enviar()).body[0];
+    const firmada = await firmar(nota);
 
-    // Los dos leyeron el MISMO `updatedAt`: es el escenario real de dos pestañas.
-    const visto = nota.updatedAt;
+    // Los dos leyeron el MISMO `updatedAt`: es el escenario real de dos pestañas. Es
+    // el de DESPUES de firmar, porque firmar tambien mueve el reloj de la nota.
+    const visto = firmada.updatedAt;
     await http()
       .post(`/api/weekly-notes/${nota.id}/approve`)
       .set(auth(tokenAdmin))
@@ -445,6 +516,7 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     await jornada({ projectId: a.id, date: '2026-03-02' });
     await jornada({ projectId: b.id, date: '2026-03-03' });
     const [na] = (await enviar()).body.filter((n: { projectId: string }) => n.projectId === a.id);
+    await firmar(na);
 
     await http().post(`/api/weekly-notes/${na.id}/approve`).set(auth(tokenAdmin)).expect(201);
 
@@ -592,6 +664,7 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     const p = await crearProyecto();
     await jornada({ projectId: p.id, date: '2026-03-02' });
     const nota = (await enviar()).body[0];
+    await firmar(nota);
 
     await http()
       .post(`/api/weekly-notes/${nota.id}/approve`)
@@ -611,6 +684,7 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     const p = await crearProyecto();
     await jornada({ projectId: p.id, date: '2026-03-02' });
     const nota = (await enviar()).body[0];
+    await firmar(nota);
     await http().post(`/api/weekly-notes/${nota.id}/approve`).set(auth(tokenAdmin)).expect(201);
 
     await http().post(`/api/weekly-notes/${nota.id}/reopen`).set(auth(tokenAdmin)).send({ reason: 'x' }).expect(403);
