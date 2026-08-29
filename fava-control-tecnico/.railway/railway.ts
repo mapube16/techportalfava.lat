@@ -33,9 +33,10 @@ const RAIZ = '/fava-control-tecnico';
 export default defineRailway(() => {
   const Postgres = postgres('Postgres', { region: 'europe-west4-drams3a' });
 
-  // Tres volumenes de 5 GB. Solo uno puede estar montado; los otros dos son restos de
-  // intentos anteriores y SIGUEN facturando. Se declaran para que `plan` no proponga
-  // destruirlos por accidente: borrarlos es una decision aparte y deliberada.
+  // Tres volumenes de 5 GB y solo UNO montado (el de Postgres). Los otros dos son
+  // restos de intentos anteriores y siguen facturando. Se declaran para que `plan` no
+  // los destruya por accidente; borrarlos es una decision deliberada y se hace desde el
+  // dashboard, igual que se hizo con el servicio vacio que quedo de un `railway init`.
   const vol = (n: string) =>
     volume(n, {
       alerts: { usage: { '100': {}, '80': {}, '95': {} } },
@@ -148,22 +149,11 @@ export default defineRailway(() => {
     },
   });
 
-  /**
-   * Servicio vacio que quedo de un `railway init` a medias. No lo borro desde aqui
-   * porque destruir es una decision explicita, pero no despliega nada util: revisar y
-   * eliminar desde el dashboard.
-   */
-  const restoInit = service('virtuous-encouragement', {
-    source: github(REPO, { checkSuites: false }),
-    replicas: { 'europe-west4-drams3a': 1 },
-  });
-
   return project('aware-acceptance', {
     resources: [
       Postgres,
       app,
       avisos,
-      restoInit,
       postgresVolume9o7j,
       postgresVolume2b3M,
       postgresVolume,
