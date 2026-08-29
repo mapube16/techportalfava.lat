@@ -48,12 +48,14 @@ export interface AppState {
   inviteOpen: boolean;
   /** La vista previa del PDF es SIEMPRE de una nota concreta: sin id no hay qué pintar. */
   /**
-   * La nota que se abre PARA FIRMAR nada mas enviarla.
+   * Las notas que quedan POR FIRMAR del envio recien hecho, en orden.
    *
-   * Firmar es el momento con el cliente delante, y `submitWeek` YA devuelve las notas
-   * derivadas — el codigo las tiraba y mandaba al tecnico a otra pantalla a buscarlas.
+   * Firmar es el consentimiento del envio, asi que se pide al enviar y no despues. Era
+   * `firmarId` —una sola— y ahi estaba el fallo: una semana en dos proyectos genera DOS
+   * notas y solo se ofrecia firmar la primera. La segunda se quedaba sin firma y sin
+   * que nadie la pidiera. Al firmar una se abre la siguiente hasta que no queda ninguna.
    */
-  firmarId: string | null;
+  porFirmar: string[];
   pdfOpen: boolean;
   pdfNoteId: string | null;
   /** Firmada = se piden los bytes congelados; si no, el borrador renderizado al vuelo. */
@@ -94,7 +96,7 @@ const initialState: AppState = {
   returnUpdatedAt: null,
   projOpen: false,
   inviteOpen: false,
-  firmarId: null,
+  porFirmar: [],
   pdfOpen: false,
   pdfNoteId: null,
   pdfSigned: false,

@@ -48,7 +48,16 @@ const FIRMANTE_VACIO: Firmante = { nombre: '', documento: '', cargo: '' };
 /** Tope de filas por tabla: las cuatro que imprime el PDF. */
 const MAX_GASTOS = 4;
 
-export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onClose: () => void }) {
+export default function SignNoteModal({
+  nota,
+  onClose,
+  onSigned,
+}: {
+  nota: WeeklyNote;
+  onClose: () => void;
+  /** Solo tras firmar de verdad. Deja al padre encadenar la siguiente nota del envio. */
+  onSigned?: () => void;
+}) {
   const { t, showToast, refresh } = useApp();
   const [tecnico, setTecnico] = useState<Firmante>({ ...FIRMANTE_VACIO, nombre: nota.technicianName });
   const [gastos, setGastos] = useState<Gasto[]>([]);
@@ -88,9 +97,9 @@ export default function SignNoteModal({ nota, onClose }: { nota: WeeklyNote; onC
         ),
       )
       .then(() => {
-        onClose();
         refresh();
         showToast('signed');
+        (onSigned ?? onClose)();
       })
       .catch((e: unknown) => setErr(codigo(e)))
       .finally(() => setFirmando(false));

@@ -51,9 +51,9 @@ export default function Week() {
     [miTecnico, state.dataVersion],
   );
   const deLaSemana = (notas ?? []).filter((n) => n.weekStart.slice(0, 10) === semana);
-  /** La que se abre al pulsar «Firmar»; `state.firmarId` es la que llega recien enviada. */
+  /** La que se abre al pulsar «Firmar»; la cola es la del envio recien hecho. */
   const [firmandoLocal, setFirmandoLocal] = useState<WeeklyNote | null>(null);
-  const aFirmar = firmandoLocal ?? deLaSemana.find((n) => n.id === state.firmarId) ?? null;
+  const aFirmar = firmandoLocal ?? deLaSemana.find((n) => n.id === state.porFirmar[0]) ?? null;
 
   const mes = (iso: string) => (state.lang === 'it' ? MES_IT : MES_ES)[Number(iso.slice(5, 7))];
   const rotulo = `${diaDe(dias[0])} ${mes(dias[0])} – ${diaDe(dias[6])} ${mes(dias[6])} ${dias[6].slice(0, 4)}`;
@@ -207,10 +207,11 @@ export default function Week() {
             submitWeek(semana)
               .then((creadas) => {
                 showToast('submitted');
-                // Se ENCADENA con la firma y NO se cambia de pantalla: el cliente esta
-                // delante justo ahora. Si la semana toco dos proyectos se abre la
-                // primera y las otras quedan abajo, cada una con su boton.
-                patch({ firmarId: creadas[0]?.id ?? null });
+                // Se ENCADENA con la firma y NO se cambia de pantalla: la firma es el
+                // consentimiento de ESTE envio. Van TODAS las notas creadas, no la
+                // primera: al firmar una se abre la siguiente sola. Con `creadas[0]`, una
+                // semana en dos proyectos dejaba la segunda sin firma y sin pedirla.
+                patch({ porFirmar: creadas.map((n) => n.id) });
                 refresh();
               })
               .catch((e: unknown) => setErrEnvio(codigo(e)))
@@ -226,9 +227,17 @@ export default function Week() {
       {aFirmar ? (
         <SignNoteModal
           nota={aFirmar}
+          onSigned={() => {
+            // Firmada: pasa a la siguiente de la cola. Si venia del boton de una
+            // tarjeta suelta no hay cola que avanzar.
+            if (firmandoLocal) setFirmandoLocal(null);
+            else patch({ porFirmar: state.porFirmar.slice(1) });
+          }}
           onClose={() => {
+            // Cerrar es renunciar a firmar AHORA, no solo a esta: se vacia la cola y
+            // cada nota queda con su boton «Firmar» en su tarjeta.
             setFirmandoLocal(null);
-            if (state.firmarId) patch({ firmarId: null });
+            if (state.porFirmar.length) patch({ porFirmar: [] });
           }}
         />
       ) : null}
