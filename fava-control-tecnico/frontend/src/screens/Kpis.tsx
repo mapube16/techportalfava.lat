@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ApiState, FiltroVigencia, nf, porVigencia, td, th } from '../ui';
+import { ApiState, Ayuda, FiltroVigencia, nf, porVigencia, td, th } from '../ui';
 import type { Vigencia } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
@@ -274,15 +274,19 @@ export default function Kpis() {
   // El color es un dato (positivo/negativo/neutro), no una paleta finita: se queda en
   // `style` porque Tailwind no puede generar una clase por valor en tiempo de ejecución.
   /**
-   * `ayuda` es la definicion del indicador, visible al pasar el raton. El modelo es
-   * UtilizationCard, que imprime su regla en pantalla: un numero sin su definicion es
-   * un numero suelto — «Avance global» no significa nada hasta saber que un proyecto
-   * grande pesa mas que uno pequeño. El subrayado punteado avisa de que hay algo.
+   * `ayuda` es la definicion del indicador. El modelo es UtilizationCard, que imprime
+   * su regla en pantalla: un numero sin su definicion es un numero suelto — «Avance
+   * global» no significa nada hasta saber que un proyecto grande pesa mas que uno
+   * pequeño. Va en una burbuja propia (`Ayuda`), no en un `title`: aquel tarda un
+   * segundo, sale minusculo y en el movil no existe.
    */
   const kcard = (label: string, val: string, sub: string, color?: string, ayuda?: string) => (
-    <Card title={ayuda} className={ayuda ? 'cursor-help' : undefined}>
+    <Card>
       <CardContent>
-        <div className={`text-[11.5px] text-muted-foreground font-semibold uppercase tracking-wide ${ayuda ? 'underline decoration-dotted underline-offset-4' : ''}`}>{label}</div>
+        <div className="text-[11.5px] text-muted-foreground font-semibold uppercase tracking-wide flex items-center gap-1.5">
+          {label}
+          {ayuda ? <Ayuda texto={ayuda} /> : null}
+        </div>
         <div className="text-[27px] font-bold font-cond mt-1 leading-tight" style={{ color: color || 'var(--text)' }}>
           {val}
         </div>

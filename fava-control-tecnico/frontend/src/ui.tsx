@@ -256,6 +256,37 @@ export function FiltroVigencia<T extends { isActive: boolean }>({
   );
 }
 
+/**
+ * La definición de un indicador: un «?» junto al rótulo que abre una burbuja.
+ *
+ * NO es el `title` nativo, que fue el primer intento y era peor que nada: tarda un
+ * segundo en aparecer, sale en letra diminuta del sistema y EN EL MÓVIL NO EXISTE —
+ * justo donde los técnicos miran esto. La burbuja es nuestra: sale al instante con el
+ * ratón o el foco, y en táctil se abre tocando el «?», porque tocar enfoca el botón.
+ *
+ * Es un botón de verdad y no un span por accesibilidad: entra en el orden de
+ * tabulación y un lector de pantalla anuncia la definición por el aria-label.
+ */
+export function Ayuda({ texto }: { texto: string }) {
+  return (
+    <span className="relative inline-flex group/ayuda align-middle">
+      <button
+        type="button"
+        aria-label={texto}
+        className="size-4 rounded-full border border-border text-muted-foreground text-[10px] font-bold leading-none cursor-help bg-transparent p-0 inline-flex items-center justify-center hover:text-foreground hover:border-foreground focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        ?
+      </button>
+      <span
+        role="tooltip"
+        className="hidden group-hover/ayuda:block group-focus-within/ayuda:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 z-50 rounded-lg border border-border bg-card text-card-foreground shadow-pop px-3 py-2.5 text-[12.5px] leading-relaxed font-normal normal-case tracking-normal text-left pointer-events-none"
+      >
+        {texto}
+      </span>
+    </span>
+  );
+}
+
 /** El filtro en si. Fuera del componente para poder aplicarlo antes del buscador. */
 export const porVigencia = <T extends { isActive: boolean }>(items: T[], v: Vigencia): T[] =>
   v === 'todos' ? items : items.filter((i) => i.isActive === (v === 'activos'));

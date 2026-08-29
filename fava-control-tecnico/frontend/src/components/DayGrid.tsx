@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ApiState, mesCorto } from '../ui';
+import { Ayuda, ApiState, mesCorto } from '../ui';
 import { useApp } from '../state';
 import { useApiData } from '../lib/api/useApiData';
 import { getDayGrid, getGridYears } from '../lib/api/kpis';
@@ -64,9 +64,12 @@ const FIJA = 'sticky left-0 z-10 bg-card min-w-[230px]';
  */
 function Metrica({ etiqueta, valor, ayuda }: { etiqueta: string; valor: string; ayuda?: string }) {
   return (
-    <Card title={ayuda} className={`border-t-4 border-t-primary ${ayuda ? 'cursor-help' : ''}`}>
+    <Card className="border-t-4 border-t-primary">
       <CardContent>
-        <p className={`text-sm text-muted-foreground ${ayuda ? 'underline decoration-dotted underline-offset-4' : ''}`}>{etiqueta}</p>
+        <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+          {etiqueta}
+          {ayuda ? <Ayuda texto={ayuda} /> : null}
+        </p>
         <p className="text-3xl font-semibold tabular-nums mt-1">{valor}</p>
       </CardContent>
     </Card>
