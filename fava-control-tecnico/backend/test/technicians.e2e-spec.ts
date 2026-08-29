@@ -80,6 +80,8 @@ describe('technicians: alta sin Entra y baja que conserva la historia (CAT-02)',
     const [t] = await listar();
 
     expect(Object.keys(t).sort()).toEqual([
+      // CAT-02b: el correo de la PERSONA, que puede existir sin cuenta de la app.
+      'email',
       'employmentType',
       'fullName',
       'id',
@@ -268,4 +270,85 @@ describe('technicians: alta sin Entra y baja que conserva la historia (CAT-02)',
       .send({})
       .expect(403);
   });
+
+  // ── CAT-02b: el correo es del tecnico, y une la ficha con la cuenta ──
+
+  it('crear un tecnico con el correo de un usuario suelto los vincula solo', async () => {
+    await crearUsuario({ email: 'nuevo@favalatinoamerica.com', roles: ['T'] });
+
+    const creado = await http()
+      .post('/api/technicians')
+      .set(auth(tokenAdmin))
+      .send({
+        fullName: 'Nuevo Tecnico',
+        roleTypeId: ROL_TEST,
+        employmentType: 'INTERNO',
+        // En MAYUSCULAS a proposito: el emparejado no puede distinguirlas o una ficha
+        // guardada como Nombre@Fava.com no se uniria nunca con su cuenta.
+        email: 'NUEVO@favalatinoamerica.com',
+      })
+      .expect(201);
+
+    expect(creado.body.email).toBe('nuevo@favalatinoamerica.com');
+    expect(creado.body.userId).not.toBeNull();
+
+    const u = await ownerClient.user.findUniqueOrThrow({
+      where: { email: 'nuevo@favalatinoamerica.com' },
+    });
+    expect(u.technicianId).toBe(creado.body.id);
+  });
+
+  it('NO le roba la cuenta a otro tecnico: un vinculo existente manda', async () => {
+    const otro = await ownerClient.technician.create({
+      data: { fullName: 'Ya vinculado', roleTypeId: ROL_TEST, employmentType: 'INTERNO' },
+    });
+    await crearUsuario({
+      email: 'ocupado@favalatinoamerica.com',
+      roles: ['T'],
+      technicianId: otro.id,
+    });
+
+    const creado = await http()
+      .post('/api/technicians')
+      .set(auth(tokenAdmin))
+      .send({
+        fullName: 'Llega tarde',
+        roleTypeId: ROL_TEST,
+        employmentType: 'INTERNO',
+        email: 'ocupado@favalatinoamerica.com',
+      })
+      .expect(201);
+
+    // La ficha se crea con su correo, pero la cuenta sigue siendo del primero:
+    // reasignar a quien pertenece una cuenta es una decision, no un efecto secundario.
+    expect(creado.body.userId).toBeNull();
+    const u = await ownerClient.user.findUniqueOrThrow({
+      where: { email: 'ocupado@favalatinoamerica.com' },
+    });
+    expect(u.technicianId).toBe(otro.id);
+  });
+
+  it('y al reves: invitar a un usuario con el correo de un tecnico tambien une', async () => {
+    const t = await ownerClient.technician.create({
+      data: {
+        fullName: 'Espera cuenta',
+        roleTypeId: ROL_TEST,
+        employmentType: 'EXTERNO',
+        email: 'espera@favalatinoamerica.com',
+      },
+    });
+
+    const invitado = await http()
+      .post('/api/users')
+      .set(auth(tokenAdmin))
+      .send({
+        email: 'espera@favalatinoamerica.com',
+        displayName: 'Espera Cuenta',
+        roles: ['T'],
+      })
+      .expect(201);
+
+    expect(invitado.body.technicianId).toBe(t.id);
+  });
+
 });

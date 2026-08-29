@@ -16,6 +16,7 @@ const TECNICO = {
   roleTypeId: true,
   employmentType: true,
   isActive: true,
+  email: true,
   roleType: { select: { name: true } },
   user: { select: { id: true } },
 } as const;
@@ -26,6 +27,7 @@ interface Fila {
   roleTypeId: string;
   employmentType: EmploymentType;
   isActive: boolean;
+  email: string | null;
   roleType: { name: string };
   user: { id: string } | null;
 }
@@ -37,6 +39,7 @@ const plano = (t: Fila) => ({
   roleTypeName: t.roleType.name,
   employmentType: t.employmentType,
   isActive: t.isActive,
+  email: t.email,
   userId: t.user?.id ?? null,
 });
 
@@ -45,6 +48,8 @@ export interface DatosTecnico {
   roleTypeId?: string;
   employmentType?: EmploymentType;
   isActive?: boolean;
+  /** `null` borra el correo; `undefined` lo deja como esta. */
+  email?: string | null;
 }
 
 @Injectable()
@@ -66,17 +71,49 @@ export class TechniciansService {
 
   /** CAT-02: no toca `users`. El vinculo con una cuenta Entra es opcional y va aparte. */
   async crear(d: Required<Omit<DatosTecnico, 'isActive'>>) {
-    return plano(
-      await this.intentar(() => this.prisma.client.technician.create({ data: d, select: TECNICO })),
+    const creado = await this.intentar(() =>
+      this.prisma.client.technician.create({ data: d, select: TECNICO }),
     );
+    await this.emparejarPorCorreo(creado.id, d.email);
+    // Se relee: `emparejarPorCorreo` puede haber escrito el vinculo y `userId` sale de él.
+    return plano(
+      await this.prisma.client.technician.findUniqueOrThrow({
+        where: { id: creado.id },
+        select: TECNICO,
+      }),
+    );
+  }
+
+  /**
+   * Une la ficha con la cuenta que tenga ESE correo, si existe y está libre.
+   *
+   * Es el motivo por el que el correo vive en el técnico. Antes había que crear la
+   * ficha, invitar al usuario y acordarse de vincularlos a mano desde un desplegable;
+   * tres pasos, y olvidar el tercero deja al técnico sin ver ni sus propios registros
+   * —`app.technician_id` sale de esa columna— sin ningún aviso.
+   *
+   * NO PISA un vínculo existente. Si esa cuenta ya apunta a otro técnico, la unión no
+   * se hace y no pasa nada: reasignar a quién pertenece una cuenta es una decisión, no
+   * un efecto secundario de teclear un correo.
+   */
+  private async emparejarPorCorreo(technicianId: string, email?: string | null) {
+    if (!email) return;
+    await this.prisma.client.user.updateMany({
+      where: { email: { equals: email, mode: 'insensitive' }, technicianId: null },
+      data: { technicianId },
+    });
   }
 
   /** Sirve al PATCH de datos y al de baja: la baja es un campo, no una operacion aparte. */
   async editar(id: string, data: DatosTecnico) {
+    const fila = await this.intentar(() =>
+      this.prisma.client.technician.update({ where: { id }, data, select: TECNICO }),
+    );
+    // Escribir el correo también empareja: es la vía por la que se arregla un técnico
+    // histórico al que por fin se le pone el suyo.
+    if (data.email !== undefined) await this.emparejarPorCorreo(id, data.email);
     return plano(
-      await this.intentar(() =>
-        this.prisma.client.technician.update({ where: { id }, data, select: TECNICO }),
-      ),
+      await this.prisma.client.technician.findUniqueOrThrow({ where: { id: fila.id }, select: TECNICO }),
     );
   }
 

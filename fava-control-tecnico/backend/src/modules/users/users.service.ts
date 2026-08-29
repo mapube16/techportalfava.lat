@@ -83,7 +83,19 @@ export class UsersService {
           // A proposito: la invitacion NO fija identidad. El primer login con un token
           // cuyo claim `email` coincide escribe el entra_oid (EntraGuard.vincular, 01-03).
           entraOid: null,
-          technicianId: datos.technicianId,
+          /**
+           * El tecnico elegido a mano, o el que YA tiene ese correo.
+           *
+           * Es la otra mitad de `emparejarPorCorreo`: la ficha del tecnico guarda el
+           * correo de la persona, asi que invitarla con ese mismo correo es decir quien
+           * es. Antes habia que acordarse de elegirla en un desplegable, y olvidarlo
+           * dejaba al tecnico sin ver ni sus propios registros —`app.technician_id`
+           * sale de esta columna— sin ningun aviso.
+           *
+           * Lo elegido a mano MANDA: si alguien selecciono una ficha distinta, sabra por
+           * que. El correo solo rellena el hueco.
+           */
+          technicianId: datos.technicianId ?? (await this.tecnicoConCorreo(datos.email)),
         },
         select: CAMPOS,
       });
@@ -99,6 +111,21 @@ export class UsersService {
    * Un solo UPDATE con los dos errores esperados traducidos desde el codigo de Prisma:
    * precomprobar con dos SELECT abre una carrera y el motor ya tiene la respuesta.
    */
+  /**
+   * La ficha de tecnico que declara ese correo y todavia no tiene cuenta.
+   *
+   * Sin distinguir mayusculas, igual que el indice unico de `technicians`. Si ya tiene
+   * cuenta se devuelve `null` y el usuario nuevo nace sin vinculo: dos cuentas para el
+   * mismo tecnico es una decision de una persona, no algo que pase por teclear un correo.
+   */
+  private async tecnicoConCorreo(email: string): Promise<string | null> {
+    const t = await this.prisma.client.technician.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' }, user: null },
+      select: { id: true },
+    });
+    return t?.id ?? null;
+  }
+
   async vincularTecnico(targetId: string, technicianId: string | null) {
     await this.buscar(targetId);
 

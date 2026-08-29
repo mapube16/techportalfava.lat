@@ -28,6 +28,7 @@ interface Form {
   fullName: string;
   roleTypeId: string;
   employmentType: EmploymentType;
+  email: string;
 }
 
 export default function Techs() {
@@ -95,10 +96,10 @@ export default function Techs() {
     setData({ ...data, techs: data.techs.map((x) => (x.id === fila.id ? fila : x)) });
 
   const abrirAlta = () =>
-    setForm({ id: null, fullName: '', roleTypeId: rolesElegibles[0]?.id ?? '', employmentType: 'INTERNO' });
+    setForm({ id: null, fullName: '', roleTypeId: rolesElegibles[0]?.id ?? '', employmentType: 'INTERNO', email: '' });
 
   const abrirEdicion = (tc: Technician) =>
-    setForm({ id: tc.id, fullName: tc.fullName, roleTypeId: tc.roleTypeId, employmentType: tc.employmentType });
+    setForm({ id: tc.id, fullName: tc.fullName, roleTypeId: tc.roleTypeId, employmentType: tc.employmentType, email: tc.email ?? '' });
 
   const enviar = () => {
     if (!form || !form.fullName.trim() || !form.roleTypeId) return;
@@ -106,6 +107,8 @@ export default function Techs() {
       fullName: form.fullName.trim(),
       roleTypeId: form.roleTypeId,
       employmentType: form.employmentType,
+      // Se manda SIEMPRE, tambien vacio: es como se borra uno mal escrito.
+      email: form.email.trim(),
     };
     setErrSave(null);
     const peticion = form.id ? updateTechnician(form.id, cuerpo) : createTechnician(cuerpo);
@@ -157,6 +160,16 @@ export default function Techs() {
         onChange={(e) => setForm({ ...form, fullName: e.target.value })}
         placeholder={t.tech_name_ph}
         className={`${inputStyle} w-[220px]`}
+      />
+      {/* Junto al nombre a proposito: de una persona nueva es lo unico que FAVA tiene,
+          y ademas es lo que une esta ficha con su cuenta de la aplicacion. */}
+      <input
+        type="email"
+        value={form.email}
+        onChange={(e) => setForm({ ...form, email: e.target.value })}
+        placeholder={t.invite_email_ph}
+        aria-label={t.invite_email}
+        className={`${inputStyle} w-[230px]`}
       />
       <select
         value={form.roleTypeId}
@@ -267,7 +280,14 @@ export default function Techs() {
                     <span className="font-semibold">{tc.fullName}</span>
                   </div>
                 </TableCell>
-                <TableCell>{tc.roleTypeName}</TableCell>
+                <TableCell>
+                  <div>{tc.roleTypeName}</div>
+                  {/* Sin correo no hay a donde escribirle NI forma de unirle una cuenta:
+                      es un hueco que se tiene que ver, no uno que se deduzca. */}
+                  <div className="text-[11.5px] text-muted-foreground truncate max-w-[220px]">
+                    {tc.email ?? '—'}
+                  </div>
+                </TableCell>
                 <TableCell>{empleoChip(tc)}</TableCell>
                 {celdaUtil(tc.id)}
                 <TableCell>{activePill(tc.isActive)}</TableCell>

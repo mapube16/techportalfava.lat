@@ -541,6 +541,14 @@ model Technician {
   roleTypeId     String         @map("role_type_id") @db.Uuid
   employmentType EmploymentType @map("employment_type")
 
+  /// El correo de la PERSONA, no el de su cuenta. Un tecnico existe antes de tener
+  /// acceso a la aplicacion, y hasta ahora el correo vivia solo en `users`: uno sin
+  /// cuenta no era contactable por ningun medio. Es ademas la clave con la que ficha y
+  /// cuenta se unen solas (ver `users.service.ts`), en vez de a mano desde un desplegable.
+  /// El indice unico va sobre `lower(email)` y se declara en la migracion: Prisma no
+  /// sabe expresar un indice sobre una funcion.
+  email String?
+
   /// Las grafias con las que el tecnico aparece en el Excel («Leomar/Leomir»,
   /// «Klein/Kleir»). Las consume la conciliacion de la Fase 6 (MIG-01).
   aliases String[] @default([])

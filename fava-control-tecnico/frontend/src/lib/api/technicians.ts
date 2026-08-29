@@ -5,6 +5,9 @@ import { apiFetch, apiSend } from './client';
 export type EmploymentType = 'INTERNO' | 'EXTERNO';
 
 export interface Technician {
+  /** CAT-02b: el correo de la PERSONA. Existe aunque no tenga cuenta de la app, y es
+      la clave con la que ficha y cuenta se unen solas. */
+  email?: string | null;
   id: string;
   fullName: string;
   roleTypeId: string;
@@ -17,6 +20,8 @@ export interface Technician {
 }
 
 export interface TechnicianInput {
+  /** Cadena vacía borra el correo; omitirlo lo deja como está. */
+  email?: string | null;
   fullName: string;
   roleTypeId: string;
   employmentType: EmploymentType;

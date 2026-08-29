@@ -18,6 +18,8 @@ import { type DatosTecnico, TechniciansService } from './technicians.service';
 
 const TIPOS: string[] = Object.values(EmploymentType);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** El mismo de `users.controller.ts`: basta con que tenga arroba y un punto detras. */
+const EMAIL = /^[^s@]+@[^s@]+.[^s@]+$/;
 
 type Cuerpo = Record<string, unknown>;
 
@@ -31,6 +33,25 @@ function rol(valor: unknown): string {
   if (typeof valor !== 'string' || !UUID.test(valor))
     throw new BadRequestException('ROL_TECNICO_INVALIDO');
   return valor;
+}
+
+/**
+ * El correo de la persona. OPCIONAL y en minusculas.
+ *
+ * Opcional porque un tecnico historico puede no tener ninguno y obligarlo inventaria
+ * un dato. En minusculas por el mismo motivo que en `users`: el indice unico va sobre
+ * `lower(email)` y el emparejado con la cuenta compara sin distinguir mayusculas — una
+ * ficha guardada como `Nombre@Fava.com` no se uniria nunca con su cuenta.
+ *
+ * Cadena vacia = borrar, y por eso devuelve `null` en vez de `undefined`: en un PATCH
+ * `undefined` significa «no lo toques» y no habria forma de quitar un correo mal puesto.
+ */
+function correo(valor: unknown): string | null | undefined {
+  if (valor === undefined) return undefined;
+  if (valor === null || valor === '') return null;
+  const email = typeof valor === 'string' ? valor.trim().toLowerCase() : '';
+  if (!EMAIL.test(email)) throw new BadRequestException('EMAIL_INVALIDO');
+  return email;
 }
 
 /** El enum de Postgres es la lista cerrada; aqui solo se traduce a 400 en vez de 500. */
@@ -67,6 +88,7 @@ export class TechniciansController {
       fullName: nombre(body?.fullName),
       roleTypeId: rol(body?.roleTypeId),
       employmentType: tipo(body?.employmentType),
+      email: correo(body?.email) ?? null,
     });
   }
 
@@ -76,6 +98,7 @@ export class TechniciansController {
     if (body?.fullName !== undefined) data.fullName = nombre(body.fullName);
     if (body?.roleTypeId !== undefined) data.roleTypeId = rol(body.roleTypeId);
     if (body?.employmentType !== undefined) data.employmentType = tipo(body.employmentType);
+    if (body?.email !== undefined) data.email = correo(body.email);
     if (!Object.keys(data).length) throw new BadRequestException('NADA_QUE_EDITAR');
     return this.service.editar(id, data);
   }
