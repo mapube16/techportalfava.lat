@@ -147,7 +147,10 @@ describe('concurrencia: varios usuarios a la vez, por HTTP', () => {
       const cuerpo = (dia: number) => ({
         projectId: null,
         orderId: null,
-        conceptCode: 'LR',
+        // NR y no LR: la mitad de las peticiones son de TEC_B, que es EXTERNO, y el
+        // LR se le rechaza por regla de negocio (BIT-09) — aqui el sujeto es el pool,
+        // no esa regla, asi que el relleno usa el concepto que vale para los dos.
+        conceptCode: 'NR',
         phase: null,
         description: `concurrente ${dia}`,
       });

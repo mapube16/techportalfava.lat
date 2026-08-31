@@ -65,7 +65,7 @@ async function main() {
     console.log(
       `seed OK — catalogos de arranque: ${ROLES_TECNICOS.length} roles, ` +
         `${MONEDAS.length} monedas, ${MAQUINAS.length} modelos de maquina ` +
-        `(los 8 conceptos los siembra la migracion)`,
+        `(los conceptos los siembran las migraciones)`,
     );
   } finally {
     await prisma.$disconnect();

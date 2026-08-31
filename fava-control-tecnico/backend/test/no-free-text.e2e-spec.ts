@@ -59,8 +59,8 @@ const COLUMNAS_ENUM: [tabla: string, columna: string, enumEsperado: string][] = 
   ['technicians', 'employment_type', 'employment_type'],
 ];
 
-/** Los 8 codigos son FIJOS y su orden es el de `sort_order` del catalogo. */
-const CONCEPTOS = ['DC', 'MD', 'DFD', 'DVSF', 'DVRC', 'LR', 'NR', 'IL'];
+/** Los 9 codigos son FIJOS y su orden es el de `sort_order` del catalogo. */
+const CONCEPTOS = ['DC', 'MD', 'DFD', 'DVSF', 'DVRC', 'LR', 'NR', 'IL', 'OTRO'];
 
 /** Columnas que NO deben existir: el delta se calcula, no se guarda ni se digita. */
 const COLUMNAS_PROHIBIDAS = ['delta', 'executed'];
@@ -108,7 +108,7 @@ describe('Criterio 4 — ninguna eleccion cerrada acepta texto libre (introspecc
     expect(malas).toEqual([]);
   });
 
-  it('el enum concept_code tiene exactamente los 8 codigos fijos, en su orden', async () => {
+  it('el enum concept_code tiene exactamente los 9 codigos fijos, en su orden', async () => {
     const filas = await ownerClient.$queryRaw<{ enumlabel: string }[]>`
       SELECT e.enumlabel
       FROM pg_enum e

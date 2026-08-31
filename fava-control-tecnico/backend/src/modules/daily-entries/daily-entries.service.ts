@@ -196,6 +196,12 @@ export class DailyEntriesService {
         throw new BadRequestException('LIBRE_REMUNERADO_SOLO_INTERNOS');
     }
 
+    // «Otro» sin decir QUE fue es la celda que nadie sabe leer seis meses despues.
+    // El cajon ya obliga a la descripcion en pantalla, pero un comodin del catalogo
+    // no puede depender de eso: la regla vive aqui, como la del LR de arriba.
+    if (datos.conceptCode === 'OTRO' && !datos.description)
+      throw new BadRequestException('OTRO_SIN_DESCRIPCION');
+
     // La orden tiene que ser DEL proyecto que se declara. El FK solo garantiza que
     // existe, no que sea de este proyecto: sin esta comprobacion un dia de JAV podria
     // apuntar a una maquina de Lucchetti y el vendido/ejecutado saldria descuadrado

@@ -3,7 +3,7 @@ import { apiFetch } from './client';
 // KPI-07: la cuadrícula de días por concepto. Reemplaza la tabla dinámica que hoy se
 // mantiene a mano en el Excel y que sólo Andrea sabe refrescar.
 
-export type ConceptCode = 'DC' | 'MD' | 'DFD' | 'DVSF' | 'DVRC' | 'LR' | 'NR' | 'IL';
+export type ConceptCode = 'DC' | 'MD' | 'DFD' | 'DVSF' | 'DVRC' | 'LR' | 'NR' | 'IL' | 'OTRO';
 
 /** Ausente = 0. La celda se pinta vacía y no «0»: una cuadrícula de ceros no se lee. */
 export type Counts = Partial<Record<ConceptCode, number>>;

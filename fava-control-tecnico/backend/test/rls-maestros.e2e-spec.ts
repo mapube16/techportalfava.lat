@@ -41,7 +41,7 @@ function comoTecnico<T>(fn: (tx: typeof appClient) => Promise<T>): Promise<T> {
  * Escritura de admin verificada y DESHECHA: la tx termina en rollback a proposito.
  *
  * Asi el caso prueba el PERMISO sin dejar rastro. Importa porque los catalogos NO se
- * truncan entre tests (los 8 conceptos los sembro la migracion): una escritura que
+ * truncan entre tests (los conceptos los sembraron las migraciones): una escritura que
  * persistiese dejaria la base distinta para la suite siguiente y para la segunda
  * pasada de esta.
  *
@@ -91,9 +91,10 @@ type Tabla = (typeof TABLAS)[number];
  * Una sentencia de escritura por tabla.
  *
  * `insert` usa claves que no colisionan con lo sembrado, salvo en `concepts`: el enum
- * tiene EXACTAMENTE 8 valores y los 8 estan sembrados, asi que un «9º concepto» no se
- * puede ni nombrar (ver el caso del enum). Se intenta con un codigo existente, y aun asi
- * el error es 42501 y no 23505: la politica se evalua antes del unique (comprobado).
+ * es cerrado y TODOS sus valores estan sembrados por migracion, asi que un concepto
+ * extra no se puede ni nombrar (ver el caso del enum). Se intenta con un codigo
+ * existente, y aun asi el error es 42501 y no 23505: la politica se evalua antes del
+ * unique (comprobado).
  *
  * `update` va con WHERE y sobre una columna sin unique: un UPDATE a pelo sobre
  * `role_types.name` chocaria con su propio @unique y el fallo no diria nada de RLS.
@@ -274,12 +275,12 @@ describe('RLS: maestros y catalogos leidos por todos, escritos solo por admin', 
 
     it('ni el admin puede INSERTAR un concepto: no hay politica de INSERT (42501)', async () => {
       await expect(comoAdmin(SQL.concepts.insert)).rejects.toThrow(/42501/);
-      expect(await contar(ownerClient, 'concepts')).toBe(8);
+      expect(await contar(ownerClient, 'concepts')).toBe(9);
     });
 
     it('ni el admin puede BORRAR un concepto: no hay politica de DELETE (0 filas)', async () => {
       expect(await comoAdmin(SQL.concepts.borrar)).toBe(0);
-      expect(await contar(ownerClient, 'concepts')).toBe(8);
+      expect(await contar(ownerClient, 'concepts')).toBe(9);
     });
 
     it('un codigo inventado no pasa del enum: 22P02, antes incluso de llegar a RLS', async () => {
@@ -291,7 +292,7 @@ describe('RLS: maestros y catalogos leidos por todos, escritos solo por admin', 
       ).rejects.toThrow(/22P02/);
     });
 
-    it('los 8 conceptos existen con etiqueta ES e IT, sembrados por la migracion', async () => {
+    it('los 9 conceptos existen con etiqueta ES e IT, sembrados por migracion', async () => {
       const filas = await comoTecnico((tx) =>
         tx.concept.findMany({ orderBy: { sortOrder: 'asc' } }),
       );
@@ -305,6 +306,7 @@ describe('RLS: maestros y catalogos leidos por todos, escritos solo por admin', 
         'LR',
         'NR',
         'IL',
+        'OTRO',
       ]);
       expect(filas.every((c) => c.labelEs.length > 0 && c.labelIt.length > 0)).toBe(true);
     });

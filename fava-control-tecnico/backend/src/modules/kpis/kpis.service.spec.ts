@@ -37,7 +37,7 @@ describe('KpisService.utilizacion', () => {
     // Si alguien mueve un concepto de lista, este caso lo dice con nombre y apellido:
     // el indicador cambia de significado y no puede pasar en silencio.
     expect(PRODUCTIVOS).toEqual(['DC', 'MD', 'DFD', 'DVSF', 'DVRC']);
-    expect(NO_PRODUCTIVOS).toEqual(['LR', 'NR']);
+    expect(NO_PRODUCTIVOS).toEqual(['LR', 'NR', 'OTRO']);
     expect(FUERA_DEL_DENOMINADOR).toEqual(['IL']);
 
     const u = await servicioCon([fila('Ana', 'DC', 1)]).utilizacion(2026);
@@ -48,11 +48,12 @@ describe('KpisService.utilizacion', () => {
     });
   });
 
-  it('LR y NR entran en el denominador; IL queda FUERA', async () => {
+  it('LR, NR y OTRO entran en el denominador; IL queda FUERA', async () => {
     const u = await servicioCon([
       fila('Ana', 'DC', 60),
       fila('Ana', 'LR', 20),
-      fila('Ana', 'NR', 20),
+      fila('Ana', 'NR', 10),
+      fila('Ana', 'OTRO', 10), // un «Otro» es un día disponible que no produjo: cuenta
       fila('Ana', 'IL', 100), // 100 días de incapacidad: no deben tocar el porcentaje
     ]).utilizacion(2026);
 

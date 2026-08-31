@@ -3,7 +3,7 @@ import { apiFetch, apiSend } from './client';
 // BIT-01/02/04. La bitácora es del TÉCNICO: el servidor la aísla por `app.technician_id`
 // (RLS), así que estas llamadas nunca mandan un id de técnico — lo pone el token.
 
-export type ConceptCode = 'DC' | 'MD' | 'DFD' | 'DVSF' | 'DVRC' | 'LR' | 'NR' | 'IL';
+export type ConceptCode = 'DC' | 'MD' | 'DFD' | 'DVSF' | 'DVRC' | 'LR' | 'NR' | 'IL' | 'OTRO';
 export type Phase = 'MONTAJE' | 'COLLAUDO';
 export type EntryStatus = 'draft' | 'submitted' | 'approved' | 'returned';
 

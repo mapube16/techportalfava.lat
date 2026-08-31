@@ -167,7 +167,13 @@ describe('technicians: alta sin Entra y baja que conserva la historia (CAT-02)',
     // Se CREA en vez de buscarlo: la version anterior asumia que el catalogo ya tenia
     // mas de un cargo, y en una base recien levantada solo existe ROL_TEST. Una prueba
     // que depende de lo que haya en la base falla por el sitio equivocado.
-    const otroRol = await ownerClient.roleType.create({ data: { name: 'Cargo alternativo' } });
+    // Upsert y no create: role_types no se trunca entre corridas, y la segunda pasada
+    // de esta suite se encontraba su propio cargo de la primera y chocaba con el unique.
+    const otroRol = await ownerClient.roleType.upsert({
+      where: { name: 'Cargo alternativo' },
+      update: {},
+      create: { name: 'Cargo alternativo' },
+    });
 
     const res = await http()
       .patch(`/api/technicians/${t.id}`)

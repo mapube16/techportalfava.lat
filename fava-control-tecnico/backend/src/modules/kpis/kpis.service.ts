@@ -77,8 +77,13 @@ export interface ProyectoVendidoEjecutado {
 /** Días que cuentan como trabajo. El medio día cuenta 1, igual que en el Excel. */
 export const PRODUCTIVOS: ConceptCode[] = ['DC', 'MD', 'DFD', 'DVSF', 'DVRC'];
 
-/** No productivos, pero SÍ en el denominador: el técnico estaba disponible y no produjo. */
-export const NO_PRODUCTIVOS: ConceptCode[] = ['LR', 'NR'];
+/**
+ * No productivos, pero SÍ en el denominador: el técnico estaba disponible y no produjo.
+ * `OTRO` (capacitación, trámites…) cae aquí y no fuera, como la incapacidad: fue un día
+ * disponible que no produjo en ningún proyecto, y sacarlo del denominador lo borraría
+ * del indicador — justo lo contrario de lo pedido, que estos días se VEAN en el KPI.
+ */
+export const NO_PRODUCTIVOS: ConceptCode[] = ['LR', 'NR', 'OTRO'];
 
 /**
  * Fuera del denominador ENTERO. Una incapacidad no es tiempo disponible que se
@@ -134,7 +139,7 @@ const sumar = (c: Conteos, code: ConceptCode, n: number) => {
 
 /**
  * KPI-07 — la cuadrícula de días por concepto: filas proyecto → técnico → mes,
- * columnas los 8 conceptos, totales en cada nivel.
+ * columnas los conceptos del catalogo, totales en cada nivel.
  *
  * Es la tabla dinámica que Andrea mantiene a mano y que sólo ella sabe refrescar
  * («yo me siento con Luca… él, como no sabe hacerle una actualización a la data, pues

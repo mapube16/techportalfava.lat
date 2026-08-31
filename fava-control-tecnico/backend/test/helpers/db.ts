@@ -76,7 +76,7 @@ const TABLAS_TX = [
 ] as const;
 
 /**
- * Catalogos: NUNCA se truncan. Los 8 conceptos los siembra la migracion (son
+ * Catalogos: NUNCA se truncan. Los conceptos los siembran las migraciones (son
  * estructura, no datos de ejemplo) y un `TRUNCATE ... CASCADE` sobre `concepts`
  * se los llevaria por delante dejando la base en un estado que ninguna migracion
  * repone. Listados aqui para que quede escrito por que NO estan en TABLAS_TX.

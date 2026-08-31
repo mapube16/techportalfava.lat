@@ -341,4 +341,21 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
     await guardar(DIA, { conceptCode: 'LR' }, tokenA).expect(200);
   });
 
+  // ── «Otro» (peticion de Andrea, 2026-08-31): el cajon residual, con explicacion ──
+
+  it('un OTRO sin descripcion se rechaza: un comodin sin explicar no se puede leer', async () => {
+    const res = await guardar(DIA, { conceptCode: 'OTRO' }).expect(400);
+    expect(res.body.message).toBe('OTRO_SIN_DESCRIPCION');
+  });
+
+  it('un OTRO con descripcion y SIN proyecto entra: el CHECK lo admite suelto', async () => {
+    // Si la CHECK `de_proyecto_por_concepto` no conociera OTRO, esto seria un 23514.
+    const res = await guardar(DIA, {
+      conceptCode: 'OTRO',
+      description: 'Capacitacion interna en la planta',
+    }).expect(200);
+    expect(res.body.conceptCode).toBe('OTRO');
+    expect(res.body.projectId).toBeNull();
+  });
+
 });

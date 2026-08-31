@@ -53,6 +53,8 @@ describe('auth (AUTH-01, AUTH-04)', () => {
       email: EMAIL,
       roles: ['T', 'A'],
       technicianId: null,
+      // Sin vinculo a technician no hay tipo de contratacion que declarar (BIT-09).
+      employmentType: null,
       // Fase 9: el idioma de SUS correos. El contrato se quedo atras cuando se añadio.
       lang: 'es',
     });

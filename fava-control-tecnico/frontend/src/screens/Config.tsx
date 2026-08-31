@@ -195,7 +195,7 @@ export default function Config() {
             {isSuper ? null : <span className="text-xs text-muted-foreground">{t.cat_only_super}</span>}
           </CardHeader>
           <CardContent className="px-4.5 py-2">
-            {/* Los 8 códigos son fijos por enum de Postgres: aquí solo se editan las
+            {/* Los códigos son fijos por enum de Postgres: aquí solo se editan las
                 etiquetas ES/IT, que es lo único que CAT-01 deja tocar. */}
             {cat.concepts.map((c, i) => (
               <div key={c.code} className={`flex items-center gap-3 py-2.5 flex-wrap ${i ? 'border-t border-border' : ''}`}>

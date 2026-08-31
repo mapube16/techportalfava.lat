@@ -12,7 +12,7 @@ import { Roles } from '../../common/auth/roles.decorator';
 import { ConceptCode } from '../../generated/prisma/enums';
 import { CatalogsService } from './catalogs.service';
 
-/** Los 8 codigos del enum de Postgres, no una lista copiada a mano. */
+/** Los codigos del enum de Postgres, no una lista copiada a mano. */
 const CODIGOS: string[] = Object.values(ConceptCode);
 
 /** ISO-4217: exactamente 3 letras. Se normaliza a mayusculas, no se rechaza por eso. */

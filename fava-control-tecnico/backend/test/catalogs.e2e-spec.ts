@@ -25,8 +25,8 @@ const ROL_INACTIVO = 'Rol e2e inactivo';
 const CUR_NUEVA = 'ZZZ';
 const MAQ_NUEVA = 'E2E-MAQ';
 
-/** Los 8 codigos en el orden que fija `sort_order` en la migracion. */
-const CONCEPTOS = ['DC', 'MD', 'DFD', 'DVSF', 'DVRC', 'LR', 'NR', 'IL'];
+/** Los 9 codigos en el orden que fija `sort_order` en las migraciones. */
+const CONCEPTOS = ['DC', 'MD', 'DFD', 'DVSF', 'DVRC', 'LR', 'NR', 'IL', 'OTRO'];
 
 describe('catalogs: catalogo cerrado y ABM de Super Admin (CAT-01)', () => {
   let app: INestApplication;
@@ -93,8 +93,8 @@ describe('catalogs: catalogo cerrado y ABM de Super Admin (CAT-01)', () => {
   });
 
   it('el Admin y el Super Admin tambien leen el catalogo', async () => {
-    expect((await catalogos(tokenAdmin)).concepts).toHaveLength(8);
-    expect((await catalogos(tokenSuper)).concepts).toHaveLength(8);
+    expect((await catalogos(tokenAdmin)).concepts).toHaveLength(CONCEPTOS.length);
+    expect((await catalogos(tokenSuper)).concepts).toHaveLength(CONCEPTOS.length);
   });
 
   it('el contrato de las 4 listas es exactamente el que consume el cliente', async () => {
@@ -202,7 +202,7 @@ describe('catalogs: catalogo cerrado y ABM de Super Admin (CAT-01)', () => {
 
   it('no existe endpoint para BORRAR un concepto → 404', async () => {
     await http().delete('/api/catalogs/concepts/DC').set(auth(tokenSuper)).expect(404);
-    expect(await ownerClient.concept.count()).toBe(8);
+    expect(await ownerClient.concept.count()).toBe(CONCEPTOS.length);
   });
 
   // ── Roles tecnicos: ABM completo del Super Admin, con desactivacion ──

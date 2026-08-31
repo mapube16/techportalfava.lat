@@ -17,10 +17,11 @@ export const CONCEPTS: Concept[] = [
   { c: 'LR', es: 'Libre remunerado', it: 'Permesso retribuito', pt: 'Folga remunerada', color: '#e86c00' },
   { c: 'NR', es: 'No remunerado', it: 'Non retribuito', pt: 'Não remunerado', color: '#78889a' },
   { c: 'IL', es: 'Incapacidad', it: 'Malattia', pt: 'Atestado médico', color: '#d64545' },
+  { c: 'OTRO', es: 'Otro', it: 'Altro', pt: 'Outro', color: '#a16207' },
 ];
 
 /**
- * Color por código: DECORACIÓN, no dato. Los 8 códigos son fijos por enum de Postgres,
+ * Color por código: DECORACIÓN, no dato. Los códigos son fijos por enum de Postgres,
  * así que este mapa no se puede desincronizar. Las ETIQUETAS, en cambio, las edita el
  * Super Admin y vienen del API (`GET /api/catalogs`) desde el cutover de la Fase 2.
  */

@@ -22,7 +22,7 @@ enum Role {
   @@map("role")
 }
 
-/// CAT-01. Los 8 codigos son FIJOS (decision bloqueada del CONTEXT). Enum de
+/// CAT-01. Los codigos son FIJOS (decision bloqueada del CONTEXT). Enum de
 /// Postgres = el catalogo no puede crecer ni por un bug de servicio ni por SQL
 /// suelto. Las etiquetas visibles (mutables) viven en la tabla `concepts`.
 /// OJO con LR/NR: la hoja Parametros del Excel llama «LR» a los codigos 4 y 5;
@@ -36,6 +36,10 @@ enum ConceptCode {
   LR
   NR
   IL
+  /// Lo que no cabe en ninguno (capacitacion, tramites…). Peticion de Andrea
+  /// (2026-08-31). Sin proyecto, y el servidor exige descripcion: un comodin sin
+  /// explicacion es la celda que nadie sabe leer seis meses despues.
+  OTRO
 
   @@map("concept_code")
 }
@@ -141,7 +145,7 @@ model DailyEntry {
   /// «En Fabrica» es un MODIFICADOR de DC y DFD, no un concepto aparte: la hoja
   /// `Parametros` se lo pega a la etiqueta, pero los datos usan las dos variantes bajo
   /// el mismo numero (1.109 con y 1.133 sin). Como concepto separado duplicaria el
-  /// catalogo cerrado de 8.
+  /// catalogo cerrado.
   inFactory Boolean @default(false) @map("in_factory")
 
   /// BIT-08: la columna NOTA del papel — el horario del dia o un aviso para Andrea.

@@ -3,7 +3,7 @@ import { apiFetch, apiSend } from './client';
 // Contrato cerrado de 02-03 (§ «Contrato definitivo del API»). Las 4 listas incluyen
 // los INACTIVOS: filtra el selector, no el endpoint.
 
-/** Los 8 conceptos son fijos por enum de Postgres: solo cambian sus etiquetas. */
+/** Los conceptos son fijos por enum de Postgres: solo cambian sus etiquetas. */
 export interface Concept {
   code: string;
   labelEs: string;

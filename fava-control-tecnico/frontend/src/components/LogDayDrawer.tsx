@@ -17,7 +17,7 @@ import { diasDeSemana, hoyLocal, lunesDe } from '../lib/fecha';
  * misma lista que el motor: si se desincronizan, el servidor rechaza con un 23514 que
  * al técnico no le dice nada. Aquí sirve para no pedirle un proyecto que no tiene.
  */
-const SIN_PROYECTO: ConceptCode[] = ['LR', 'NR', 'IL'];
+const SIN_PROYECTO: ConceptCode[] = ['LR', 'NR', 'IL', 'OTRO'];
 
 /** Inicial del dia, indexada por `getUTCDay()` (0 = domingo). Las fechas son
     'YYYY-MM-DD' leidas en UTC, nunca en el huso del movil (ver lib/fecha.ts). */
@@ -57,7 +57,7 @@ export default function LogDayDrawer() {
   /**
    * Las ETIQUETAS de los conceptos vienen del API porque el Super Admin las edita
    * (CAT-01). Lo único que se queda en `i18n` es el COLOR, que es decoración y no
-   * puede desincronizarse: los 8 códigos son fijos por enum de Postgres.
+   * puede desincronizarse: los códigos son fijos por enum de Postgres.
    */
   const { data: catalogos } = useApiData(getCatalogs, []);
   const conceptos = catalogos?.concepts ?? [];
@@ -311,7 +311,7 @@ export default function LogDayDrawer() {
             })()}
           </div>
 
-          {/* Modificador, no concepto: el catálogo cerrado son 8 y «En Fabrica» duplicaría
+          {/* Modificador, no concepto: el catálogo es cerrado y «En Fabrica» duplicaría
               DC y DFD si fuese uno más. */}
           {ADMITE_FABRICA.includes(concept) ? (
             <label className="flex items-center gap-2.5 mb-3.5 min-h-11 cursor-pointer">
