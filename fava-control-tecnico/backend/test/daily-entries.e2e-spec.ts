@@ -268,7 +268,7 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
 
   it('cada tecnico ve SOLO las suyas cuando los dos tienen dias en la misma semana', async () => {
     await guardar(DIA, datos(), tokenA).expect(200);
-    await guardar(dia(8), { conceptCode: 'LR' }, tokenB).expect(200);
+    await guardar(dia(8), { conceptCode: 'NR' }, tokenB).expect(200);
 
     const [a, b] = await Promise.all([
       semana(SEMANA, tokenA).expect(200),
@@ -326,4 +326,19 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
     await http().get('/api/daily-entries').set(auth(tokenAdmin)).expect(403);
     await guardar(DIA, datos(), tokenAdmin).expect(403);
   });
+
+  // ── BIT-09: el libre remunerado es SOLO de internos (regla de Andrea, 2026-08-30) ──
+
+  it('a un tecnico EXTERNO el LR se le rechaza con su motivo; el NR le vale', async () => {
+    // TEC_B nace EXTERNO en los fixtures: exactamente el caso de la regla.
+    const res = await guardar(DIA, { conceptCode: 'LR' }, tokenB).expect(400);
+    expect(res.body.message).toBe('LIBRE_REMUNERADO_SOLO_INTERNOS');
+
+    await guardar(DIA, { conceptCode: 'NR' }, tokenB).expect(200);
+  });
+
+  it('a un INTERNO (TEC_A en los fixtures) el LR se le acepta', async () => {
+    await guardar(DIA, { conceptCode: 'LR' }, tokenA).expect(200);
+  });
+
 });

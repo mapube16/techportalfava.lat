@@ -31,6 +31,8 @@ const datos: DatosNota = {
     // imprime la fila vacía en vez de omitirla.
     description: i === 3 ? null : `Montaje y revisión del día ${i + 1}`,
     categoria: i === 3 ? null : 'Día completo',
+    // BIT-08: un dia con nota y el resto sin ella — el respaldo al n.º de contrato.
+    dayNote: i === 0 ? 'HORARIO 7 AM - 5 PM' : null,
   })),
   gastosTecnico: [{ descripcion: 'Transporte', valor: '50.000' }],
   anticiposCliente: [{ descripcion: 'Anticipo', valor: '100.000' }],

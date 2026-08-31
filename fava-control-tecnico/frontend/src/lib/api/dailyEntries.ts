@@ -25,6 +25,8 @@ export interface Entry {
   /** «En Fabrica»: modificador de DC y DFD, no un concepto aparte. */
   inFactory: boolean;
   description: string | null;
+  /** La columna NOTA del papel: horario del dia, o algo que Andrea deba saber. */
+  dayNote: string | null;
   status: EntryStatus;
   /** Lo único contra lo que el borrador local puede detectar un conflicto. */
   updatedAt: string;
@@ -45,6 +47,7 @@ export interface EntryInput {
   phase: Phase | null;
   inFactory: boolean;
   description: string | null;
+  dayNote: string | null;
 }
 
 /** Rango máximo de 30 días: sin techo un `from` lejano se trae la tabla entera. */

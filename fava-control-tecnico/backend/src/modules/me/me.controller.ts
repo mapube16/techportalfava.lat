@@ -20,6 +20,11 @@ export type MeResponse =
         email: string;
         roles: Role[];
         technicianId: string | null;
+        /**
+         * INTERNO | EXTERNO | null (sin ficha de tecnico). La pantalla lo usa para no
+         * ofrecer el libre remunerado a un externo — la regla dura vive en el servidor.
+         */
+        employmentType: string | null;
         /** Idioma de sus correos (Fase 9). 'es' | 'it' | 'pt'. */
         lang: string;
       };
@@ -42,7 +47,16 @@ export class MeController {
   async me(@Req() req: Request): Promise<MeResponse> {
     if (req.user) {
       const { id, displayName, email, roles, technicianId, lang } = req.user;
-      return { status: 'ok', user: { id, displayName, email, roles, technicianId, lang } };
+      const tec = technicianId
+        ? await this.prisma.base.technician.findUnique({
+            where: { id: technicianId },
+            select: { employmentType: true },
+          })
+        : null;
+      return {
+        status: 'ok',
+        user: { id, displayName, email, roles, technicianId, employmentType: tec?.employmentType ?? null, lang },
+      };
     }
 
     // biome-ignore lint: el guard garantiza req.entra en toda ruta con token.

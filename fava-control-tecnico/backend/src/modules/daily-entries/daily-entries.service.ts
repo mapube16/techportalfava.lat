@@ -24,6 +24,7 @@ const FILA = {
   machineModelId: true,
   conceptCode: true,
   inFactory: true,
+  dayNote: true,
   phase: true,
   description: true,
   status: true,
@@ -55,6 +56,8 @@ export interface Jornada {
   phase: Phase | null;
   inFactory: boolean;
   description: string | null;
+  /** La columna NOTA del papel: horario, o algo que Andrea deba saber de ese dia. */
+  dayNote: string | null;
 }
 
 interface Cruda {
@@ -66,6 +69,7 @@ interface Cruda {
   phase: Phase | null;
   inFactory: boolean;
   description: string | null;
+  dayNote: string | null;
   status: string;
   updatedAt: Date;
   project: { name: string } | null;
@@ -86,6 +90,7 @@ const plana = (f: Cruda) => ({
   phase: f.phase,
   inFactory: f.inFactory,
   description: f.description,
+  dayNote: f.dayNote,
   status: f.status,
   updatedAt: f.updatedAt.toISOString(),
 });
@@ -175,6 +180,21 @@ export class DailyEntriesService {
     });
     if (actual && !EDITABLES.includes(actual.status))
       throw new ConflictException('JORNADA_BLOQUEADA');
+
+    /**
+     * El libre remunerado es SOLO de internos. Regla de negocio dictada por Andrea
+     * (2026-08-30): al externo no se le pagan los libres — su dia libre es NR, no LR.
+     * Va en el servidor y no solo en la pantalla: la pantalla esconde el boton, pero
+     * el dato que factura dias pagados no puede depender de un boton escondido.
+     */
+    if (datos.conceptCode === 'LR') {
+      const tec = await this.prisma.client.technician.findUnique({
+        where: { id: technicianId },
+        select: { employmentType: true },
+      });
+      if (tec?.employmentType === 'EXTERNO')
+        throw new BadRequestException('LIBRE_REMUNERADO_SOLO_INTERNOS');
+    }
 
     // La orden tiene que ser DEL proyecto que se declara. El FK solo garantiza que
     // existe, no que sea de este proyecto: sin esta comprobacion un dia de JAV podria

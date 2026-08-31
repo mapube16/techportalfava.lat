@@ -33,6 +33,8 @@ export default function LogDayDrawer() {
   const [orderId, setOrderId] = useState('');
   const [concept, setConcept] = useState<ConceptCode>('DC');
   const [inFactory, setInFactory] = useState(false);
+  /** BIT-08: la columna NOTA del papel — horario del dia o un aviso para Andrea. */
+  const [notaDia, setNotaDia] = useState('');
   /**
    * Los dias que se van a escribir. Empieza con uno —el que se abrio— y el tecnico
    * puede marcar mas: un montaje son cinco dias con el MISMO proyecto, orden y
@@ -72,6 +74,7 @@ export default function LogDayDrawer() {
     setOrderId(existente.orderId ?? '');
     if (existente.conceptCode) setConcept(existente.conceptCode);
     setInFactory(existente.inFactory);
+    setNotaDia(existente.dayNote ?? '');
     setDescs((d) => ({ ...d, [fecha]: existente.description ?? '' }));
   }, [existente, fecha]);
 
@@ -117,6 +120,9 @@ export default function LogDayDrawer() {
         conceptCode: concept,
         phase: null,
         inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
+        // Solo en el modo de UN dia: en el relleno multiple la nota es de cada dia y
+        // repetir la misma en siete filas del PDF seria ruido impreso.
+        dayNote: dias.length <= 1 ? notaDia.trim() || null : null,
       },
     )
       .then(() => {
@@ -195,7 +201,11 @@ export default function LogDayDrawer() {
             })}
           </div>
 
-          {field(
+          {/* Con un concepto sin proyecto (LR, NR, IL) el selector NO se muestra:
+              esa informacion se relaciona directamente con «sin proyecto», y ofrecer
+              un desplegable opcional invitaba a colgar una incapacidad de una obra.
+              El estado se limpia al elegir el concepto, mas abajo. */}
+          {exigeProyecto ? field(
             t.log_project,
             <select
               value={projectId}
@@ -205,14 +215,14 @@ export default function LogDayDrawer() {
               }}
               className={inputStyle}
             >
-              <option value="">{exigeProyecto ? t.log_pick_project : t.log_no_project}</option>
+              <option value="">{t.log_pick_project}</option>
               {(proyectos ?? []).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
               ))}
             </select>,
-          )}
+          ) : null}
 
           {/* La máquina se elige por ORDEN, no por modelo: dos `PL 6000` del mismo
               proyecto son el mismo modelo y solo se distinguen por su commessa. Es el
@@ -251,13 +261,30 @@ export default function LogDayDrawer() {
           {field(
             t.log_concept,
             <div className="grid grid-cols-4 gap-1.5">
-              {conceptos.map((c) => {
+              {conceptos
+                .filter(
+                  // Regla de Andrea (2026-08-30): al EXTERNO no se le pagan los libres
+                  // remunerados, asi que ni se le ofrece el boton. La regla dura vive
+                  // en el servidor; esto solo evita ensenar una opcion que va a fallar.
+                  (c) =>
+                    c.code !== 'LR' ||
+                    (state.me?.status === 'ok' ? state.me.user.employmentType !== 'EXTERNO' : true),
+                )
+                .map((c) => {
                 const on = concept === c.code;
                 const color = CONCEPT_COLOR[c.code] ?? 'var(--primary)';
                 return (
                   <button
                     key={c.code}
-                    onClick={() => setConcept(c.code as ConceptCode)}
+                    onClick={() => {
+                      const codigoNuevo = c.code as ConceptCode;
+                      setConcept(codigoNuevo);
+                      // Un dia sin proyecto no puede quedarse apuntando al de antes.
+                      if (SIN_PROYECTO.includes(codigoNuevo)) {
+                        setProjectId('');
+                        setOrderId('');
+                      }
+                    }}
                     title={state.lang === 'it' ? c.labelIt : c.labelEs}
                     // El color viene del catálogo (una fila por concepto), no de una
                     // paleta finita: no hay clase de Tailwind posible para eso, va en
@@ -327,6 +354,21 @@ export default function LogDayDrawer() {
                   descError && !(descs[f] ?? '').trim(),
                 ),
               )}
+
+          {/* BIT-08: la columna NOTA del papel. Solo en el modo de un dia — en el
+              relleno multiple repetir la misma nota siete veces seria ruido impreso. */}
+          {dias.length <= 1
+            ? field(
+                t.log_note,
+                <input
+                  value={notaDia}
+                  maxLength={120}
+                  onChange={(e) => setNotaDia(e.target.value)}
+                  placeholder={t.log_note_ph}
+                  className={inputStyle}
+                />,
+              )
+            : null}
 
           {errApi ? <FieldError msg={errTexto(errApi)} /> : null}
 

@@ -96,7 +96,20 @@ function jornada(body: Cuerpo): Jornada {
     conceptCode: deLista(body?.conceptCode, CONCEPTOS, 'CONCEPTO_INVALIDO') as Jornada['conceptCode'],
     phase: deLista(body?.phase, FASES, 'FASE_INVALIDA') as Jornada['phase'],
     description: descripcion(body?.description),
+    dayNote: notaDia(body?.dayNote),
   };
+}
+
+/**
+ * La nota del dia: corta y opcional. 120 caracteres porque es UNA celda de la fila del
+ * PDF — «HORARIO 7 AM - 5 PM», no un segundo parrafo de descripcion; para eso ya esta
+ * la descripcion.
+ */
+function notaDia(valor: unknown): string | null {
+  if (valor === undefined || valor === null || valor === '') return null;
+  if (typeof valor !== 'string' || valor.length > 120)
+    throw new BadRequestException('NOTA_DIA_INVALIDA');
+  return valor.trim() || null;
 }
 
 /**

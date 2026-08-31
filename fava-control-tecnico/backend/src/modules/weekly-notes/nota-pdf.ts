@@ -70,6 +70,8 @@ export interface FilaNota {
   description: string | null;
   /** La etiqueta del concepto, ya resuelta al idioma («Día completo»). */
   categoria: string | null;
+  /** La nota del dia que escribe el tecnico: horario, o algo que Andrea deba saber. */
+  dayNote: string | null;
 }
 
 export interface Gasto {
@@ -291,21 +293,23 @@ export function definicionNota(d: DatosNota): TDocumentDefinitions {
               eti(DIAS[i] ?? '', { alignment: 'center', fontSize: 8 }),
               eti(f.description ?? ' ', { alignment: 'center', fontSize: 8 }),
               eti(f.categoria ?? ' ', { alignment: 'center', fontSize: 8 }),
-              // NOTA repite el n.º de contrato en los siete días: en el original es
-              // literalmente el mismo valor, no un campo distinto.
-              eti(d.contractNumber || ' ', { alignment: 'center', fontSize: 8 }),
+              // La nota DEL DIA si el tecnico escribio una («HORARIO 7 AM - 5 PM»);
+              // si no, el n.º de contrato, que es lo que el papel repetia en las
+              // siete filas. Pedido por Andrea (2026-08-30): esa columna existia y no
+              // habia forma de escribir en ella.
+              eti(f.dayNote || d.contractNumber || ' ', { alignment: 'center', fontSize: 8 }),
             ]),
           ],
         },
         layout: REJILLA,
       },
 
-      // Gastos y anticipos: informativos (NOTA-08), sin flujo de reembolso.
+      // Solo los gastos del tecnico (NOTA-08). El bloque «Anticipo efectuado por el
+      // cliente» salio del PDF a peticion de Andrea (2026-08-30): en la practica nadie
+      // lo rellenaba y ocupaba media banda. El dato se sigue capturando y Andrea lo ve
+      // en la bandeja; si algun dia vuelve al papel, `bloqueGastos` sigue aqui.
       {
-        columns: [
-          bloqueGastos('Gastos sostenidos por el técnico', d.gastosTecnico, true, '54%'),
-          bloqueGastos('Anticipo efectuado por el cliente', d.anticiposCliente, false, '46%'),
-        ],
+        columns: [bloqueGastos('Gastos sostenidos por el técnico', d.gastosTecnico, true, '100%')],
         columnGap: 0,
       },
 

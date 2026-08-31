@@ -55,6 +55,8 @@ const ES: Record<string, string> = {
   ORDEN_INEXISTENTE: 'Esa orden no existe.',
   ORDEN_DE_OTRO_PROYECTO: 'Esa orden es de otro proyecto.',
   CONCEPTO_INEXISTENTE: 'Ese concepto no existe en el catálogo.',
+  LIBRE_REMUNERADO_SOLO_INTERNOS: 'El libre remunerado es solo para técnicos internos. Para un externo, el día libre se registra como no remunerado.',
+  NOTA_DIA_INVALIDA: 'La nota del día no es válida: máximo 120 caracteres.',
 
   // ── Proyectos y órdenes ──
   PROYECTO_NO_ENCONTRADO: 'Ese proyecto ya no existe. Recarga la pantalla.',
@@ -137,6 +139,8 @@ const IT: Record<string, string> = {
   ORDEN_INEXISTENTE: 'Quella commessa non esiste.',
   ORDEN_DE_OTRO_PROYECTO: 'Quella commessa è di un altro progetto.',
   CONCEPTO_INEXISTENTE: 'Quel concetto non esiste nel catalogo.',
+  LIBRE_REMUNERADO_SOLO_INTERNOS: 'Il permesso retribuito è solo per i tecnici interni. Per un esterno, il giorno libero si registra come non retribuito.',
+  NOTA_DIA_INVALIDA: 'La nota del giorno non è valida: massimo 120 caratteri.',
 
   PROYECTO_NO_ENCONTRADO: 'Quel progetto non esiste più. Ricarica la schermata.',
   ORDEN_NO_ENCONTRADA: 'Quella commessa non esiste più. Ricarica la schermata.',
@@ -215,6 +219,8 @@ const PT: Record<string, string> = {
   ORDEN_INEXISTENTE: 'Essa ordem não existe.',
   ORDEN_DE_OTRO_PROYECTO: 'Essa ordem é de outro projeto.',
   CONCEPTO_INEXISTENTE: 'Esse conceito não existe no catálogo.',
+  LIBRE_REMUNERADO_SOLO_INTERNOS: 'O dia livre remunerado é só para técnicos internos. Para um externo, o dia livre registra-se como não remunerado.',
+  NOTA_DIA_INVALIDA: 'A nota do dia não é válida: máximo de 120 caracteres.',
 
   PROYECTO_NO_ENCONTRADO: 'Esse projeto não existe mais. Recarregue a tela.',
   ORDEN_NO_ENCONTRADA: 'Essa ordem não existe mais. Recarregue a tela.',

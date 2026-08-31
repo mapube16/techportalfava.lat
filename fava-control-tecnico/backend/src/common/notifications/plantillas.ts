@@ -74,6 +74,13 @@ interface Cuerpo {
   listas?: { titulo: string; items: string[] }[];
   /** El texto del boton. El destino sale de `datos.enlace`; sin enlace no se pinta. */
   boton?: string;
+  /**
+   * Un segundo enlace, discreto y debajo del boton. Hoy solo lo usa la invitacion,
+   * para el manual: es el unico correo que recibe alguien que no ha visto la
+   * aplicacion nunca, y es el momento en que un manual sirve de algo. En los otros
+   * cuatro seria ruido — quien recibe «tu nota fue devuelta» ya sabe donde esta todo.
+   */
+  extra?: { texto: string; ruta: string };
 }
 
 export interface Correo {
@@ -165,6 +172,8 @@ function aTexto(c: Cuerpo, d: Datos, lang: Lang): string {
     partes.push('', `${l.titulo}:`, ...l.items.map((i) => `  · ${i}`));
   }
   if (c.boton && d.enlace) partes.push('', `${c.boton}: ${d.enlace}`);
+  const base = origen(d);
+  if (c.extra && base) partes.push(`${c.extra.texto}: ${base}${c.extra.ruta}`);
   partes.push('', PIE[lang]);
   return partes.join('\n') + '\n';
 }
@@ -292,7 +301,12 @@ function aHtml(c: Cuerpo, d: Datos, lang: Lang): string {
     c.parrafos.map(parrafo).join('') +
     (c.destacado ? destacado(c.destacado) : '') +
     (c.listas ?? []).map((l) => lista(l.titulo, l.items)).join('') +
-    (c.boton && d.enlace ? boton(c.boton, d.enlace) : '');
+    (c.boton && d.enlace ? boton(c.boton, d.enlace) : '') +
+    (c.extra && origen(d)
+      ? `<p style="margin:16px 0 0;font:14px/1.5 ${TIPO};color:${SUAVE};">` +
+        `<a href="${esc(origen(d)!)}${esc(c.extra.ruta)}" style="color:${AZUL};">` +
+        `${esc(c.extra.texto)}</a></p>`
+      : '');
 
   return (
     `<!doctype html><html lang="${lang}"><head><meta charset="utf-8">` +
@@ -350,6 +364,7 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
         ],
         destacado: 'Ingrese con su correo de FAVA. No necesita crear una contraseña.',
         boton: 'Ingresar',
+        extra: { texto: 'Manual de uso', ruta: '/manual.html' },
       },
     }),
     note_approved: (d) => ({
@@ -426,6 +441,7 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
         ],
         destacado: 'Acceda con la Sua email FAVA. Non è necessario creare una password.',
         boton: 'Accedere',
+        extra: { texto: 'Manuale d’uso', ruta: '/manual.html' },
       },
     }),
     note_approved: (d) => ({
@@ -497,6 +513,7 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
         ],
         destacado: 'Entre com o seu e-mail da FAVA. Não é necessário criar uma senha.',
         boton: 'Entrar',
+        extra: { texto: 'Manual de uso', ruta: '/manual.html' },
       },
     }),
     note_approved: (d) => ({

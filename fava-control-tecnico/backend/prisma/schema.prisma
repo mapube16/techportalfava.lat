@@ -144,6 +144,10 @@ model DailyEntry {
   /// catalogo cerrado de 8.
   inFactory Boolean @default(false) @map("in_factory")
 
+  /// BIT-08: la columna NOTA del papel — el horario del dia o un aviso para Andrea.
+  /// 120 caracteres porque es UNA celda de la fila del PDF, no otra descripcion.
+  dayNote String? @map("day_note") @db.VarChar(120)
+
   /// El «sin texto libre» de CAT-01, a nivel de tipo. Sin relacion a `concepts`
   /// a proposito: el enum ya constrine la columna y una FK obligaria a leer el
   /// catalogo en cada escritura de bitacora sin ganar ninguna garantia.

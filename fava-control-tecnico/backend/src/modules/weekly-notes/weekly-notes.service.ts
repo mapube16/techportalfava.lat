@@ -331,6 +331,7 @@ export class WeeklyNotesService {
         description: true,
         conceptCode: true,
         inFactory: true,
+        dayNote: true,
         sourceMachine: true,
         order: { select: { label: true, commessaShort: true } },
       },
@@ -342,6 +343,7 @@ export class WeeklyNotesService {
       conceptCode: e.conceptCode,
       description: e.description,
       inFactory: e.inFactory,
+      dayNote: e.dayNote,
       commessaShort: e.order?.commessaShort ?? null,
       /**
        * La máquina contratada si la hay y, si no, el texto CRUDO de la columna
@@ -388,7 +390,7 @@ export class WeeklyNotesService {
     const [entradas, conceptos] = await Promise.all([
       c.dailyEntry.findMany({
         where: { technicianId: nota.technicianId, projectId: nota.projectId, date: { gte: nota.weekStart, lte: fin } },
-        select: { date: true, description: true, conceptCode: true, order: { select: { label: true } } },
+        select: { date: true, description: true, conceptCode: true, dayNote: true, order: { select: { label: true } } },
       }),
       c.concept.findMany({ select: { code: true, labelEs: true } }),
     ]);
@@ -404,6 +406,7 @@ export class WeeklyNotesService {
         date: fecha,
         description: e?.description ?? null,
         categoria: e?.conceptCode ? (etiquetaDe.get(e.conceptCode) ?? null) : null,
+        dayNote: e?.dayNote ?? null,
       };
     });
 

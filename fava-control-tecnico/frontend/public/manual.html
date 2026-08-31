@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cómo usar Control Técnico — FAVA</title>
+    <!--
+      EL MANUAL, servido por la propia aplicacion en /manual.html.
+
+      No es un PDF adjunto ni un enlace a Drive a proposito: el correo de invitacion lo
+      enlaza, y un tecnico en obra tiene que poder abrirlo desde el movil sin descargar
+      nada ni pedir permisos a nadie. Vive con el producto y se despliega con el, asi
+      que no puede quedarse describiendo una version que ya no existe.
+
+      Estilos EN LINEA, como el puente de redireccion y por lo mismo: se abre en un
+      movil con mala cobertura y tiene que pintarse a la primera.
+    -->
+    <style>
+      :root {
+        --papel: #eef2f5;
+        --carta: #ffffff;
+        --tinta: #132330;
+        --suave: #5b6b7a;
+        --azul: #1f4e79;
+        --relleno: #dce9f6;
+        --borde: #a9bed4;
+        --linea: #dde3e9;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --papel: #0b131c;
+          --carta: #131f2b;
+          --tinta: #e6edf4;
+          --suave: #93a4b5;
+          --azul: #5ea3e0;
+          --relleno: #16283a;
+          --borde: #2c4257;
+          --linea: #263544;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--papel);
+        color: var(--tinta);
+        font: 16px/1.65 Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      .hoja {
+        max-width: 760px;
+        margin: 0 auto;
+        background: var(--carta);
+        border: 1px solid var(--borde);
+      }
+      header {
+        border-bottom: 1px solid var(--borde);
+        padding: 18px 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .marca { font-weight: 700; font-size: 17px; color: var(--azul); }
+      .marca span { font-weight: 400; color: var(--suave); }
+      .doc {
+        font-size: 11.5px; font-weight: 600; letter-spacing: 0.1em;
+        text-transform: uppercase; color: var(--suave);
+      }
+      main { padding: 26px 22px 40px; }
+      h1 { font-size: 25px; line-height: 1.25; margin: 0 0 6px; text-wrap: balance; }
+      .bajada { color: var(--suave); margin: 0 0 26px; }
+      h2 {
+        font-size: 18px; margin: 34px 0 12px; padding-top: 20px;
+        border-top: 1px solid var(--linea);
+      }
+      h2:first-of-type { border-top: 0; padding-top: 0; margin-top: 26px; }
+      h3 { font-size: 15px; margin: 20px 0 6px; }
+      p, li { margin: 0 0 12px; }
+      ol.pasos { counter-reset: p; list-style: none; padding: 0; margin: 0 0 16px; }
+      ol.pasos > li {
+        counter-increment: p; position: relative; padding: 0 0 0 38px; margin-bottom: 14px;
+      }
+      ol.pasos > li::before {
+        content: counter(p); position: absolute; left: 0; top: 1px;
+        width: 26px; height: 26px; border-radius: 50%;
+        background: var(--azul); color: #fff;
+        font: 600 13px/26px Roboto, sans-serif; text-align: center;
+      }
+      .aviso {
+        background: var(--relleno); border: 1px solid var(--borde);
+        padding: 13px 15px; margin: 0 0 18px; color: var(--tinta);
+      }
+      .aviso strong { color: var(--azul); }
+      table { width: 100%; border-collapse: collapse; margin: 0 0 18px; font-size: 15px; }
+      th, td { border: 1px solid var(--borde); padding: 8px 11px; text-align: left; vertical-align: top; }
+      th {
+        background: var(--carta); font-size: 12px; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--suave);
+      }
+      td:first-child { background: var(--relleno); font-weight: 600; color: var(--azul); white-space: nowrap; }
+      .boton {
+        display: inline-block; background: var(--azul); color: #fff;
+        padding: 3px 9px; font-size: 14px; font-weight: 600; white-space: nowrap;
+      }
+      footer {
+        border-top: 1px solid var(--borde); padding: 16px 22px;
+        font-size: 13.5px; color: var(--suave); background: var(--papel);
+      }
+      a { color: var(--azul); }
+      @media (max-width: 620px) {
+        main { padding: 20px 16px 32px; }
+        h1 { font-size: 22px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hoja">
+      <header>
+        <div class="marca">FAVA <span>Control Técnico</span></div>
+        <div class="doc">Manual de uso</div>
+      </header>
+
+      <main>
+        <h1>Cómo registrar tu semana y firmar tu nota</h1>
+        <p class="bajada">
+          Esta aplicación reemplaza el Excel y la nota en papel. Registras tus días una sola vez y
+          de ahí sale la nota semanal firmada. Se usa desde el móvil, en obra.
+        </p>
+
+        <h2>1. Entrar</h2>
+        <div class="aviso">
+          <strong>No tienes que crear ninguna contraseña.</strong> Se entra con el mismo correo de
+          FAVA que ya usas para Outlook.
+        </div>
+        <ol class="pasos">
+          <li>Abre <a href="/">www.techportalfava.lat</a> en el navegador del móvil o del ordenador.</li>
+          <li>Pulsa el botón de entrar y elige tu cuenta de Microsoft.</li>
+          <li>La primera vez te pedirá confirmar. Después entra directo.</li>
+        </ol>
+        <p>
+          Si te dice que no tienes acceso, pídeselo a tu administrador: tu cuenta tiene que estar
+          dada de alta antes.
+        </p>
+
+        <h2>2. Registrar tus días</h2>
+        <p>
+          Nada más entrar verás <strong>Mi semana</strong>, de lunes a domingo. Es tu pantalla de
+          trabajo: todo lo demás sale de aquí.
+        </p>
+        <ol class="pasos">
+          <li>Pulsa el día que quieras registrar.</li>
+          <li>
+            Elige el <strong>proyecto</strong>, el <strong>concepto</strong> (día completo, medio
+            día, viaje, festivo…) y escribe qué hiciste.
+          </li>
+          <li>Guarda. El día queda en tu semana con su proyecto a la vista.</li>
+        </ol>
+        <div class="aviso">
+          Si estuviste varios días seguidos en lo mismo, puedes <strong>rellenar varios de una
+          vez</strong> y escribir la descripción de cada uno. No hace falta repetir el proyecto
+          siete veces.
+        </div>
+        <h3>La descripción importa</h3>
+        <p>
+          Es lo que el cliente lee y firma. «Montaje» no dice nada dentro de seis meses; «Montaje de
+          bancada y alineación de la línea de extrusión» sí.
+        </p>
+
+        <h2>3. Enviar la semana</h2>
+        <p>
+          Cuando la semana esté completa, pulsa <span class="boton">Enviar a revisión →</span>.
+        </p>
+        <table>
+          <tr>
+            <td>Qué pasa</td>
+            <td>
+              Se crea <strong>una nota por proyecto</strong>. Si trabajaste en dos obras, salen dos
+              notas, cada una con su cliente. Tú no eliges nada.
+            </td>
+          </tr>
+          <tr>
+            <td>Días sin proyecto</td>
+            <td>Los días libres o no remunerados se cierran con la semana. Nadie los firma.</td>
+          </tr>
+          <tr>
+            <td>Si no te deja</td>
+            <td>
+              Sale un aviso explicando por qué: la semana ya estaba enviada, o un proyecto ya está
+              aprobado y hay que reabrirlo. Lee el aviso, dice qué hacer.
+            </td>
+          </tr>
+        </table>
+
+        <h2>4. Firmar</h2>
+        <div class="aviso">
+          <strong>La firma es obligatoria.</strong> Sin ella la nota no se puede aprobar y no queda
+          un PDF que descargar. Es tu consentimiento sobre lo que declaraste.
+        </div>
+        <ol class="pasos">
+          <li>Al enviar, el diálogo de firma se abre solo.</li>
+          <li>Firma con el dedo en el recuadro y acepta la declaración.</li>
+          <li>
+            Si la semana generó varias notas, al firmar una <strong>se abre la siguiente</strong>
+            hasta que no quede ninguna.
+          </li>
+        </ol>
+        <p>
+          Si lo cierras sin firmar, cada nota conserva su botón
+          <span class="boton">Firmar</span> en su tarjeta. Puedes volver cuando quieras.
+        </p>
+        <p>
+          <strong>El cliente no firma en tu móvil.</strong> El PDF sale con su casilla en blanco
+          para que la firme y le ponga el timbre sobre el papel, como siempre.
+        </p>
+
+        <h2>5. Gastos y comprobantes</h2>
+        <p>
+          En el mismo diálogo de la firma, plegado abajo, está <strong>Gastos · Comprobantes</strong>.
+          Ábrelo solo si esa semana hubo algo: la mayoría no tiene.
+        </p>
+        <table>
+          <tr>
+            <td>Gastos</td>
+            <td>Lo que pusiste tú de tu bolsillo: peaje, hotel, taxi.</td>
+          </tr>
+          <tr>
+            <td>Anticipo del cliente</td>
+            <td>Lo que el cliente te adelantó en obra. No lo pusiste tú.</td>
+          </tr>
+          <tr>
+            <td>Comprobantes</td>
+            <td>
+              La foto del ticket. Pulsa <span class="boton">Adjuntar comprobante</span> y usa la
+              cámara o una foto que ya tengas. Se reduce sola antes de subirse.
+            </td>
+          </tr>
+        </table>
+        <p>
+          Se aprueban a la vez que la semana. Una vez firmada la nota ya no se pueden cambiar, así
+          que adjunta antes de firmar.
+        </p>
+
+        <h2>6. Qué pasa después</h2>
+        <table>
+          <tr>
+            <td>Aprobada</td>
+            <td>Recibes un correo. No tienes que hacer nada más.</td>
+          </tr>
+          <tr>
+            <td>Devuelta</td>
+            <td>
+              Recibes un correo <strong>con el motivo</strong>. Corriges lo que dice y vuelves a
+              enviar la semana.
+            </td>
+          </tr>
+          <tr>
+            <td>Sin enviar</td>
+            <td>
+              Si el viernes por la tarde tu semana sigue sin enviar, te llega un recordatorio. Y otro
+              el domingo si sigue igual.
+            </td>
+          </tr>
+        </table>
+
+        <h2>Para administradores</h2>
+        <p>
+          La <strong>Bandeja</strong> lista lo que está esperando revisión. De cada nota puedes ver
+          los días que la originaron, sus gastos y sus comprobantes antes de decidir.
+        </p>
+        <table>
+          <tr>
+            <td>Aprobar</td>
+            <td>
+              Solo si está firmada. Si no lo está, sale un aviso: hay que pedirle al técnico que
+              firme desde <em>Mi semana</em>.
+            </td>
+          </tr>
+          <tr>
+            <td>Devolver</td>
+            <td>
+              Exige un motivo, y ese texto es literalmente lo que el técnico va a leer en su correo.
+              Escribe qué corregir, no «revisar».
+            </td>
+          </tr>
+          <tr>
+            <td>Reabrir</td>
+            <td>
+              Solo Super Admin, y solo para notas ya aprobadas. Sube la versión y exige motivo.
+            </td>
+          </tr>
+          <tr>
+            <td>Auditoría</td>
+            <td>
+              Quién tocó qué nota, cuándo y qué decía antes. No se puede borrar ni reescribir.
+            </td>
+          </tr>
+        </table>
+
+        <h2>Si algo no funciona</h2>
+        <p>
+          Los mensajes de error dicen qué pasó y qué hacer. Si uno no se entiende, o algo no
+          responde, avisa con una captura de pantalla: con eso se localiza en minutos.
+        </p>
+      </main>
+
+      <footer>
+        FAVA Control Técnico — manual de uso. Se actualiza con la aplicación.
+      </footer>
+    </div>
+  </body>
+</html>

@@ -11,6 +11,8 @@ export interface ApiUser {
   email: string;
   roles: Role[];
   technicianId: string | null;
+  /** INTERNO | EXTERNO | null. Decide, entre otras cosas, si se le ofrece el LR. */
+  employmentType: string | null;
   /** Idioma de SUS correos. El botón del encabezado lo persiste con `setMyLang`. */
   lang: Lang;
 }
