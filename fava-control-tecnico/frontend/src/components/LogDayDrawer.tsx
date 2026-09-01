@@ -7,7 +7,7 @@ import { FieldError, inputStyle, inputError } from '../ui';
 import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getCatalogs } from '../lib/api/catalogs';
-import { listProjects } from '../lib/api/projects';
+import { listProjectsForLog } from '../lib/api/projects';
 import { getWeek, putEntries } from '../lib/api/dailyEntries';
 import type { ConceptCode } from '../lib/api/dailyEntries';
 import { diasDeSemana, hoyLocal, lunesDe } from '../lib/fecha';
@@ -66,7 +66,7 @@ export default function LogDayDrawer() {
   const [guardando, setGuardando] = useState(false);
 
   // La proyección de técnico: solo id, nombre y sus órdenes activas. Nada comercial.
-  const { data: proyectos } = useApiData(listProjects, []);
+  const { data: proyectos } = useApiData(listProjectsForLog, []);
 
   /**
    * Las ETIQUETAS de los conceptos vienen del API porque el Super Admin las edita
@@ -105,9 +105,10 @@ export default function LogDayDrawer() {
   const close = () => patch({ logOpen: false, logDate: null });
 
   const proyecto = (proyectos ?? []).find((p) => p.id === projectId);
-  // `orders` solo viaja en la proyección del técnico; para un admin el listado trae
-  // otra forma, así que se lee con cuidado en vez de asumir.
-  const ordenes = ((proyecto as unknown as { orders?: { id: string; label: string; commessaShort: string | null }[] })?.orders) ?? [];
+  // Sin `as unknown as`: `/projects/para-registrar` devuelve SIEMPRE esta forma, sea
+  // quien sea quien pregunta. El casteo de antes tapaba justo el bug que lo hacía
+  // necesario — a un admin le llegaba otra proyección y `orders` era undefined.
+  const ordenes = proyecto?.orders ?? [];
   const exigeProyecto = !SIN_PROYECTO.includes(concept);
 
   const save = () => {

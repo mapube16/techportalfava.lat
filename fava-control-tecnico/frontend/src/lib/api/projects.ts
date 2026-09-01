@@ -133,6 +133,24 @@ export interface SoldDaysCell {
 /** ORDER BY name, incluye inactivos: filtra el selector, no el endpoint. */
 export const listProjects = () => apiFetch<ProjectListItem[]>('/projects');
 
+/** Un proyecto tal como lo necesita el cajón de la jornada: sus máquinas, con id. */
+export interface ProjectForLog {
+  id: string;
+  name: string;
+  orders: { id: string; label: string; commessaShort: string | null; machineModelId: string | null }[];
+}
+
+/**
+ * Los proyectos PARA REGISTRAR un día, con sus máquinas.
+ *
+ * Ruta aparte de `listProjects` porque aquella cambia de forma según el rol de quien
+ * pregunta: a un admin le devuelve `machineCodes` (etiquetas sueltas, sin id) y a un
+ * técnico `orders`. El cajón necesita órdenes con id — es lo único que se puede
+ * guardar— así que a un admin registrando su propia jornada no le salía NINGUNA
+ * máquina, en silencio. Esta ruta devuelve lo mismo para todo el mundo.
+ */
+export const listProjectsForLog = () => apiFetch<ProjectForLog[]>('/projects/para-registrar');
+
 export const getProject = (id: string) => apiFetch<Project>(`/projects/${id}`);
 
 /** POST y PATCH devuelven el proyecto SIN `orders` ni `unassigned`: eso es del GET. */

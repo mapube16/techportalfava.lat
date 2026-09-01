@@ -752,5 +752,37 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
         expect(fila.contractValue).toBe(4150000.5);
       }
     });
+
+    /**
+     * El bug que hacia que a un admin NO le saliera ninguna maquina al registrar su dia.
+     *
+     * `GET /projects` cambia de forma segun el rol: al admin le da `machineCodes`
+     * (etiquetas sueltas, sin id) y al tecnico `orders`. El cajon de la jornada necesita
+     * ordenes con id —es lo unico que se puede guardar— asi que a quien tuviera rol A o S
+     * se le quedaba el selector de maquina VACIO, sin ningun error. Y quien prueba la
+     * aplicacion suele ser justo la persona con rol de admin.
+     *
+     * `/projects/para-registrar` devuelve la MISMA forma a los tres roles. Este caso lo
+     * fija: si alguien vuelve a hacerla depender del rol, se pone rojo aqui.
+     */
+    it('para-registrar da las MISMAS maquinas a tecnico, admin y super admin', async () => {
+      const p = await crearSecreto();
+
+      for (const token of [tokenTec, tokenAdmin, tokenSuper]) {
+        const res = await http()
+          .get('/api/projects/para-registrar')
+          .set(auth(token))
+          .expect(200);
+        const fila = res.body.find((x: { id: string }) => x.id === p.id);
+
+        // Con id: sin el, el cajon no tiene nada que guardar.
+        expect(fila.orders).toHaveLength(1);
+        expect(fila.orders[0].id).toEqual(expect.any(String));
+        expect(fila.orders[0].label).toBe('PL 6000 KG - 1-3428');
+        // Y sigue SIN lo comercial, tambien para el admin: esta ruta es la del tecnico.
+        expect(fila.clientName).toBeUndefined();
+        expect(fila.contractValue).toBeUndefined();
+      }
+    });
   });
 });

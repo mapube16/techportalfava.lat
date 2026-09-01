@@ -75,6 +75,27 @@ export class ProjectsController {
     return admin ? this.service.listar() : this.service.listarParaTecnico();
   }
 
+  /**
+   * La MISMA proyeccion de tecnico para todo el mundo, rol aparte. La usa el cajon de
+   * registrar la jornada.
+   *
+   * POR QUE EXISTE una ruta aparte teniendo `GET /projects`: esa cambia de FORMA segun
+   * quien pregunta —un admin recibe `machineCodes` (etiquetas sueltas) y un tecnico
+   * recibe `orders` (con id, que es lo unico que se puede guardar)— y el cajon pide
+   * ordenes. A un admin que registra su propia jornada le llegaban `machineCodes` y se
+   * quedaba SIN NINGUNA MAQUINA que elegir, en silencio: la lista existia, tenia otra
+   * forma. Y quien prueba la aplicacion suele ser justo la persona con rol de admin.
+   *
+   * La alternativa —que el cajon supiera del rol y pidiera una cosa u otra— reparte la
+   * misma regla en dos sitios que pueden separarse. Aqui la forma no depende de quien
+   * llama, que es la propiedad que faltaba.
+   */
+  @Get('para-registrar')
+  @Roles('T', 'A', 'S')
+  paraRegistrar() {
+    return this.service.listarParaTecnico();
+  }
+
   @Get(':id')
   detalle(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.detalle(id);
