@@ -352,9 +352,21 @@ export default function LogDayDrawer() {
           </div>
 
           {/* Modificador, no concepto: el catálogo es cerrado y «En Fabrica» duplicaría
-              DC, DFD e IL si fuese uno más. */}
+              DC, DFD e IL si fuese uno más.
+
+              Con IL va RECUADRADO y no como una casilla suelta: es la pregunta que
+              Andrea necesita contestada («a veces hemos tenido en fábrica con
+              incapacidad») y, perdida entre la rejilla de conceptos y la descripción,
+              se pasa por alto — de hecho se pasó por alto al probarlo. Con los demás
+              conceptos sigue siendo una casilla discreta, que es lo que merece. */}
           {ADMITE_FABRICA.includes(concept) ? (
-            <label className="flex items-center gap-2.5 mb-3.5 min-h-11 cursor-pointer">
+            <label
+              className={`flex items-center gap-2.5 mb-3.5 min-h-11 cursor-pointer ${
+                concept === 'IL'
+                  ? 'rounded-lg border border-input bg-muted px-3 py-2.5'
+                  : ''
+              }`}
+            >
               <input
                 type="checkbox"
                 checked={inFactory}
