@@ -105,6 +105,17 @@ export default function LogDayDrawer() {
   const close = () => patch({ logOpen: false, logDate: null });
 
   const proyecto = (proyectos ?? []).find((p) => p.id === projectId);
+  /**
+   * El día está colgado de un proyecto que YA NO SE OFRECE (cerrado, o desactivado
+   * después de registrarlo). La lista solo trae los activos, así que el desplegable no
+   * encuentra su id y se queda en «Elige un proyecto…» — mientras `projectId` sigue
+   * puesto. La pantalla decía entonces dos cosas contradictorias a la vez: ningún
+   * proyecto elegido arriba, y «este proyecto no tiene máquinas» debajo.
+   *
+   * `proyectos` puede estar cargando todavía: sin ese `&&` se acusaría de huérfano a
+   * cualquier día durante el primer render.
+   */
+  const proyectoHuerfano = Boolean(projectId) && proyectos !== null && !proyecto;
   // Sin `as unknown as`: `/projects/para-registrar` devuelve SIEMPRE esta forma, sea
   // quien sea quien pregunta. El casteo de antes tapaba justo el bug que lo hacía
   // necesario — a un admin le llegaba otra proyección y `orders` era undefined.
@@ -245,10 +256,19 @@ export default function LogDayDrawer() {
             </select>,
           ) : null}
 
+          {/* El día quedó colgado de un proyecto que ya no se ofrece. Se DICE, en vez
+              de dejar el desplegable en «Elige un proyecto…» como si nunca se hubiera
+              elegido: lo registrado sigue ahí y se pierde al guardar sin volver a elegir. */}
+          {proyectoHuerfano ? (
+            <div className="mb-3.5 rounded-lg border border-input bg-muted px-3 py-2.5 text-[12.5px] text-muted-foreground">
+              {t.log_project_closed}
+            </div>
+          ) : null}
+
           {/* La máquina se elige por ORDEN, no por modelo: dos `PL 6000` del mismo
               proyecto son el mismo modelo y solo se distinguen por su commessa. Es el
               dato cuya ausencia obliga hoy a repartir los días a mano. */}
-          {projectId ? (
+          {projectId && !proyectoHuerfano ? (
             field(
               t.log_machine,
               ordenes.length ? (
@@ -278,9 +298,15 @@ export default function LogDayDrawer() {
                             setExtraOrderIds([...extraOrderIds, o.id]);
                           }
                         }}
+                        type="button"
+                        aria-pressed={on}
+                        // La elegida va SOLIDA, no con un tinte: con `bg-primary-tint`
+                        // las tres maquinas de JAV se veian encendidas a la vez y no
+                        // habia forma de saber cual estaba marcada. Mismo lenguaje que
+                        // los botones de dia y de concepto de este mismo cajon.
                         className={`flex-1 basis-[120px] min-h-11 p-2.5 rounded-lg font-mono font-semibold text-[13.5px] cursor-pointer border transition-colors ${
                           on
-                            ? 'border-primary bg-primary-tint text-primary'
+                            ? 'border-primary bg-primary text-white'
                             : 'border-input bg-muted text-muted-foreground hover:bg-accent'
                         }`}
                       >
