@@ -51,6 +51,15 @@ export function camposOrden(body: Cuerpo): DatosOrden {
       throw new BadRequestException('MAQUINA_INVALIDA');
     data.machineModelId = (v as string | null) ?? null;
   }
+  /**
+   * El modelo por CODIGO, escrito a mano («PC 2000»), no por id de un desplegable.
+   * En la capacitacion del 31-ago la maquina del proyecto nuevo no estaba en el
+   * catalogo y crear el proyecto obligaba a irse a Configuracion, darla de alta y
+   * volver. El servicio lo busca y lo crea si no existe (ver `resolverModelo`).
+   * Convive con `machineModelId`: el PATCH por id sigue valiendo.
+   */
+  if (body?.machineModel !== undefined)
+    data.machineModel = opcional(body.machineModel, 'MODELO');
   if (body?.commessa !== undefined) data.commessa = opcional(body.commessa, 'COMMESSA');
   if (body?.commessaShort !== undefined)
     data.commessaShort = opcional(body.commessaShort, 'COMMESSA_CORTA');

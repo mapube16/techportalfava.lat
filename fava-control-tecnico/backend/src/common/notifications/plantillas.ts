@@ -26,6 +26,15 @@ export type Kind =
   | 'note_returned'
   | 'note_approved'
   | 'week_missing'
+  /**
+   * El corte del mes. Nace de la capacitacion del 2026-08-31: Felipe, que trabaja desde
+   * casa y viaja, pregunto si tenia que enviar sin falta cada semana; Andrea respondio
+   * que puede acumular, pero que al dia 25 «tiene que estar correcto, tiene que estar
+   * lleno», porque ese es el dia en que ella cierra. Los avisos del viernes y del domingo
+   * hablan de UNA semana; quien lleva tres sin enviar ya los ignoro tres veces y nadie le
+   * dice nunca que se le acaba el plazo. Este si.
+   */
+  | 'month_cutoff'
   | 'admin_digest'
   /**
    * CAT-02c. El unico que NO lo dispara un reloj ni una transicion: lo manda un admin
@@ -394,6 +403,18 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
         boton: 'Enviar la semana',
       },
     }),
+    month_cutoff: (d) => ({
+      subject: 'Cierre del mes: le faltan semanas por enviar',
+      cuerpo: {
+        saludo: `Hola, ${d.nombre}:`,
+        parrafos: [
+          'El cierre del mes es el día 25 y usted tiene días de este mes sin enviar.',
+          'Puede enviar varias semanas seguidas: entre a la aplicación, complete lo que falte y mándelo a revisión.',
+        ],
+        destacado: 'Lo que no esté enviado el día 25 no entra en el cierre de este mes.',
+        boton: 'Completar mis semanas',
+      },
+    }),
     admin_digest: (d) => ({
       subject: `${d.lista?.length ?? 0} técnicos sin enviar — ${semanaLegible(d.semana, 'es')}`,
       cuerpo: {
@@ -468,6 +489,18 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
         boton: 'Inviare la settimana',
       },
     }),
+    month_cutoff: (d) => ({
+      subject: 'Chiusura del mese: mancano settimane da inviare',
+      cuerpo: {
+        saludo: `Gentile ${d.nombre},`,
+        parrafos: [
+          'La chiusura del mese è il giorno 25 e Lei ha giornate di questo mese non inviate.',
+          'Può inviare più settimane di seguito: entri nell’applicazione, completi quanto manca e lo mandi in revisione.',
+        ],
+        destacado: 'Quanto non risulta inviato il giorno 25 non entra nella chiusura di questo mese.',
+        boton: 'Completare le mie settimane',
+      },
+    }),
     admin_digest: (d) => ({
       subject: `${d.lista?.length ?? 0} tecnici senza inviare — ${semanaLegible(d.semana, 'it')}`,
       cuerpo: {
@@ -538,6 +571,18 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
           'Registrá-la antes do fechamento evita ter que reconstruí-la de memória.',
         ],
         boton: 'Enviar a semana',
+      },
+    }),
+    month_cutoff: (d) => ({
+      subject: 'Fechamento do mês: faltam semanas por enviar',
+      cuerpo: {
+        saludo: `Olá, ${d.nombre},`,
+        parrafos: [
+          'O fechamento do mês é no dia 25 e o senhor tem dias deste mês sem enviar.',
+          'Pode enviar várias semanas seguidas: entre na aplicação, complete o que falta e mande para revisão.',
+        ],
+        destacado: 'O que não estiver enviado no dia 25 não entra no fechamento deste mês.',
+        boton: 'Completar as minhas semanas',
       },
     }),
     admin_digest: (d) => ({

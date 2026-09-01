@@ -62,7 +62,7 @@ const ES: Record<string, string> = {
   // ── Proyectos y órdenes ──
   PROYECTO_NO_ENCONTRADO: 'Ese proyecto ya no existe. Recarga la pantalla.',
   ORDEN_NO_ENCONTRADA: 'Esa orden ya no existe. Recarga la pantalla.',
-  COMMESSA_DUPLICADA: 'Ya hay una orden con esa commessa.',
+  COMMESSA_DUPLICADA: 'Este proyecto ya tiene una máquina con esa commessa. En otro proyecto sí puede repetirse.',
   ORDEN_CON_BITACORA: 'No se puede borrar: esa orden ya tiene jornadas registradas.',
   ORDEN_CON_DIAS_VENDIDOS: 'No se puede borrar: esa orden ya tiene días vendidos.',
   MAQUINA_O_MONEDA_INEXISTENTE: 'La máquina o la moneda que elegiste ya no está en el catálogo.',
@@ -146,7 +146,7 @@ const IT: Record<string, string> = {
 
   PROYECTO_NO_ENCONTRADO: 'Quel progetto non esiste più. Ricarica la schermata.',
   ORDEN_NO_ENCONTRADA: 'Quella commessa non esiste più. Ricarica la schermata.',
-  COMMESSA_DUPLICADA: 'Esiste già una commessa con quel numero.',
+  COMMESSA_DUPLICADA: 'Questo progetto ha già una macchina con quella commessa. In un altro progetto può ripetersi.',
   ORDEN_CON_BITACORA: 'Non si può eliminare: quella commessa ha già giornate registrate.',
   ORDEN_CON_DIAS_VENDIDOS: 'Non si può eliminare: quella commessa ha già giorni venduti.',
   MAQUINA_O_MONEDA_INEXISTENTE: 'La macchina o la valuta che hai scelto non è più nel catalogo.',
@@ -227,7 +227,7 @@ const PT: Record<string, string> = {
 
   PROYECTO_NO_ENCONTRADO: 'Esse projeto não existe mais. Recarregue a tela.',
   ORDEN_NO_ENCONTRADA: 'Essa ordem não existe mais. Recarregue a tela.',
-  COMMESSA_DUPLICADA: 'Já existe uma ordem com essa commessa.',
+  COMMESSA_DUPLICADA: 'Este projeto já tem uma máquina com essa commessa. Em outro projeto pode repetir-se.',
   ORDEN_CON_BITACORA: 'Não dá para apagar: essa ordem já tem jornadas registradas.',
   ORDEN_CON_DIAS_VENDIDOS: 'Não dá para apagar: essa ordem já tem dias vendidos.',
   MAQUINA_O_MONEDA_INEXISTENTE: 'A máquina ou a moeda que você escolheu não está mais no catálogo.',

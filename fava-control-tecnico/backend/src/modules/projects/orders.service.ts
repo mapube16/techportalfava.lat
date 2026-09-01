@@ -20,6 +20,8 @@ const ORDEN = {
 export interface DatosOrden {
   label?: string;
   machineModelId?: string | null;
+  /** El modelo por CODIGO, tal como se escribe en el formulario. Ver `resolverModelo`. */
+  machineModel?: string | null;
   commessa?: string | null;
   commessaShort?: string | null;
   oaNumber?: string | null;
@@ -60,17 +62,53 @@ export class OrdersService {
     });
     if (!proyecto) throw new NotFoundException('PROYECTO_NO_ENCONTRADO');
 
+    const data = await this.resolverModelo(datos);
     const fila = await this.intentar(() =>
-      this.prisma.client.order.create({ data: { ...datos, projectId }, select: ORDEN }),
+      this.prisma.client.order.create({
+        data: { ...data, label: datos.label, projectId },
+        select: ORDEN,
+      }),
     );
     return { ...fila, contractValue: dinero(fila.contractValue) };
   }
 
   async editar(id: string, datos: DatosOrden) {
+    const data = await this.resolverModelo(datos);
     const fila = await this.intentar(() =>
-      this.prisma.client.order.update({ where: { id }, data: datos, select: ORDEN }),
+      this.prisma.client.order.update({ where: { id }, data, select: ORDEN }),
     );
     return { ...fila, contractValue: dinero(fila.contractValue) };
+  }
+
+  /**
+   * El modelo escrito a mano se convierte en el id del catalogo, creandolo si hace falta.
+   *
+   * En la capacitacion del 31-ago Andrea se quedo atascada creando el proyecto de AJE:
+   * la maquina no estaba en el catalogo y el formulario solo ofrecia un desplegable, asi
+   * que dar de alta una orden exigia salir a Configuracion, crear el modelo y volver. El
+   * catalogo de maquinas no es una decision de negocio bloqueada —como si lo es el de
+   * conceptos, que es un enum— sino una lista que crece con cada contrato.
+   *
+   * Se busca sin distinguir mayusculas para no acabar con «PC 2000» y «pc 2000» como dos
+   * maquinas distintas, que es exactamente como el Excel llego con 21 grafias de rol
+   * para 14 tecnicos.
+   */
+  private async resolverModelo(datos: DatosOrden): Promise<Omit<DatosOrden, 'machineModel'>> {
+    const { machineModel, ...resto } = datos;
+    if (machineModel === undefined) return resto;
+    if (machineModel === null) return { ...resto, machineModelId: null };
+
+    const existente = await this.prisma.client.machineModel.findFirst({
+      where: { code: { equals: machineModel, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    if (existente) return { ...resto, machineModelId: existente.id };
+
+    const creado = await this.prisma.client.machineModel.create({
+      data: { code: machineModel },
+      select: { id: true },
+    });
+    return { ...resto, machineModelId: creado.id };
   }
 
   /**

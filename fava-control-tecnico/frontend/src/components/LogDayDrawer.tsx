@@ -23,14 +23,28 @@ const SIN_PROYECTO: ConceptCode[] = ['LR', 'NR', 'IL', 'OTRO'];
     'YYYY-MM-DD' leidas en UTC, nunca en el huso del movil (ver lib/fecha.ts). */
 const DIA_CORTO = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
-/** «En Fabrica» solo tiene sentido en día completo y festivo: es su modificador. */
-const ADMITE_FABRICA: ConceptCode[] = ['DC', 'DFD'];
+/**
+ * «En fábrica» es un MODIFICADOR del día, no un concepto: dice DÓNDE ocurrió.
+ *
+ * Incluye IL desde la capacitación del 31-ago: «a veces hemos tenido en fábrica con
+ * incapacidad, entonces van a tener ese cheque» (Andrea). Un técnico que se lesiona en
+ * planta y se queda allí no es lo mismo que uno de baja en casa, y hasta ahora las dos
+ * cosas se registraban idénticas. La etiqueta cambia con IL: preguntar «¿En fábrica?»
+ * a secas junto a una incapacidad no se entiende.
+ */
+const ADMITE_FABRICA: ConceptCode[] = ['DC', 'DFD', 'IL'];
 
 export default function LogDayDrawer() {
   const { state, t, patch, showToast, refresh, errTexto } = useApp();
   const [fecha, setFecha] = useState(state.logDate ?? hoyLocal());
   const [projectId, setProjectId] = useState('');
   const [orderId, setOrderId] = useState('');
+  /**
+   * BIT-10 — las máquinas ADICIONALES del día. Camilo Cruz, en la capacitación del
+   * 31-ago: «tenemos tres máquinas al tiempo, ¿cómo hago la descripción?». Antes había
+   * que elegir una y contar las otras en el texto libre.
+   */
+  const [extraOrderIds, setExtraOrderIds] = useState<string[]>([]);
   const [concept, setConcept] = useState<ConceptCode>('DC');
   const [inFactory, setInFactory] = useState(false);
   /** BIT-08: la columna NOTA del papel — horario del dia o un aviso para Andrea. */
@@ -72,6 +86,7 @@ export default function LogDayDrawer() {
     if (!existente) return;
     setProjectId(existente.projectId ?? '');
     setOrderId(existente.orderId ?? '');
+    setExtraOrderIds(existente.extraOrders.map((o) => o.id));
     if (existente.conceptCode) setConcept(existente.conceptCode);
     setInFactory(existente.inFactory);
     setNotaDia(existente.dayNote ?? '');
@@ -117,6 +132,9 @@ export default function LogDayDrawer() {
         // La orden es opcional aunque haya proyecto: puede no estar creada todavía, y
         // bloquear la captura por eso dejaría al técnico sin poder registrar su día.
         orderId: orderId || null,
+        // BIT-10: las demás máquinas del día. Siempre se manda la lista (aunque esté
+        // vacía) para que desmarcar una la quite de verdad.
+        extraOrderIds,
         conceptCode: concept,
         phase: null,
         inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
@@ -212,6 +230,8 @@ export default function LogDayDrawer() {
               onChange={(e) => {
                 setProjectId(e.target.value);
                 setOrderId('');
+                // Las máquinas son DEL proyecto: al cambiarlo, las de antes ya no valen.
+                setExtraOrderIds([]);
               }}
               className={inputStyle}
             >
@@ -233,11 +253,30 @@ export default function LogDayDrawer() {
               ordenes.length ? (
                 <div className="flex gap-2 flex-wrap">
                   {ordenes.map((o) => {
-                    const on = orderId === o.id;
+                    const on = orderId === o.id || extraOrderIds.includes(o.id);
                     return (
                       <button
                         key={o.id}
-                        onClick={() => setOrderId(on ? '' : o.id)}
+                        onClick={() => {
+                          // La PRIMERA que se marca es la principal (`orderId`); las
+                          // siguientes se acumulan. Volver a pulsarla la quita. Así
+                          // marcar una sola máquina se comporta igual que siempre y
+                          // marcar tres no obliga a aprender otra interacción.
+                          if (o.id === orderId) {
+                            // Al soltar la principal, una de las extra ocupa su sitio:
+                            // una jornada con máquinas pero sin principal dejaría el PDF
+                            // y la matriz sin a qué colgarse.
+                            const [siguiente, ...resto] = extraOrderIds;
+                            setOrderId(siguiente ?? '');
+                            setExtraOrderIds(resto);
+                          } else if (extraOrderIds.includes(o.id)) {
+                            setExtraOrderIds(extraOrderIds.filter((x) => x !== o.id));
+                          } else if (!orderId) {
+                            setOrderId(o.id);
+                          } else {
+                            setExtraOrderIds([...extraOrderIds, o.id]);
+                          }
+                        }}
                         className={`flex-1 basis-[120px] min-h-11 p-2.5 rounded-lg font-mono font-semibold text-[13.5px] cursor-pointer border transition-colors ${
                           on
                             ? 'border-primary bg-primary-tint text-primary'
@@ -283,6 +322,7 @@ export default function LogDayDrawer() {
                       if (SIN_PROYECTO.includes(codigoNuevo)) {
                         setProjectId('');
                         setOrderId('');
+                        setExtraOrderIds([]);
                       }
                     }}
                     title={state.lang === 'it' ? c.labelIt : c.labelEs}
@@ -312,7 +352,7 @@ export default function LogDayDrawer() {
           </div>
 
           {/* Modificador, no concepto: el catálogo es cerrado y «En Fabrica» duplicaría
-              DC y DFD si fuese uno más. */}
+              DC, DFD e IL si fuese uno más. */}
           {ADMITE_FABRICA.includes(concept) ? (
             <label className="flex items-center gap-2.5 mb-3.5 min-h-11 cursor-pointer">
               <input
@@ -321,7 +361,9 @@ export default function LogDayDrawer() {
                 onChange={(e) => setInFactory(e.target.checked)}
                 className="size-4.5 accent-primary"
               />
-              <span className="text-[13.5px]">{t.log_in_factory}</span>
+              <span className="text-[13.5px]">
+                {concept === 'IL' ? t.log_in_factory_il : t.log_in_factory}
+              </span>
             </label>
           ) : null}
 

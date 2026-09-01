@@ -29,7 +29,6 @@ interface Errors {
   supply?: boolean;
   contractNumber?: boolean;
   value?: boolean;
-  hours?: boolean;
   machineLabel?: boolean;
 }
 
@@ -45,9 +44,8 @@ export default function NewProjectModal() {
   const [oa, setOa] = useState('');
   const [commessa, setCommessa] = useState('');
   const [machineLabel, setMachineLabel] = useState('');
-  const [machineModelId, setMachineModelId] = useState('');
+  const [machineModel, setMachineModel] = useState('');
   const [valueRaw, setValueRaw] = useState('');
-  const [hoursRaw, setHoursRaw] = useState('');
   const [moneda, setMoneda] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const [errApi, setErrApi] = useState<string | null>(null);
@@ -69,9 +67,7 @@ export default function NewProjectModal() {
     if (!supply.trim()) errs.supply = true;
     if (!contractNumber.trim()) errs.contractNumber = true;
     const value = parseInt((valueRaw || '').replace(/[^0-9]/g, ''), 10);
-    const nh = parseInt((hoursRaw || '').replace(/[^0-9]/g, ''), 10);
     if (!value || value <= 0) errs.value = true;
-    if (!nh || nh <= 0) errs.hours = true;
     if (!machineLabel.trim()) errs.machineLabel = true;
     if (Object.keys(errs).length) {
       setErrors(errs);
@@ -88,12 +84,14 @@ export default function NewProjectModal() {
       country: country.trim(),
       supply: supply.trim(),
       contractNumber: contractNumber.trim(),
-      normalHours: nh,
     })
       .then(async (p) => {
         await createOrder(p.id, {
           label: machineLabel.trim(),
-          machineModelId: machineModelId || null,
+          // El CODIGO, no el id: el servidor lo busca en el catalogo y lo crea si
+          // no existe. Antes era un desplegable cerrado y una maquina nueva obligaba
+          // a salir a Configuracion en mitad del alta (capacitacion del 31-ago).
+          machineModel: machineModel.trim() || null,
           commessa: commessa.trim() || null,
           // Los 4 primeros dígitos son como se nombra la máquina en obra («3428»).
           commessaShort: commessa.trim().slice(0, 4) || null,
@@ -174,23 +172,9 @@ export default function NewProjectModal() {
               </select>,
             )}
           </div>
-          <label className="block">
-            <span className="block text-xs font-semibold text-muted-foreground mb-1.5">{t.proj_hours}</span>
-            <div className="relative">
-              <input
-                value={hoursRaw}
-                onChange={(e) => setHoursRaw(e.target.value)}
-                placeholder="1.120"
-                className={`${errors.hours ? inputError : inputStyle} font-mono pr-10`}
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-semibold">h</span>
-            </div>
-            {errors.hours ? (
-              <FieldError msg={t.val_positive} />
-            ) : (
-              <div className="text-[11.5px] text-muted-foreground mt-1.5">{t.proj_hours_hint}</div>
-            )}
-          </label>
+          {/* «Horas normales» ya no se pide al crear: era obligatorio y Andrea no lo
+              tiene a mano cuando abre el proyecto («eso lo puedes quitar», 31-ago). La
+              columna sigue existiendo y se ve en el detalle; se llenara cuando se sepa. */}
           <div className="grid grid-cols-[1.6fr_1fr] gap-3">
             {field(
               t.order_label,
@@ -200,14 +184,23 @@ export default function NewProjectModal() {
             )}
             {field(
               t.order_model,
-              <select value={machineModelId} onChange={(e) => setMachineModelId(e.target.value)} className={inputStyle}>
-                {/* Opcional: hay alcances contratados que no son un modelo del
-                    catálogo, como «PC 4000 -3430 + 4 SILOS». */}
-                <option value="">{t.order_no_model}</option>
-                {modelos.map((m) => (
-                  <option key={m.id} value={m.id}>{m.code}</option>
-                ))}
-              </select>,
+              <>
+                {/* Se ESCRIBE, con el catálogo como sugerencia: un modelo que no está
+                    todavía se crea solo. Sigue siendo opcional — hay alcances que no
+                    son un modelo, como «PC 4000 -3430 + 4 SILOS». */}
+                <input
+                  list="modelos-nuevo-proyecto"
+                  value={machineModel}
+                  onChange={(e) => setMachineModel(e.target.value)}
+                  placeholder={t.order_model_ph}
+                  className={`${inputStyle} font-mono`}
+                />
+                <datalist id="modelos-nuevo-proyecto">
+                  {modelos.map((m) => (
+                    <option key={m.id} value={m.code} />
+                  ))}
+                </datalist>
+              </>,
             )}
           </div>
 

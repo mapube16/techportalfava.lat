@@ -403,14 +403,46 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
       expect(o.machineModelId).toBeNull();
     });
 
-    it('la commessa es unica en TODO el sistema, no por proyecto → 400', async () => {
+    /**
+     * Al reves de lo que este caso afirmaba hasta el 2026-09-01.
+     *
+     * La commessa era @unique GLOBAL y en la capacitacion del 31-ago Andrea no pudo
+     * crear el proyecto de AJE: su 350200 ya la tenia VIERCI. No era un dato sucio —
+     * los dos ultimos digitos son el sector, asi que la misma raiz reaparece en
+     * proyectos distintos. Dentro de UN proyecto si identifica la maquina.
+     */
+    it('la commessa se REPITE entre proyectos pero no dentro de uno', async () => {
       const a = await crearProyecto();
       const b = await crearProyecto();
-      await crearOrdenApi(a.id, { label: 'PL 6000', commessa: '342898' });
+      await crearOrdenApi(a.id, { label: 'PL 6000', commessa: '350200' });
 
-      // Identifica la maquina en la casa matriz: dos proyectos no pueden reclamarla.
-      const res = await crearOrdenApi(b.id, { label: 'Otra', commessa: '342898' }, 400);
+      // En otro proyecto: vale.
+      const otra = await crearOrdenApi(b.id, { label: 'PC 2000', commessa: '350200' });
+      expect(otra.commessa).toBe('350200');
+
+      // En el MISMO: seria la misma maquina dos veces.
+      const res = await crearOrdenApi(a.id, { label: 'Duplicada', commessa: '350200' }, 400);
       expect(res.message).toBe('COMMESSA_DUPLICADA');
+    });
+
+    /**
+     * El modelo escrito a mano, no elegido de un desplegable: en la capacitacion crear
+     * el proyecto exigia salir a Configuracion a dar de alta la maquina y volver.
+     */
+    it('el modelo se puede ESCRIBIR: si no esta en el catalogo, se crea', async () => {
+      const p = await crearProyecto();
+      const o = await crearOrdenApi(p.id, { label: 'PC 2000', machineModel: 'PC 2000 KG/H' });
+
+      expect(o.machineModelId).not.toBeNull();
+      const modelo = await ownerClient.machineModel.findUniqueOrThrow({
+        where: { id: o.machineModelId! },
+      });
+      expect(modelo.code).toBe('PC 2000 KG/H');
+
+      // El segundo uso REUTILIZA el mismo modelo, y sin distinguir mayusculas: asi no
+      // acaba el catalogo con «PC 2000 KG/H» y «pc 2000 kg/h» como dos maquinas.
+      const otra = await crearOrdenApi(p.id, { label: 'Segunda', machineModel: 'pc 2000 kg/h' });
+      expect(otra.machineModelId).toBe(o.machineModelId);
     });
 
     it('un modelo de maquina inexistente → 400, no un 500 de FK', async () => {

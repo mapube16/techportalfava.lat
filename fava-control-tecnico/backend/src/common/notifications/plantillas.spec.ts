@@ -6,7 +6,14 @@
  */
 import { LANGS, PLANTILLAS, type Kind, idioma, render } from './plantillas';
 
-const KINDS: Kind[] = ['note_returned', 'note_approved', 'week_missing', 'admin_digest', 'invitacion'];
+const KINDS: Kind[] = [
+  'note_returned',
+  'note_approved',
+  'week_missing',
+  'month_cutoff',
+  'admin_digest',
+  'invitacion',
+];
 
 const DATOS = {
   nombre: 'Giuliano',

@@ -63,6 +63,9 @@ export const appClient = new PrismaClient({
  * y produce fallos que dependen del orden de ejecucion.
  */
 const TABLAS_TX = [
+  // Cae por CASCADE de daily_entries, pero va nombrada: esta lista se lee para saber
+  // que se limpia, y una tabla que solo desaparece por efecto colateral no se ve.
+  'daily_entry_orders',
   'daily_entries',
   'weekly_notes',
   'audit_log',

@@ -148,6 +148,10 @@ model DailyEntry {
   /// catalogo cerrado.
   inFactory Boolean @default(false) @map("in_factory")
 
+  /// Las maquinas ADICIONALES de esta jornada (ver DailyEntryOrder). La principal
+  /// sigue siendo `orderId`.
+  extraOrders DailyEntryOrder[]
+
   /// BIT-08: la columna NOTA del papel — el horario del dia o un aviso para Andrea.
   /// 120 caracteres porque es UNA celda de la fila del PDF, no otra descripcion.
   dayNote String? @map("day_note") @db.VarChar(120)
@@ -657,9 +661,16 @@ model Order {
   /// Nullable: hay ordenes cuyo alcance no es un modelo del catalogo.
   machineModelId String? @map("machine_model_id") @db.Uuid
 
-  /// La commessa larga tal cual («342898»). @unique: identifica la maquina en toda
-  /// la casa matriz y es la clave con la que Andrea ubica el trabajo en la cotizacion.
-  commessa String? @unique
+  /// Las jornadas que tocaron esta maquina ADEMAS de la principal (ver DailyEntryOrder).
+  entryOrders DailyEntryOrder[]
+
+  /// La commessa larga tal cual («342898»). Unica DENTRO DEL PROYECTO, no en toda la
+  /// casa matriz: era @unique global y en la capacitacion del 2026-08-31 Andrea no pudo
+  /// crear AJE porque su 350200 ya la tenia VIERCI. Los dos ultimos digitos son el
+  /// sector, asi que la misma raiz reaparece en proyectos distintos con toda naturalidad
+  /// («para nosotros la comesa tiene otro significado»). El @@unique compuesto esta
+  /// abajo, junto al de projectId+label.
+  commessa String?
 
   /// Los 4 primeros digitos («3428»), que es como se nombra en obra y en las notas
   /// de los tecnicos. Columna propia y no un substring: el histrico trae la corta
@@ -687,7 +698,40 @@ model Order {
   dailyEntries DailyEntry[]
 
   @@index([projectId])
+  /// La commessa se repite ENTRE proyectos (los dos ultimos digitos son el sector),
+  /// pero dentro de uno identifica la maquina: dos ordenes del mismo proyecto con la
+  /// misma commessa serian la misma maquina dos veces. Nulls permitidos y sin chocar
+  /// entre si: en Postgres NULL nunca es igual a NULL, y el historico llega sin ella.
+  @@unique([projectId, commessa])
   @@map("orders")
+}
+
+/// Las maquinas ADICIONALES de una jornada. BIT-10.
+///
+/// Camilo Cruz lo planteo en la capacitacion del 2026-08-31: «este caso es excepcional,
+/// ya que tenemos tres maquinas al tiempo, ¿como hago la descripcion?». Hasta ahora la
+/// jornada apuntaba a UNA orden y trabajar tres lineas a la vez obligaba a elegir una y
+/// contar las otras en el texto — justo el dato que se pierde y que despues hay que
+/// repartir a mano (los 151 dias de Camilo repartidos en 120 + 31 por Andrea).
+///
+/// NO sustituye a `daily_entries.order_id`: esa sigue siendo la maquina PRINCIPAL y
+/// todo lo que ya lee una orden por jornada —el PDF, la matriz vendido/ejecutado— sigue
+/// funcionando sin tocarse. Esta tabla anade las demas.
+///
+/// La distribucion de HORAS por maquina no vive aqui: en la reunion se acordo que por
+/// ahora se reparte a mano («ya luego hacemos una division de KPIs como manual»). Una
+/// columna de horas que nadie rellena es peor que no tenerla.
+model DailyEntryOrder {
+  dailyEntryId String @map("daily_entry_id") @db.Uuid
+  orderId      String @map("order_id") @db.Uuid
+
+  dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id], onDelete: Cascade)
+  order      Order      @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  /// La clave es el par: una maquina no puede estar dos veces en el mismo dia.
+  @@id([dailyEntryId, orderId])
+  @@index([orderId])
+  @@map("daily_entry_orders")
 }
 
 /// CAT-04. Una LINEA de la cotizacion. Cuelga de la ORDEN, no del proyecto: lo vendido

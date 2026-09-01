@@ -175,8 +175,10 @@ async function main() {
 
     for (const o of ORDENES) {
       const projectId = idPorNombre.get(o.proyecto)!;
+      // La commessa es unica DENTRO del proyecto desde 20260901090000 (se repite entre
+      // proyectos: los dos ultimos digitos son el sector). La clave lleva las dos partes.
       const existente = await prisma.order.findUnique({
-        where: { commessa: o.commessa },
+        where: { projectId_commessa: { projectId, commessa: o.commessa } },
         select: { id: true },
       });
 

@@ -14,7 +14,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { ventana } from '../src/modules/daily-entries/fecha';
 import { createTestApp, crearUsuario } from './helpers/app';
-import { MAQ_TEST, TEC_A, TEC_B, disconnectAll, ownerClient, truncateAll } from './helpers/db';
+import { MAQ_TEST, ROL_TEST, TEC_A, TEC_B, disconnectAll, ownerClient, truncateAll } from './helpers/db';
 import { crearOrden, crearProyecto } from './helpers/fixtures';
 import { signTestToken } from './helpers/tokens';
 
@@ -346,6 +346,78 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
   it('un OTRO sin descripcion se rechaza: un comodin sin explicar no se puede leer', async () => {
     const res = await guardar(DIA, { conceptCode: 'OTRO' }).expect(400);
     expect(res.body.message).toBe('OTRO_SIN_DESCRIPCION');
+  });
+
+  /**
+   * El rol de la jornada. Sin el, la consulta de vendido/ejecutado —que hace INNER JOIN
+   * con `role_types`— dejaba FUERA del ejecutado todo lo que se registrara desde la app,
+   * sin fallar: el tecnico veia su dia guardado y el KPI seguia en cero. Un test barato
+   * para el fallo mas caro de la Fase 1.
+   */
+  it('la jornada se sella con el rol del tecnico: sin el, el KPI no la ve', async () => {
+    const p = await proyectoConMaquina();
+    await guardar(DIA, { ...datos(), projectId: p.id, orderId: p.orderId }).expect(200);
+
+    const fila = await ownerClient.dailyEntry.findFirstOrThrow({
+      where: { date: new Date(`${DIA}T00:00:00Z`) },
+      select: { roleTypeId: true },
+    });
+    expect(fila.roleTypeId).toBe(ROL_TEST);
+  });
+
+  // ── BIT-10: varias maquinas en la MISMA jornada (Camilo Cruz, capacitacion 31-ago) ──
+
+  it('un dia puede llevar TRES maquinas: la principal y dos mas', async () => {
+    const p = await proyectoConMaquina();
+    const segunda = await crearOrden(p.id, { label: 'PC 4500', machineModelId: MAQ_TEST });
+    const tercera = await crearOrden(p.id, { label: 'CTA 1000', machineModelId: MAQ_TEST });
+
+    const res = await guardar(DIA, {
+      ...datos(),
+      projectId: p.id,
+      orderId: p.orderId,
+      extraOrderIds: [segunda.id, tercera.id],
+    }).expect(200);
+
+    expect(res.body.orderId).toBe(p.orderId);
+    expect(res.body.extraOrders.map((o: { id: string }) => o.id).sort()).toEqual(
+      [segunda.id, tercera.id].sort(),
+    );
+    // Y se leen igual al releer la semana: no es solo lo que devolvio el PUT.
+    const semana = await http()
+      .get(`/api/daily-entries?from=${DIA}&to=${DIA}`)
+      .set(auth(tokenA))
+      .expect(200);
+    expect(semana.body.entries[0].extraOrders).toHaveLength(2);
+  });
+
+  it('mandar la lista VACIA quita las maquinas de mas; omitirla las deja', async () => {
+    const p = await proyectoConMaquina();
+    const segunda = await crearOrden(p.id, { label: 'PC 4500', machineModelId: MAQ_TEST });
+    const base = { ...datos(), projectId: p.id, orderId: p.orderId };
+
+    await guardar(DIA, { ...base, extraOrderIds: [segunda.id] }).expect(200);
+
+    // Sin el campo: lo que habia sigue ahi (es un guardado parcial, no un borrado).
+    const sinCampo = await guardar(DIA, base).expect(200);
+    expect(sinCampo.body.extraOrders).toHaveLength(1);
+
+    // Con la lista vacia: se quitan de verdad.
+    const vacia = await guardar(DIA, { ...base, extraOrderIds: [] }).expect(200);
+    expect(vacia.body.extraOrders).toEqual([]);
+  });
+
+  it('una maquina extra de OTRO proyecto se rechaza, igual que la principal', async () => {
+    const p = await proyectoConMaquina();
+    const ajeno = await proyectoConMaquina({ name: 'Proyecto ajeno BIT-10' });
+
+    const res = await guardar(DIA, {
+      ...datos(),
+      projectId: p.id,
+      orderId: p.orderId,
+      extraOrderIds: [ajeno.orderId],
+    }).expect(400);
+    expect(res.body.message).toBe('ORDEN_DE_OTRO_PROYECTO');
   });
 
   it('un OTRO con descripcion y SIN proyecto entra: el CHECK lo admite suelto', async () => {

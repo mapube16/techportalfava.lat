@@ -27,6 +27,8 @@ export interface Entry {
   description: string | null;
   /** La columna NOTA del papel: horario del dia, o algo que Andrea deba saber. */
   dayNote: string | null;
+  /** BIT-10: las máquinas ADICIONALES del día, además de `orderId`. */
+  extraOrders: { id: string; label: string }[];
   status: EntryStatus;
   /** Lo único contra lo que el borrador local puede detectar un conflicto. */
   updatedAt: string;
@@ -48,6 +50,11 @@ export interface EntryInput {
   inFactory: boolean;
   description: string | null;
   dayNote: string | null;
+  /**
+   * BIT-10: las máquinas ADICIONALES del día. Mandar la lista —aunque esté vacía—
+   * REEMPLAZA la selección; omitirla deja la que hubiera.
+   */
+  extraOrderIds?: string[];
 }
 
 /** Rango máximo de 30 días: sin techo un `from` lejano se trae la tabla entera. */

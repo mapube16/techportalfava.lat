@@ -97,7 +97,30 @@ function jornada(body: Cuerpo): Jornada {
     phase: deLista(body?.phase, FASES, 'FASE_INVALIDA') as Jornada['phase'],
     description: descripcion(body?.description),
     dayNote: notaDia(body?.dayNote),
+    extraOrderIds: ordenesExtra(body?.extraOrderIds),
   };
+}
+
+/**
+ * BIT-10 — las maquinas ADICIONALES del dia.
+ *
+ * `undefined` se conserva como `undefined` a proposito: significa «no toques lo que hay».
+ * Una lista, aunque venga vacia, reemplaza la seleccion entera. Sin esa distincion no
+ * habria forma de dejar un dia con una sola maquina despues de haber marcado tres.
+ *
+ * El techo son 10: un dia con mas maquinas que eso no es un dia de trabajo, es un error
+ * de captura o alguien probando el limite.
+ */
+function ordenesExtra(valor: unknown): string[] | undefined {
+  if (valor === undefined) return undefined;
+  if (valor === null) return [];
+  if (!Array.isArray(valor) || valor.length > 10)
+    throw new BadRequestException('ORDENES_EXTRA_INVALIDAS');
+  return valor.map((v) => {
+    const id = uuid(v, 'ORDEN_INVALIDA');
+    if (!id) throw new BadRequestException('ORDEN_INVALIDA');
+    return id;
+  });
 }
 
 /**

@@ -128,6 +128,66 @@ export async function leerFaltantes(c: ClienteLectura, lunes: string): Promise<F
   return faltantes(tecnicos, grupos);
 }
 
+/**
+ * Lo mismo que `leerFaltantes` pero sobre UN MES: quien llega al corte con dias sin enviar.
+ *
+ * Nace de la capacitacion del 2026-08-31. Felipe, que trabaja desde casa y viaja, pregunto
+ * si tenia que enviar todas las semanas sin falta; Andrea respondio que puede acumular,
+ * pero que «al corte del 25 del mes tiene que estar correcto, tiene que estar lleno»,
+ * porque ese es el dia en que ella cierra. El aviso del viernes y el del domingo hablan de
+ * UNA semana: quien lleva tres sin enviar los ha ignorado tres veces y no hay ningun
+ * momento en que se le diga «se acaba el plazo».
+ *
+ * Mismo criterio de «sin enviar» que el semanal —se reutiliza `faltantes()` entero— solo
+ * que el rango es del dia 1 al 25. Del 26 al fin de mes queda fuera a proposito: son dias
+ * que aun no han pasado el corte y ya entran en el cierre siguiente.
+ *
+ * Vale la misma advertencia que arriba: el llamante TIENE que fijar `app.is_admin = 'on'`
+ * o el groupBy devuelve cero filas sin error.
+ */
+export async function leerFaltantesDelMes(c: ClienteLectura, hoy: string): Promise<Faltantes> {
+  const primero = `${hoy.slice(0, 7)}-01`;
+
+  const tecnicos = await c.technician.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      fullName: true,
+      user: { select: { id: true, email: true, displayName: true, lang: true, isActive: true } },
+    },
+    orderBy: { fullName: 'asc' },
+  });
+
+  const grupos = await c.dailyEntry.groupBy({
+    by: ['technicianId', 'status'],
+    where: { date: { gte: aDate(primero), lte: aDate(hoy) } },
+    _count: { _all: true },
+  });
+
+  return faltantes(tecnicos, grupos);
+}
+
+/**
+ * El aviso del corte. Uno por tecnico y por mes: la clave lleva el 'YYYY-MM', asi que
+ * aunque el cron evalue la ventana doce veces por hora solo sale una vez.
+ */
+export function avisosCorteDelMes(f: Faltantes, hoy: string): Aviso[] {
+  const mes = hoy.slice(0, 7);
+  return f.avisables.map((t) => ({
+    kind: 'month_cutoff' as const,
+    dedupeKey: `month_cutoff:${t.id}:${mes}`,
+    para: {
+      userId: t.user!.id,
+      email: t.user!.email,
+      displayName: t.user!.displayName,
+      lang: t.user!.lang,
+    },
+    datos: { semana: hoy, enlace: enlaceApp('/') },
+    entity: 'technician',
+    entityId: t.id,
+  }));
+}
+
 /** Los avisos a los tecnicos que no enviaron. `ronda` distingue el del viernes del del domingo. */
 export function avisosSemanaSinEnviar(f: Faltantes, lunes: string, ronda: 'vie' | 'dom'): Aviso[] {
   return f.avisables.map((t) => ({

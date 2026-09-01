@@ -31,6 +31,8 @@ const FILA = {
   updatedAt: true,
   project: { select: { name: true } },
   order: { select: { label: true, commessaShort: true } },
+  // BIT-10: las maquinas ADICIONALES del dia. La principal sigue siendo `order`.
+  extraOrders: { select: { order: { select: { id: true, label: true } } } },
   machineModel: { select: { code: true } },
 } as const;
 
@@ -58,6 +60,14 @@ export interface Jornada {
   description: string | null;
   /** La columna NOTA del papel: horario, o algo que Andrea deba saber de ese dia. */
   dayNote: string | null;
+  /**
+   * BIT-10 — las maquinas ADICIONALES del dia, ademas de `orderId`.
+   *
+   * `undefined` significa «no toques lo que hay» (un PATCH parcial); una lista, aunque
+   * sea vacia, REEMPLAZA la seleccion entera. Sin esa distincion no habria forma de
+   * dejar un dia con una sola maquina despues de haber marcado tres.
+   */
+  extraOrderIds?: string[];
 }
 
 interface Cruda {
@@ -74,6 +84,7 @@ interface Cruda {
   updatedAt: Date;
   project: { name: string } | null;
   order: { label: string; commessaShort: string | null } | null;
+  extraOrders: { order: { id: string; label: string } }[];
   machineModel: { code: string } | null;
 }
 
@@ -84,6 +95,8 @@ const plana = (f: Cruda) => ({
   orderId: f.orderId,
   orderLabel: f.order?.label ?? null,
   commessaShort: f.order?.commessaShort ?? null,
+  // BIT-10: solo ids y etiquetas — es lo que la pantalla pinta y lo que devuelve.
+  extraOrders: f.extraOrders.map((x) => x.order),
   // Respaldo del historico: las jornadas migradas del Excel traen modelo pero no orden.
   machineCode: f.order?.label ?? f.machineModel?.code ?? null,
   conceptCode: f.conceptCode,
@@ -182,19 +195,27 @@ export class DailyEntriesService {
       throw new ConflictException('JORNADA_BLOQUEADA');
 
     /**
-     * El libre remunerado es SOLO de internos. Regla de negocio dictada por Andrea
-     * (2026-08-30): al externo no se le pagan los libres — su dia libre es NR, no LR.
-     * Va en el servidor y no solo en la pantalla: la pantalla esconde el boton, pero
-     * el dato que factura dias pagados no puede depender de un boton escondido.
+     * La ficha del tecnico, para dos cosas a la vez (una sola consulta):
+     *
+     * 1. EL LIBRE REMUNERADO ES SOLO DE INTERNOS. Regla dictada por Andrea
+     *    (2026-08-30): al externo no se le pagan los libres — su dia libre es NR, no LR.
+     *    Va en el servidor y no solo en la pantalla: la pantalla esconde el boton, pero
+     *    el dato que factura dias pagados no puede depender de un boton escondido.
+     *
+     * 2. EL ROL CON EL QUE TRABAJO ESE DIA. `role_type_id` existe en la tabla desde el
+     *    principio —el historico del Excel lo trae, y 5 de los 14 tecnicos tienen mas
+     *    de un cargo— pero la captura NUNCA lo escribia: las jornadas nuevas entraban
+     *    con NULL. Como la consulta de vendido/ejecutado hace INNER JOIN con
+     *    `role_types` (las filas de la matriz salen del catalogo de roles), esas
+     *    jornadas quedaban FUERA del ejecutado sin que nada fallara: el tecnico
+     *    registraba su dia, la app se lo mostraba, y el KPI seguia en cero.
      */
-    if (datos.conceptCode === 'LR') {
-      const tec = await this.prisma.client.technician.findUnique({
-        where: { id: technicianId },
-        select: { employmentType: true },
-      });
-      if (tec?.employmentType === 'EXTERNO')
-        throw new BadRequestException('LIBRE_REMUNERADO_SOLO_INTERNOS');
-    }
+    const tec = await this.prisma.client.technician.findUnique({
+      where: { id: technicianId },
+      select: { employmentType: true, roleTypeId: true },
+    });
+    if (datos.conceptCode === 'LR' && tec?.employmentType === 'EXTERNO')
+      throw new BadRequestException('LIBRE_REMUNERADO_SOLO_INTERNOS');
 
     // «Otro» sin decir QUE fue es la celda que nadie sabe leer seis meses despues.
     // El cajon ya obliga a la descripcion en pantalla, pero un comodin del catalogo
@@ -206,6 +227,21 @@ export class DailyEntriesService {
     // existe, no que sea de este proyecto: sin esta comprobacion un dia de JAV podria
     // apuntar a una maquina de Lucchetti y el vendido/ejecutado saldria descuadrado
     // sin que nada fallase.
+    // BIT-10: las extra pasan por la MISMA comprobacion que la principal, en una sola
+    // consulta. La principal no cuenta como extra: se descarta antes para que marcarla
+    // dos veces no sea un error que el tecnico no entiende.
+    const { extraOrderIds, ...campos } = datos;
+    const extras = [...new Set(extraOrderIds ?? [])].filter((id) => id !== datos.orderId);
+    if (extras.length) {
+      const ordenes = await this.prisma.client.order.findMany({
+        where: { id: { in: extras } },
+        select: { id: true, projectId: true },
+      });
+      if (ordenes.length !== extras.length) throw new BadRequestException('ORDEN_INEXISTENTE');
+      if (ordenes.some((o) => o.projectId !== datos.projectId))
+        throw new BadRequestException('ORDEN_DE_OTRO_PROYECTO');
+    }
+
     if (datos.orderId) {
       const orden = await this.prisma.client.order.findUnique({
         where: { id: datos.orderId },
@@ -215,12 +251,38 @@ export class DailyEntriesService {
       if (orden.projectId !== datos.projectId) throw new BadRequestException('ORDEN_DE_OTRO_PROYECTO');
     }
 
+    // El rol se sella al CREAR y no se toca al editar: es el cargo con el que se
+    // trabajo ese dia, no el que el tecnico tenga hoy en su ficha. Si mañana le cambian
+    // el cargo, la historia no se reescribe — que es justo para lo que existe la columna.
     const fila = await this.prisma.client.dailyEntry.upsert({
       where: { technicianId_date: { technicianId, date } },
-      create: { technicianId, date, status: 'draft', ...datos },
-      update: { ...datos },
+      create: { technicianId, date, status: 'draft', roleTypeId: tec?.roleTypeId ?? null, ...campos },
+      update: { ...campos },
+      select: { id: true },
+    });
+
+    /**
+     * La seleccion se REEMPLAZA entera (borrar + insertar), no se reconcilia fila a fila.
+     * Son como mucho tres maquinas: calcular el diferencial seria mas codigo para el
+     * mismo resultado. `undefined` no toca nada — es la diferencia entre «no me lo
+     * mandaste» y «quitalas todas».
+     *
+     * Va DESPUES del upsert porque necesita el id de la fila, y dentro de la misma
+     * transaccion de la peticion (la abre `RlsInterceptor`): si esto falla, el dia no
+     * queda escrito a medias con las maquinas de antes.
+     */
+    if (extraOrderIds !== undefined) {
+      await this.prisma.client.dailyEntryOrder.deleteMany({ where: { dailyEntryId: fila.id } });
+      if (extras.length)
+        await this.prisma.client.dailyEntryOrder.createMany({
+          data: extras.map((orderId) => ({ dailyEntryId: fila.id, orderId })),
+        });
+    }
+
+    const completa = await this.prisma.client.dailyEntry.findUniqueOrThrow({
+      where: { id: fila.id },
       select: FILA,
     });
-    return plana(fila);
+    return plana(completa);
   }
 }

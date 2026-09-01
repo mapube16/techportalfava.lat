@@ -107,6 +107,12 @@ export interface ProjectInput {
 export interface OrderInput {
   label: string;
   machineModelId?: string | null;
+  /**
+   * El modelo por CODIGO, escrito a mano. El servidor lo busca en el catálogo (sin
+   * distinguir mayúsculas) y lo crea si no existe: una máquina nueva ya no obliga a
+   * salir a Configuración en mitad del alta del proyecto.
+   */
+  machineModel?: string | null;
   commessa?: string | null;
   commessaShort?: string | null;
   oaNumber?: string | null;

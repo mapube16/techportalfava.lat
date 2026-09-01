@@ -4,6 +4,7 @@
  *   npm -w backend run notificar
  *   npm -w backend run notificar -- --dry                 (no escribe ni envia nada)
  *   npm -w backend run notificar -- --dry --ventana=vie   (fuerza la ventana, sin esperar al viernes)
+ *   npm -w backend run notificar -- --dry --ventana=corte (el aviso del corte del 25)
  *
  * Hace dos cosas en cada tic: ENCOLA lo que toque segun la hora, y DRENA lo pendiente.
  * Un solo servicio y no tres crons porque el drenado necesita un tic frecuente de todas
@@ -19,9 +20,11 @@ import { encolarEn } from '../src/common/notifications/notifications.service';
 import { enviarCorreo } from '../src/common/notifications/graph';
 import { momento } from '../src/common/notifications/reloj';
 import {
+  avisosCorteDelMes,
   avisosResumenAdmins,
   avisosSemanaSinEnviar,
   leerFaltantes,
+  leerFaltantesDelMes,
 } from '../src/common/notifications/recordatorios';
 import { lunesDe, sumarDias } from '../src/modules/daily-entries/fecha';
 import { PrismaClient } from '../src/generated/prisma/client';
@@ -161,6 +164,29 @@ async function encolarRonda(ronda: 'vie' | 'dom' | 'lun', hoy: string): Promise<
   console.log(`  encolados ${n} (de ${avisos.length}; el resto ya estaban)`);
 }
 
+/**
+ * El aviso del CORTE DEL MES (dia 25). Ronda aparte y no una mas de `encolarRonda`
+ * porque mira otro rango —del dia 1 al 25, no una semana— y su clave de deduplicacion
+ * es por mes.
+ *
+ * Andrea cierra el 25 y acepto en la capacitacion del 31-ago que los tecnicos acumulen
+ * semanas mientras esten en casa; a cambio, ese dia tiene que estar todo. Los avisos del
+ * viernes y del domingo hablan de una sola semana y quien lleva tres sin enviar ya los
+ * ignoro tres veces.
+ */
+async function encolarCorte(hoy: string): Promise<void> {
+  const f = await conContexto((tx) => leerFaltantesDelMes(tx, hoy));
+  console.log(`corte ${hoy}: ${f.avisables.length} con dias sin enviar este mes`);
+
+  if (dry) {
+    for (const t of f.avisables) console.log(`  avisaria a ${t.fullName} <${t.user?.email}>`);
+    return;
+  }
+  const avisos = avisosCorteDelMes(f, hoy);
+  const n = await conContexto((tx) => encolarEn(tx, avisos));
+  console.log(`  encolados ${n} (de ${avisos.length}; el resto ya estaban)`);
+}
+
 async function main(): Promise<void> {
   const { dow, hora, fechaLocal } = momento();
   console.log(`${fechaLocal} dow=${dow} hora=${hora} (${env.NOTIF_TZ})`);
@@ -171,6 +197,10 @@ async function main(): Promise<void> {
   if (forzada === 'vie' || (!forzada && dow === 5 && hora === 16)) await encolarRonda('vie', fechaLocal);
   if (forzada === 'dom' || (!forzada && dow === 7 && hora === 12)) await encolarRonda('dom', fechaLocal);
   if (forzada === 'lun' || (!forzada && dow === 1 && hora === 8)) await encolarRonda('lun', fechaLocal);
+  // El 25 a las 9:00, caiga en el dia de la semana que caiga: es una fecha de calendario,
+  // no un dia laboral. `fechaLocal` es 'YYYY-MM-DD', asi que el dia son sus dos ultimos.
+  if (forzada === 'corte' || (!forzada && fechaLocal.slice(-2) === '25' && hora === 9))
+    await encolarCorte(fechaLocal);
 
   if (!dry) await drenar();
 }

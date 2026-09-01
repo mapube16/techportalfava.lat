@@ -24,7 +24,7 @@ export default function ProjectDetail() {
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [celdas, setCeldas] = useState<Record<string, 'saving' | 'error'>>({});
   const [errOrden, setErrOrden] = useState<string | null>(null);
-  const [nueva, setNueva] = useState({ label: '', commessa: '', oaNumber: '', machineModelId: '' });
+  const [nueva, setNueva] = useState({ label: '', commessa: '', oaNumber: '', machineModel: '' });
 
   const id = state.selProject;
   const { data, setData, error } = useApiData(async () => {
@@ -138,11 +138,12 @@ export default function ProjectDetail() {
       // Los 4 primeros dígitos son como se nombra la máquina en obra («3428»).
       commessaShort: nueva.commessa.trim().slice(0, 4) || null,
       oaNumber: nueva.oaNumber.trim() || null,
-      machineModelId: nueva.machineModelId || null,
+      // El CODIGO, no el id: el servidor lo busca en el catalogo y lo crea si no existe.
+      machineModel: nueva.machineModel.trim() || null,
     })
       .then((o) => {
         setData((d) => d && { ...d, p: { ...d.p, orders: [...d.p.orders, { ...o, matrix: [] }] } });
-        setNueva({ label: '', commessa: '', oaNumber: '', machineModelId: '' });
+        setNueva({ label: '', commessa: '', oaNumber: '', machineModel: '' });
       })
       .catch((e: unknown) => setErrOrden(codigo(e)));
   };
@@ -228,18 +229,24 @@ export default function ProjectDetail() {
             placeholder={t.order_oa}
             className={`${inputStyle} flex-[1_1_110px] font-mono`}
           />
-          <select
-            value={nueva.machineModelId}
-            onChange={(e) => setNueva({ ...nueva, machineModelId: e.target.value })}
-            className={`${inputStyle} flex-[1_1_140px]`}
-          >
-            {/* Hay alcances contratados que no son un modelo del catálogo
-                («PC 4000 + 4 SILOS»), así que el modelo es opcional. */}
-            <option value="">{t.order_no_model}</option>
+          {/* Se ESCRIBE, con el catálogo como sugerencia (datalist), en vez de un
+              desplegable cerrado. En la capacitación del 31-ago Andrea se quedó
+              atascada aquí: la máquina del proyecto nuevo no estaba en el catálogo y
+              crear el proyecto exigía irse a Configuración, darla de alta y volver. Un
+              modelo nuevo se crea solo, en el servidor, si el código no existe.
+              Sigue siendo opcional: hay alcances que no son un modelo («PC 4000 + 4 SILOS»). */}
+          <input
+            list="modelos-maquina"
+            value={nueva.machineModel}
+            onChange={(e) => setNueva({ ...nueva, machineModel: e.target.value })}
+            placeholder={t.order_model_ph}
+            className={`${inputStyle} flex-[1_1_140px] font-mono`}
+          />
+          <datalist id="modelos-maquina">
             {data.machineModels.filter((m) => m.isActive).map((m) => (
-              <option key={m.id} value={m.id}>{m.code}</option>
+              <option key={m.id} value={m.code} />
             ))}
-          </select>
+          </datalist>
           <Button onClick={anadirOrden} disabled={!nueva.label.trim()} className="min-h-11 md:min-h-9">
             {hi('plus', { w: 14 })} {t.order_add}
           </Button>
