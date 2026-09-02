@@ -36,11 +36,29 @@ export default function DayExpenses({ fecha, bloqueado }: { fecha: string; bloqu
   const [lista, setLista] = useState<DailyExpense[] | null>(null);
   const [descripcion, setDescripcion] = useState('');
   const [valor, setValor] = useState('');
-  const [archivo, setArchivo] = useState<File | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
-  /** El `<input type=file>` real, oculto: lo abre el botón «Adjuntar». */
+  /** El `<input type=file>` real, oculto: lo abre el botón «Agregar gasto». */
   const selector = useRef<HTMLInputElement>(null);
+
+  /**
+   * Cancelar el selector GUARDA el gasto sin comprobante — es el caso de obra: se anota
+   * «peaje 15.000» y la foto se sube después. Sin esto, cancelar dejaba lo escrito en el
+   * aire y el botón parecía no hacer nada.
+   *
+   * Va por `addEventListener` y no por JSX: los tipos de React de este proyecto no
+   * declaran `onCancel`, aunque el evento existe en los navegadores actuales. La
+   * función se lee de una ref para que el listener no haya que recolocarlo en cada
+   * tecleo del concepto o del valor.
+   */
+  const alCancelar = useRef<() => void>(() => {});
+  useEffect(() => {
+    const el = selector.current;
+    if (!el) return;
+    const fn = () => alCancelar.current();
+    el.addEventListener('cancel', fn);
+    return () => el.removeEventListener('cancel', fn);
+  }, []);
 
   useEffect(() => {
     let vigente = true;
@@ -52,7 +70,8 @@ export default function DayExpenses({ fecha, bloqueado }: { fecha: string; bloqu
     };
   }, [fecha]);
 
-  const anadir = async () => {
+  /** `archivo` llega del selector: `null` = el técnico canceló y el gasto va sin foto. */
+  const anadir = async (archivo: File | null) => {
     if (!descripcion.trim() || !valor.trim()) return;
     setErr(null);
     setGuardando(true);
@@ -72,7 +91,7 @@ export default function DayExpenses({ fecha, bloqueado }: { fecha: string; bloqu
       setLista((l) => [...(l ?? []), creado]);
       setDescripcion('');
       setValor('');
-      setArchivo(null);
+      // El selector se limpia o no dispararía dos veces con el mismo archivo.
       if (selector.current) selector.current.value = '';
     } catch (e: unknown) {
       setErr(codigo(e));
@@ -87,6 +106,10 @@ export default function DayExpenses({ fecha, bloqueado }: { fecha: string; bloqu
       .then(() => setLista((l) => (l ?? []).filter((g) => g.id !== id)))
       .catch((e: unknown) => setErr(codigo(e)));
   };
+
+  // El listener de arriba llama a esto: siempre la versión actual, con el concepto y
+  // el valor que haya escritos en este render.
+  alCancelar.current = () => void anadir(null);
 
   if (lista === null) return null;
 
@@ -163,48 +186,23 @@ export default function DayExpenses({ fecha, bloqueado }: { fecha: string; bloqu
             ref={selector}
             type="file"
             accept="image/jpeg,image/png,application/pdf"
-            onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+            // Elegir el archivo GUARDA el gasto: el botón ya era la acción completa.
+            onChange={(e) => anadir(e.target.files?.[0] ?? null)}
             className="hidden"
           />
 
+          {/* UN SOLO BOTÓN: «Agregar gasto» abre la cámara o los archivos, y al elegir
+              el comprobante el gasto se guarda. Antes eran dos —«Adjuntar» y luego
+              «Agregar»— y eso convertía un gesto en dos pasos que nadie pidió.
+
+              El comprobante sigue siendo opcional: pulsar «Agregar gasto» y CANCELAR el
+              selector guarda el gasto igual, sin foto. En obra se anota «peaje 15.000»
+              en diez segundos y la foto se sube después con «Ver» → volver a elegirla. */}
           <div className="flex gap-2 items-center flex-wrap mt-2">
-            {/* «Adjuntar»: abre la cámara o los archivos del móvil. El comprobante sigue
-                siendo opcional — en obra se anota el gasto y la foto se sube después. */}
             <Button
-              type="button"
               onClick={() => selector.current?.click()}
-              variant="outline"
-              className="min-h-11 md:min-h-9 shrink-0"
-            >
-              {archivo ? t.exp_day_file_change : t.exp_day_file_add}
-            </Button>
-
-            {archivo ? (
-              <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground min-w-0">
-                <span className="truncate max-w-[150px]">{archivo.name}</span>
-                {/* Quitar el archivo elegido ANTES de guardarlo: sin esto, equivocarse
-                    de foto obligaba a cerrar el cajón y volver a empezar. */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setArchivo(null);
-                    if (selector.current) selector.current.value = '';
-                  }}
-                  aria-label={t.exp_day_file_clear}
-                  className="text-muted-foreground hover:text-warn cursor-pointer"
-                >
-                  <X className="size-3.5" />
-                </button>
-              </span>
-            ) : null}
-
-            <Button
-              onClick={anadir}
-              // Apagado hasta que haya CONCEPTO y VALOR: un gasto sin una de las dos
-              // cosas no se puede leer después. Debajo se dice qué falta — un botón gris
-              // sin explicación parece la aplicación rota, no un campo a medias.
               disabled={guardando || !descripcion.trim() || !valor.trim()}
-              className="min-h-11 md:min-h-9 shrink-0 ml-auto"
+              className="min-h-11 md:min-h-9 shrink-0"
             >
               {guardando ? t.loading : t.btn_addexp}
             </Button>

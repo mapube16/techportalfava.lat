@@ -395,7 +395,12 @@ export default function LogDayDrawer() {
               incapacitado EN FÁBRICA, que es justo lo que Andrea pidió poder distinguir
               («a veces hemos tenido en fábrica con incapacidad», 31-ago). */}
           <div className="flex gap-5 flex-wrap mb-3.5">
-            {ADMITE_FABRICA.includes(concept) ? (
+            {/* «En fabrica» vale para el dia trabajado Y para la incapacidad, pero NO
+                significan lo mismo: en un dia normal dice donde se trabajo; en una
+                incapacidad, si el tecnico estaba en planta o en casa —que es lo que
+                Andrea pidio poder distinguir («a veces hemos tenido en fabrica con
+                incapacidad», 31-ago)—. La etiqueta cambia; la casilla es la misma. */}
+            {ADMITE_FABRICA.includes(concept) || incapacitado ? (
               <label className="flex items-center gap-2.5 min-h-11 cursor-pointer">
                 <input
                   type="checkbox"
@@ -403,7 +408,9 @@ export default function LogDayDrawer() {
                   onChange={(e) => setInFactory(e.target.checked)}
                   className="size-4.5 accent-primary"
                 />
-                <span className="text-[13.5px]">{t.log_in_factory}</span>
+                <span className="text-[13.5px]">
+                  {incapacitado ? t.log_in_factory_il : t.log_in_factory}
+                </span>
               </label>
             ) : null}
 
