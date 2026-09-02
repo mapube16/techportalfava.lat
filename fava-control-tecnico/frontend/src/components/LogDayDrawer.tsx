@@ -389,31 +389,14 @@ export default function LogDayDrawer() {
             })()}
           </div>
 
-          {/* Los dos modificadores del día, uno al lado del otro: DÓNDE fue y si hubo
-              incapacidad. «Incapacitado» marca el día como IL sin tener que buscar ese
-              botón en la rejilla, y las dos casillas conviven — un técnico puede estar
-              incapacitado EN FÁBRICA, que es justo lo que Andrea pidió poder distinguir
-              («a veces hemos tenido en fábrica con incapacidad», 31-ago). */}
+          {/* Las dos casillas del día, en el orden en que se leen: primero SI hubo
+              incapacidad, y solo entonces DÓNDE («En fábrica»). Al revés se leía la
+              explicación de algo aún no marcado. En un día normal «En fábrica» dice
+              dónde se trabajó; con incapacidad, si el técnico estaba en planta o en
+              casa — lo que Andrea pidió distinguir («a veces hemos tenido en fábrica
+              con incapacidad», 31-ago). Misma casilla, misma etiqueta: el contexto lo
+              da la de arriba. */}
           <div className="flex gap-5 flex-wrap mb-3.5">
-            {/* «En fabrica» vale para el dia trabajado Y para la incapacidad, pero NO
-                significan lo mismo: en un dia normal dice donde se trabajo; en una
-                incapacidad, si el tecnico estaba en planta o en casa —que es lo que
-                Andrea pidio poder distinguir («a veces hemos tenido en fabrica con
-                incapacidad», 31-ago)—. La etiqueta cambia; la casilla es la misma. */}
-            {ADMITE_FABRICA.includes(concept) || incapacitado ? (
-              <label className="flex items-center gap-2.5 min-h-11 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={inFactory}
-                  onChange={(e) => setInFactory(e.target.checked)}
-                  className="size-4.5 accent-primary"
-                />
-                <span className="text-[13.5px]">
-                  {incapacitado ? t.log_in_factory_il : t.log_in_factory}
-                </span>
-              </label>
-            ) : null}
-
             <label className="flex items-center gap-2.5 min-h-11 cursor-pointer">
               <input
                 type="checkbox"
@@ -435,6 +418,18 @@ export default function LogDayDrawer() {
               />
               <span className="text-[13.5px]">{t.log_sick}</span>
             </label>
+
+            {ADMITE_FABRICA.includes(concept) || incapacitado ? (
+              <label className="flex items-center gap-2.5 min-h-11 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={inFactory}
+                  onChange={(e) => setInFactory(e.target.checked)}
+                  className="size-4.5 accent-primary"
+                />
+                <span className="text-[13.5px]">{t.log_in_factory}</span>
+              </label>
+            ) : null}
           </div>
 
           {dias.length <= 1
