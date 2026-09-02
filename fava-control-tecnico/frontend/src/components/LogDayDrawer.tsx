@@ -158,9 +158,7 @@ export default function LogDayDrawer() {
         extraOrderIds,
         conceptCode: concept,
         phase: null,
-        // Con la incapacidad dice si fue en planta o en casa; con DC/DFD, dónde se
-        // trabajó. En cualquier otro concepto no significa nada y no se manda.
-        inFactory: ADMITE_FABRICA.includes(concept) || incapacitado ? inFactory : false,
+        inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
         // Solo en el modo de UN dia: en el relleno multiple la nota es de cada dia y
         // repetir la misma en siete filas del PDF seria ruido impreso.
         dayNote: dias.length <= 1 ? notaDia.trim() || null : null,
@@ -389,13 +387,9 @@ export default function LogDayDrawer() {
             })()}
           </div>
 
-          {/* Las dos casillas del día, en el orden en que se leen: primero SI hubo
-              incapacidad, y solo entonces DÓNDE («En fábrica»). Al revés se leía la
-              explicación de algo aún no marcado. En un día normal «En fábrica» dice
-              dónde se trabajó; con incapacidad, si el técnico estaba en planta o en
-              casa — lo que Andrea pidió distinguir («a veces hemos tenido en fábrica
-              con incapacidad», 31-ago). Misma casilla, misma etiqueta: el contexto lo
-              da la de arriba. */}
+          {/* Las dos casillas del día. Se EXCLUYEN: quien está incapacitado no está
+              en fábrica, así que marcar «Incapacitado» quita «En fábrica» y la esconde.
+              «En fábrica» solo acompaña a un día trabajado (DC, DFD). */}
           <div className="flex gap-5 flex-wrap mb-3.5">
             <label className="flex items-center gap-2.5 min-h-11 cursor-pointer">
               <input
@@ -405,6 +399,9 @@ export default function LogDayDrawer() {
                   if (e.target.checked) {
                     setConceptoPrevio(concept);
                     setConcept(INCAPACIDAD);
+                    // Incapacitado y en fábrica se EXCLUYEN: quien está de baja no
+                    // está en planta. Se desmarca para no guardar un dato imposible.
+                    setInFactory(false);
                     // Una incapacidad no es de ningún proyecto: lo exige el CHECK
                     // de_proyecto_por_concepto del motor, no solo esta pantalla.
                     setProjectId('');
@@ -419,7 +416,7 @@ export default function LogDayDrawer() {
               <span className="text-[13.5px]">{t.log_sick}</span>
             </label>
 
-            {ADMITE_FABRICA.includes(concept) || incapacitado ? (
+            {ADMITE_FABRICA.includes(concept) ? (
               <label className="flex items-center gap-2.5 min-h-11 cursor-pointer">
                 <input
                   type="checkbox"
