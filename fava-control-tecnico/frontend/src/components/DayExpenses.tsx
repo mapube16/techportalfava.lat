@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError, inputStyle } from '../ui';
 import { useApp } from '../state';
@@ -25,9 +25,11 @@ import {
  * segundos y la foto se sube al llegar al hotel. Exigir la foto para poder anotar el
  * gasto es la forma segura de que no se anote ninguno.
  *
- * Se guarda AL INSTANTE, no con «Guardar jornada»: el gasto cuelga de la jornada ya
- * escrita y su propio endpoint lo valida. Por eso el bloque solo aparece cuando el día
- * ya existe — un gasto sin día no tiene dónde colgarse.
+ * Se guarda AL INSTANTE, no con «Guardar jornada»: el gasto tiene su propio endpoint.
+ * El bloque se ve SIEMPRE, también en un día en blanco: el servidor crea la jornada
+ * vacía al recibir el primer gasto. Exigir que el día estuviera escrito antes lo hacía
+ * invisible justo cuando se busca — se abre el día para apuntar el taxi y todavía no
+ * hay nada escrito.
  */
 export default function DayExpenses({ fecha, bloqueado }: { fecha: string; bloqueado: boolean }) {
   const { t, errTexto } = useApp();
@@ -37,6 +39,8 @@ export default function DayExpenses({ fecha, bloqueado }: { fecha: string; bloqu
   const [archivo, setArchivo] = useState<File | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+  /** El `<input type=file>` real, oculto: lo abre el botón «Adjuntar». */
+  const selector = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let vigente = true;
@@ -69,6 +73,7 @@ export default function DayExpenses({ fecha, bloqueado }: { fecha: string; bloqu
       setDescripcion('');
       setValor('');
       setArchivo(null);
+      if (selector.current) selector.current.value = '';
     } catch (e: unknown) {
       setErr(codigo(e));
     } finally {
@@ -151,22 +156,62 @@ export default function DayExpenses({ fecha, bloqueado }: { fecha: string; bloqu
               className={`${inputStyle} flex-[1_1_90px] font-mono`}
             />
           </div>
+          {/* El selector nativo va OCULTO y lo dispara el botón: el `<input type=file>`
+              crudo pinta un «Sin archivos seleccionados» en el idioma del navegador que
+              no se puede traducir ni alinear con el resto del cajón. */}
+          <input
+            ref={selector}
+            type="file"
+            accept="image/jpeg,image/png,application/pdf"
+            onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+            className="hidden"
+          />
+
           <div className="flex gap-2 items-center flex-wrap mt-2">
-            <input
-              type="file"
-              accept="image/jpeg,image/png,application/pdf"
-              onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
-              className="text-[12px] flex-1 min-w-[140px]"
-            />
+            {/* «Adjuntar»: abre la cámara o los archivos del móvil. El comprobante sigue
+                siendo opcional — en obra se anota el gasto y la foto se sube después. */}
             <Button
-              onClick={anadir}
-              disabled={guardando || !descripcion.trim() || !valor.trim()}
+              type="button"
+              onClick={() => selector.current?.click()}
               variant="outline"
               className="min-h-11 md:min-h-9 shrink-0"
+            >
+              {archivo ? t.exp_day_file_change : t.exp_day_file_add}
+            </Button>
+
+            {archivo ? (
+              <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground min-w-0">
+                <span className="truncate max-w-[150px]">{archivo.name}</span>
+                {/* Quitar el archivo elegido ANTES de guardarlo: sin esto, equivocarse
+                    de foto obligaba a cerrar el cajón y volver a empezar. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setArchivo(null);
+                    if (selector.current) selector.current.value = '';
+                  }}
+                  aria-label={t.exp_day_file_clear}
+                  className="text-muted-foreground hover:text-warn cursor-pointer"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </span>
+            ) : null}
+
+            <Button
+              onClick={anadir}
+              // Apagado hasta que haya CONCEPTO y VALOR: un gasto sin una de las dos
+              // cosas no se puede leer después. Debajo se dice qué falta — un botón gris
+              // sin explicación parece la aplicación rota, no un campo a medias.
+              disabled={guardando || !descripcion.trim() || !valor.trim()}
+              className="min-h-11 md:min-h-9 shrink-0 ml-auto"
             >
               {guardando ? t.loading : t.btn_addexp}
             </Button>
           </div>
+          {!descripcion.trim() || !valor.trim() ? (
+            <div className="text-[11.5px] text-muted-foreground mt-1.5">{t.exp_day_need}</div>
+          ) : null}
         </>
       )}
 
