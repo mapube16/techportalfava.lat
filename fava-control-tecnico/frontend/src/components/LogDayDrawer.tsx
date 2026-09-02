@@ -24,16 +24,19 @@ const SIN_PROYECTO: ConceptCode[] = ['LR', 'NR', 'IL', 'OTRO'];
     'YYYY-MM-DD' leidas en UTC, nunca en el huso del movil (ver lib/fecha.ts). */
 const DIA_CORTO = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
+/** «En fábrica» es un MODIFICADOR del día completo y del festivo: dice DÓNDE ocurrió. */
+const ADMITE_FABRICA: ConceptCode[] = ['DC', 'DFD'];
+
 /**
- * «En fábrica» es un MODIFICADOR del día, no un concepto: dice DÓNDE ocurrió.
+ * La INCAPACIDAD se marca con una casilla, no eligiendo un concepto de la rejilla.
  *
- * Incluye IL desde la capacitación del 31-ago: «a veces hemos tenido en fábrica con
- * incapacidad, entonces van a tener ese cheque» (Andrea). Un técnico que se lesiona en
- * planta y se queda allí no es lo mismo que uno de baja en casa, y hasta ahora las dos
- * cosas se registraban idénticas. La etiqueta cambia con IL: preguntar «¿En fábrica?»
- * a secas junto a una incapacidad no se entiende.
+ * El código sigue siendo IL en la base y en los KPIs — es el que deja el día FUERA del
+ * denominador de utilización, porque una baja no es tiempo disponible desaprovechado —
+ * pero el técnico ya no lo busca entre otros ocho botones de tres letras: marca «Estuve
+ * incapacitado» y el día queda registrado. La casilla dice lo que pasó; «IL» había que
+ * traducirlo.
  */
-const ADMITE_FABRICA: ConceptCode[] = ['DC', 'DFD', 'IL'];
+const INCAPACIDAD: ConceptCode = 'IL';
 
 export default function LogDayDrawer() {
   const { state, t, patch, showToast, refresh, errTexto } = useApp();
@@ -48,6 +51,11 @@ export default function LogDayDrawer() {
   const [extraOrderIds, setExtraOrderIds] = useState<string[]>([]);
   const [concept, setConcept] = useState<ConceptCode>('DC');
   const [inFactory, setInFactory] = useState(false);
+  /** Marcada = el día se guarda como incapacidad. No hay botón que elegir. */
+  const incapacitado = concept === INCAPACIDAD;
+  /** Lo que había puesto antes de marcarla: al desmarcar se vuelve ahí, no a un cajón
+      sin concepto por haber probado la casilla. */
+  const [conceptoPrevio, setConceptoPrevio] = useState<ConceptCode>('DC');
   /** BIT-08: la columna NOTA del papel — horario del dia o un aviso para Andrea. */
   const [notaDia, setNotaDia] = useState('');
   /**
@@ -150,7 +158,9 @@ export default function LogDayDrawer() {
         extraOrderIds,
         conceptCode: concept,
         phase: null,
-        inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
+        // Con la incapacidad dice si fue en planta o en casa; con DC/DFD, dónde se
+        // trabajó. En cualquier otro concepto no significa nada y no se manda.
+        inFactory: ADMITE_FABRICA.includes(concept) || incapacitado ? inFactory : false,
         // Solo en el modo de UN dia: en el relleno multiple la nota es de cada dia y
         // repetir la misma en siete filas del PDF seria ruido impreso.
         dayNote: dias.length <= 1 ? notaDia.trim() || null : null,
@@ -329,6 +339,8 @@ export default function LogDayDrawer() {
             t.log_concept,
             <div className="grid grid-cols-4 gap-1.5">
               {conceptos
+                // IL fuera de la rejilla: se marca con su casilla, justo debajo.
+                .filter((c) => c.code !== INCAPACIDAD)
                 .filter(
                   // Regla de Andrea (2026-08-30): al EXTERNO no se le pagan los libres
                   // remunerados, asi que ni se le ofrece el boton. La regla dura vive
@@ -379,31 +391,55 @@ export default function LogDayDrawer() {
             })()}
           </div>
 
-          {/* Modificador, no concepto: el catálogo es cerrado y «En Fabrica» duplicaría
-              DC, DFD e IL si fuese uno más.
+          {/* LA INCAPACIDAD, como casilla y siempre visible: marcarla ES registrar el
+              día como incapacidad. Recuadrada porque no es un detalle — cambia lo que el
+              día significa para la nómina y lo saca del denominador del KPI. */}
+          <label className="flex items-center gap-2.5 mb-3.5 min-h-11 cursor-pointer rounded-lg border border-input bg-muted px-3 py-2.5">
+            <input
+              type="checkbox"
+              checked={incapacitado}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setConceptoPrevio(concept);
+                  setConcept(INCAPACIDAD);
+                  // Una incapacidad no es de ningún proyecto: lo exige el CHECK
+                  // de_proyecto_por_concepto del motor, no solo esta pantalla.
+                  setProjectId('');
+                  setOrderId('');
+                  setExtraOrderIds([]);
+                } else {
+                  setConcept(conceptoPrevio === INCAPACIDAD ? 'DC' : conceptoPrevio);
+                }
+              }}
+              className="size-4.5 accent-primary"
+            />
+            <span className="text-[13.5px] font-semibold">{t.log_sick}</span>
+          </label>
 
-              Con IL va RECUADRADO y no como una casilla suelta: es la pregunta que
-              Andrea necesita contestada («a veces hemos tenido en fábrica con
-              incapacidad») y, perdida entre la rejilla de conceptos y la descripción,
-              se pasa por alto — de hecho se pasó por alto al probarlo. Con los demás
-              conceptos sigue siendo una casilla discreta, que es lo que merece. */}
-          {ADMITE_FABRICA.includes(concept) ? (
-            <label
-              className={`flex items-center gap-2.5 mb-3.5 min-h-11 cursor-pointer ${
-                concept === 'IL'
-                  ? 'rounded-lg border border-input bg-muted px-3 py-2.5'
-                  : ''
-              }`}
-            >
+          {/* Dónde ocurrió: en planta o en casa. Solo con la casilla de arriba marcada
+              («a veces hemos tenido en fábrica con incapacidad», Andrea, 31-ago). */}
+          {incapacitado ? (
+            <label className="flex items-center gap-2.5 mb-3.5 min-h-11 cursor-pointer pl-3">
               <input
                 type="checkbox"
                 checked={inFactory}
                 onChange={(e) => setInFactory(e.target.checked)}
                 className="size-4.5 accent-primary"
               />
-              <span className="text-[13.5px]">
-                {concept === 'IL' ? t.log_in_factory_il : t.log_in_factory}
-              </span>
+              <span className="text-[13.5px]">{t.log_in_factory_il}</span>
+            </label>
+          ) : null}
+
+          {/* «En fábrica» del día normal: modificador de DC y DFD. */}
+          {ADMITE_FABRICA.includes(concept) ? (
+            <label className="flex items-center gap-2.5 mb-3.5 min-h-11 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={inFactory}
+                onChange={(e) => setInFactory(e.target.checked)}
+                className="size-4.5 accent-primary"
+              />
+              <span className="text-[13.5px]">{t.log_in_factory}</span>
             </label>
           ) : null}
 

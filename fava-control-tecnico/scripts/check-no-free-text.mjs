@@ -87,6 +87,13 @@ for (const rel of ARCHIVOS) {
 
   for (const m of src.matchAll(/<input\b/g)) {
     const etiqueta = etiquetaInput(src, m.index);
+    // Un checkbox NO es texto libre: es una eleccion cerrada de dos valores, igual de
+    // cerrada que un chip o un select. La regla vigila que un concepto no se ESCRIBA;
+    // la casilla «Estuve incapacitado» decide entre IL y el concepto anterior, y no hay
+    // forma de teclear un codigo que no exista. Sin esta excepcion, la unica salida
+    // seria disfrazar la casilla de otra cosa para esquivar al guarda-rail — y ahi el
+    // guarda-rail habria empeorado la pantalla en vez de protegerla.
+    if (/type=(["'])checkbox\1/.test(etiqueta)) continue;
     const dato = CERRADO.exec(etiqueta);
     if (dato)
       hallazgos.push(
