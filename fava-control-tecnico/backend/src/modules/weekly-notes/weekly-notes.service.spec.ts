@@ -165,10 +165,28 @@ describe('WeeklyNotesService', () => {
       );
     });
 
-    it('rechaza devolver una nota ya firmada — hay que reabrirla', async () => {
-      findUnique.mockResolvedValueOnce(notaFixture({ status: 'submitted', signedContentHash: 'hash-v1' }));
-      await expect(service.return_(actor, 'n-1', 'algo está mal')).rejects.toThrow(ConflictException);
-      expect(update).not.toHaveBeenCalled();
+    it('devolver una firmada sube la versión y limpia signedContentHash, como reopen', async () => {
+      findUnique.mockResolvedValueOnce(notaFixture({ status: 'submitted', version: 1, signedContentHash: 'hash-v1' }));
+      update.mockResolvedValueOnce(notaFixture({ status: 'returned', version: 2, signedContentHash: null }));
+
+      await service.return_(actor, 'n-1', 'algo está mal');
+
+      expect(update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ version: { increment: 1 }, signedContentHash: null }),
+        }),
+      );
+    });
+
+    it('aprobar una firmada NO toca la versión ni el hash', async () => {
+      findUnique.mockResolvedValueOnce(notaFixture({ status: 'submitted', version: 1, signedContentHash: 'hash-v1' }));
+      update.mockResolvedValueOnce(notaFixture({ status: 'approved', version: 1, signedContentHash: 'hash-v1' }));
+
+      await service.approve(actor, 'n-1');
+
+      const { data } = update.mock.calls[0][0];
+      expect(data).not.toHaveProperty('version');
+      expect(data).not.toHaveProperty('signedContentHash');
     });
   });
 });

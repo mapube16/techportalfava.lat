@@ -646,11 +646,6 @@ export class WeeklyNotesService {
     if (!(TRANSICIONES[actual.status] ?? []).includes(destino))
       throw new ConflictException(`TRANSICION_INVALIDA_${actual.status.toUpperCase()}_A_${destino.toUpperCase()}`);
 
-    // El cliente ya firmó lo que el papel dice: devolverla desharía esa firma sin
-    // dejar rastro de que existió. Deshacer una nota firmada es lo mismo que deshacer
-    // una aprobación (reopen) — Super Admin, con motivo, y sube la versión.
-    if (destino === 'returned' && actual.signedContentHash) throw new ConflictException('NOTA_FIRMADA_USAR_REOPEN');
-
     /**
      * NO SE APRUEBA UNA NOTA SIN FIRMAR. La firma es el consentimiento del técnico
      * sobre lo que declaró: aprobarla sin ella es dar por bueno un documento que nadie
@@ -677,7 +672,14 @@ export class WeeklyNotesService {
         // empieza sin firmar, y sin esto `gastos()` se quedaría bloqueada para siempre
         // creyendo que la nota (la nueva version) ya tiene firma. El PDF y las firmas
         // de la versión anterior no se tocan (viven en filas propias por versión).
-        ...(action === 'reopen' ? { version: { increment: 1 }, signedContentHash: null } : {}),
+        //
+        // Devolver una nota YA FIRMADA hace lo mismo: el técnico corrige y vuelve a
+        // firmar la versión nueva, y el PDF que firmó antes queda como evidencia. Antes
+        // se rechazaba pidiendo `reopen`, pero reopen solo vale sobre aprobadas — la
+        // firmada-y-enviada no tenía salida salvo aprobarla.
+        ...(action === 'reopen' || (action === 'return' && actual.signedContentHash)
+          ? { version: { increment: 1 }, signedContentHash: null }
+          : {}),
       },
       select: NOTA,
     });
