@@ -116,9 +116,28 @@ describe('gastos del dia (GASTO-01)', () => {
     expect(foto.body.length).toBe(Buffer.from(PNG, 'base64').length);
   });
 
-  it('sin jornada registrada no hay donde colgar el gasto → 404 con su motivo', async () => {
-    const res = await anadirGasto({ descripcion: 'Taxi', valor: '30.000' }).expect(404);
-    expect(res.body.message).toBe('JORNADA_SIN_REGISTRAR');
+  /**
+   * Al reves de lo que este caso exigia hasta el 2026-09-01.
+   *
+   * El bloque de gastos estaba condicionado a que la jornada YA existiera, y eso lo
+   * hacia invisible justo cuando el tecnico lo busca: abre el dia para apuntar el taxi
+   * del aeropuerto y todavia no ha escrito el trabajo. Exigirle describir la jornada
+   * antes convierte «apuntar un gasto» en dos tareas — la friccion por la que los
+   * gastos se acababan escribiendo el viernes de memoria.
+   */
+  it('un gasto en un dia EN BLANCO crea la jornada vacia, no falla', async () => {
+    const { body } = await anadirGasto({ descripcion: 'Taxi', valor: '30.000' }).expect(201);
+    expect(body.descripcion).toBe('Taxi');
+
+    // La jornada nace en draft y SIN concepto: no cuenta como dia trabajado en ningun
+    // indicador (la cuadricula y la utilizacion filtran por concept_code IS NOT NULL).
+    const dia = await ownerClient.dailyEntry.findFirstOrThrow({
+      where: { technicianId: TEC_A, date: new Date(`${DIA}T00:00:00Z`) },
+      select: { status: true, conceptCode: true, description: true },
+    });
+    expect(dia.status).toBe('draft');
+    expect(dia.conceptCode).toBeNull();
+    expect(dia.description).toBeNull();
   });
 
   it('un dia ya ENVIADO no admite gastos nuevos (BIT-05)', async () => {

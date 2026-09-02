@@ -452,13 +452,19 @@ export default function LogDayDrawer() {
               )
             : null}
 
-          {/* GASTO-01: los gastos de ESE día, con su comprobante. Solo cuando el día
-              ya está registrado —un gasto cuelga de la jornada, y sin ella no tiene
-              dónde ir— y solo en el modo de un día: un gasto es de una fecha concreta,
-              no de las cinco de un montaje. Se guarda al instante, con su propio
-              endpoint, no con «Guardar jornada». */}
-          {existente && dias.length <= 1 ? (
-            <DayExpenses fecha={fecha} bloqueado={existente.status !== 'draft' && existente.status !== 'returned'} />
+          {/* GASTO-01: los gastos de ESE día, con su comprobante.
+              SIEMPRE visible en el modo de un día, aunque el día esté en blanco: el
+              bloque estaba condicionado a que la jornada ya existiera y eso lo hacía
+              invisible justo cuando el técnico lo busca —abre el día, quiere apuntar el
+              taxi y todavía no ha escrito nada—. Ahora el servidor crea la jornada
+              vacía al recibir el primer gasto (ver `GastosService.crear`).
+              Solo con un día porque un gasto es de una fecha concreta, no de las cinco
+              de un montaje. Se guarda al instante, con su propio endpoint. */}
+          {dias.length <= 1 ? (
+            <DayExpenses
+              fecha={fecha}
+              bloqueado={Boolean(existente) && existente!.status !== 'draft' && existente!.status !== 'returned'}
+            />
           ) : null}
 
           {errApi ? <FieldError msg={errTexto(errApi)} /> : null}

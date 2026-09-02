@@ -53,11 +53,40 @@ export class GastosService {
       where: { technicianId_date: { technicianId, date: aDate(fecha) } },
       select: { id: true, status: true },
     });
-    // Sin jornada no hay donde colgar el gasto. Es un caso real: el tecnico abre el
-    // cajon de un dia en blanco y anade un gasto antes de describir el trabajo.
-    if (!dia) throw new NotFoundException('JORNADA_SIN_REGISTRAR');
-    if (!EDITABLES.includes(dia.status)) throw new ConflictException('JORNADA_BLOQUEADA');
+    if (dia && !EDITABLES.includes(dia.status)) throw new ConflictException('JORNADA_BLOQUEADA');
     return dia;
+  }
+
+  /**
+   * La jornada donde colgar el gasto, CREANDOLA VACIA si el dia esta en blanco.
+   *
+   * El caso real es el corriente: el tecnico abre el dia para apuntar el taxi del
+   * aeropuerto y todavia no ha escrito el trabajo. Exigirle que primero describa la
+   * jornada convierte «apuntar un gasto» en dos tareas, que es justo la friccion por la
+   * que los gastos se acababan escribiendo el viernes de memoria.
+   *
+   * La fila nace en `draft` y sin concepto — igual que un dia que el tecnico abrio y no
+   * completo. No cuenta como dia trabajado en ningun sitio: la cuadricula y la
+   * utilizacion filtran por `concept_code IS NOT NULL`, asi que un dia que solo tiene un
+   * gasto no infla ningun indicador.
+   */
+  private async jornadaParaEscribir(technicianId: string, fecha: string) {
+    const dia = await this.jornadaEditable(technicianId, fecha);
+    if (dia) return dia;
+
+    const tec = await this.prisma.client.technician.findUnique({
+      where: { id: technicianId },
+      select: { roleTypeId: true },
+    });
+    return this.prisma.client.dailyEntry.create({
+      data: {
+        technicianId,
+        date: aDate(fecha),
+        status: 'draft',
+        roleTypeId: tec?.roleTypeId ?? null,
+      },
+      select: { id: true, status: true },
+    });
   }
 
   listar(technicianId: string, fecha: string) {
@@ -69,7 +98,7 @@ export class GastosService {
   }
 
   async crear(technicianId: string, fecha: string, datos: GastoEntrada) {
-    const dia = await this.jornadaEditable(technicianId, fecha);
+    const dia = await this.jornadaParaEscribir(technicianId, fecha);
 
     const cuantos = await this.prisma.client.dailyExpense.count({
       where: { dailyEntryId: dia.id },
@@ -100,11 +129,14 @@ export class GastosService {
    * una jornada ya enviada, y de eso se encarga `jornadaEditable`.
    */
   async eliminar(technicianId: string, fecha: string, gastoId: string) {
+    // Aqui NO se crea nada: sin jornada no hay gasto que borrar.
     const dia = await this.jornadaEditable(technicianId, fecha);
-    const gasto = await this.prisma.client.dailyExpense.findFirst({
-      where: { id: gastoId, dailyEntryId: dia.id },
-      select: { id: true },
-    });
+    const gasto = dia
+      ? await this.prisma.client.dailyExpense.findFirst({
+          where: { id: gastoId, dailyEntryId: dia.id },
+          select: { id: true },
+        })
+      : null;
     if (!gasto) throw new NotFoundException('GASTO_NO_ENCONTRADO');
 
     await this.prisma.client.dailyExpense.delete({ where: { id: gastoId } });
