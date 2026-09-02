@@ -57,6 +57,10 @@ const ES: Record<string, string> = {
   CONCEPTO_INEXISTENTE: 'Ese concepto no existe en el catálogo.',
   LIBRE_REMUNERADO_SOLO_INTERNOS: 'El libre remunerado es solo para técnicos internos. Para un externo, el día libre se registra como no remunerado.',
   OTRO_SIN_DESCRIPCION: 'Con «Otro» hay que escribir en la descripción qué fue ese día.',
+  JORNADA_SIN_REGISTRAR: 'Primero guarda la jornada de ese día; después podrás añadirle gastos.',
+  DEMASIADOS_GASTOS: 'Ya hay diez gastos en este día. Si necesitas más, escríbelos en uno solo.',
+  GASTO_NO_ENCONTRADO: 'Ese gasto ya no existe. Recarga la pantalla.',
+  COMPROBANTE_NO_DISPONIBLE: 'Ese gasto todavía no tiene comprobante.',
   NOTA_DIA_INVALIDA: 'La nota del día no es válida: máximo 120 caracteres.',
 
   // ── Proyectos y órdenes ──
@@ -142,6 +146,10 @@ const IT: Record<string, string> = {
   CONCEPTO_INEXISTENTE: 'Quel concetto non esiste nel catalogo.',
   LIBRE_REMUNERADO_SOLO_INTERNOS: 'Il permesso retribuito è solo per i tecnici interni. Per un esterno, il giorno libero si registra come non retribuito.',
   OTRO_SIN_DESCRIPCION: 'Con «Altro» bisogna scrivere nella descrizione che cosa è stato quel giorno.',
+  JORNADA_SIN_REGISTRAR: 'Salvi prima la giornata; dopo potrà aggiungerle le spese.',
+  DEMASIADOS_GASTOS: 'Ci sono già dieci spese in questa giornata. Se ne servono altre, le scriva in una sola.',
+  GASTO_NO_ENCONTRADO: 'Quella spesa non esiste più. Ricarichi la pagina.',
+  COMPROBANTE_NO_DISPONIBLE: 'Quella spesa non ha ancora una ricevuta.',
   NOTA_DIA_INVALIDA: 'La nota del giorno non è valida: massimo 120 caratteri.',
 
   PROYECTO_NO_ENCONTRADO: 'Quel progetto non esiste più. Ricarica la schermata.',
@@ -223,6 +231,10 @@ const PT: Record<string, string> = {
   CONCEPTO_INEXISTENTE: 'Esse conceito não existe no catálogo.',
   LIBRE_REMUNERADO_SOLO_INTERNOS: 'O dia livre remunerado é só para técnicos internos. Para um externo, o dia livre registra-se como não remunerado.',
   OTRO_SIN_DESCRIPCION: 'Com «Outro» é preciso escrever na descrição o que foi esse dia.',
+  JORNADA_SIN_REGISTRAR: 'Guarde primeiro a jornada desse dia; depois poderá acrescentar despesas.',
+  DEMASIADOS_GASTOS: 'Já há dez despesas neste dia. Se precisar de mais, escreva-as numa só.',
+  GASTO_NO_ENCONTRADO: 'Essa despesa já não existe. Recarregue a página.',
+  COMPROBANTE_NO_DISPONIBLE: 'Essa despesa ainda não tem comprovante.',
   NOTA_DIA_INVALIDA: 'A nota do dia não é válida: máximo de 120 caracteres.',
 
   PROYECTO_NO_ENCONTRADO: 'Esse projeto não existe mais. Recarregue a tela.',

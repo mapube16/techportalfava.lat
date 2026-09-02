@@ -390,7 +390,13 @@ export class WeeklyNotesService {
     const [entradas, conceptos] = await Promise.all([
       c.dailyEntry.findMany({
         where: { technicianId: nota.technicianId, projectId: nota.projectId, date: { gte: nota.weekStart, lte: fin } },
-        select: { date: true, description: true, conceptCode: true, dayNote: true, order: { select: { label: true } } },
+        select: {
+          date: true, description: true, conceptCode: true, dayNote: true,
+          order: { select: { label: true } },
+          // GASTO-01: los gastos escritos el DIA que ocurrieron. Se suman a los de la
+          // nota mas abajo — los dos origenes conviven a proposito.
+          expenses: { select: { descripcion: true, valor: true }, orderBy: { createdAt: 'asc' } },
+        },
       }),
       c.concept.findMany({ select: { code: true, labelEs: true } }),
     ]);
@@ -422,8 +428,28 @@ export class WeeklyNotesService {
       cargoSemana: nota.roleType?.name ?? '',
       technicianName: nota.technician.fullName,
       filas,
-      // NOTA-08: informativos, sin flujo de reembolso. Lo que haya escrito `gastos()`.
-      gastosTecnico: (nota.gastosTecnico as Gasto[] | null) ?? [],
+      /**
+       * NOTA-08 + GASTO-01: los gastos del DIA primero, y detras los que se escribieran
+       * al enviar la nota.
+       *
+       * Son dos origenes a proposito. Desde la capacitacion del 31-ago el gasto se
+       * captura el dia que ocurre —con su foto, mientras el ticket existe— pero el JSON
+       * de la nota sigue guardando las 496 notas historicas y lo que alguien anada al
+       * enviar. Sumarlos aqui es lo que permite que el papel no cambie mientras la
+       * captura si lo hace.
+       *
+       * Se DEDUPLICA por descripcion+valor: quien registro el gasto el martes y volvio a
+       * escribirlo el viernes al enviar veria la misma linea dos veces en el PDF, y esa
+       * es exactamente la semana en la que se empieza a desconfiar del documento.
+       */
+      gastosTecnico: (() => {
+        const delDia: Gasto[] = entradas.flatMap((e) =>
+          e.expenses.map((g) => ({ descripcion: g.descripcion, valor: g.valor })),
+        );
+        const deLaNota = (nota.gastosTecnico as Gasto[] | null) ?? [];
+        const vistos = new Set(delDia.map((g) => `${g.descripcion}|${g.valor}`));
+        return [...delDia, ...deLaNota.filter((g) => !vistos.has(`${g.descripcion}|${g.valor}`))];
+      })(),
       anticiposCliente: (nota.anticiposCliente as Gasto[] | null) ?? [],
       firmaTecnico: firmas?.tecnico,
       firmaCliente: firmas?.cliente,

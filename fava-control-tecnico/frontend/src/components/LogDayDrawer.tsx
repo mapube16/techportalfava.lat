@@ -11,6 +11,7 @@ import { listProjectsForLog } from '../lib/api/projects';
 import { getWeek, putEntries } from '../lib/api/dailyEntries';
 import type { ConceptCode } from '../lib/api/dailyEntries';
 import { diasDeSemana, hoyLocal, lunesDe } from '../lib/fecha';
+import DayExpenses from './DayExpenses';
 
 /**
  * Los conceptos que la CHECK `de_proyecto_por_concepto` deja ir SIN proyecto. Es la
@@ -450,6 +451,15 @@ export default function LogDayDrawer() {
                 />,
               )
             : null}
+
+          {/* GASTO-01: los gastos de ESE día, con su comprobante. Solo cuando el día
+              ya está registrado —un gasto cuelga de la jornada, y sin ella no tiene
+              dónde ir— y solo en el modo de un día: un gasto es de una fecha concreta,
+              no de las cinco de un montaje. Se guarda al instante, con su propio
+              endpoint, no con «Guardar jornada». */}
+          {existente && dias.length <= 1 ? (
+            <DayExpenses fecha={fecha} bloqueado={existente.status !== 'draft' && existente.status !== 'returned'} />
+          ) : null}
 
           {errApi ? <FieldError msg={errTexto(errApi)} /> : null}
 

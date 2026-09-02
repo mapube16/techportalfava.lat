@@ -152,6 +152,9 @@ model DailyEntry {
   /// sigue siendo `orderId`.
   extraOrders DailyEntryOrder[]
 
+  /// Los gastos de ESE dia, con su comprobante (ver DailyExpense).
+  expenses DailyExpense[]
+
   /// BIT-08: la columna NOTA del papel — el horario del dia o un aviso para Andrea.
   /// 120 caracteres porque es UNA celda de la fila del PDF, no otra descripcion.
   dayNote String? @map("day_note") @db.VarChar(120)
@@ -704,6 +707,51 @@ model Order {
   /// entre si: en Postgres NULL nunca es igual a NULL, y el historico llega sin ella.
   @@unique([projectId, commessa])
   @@map("orders")
+}
+
+/// GASTO-01 — un gasto del DIA en que ocurrio, con su comprobante.
+///
+/// Ivan Cortes, en la capacitacion del 2026-08-31: «¿no seria mas util tenerlo en el
+/// diario? a veces uno efectuo el gasto de una vez, tiene la factura». Andrea acepto en
+/// el momento: «vale, lo hacemos diario, yo tambien tomo nota». Hasta ahora los gastos
+/// solo se podian escribir al ENVIAR la nota —el viernes, de memoria y con la foto ya
+/// perdida— porque vivian como JSON dentro de `weekly_notes.gastos_tecnico`.
+///
+/// POR QUE UNA TABLA Y NO SEGUIR EN EL JSON. El JSON de la nota se justificaba con
+/// cuatro lineas informativas sin flujo propio; un gasto del dia tiene fecha, se captura
+/// aparte del envio, lleva su comprobante colgando y se cuenta por dia. Indexar un array
+/// por posicion para colgarle una foto es justo lo que `ExpenseReceipt` documenta como
+/// fragil: se borra una linea, los indices bailan y la foto queda en otro gasto.
+///
+/// EL JSON DE LA NOTA NO DESAPARECE: sigue guardando lo que ya se escribio ahi (496
+/// notas historicas) y lo que se anada al enviar. Al generar el PDF se SUMAN los dos
+/// origenes. Migrar 496 notas para ganar uniformidad seria mover datos firmados.
+///
+/// El VALOR es texto y no un decimal, igual que en el JSON: el papel admite «150.000»,
+/// «USD 40» y «40 EUR», y el PDF lo imprime tal cual. Convertirlo a numero obligaria a
+/// decidir la moneda de cada linea, que es una conversacion con Andrea, no un tipo.
+model DailyExpense {
+  id           String @id @default(uuid()) @db.Uuid
+  dailyEntryId String @map("daily_entry_id") @db.Uuid
+
+  /// Que fue: «peaje», «almuerzo», «taxi al aeropuerto».
+  descripcion String
+  /// Tal como lo escribe el tecnico, con su moneda si la pone.
+  valor String
+
+  /// El comprobante, opcional: se puede anotar el gasto y subir la foto despues.
+  /// Los bytes en la columna, como `expense_receipts` — mismo criterio, misma escala.
+  mimeType  String? @map("mime_type")
+  bytes     Bytes?
+  sizeBytes Int?    @map("size_bytes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id], onDelete: Cascade)
+
+  @@index([dailyEntryId])
+  @@map("daily_expenses")
 }
 
 /// Las maquinas ADICIONALES de una jornada. BIT-10.

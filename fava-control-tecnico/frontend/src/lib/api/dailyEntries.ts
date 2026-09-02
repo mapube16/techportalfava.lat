@@ -79,3 +79,34 @@ export const putEntries = (
   days: { date: string; description: string | null }[],
   body: Omit<EntryInput, 'description'>,
 ) => apiSend<Entry[]>('/daily-entries', 'PUT', { ...body, days });
+
+// ── GASTO-01: los gastos del DÍA en que ocurren ──
+//
+// Iván lo pidió en la capacitación del 31-ago: «a veces uno efectuó el gasto de una vez,
+// tiene la factura». Antes solo se podían escribir al enviar la nota — el viernes, de
+// memoria y con el ticket ya perdido.
+
+export interface DailyExpense {
+  id: string;
+  descripcion: string;
+  valor: string;
+  /** `null` = todavía sin comprobante. Se puede anotar el gasto y subir la foto después. */
+  mimeType: string | null;
+  sizeBytes: number | null;
+}
+
+export const getExpenses = (date: string) =>
+  apiFetch<DailyExpense[]>(`/daily-entries/${date}/expenses`);
+
+/** El comprobante es opcional: sin `dataBase64` se guarda solo la línea. */
+export const addExpense = (
+  date: string,
+  body: { descripcion: string; valor: string; mimeType?: string; dataBase64?: string },
+) => apiSend<DailyExpense>(`/daily-entries/${date}/expenses`, 'POST', body);
+
+export const deleteExpense = (date: string, gastoId: string) =>
+  apiFetch<{ id: string }>(`/daily-entries/${date}/expenses/${gastoId}`, { method: 'DELETE' });
+
+/** La URL para ver el comprobante en pantalla (no descarga: se abre inline). */
+export const expenseFileUrl = (date: string, gastoId: string) =>
+  `/api/daily-entries/${date}/expenses/${gastoId}/file`;
