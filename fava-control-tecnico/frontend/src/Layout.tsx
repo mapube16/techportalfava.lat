@@ -11,6 +11,7 @@ import { listNotes } from './lib/api/weeklyNotes';
 import type { Role, Route } from './types';
 import Week from './screens/Week';
 import Notes from './screens/Notes';
+import MyStats from './screens/MyStats';
 import Inbox from './screens/Inbox';
 import Projects from './screens/Projects';
 import ProjectDetail from './screens/ProjectDetail';
@@ -32,6 +33,7 @@ function Screen() {
   switch (state.route) {
     case 'week': return <Week />;
     case 'notes': return <Notes />;
+    case 'mine': return <MyStats />;
     case 'inbox': return <Inbox />;
     // La MISMA pantalla en modo consulta: todas las notas, sin botones de decisión.
     case 'allnotes': return <Inbox archivo />;
@@ -135,7 +137,10 @@ export default function Layout() {
   if (tiene('T')) {
     // Sin «Inicio»: era la lista de «Mis notas» con dos botones encima. El tecnico
     // entra en su semana, que es donde trabaja, y «Mis notas» queda de archivo.
-    groups.push({ title: t.grp_tecnico, items: [mk('week', 'week', 'doc'), mk('notes', 'notes', 'doc')] });
+    groups.push({
+      title: t.grp_tecnico,
+      items: [mk('week', 'week', 'doc'), mk('notes', 'notes', 'doc'), mk('mine', 'mine', 'chart')],
+    });
   }
   if (tiene('A') || tiene('S')) {
     groups.push({
@@ -148,7 +153,7 @@ export default function Layout() {
   }
 
   const titleMap: Record<string, string> = {
-    week: t.t_week, notes: t.t_notes, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
+    week: t.t_week, notes: t.t_notes, mine: t.t_mine, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
     project: t.t_project, techs: t.t_techs, users: t.t_users, kpis: t.t_kpis, audit: t.t_audit, config: t.t_config,
   };
 
