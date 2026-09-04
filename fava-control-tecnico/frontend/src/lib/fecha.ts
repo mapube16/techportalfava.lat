@@ -51,3 +51,24 @@ export const primerDiaMesAnterior = (hoy: string): string => {
   const [a, m] = hoy.split('-').map(Number);
   return m === 1 ? `${a - 1}-12-01` : `${a}-${dos(m - 1)}-01`;
 };
+
+/**
+ * La rejilla mensual de la bitacora: SIEMPRE 42 celdas (6 semanas de lunes a domingo)
+ * que cubren el mes de `iso` y se completan con los dias de los meses vecinos.
+ *
+ * Fijo en 42 y no «las semanas que hagan falta» a proposito: con 35 unas veces y 42
+ * otras, la rejilla cambia de alto al pasar de mes y el teclado de la derecha da un
+ * salto. 42 es ademas el tope exacto del GET y del PUT del servidor, asi que el mes
+ * entero cabe en una peticion de lectura y en una de escritura.
+ */
+export const rejillaDelMes = (iso: string): string[] => {
+  const primero = `${iso.slice(0, 7)}-01`;
+  return Array.from({ length: 42 }, (_, i) => sumarDias(lunesDe(primero), i));
+};
+
+/** Mueve `iso` `n` meses, quedandose en el dia 1. Sin `Date`: el dia 1 siempre existe. */
+export const sumarMeses = (iso: string, n: number): string => {
+  const [a, m] = iso.split('-').map(Number);
+  const total = a * 12 + (m - 1) + n;
+  return `${Math.floor(total / 12)}-${dos((total % 12) + 1)}-01`;
+};

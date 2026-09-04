@@ -3,7 +3,7 @@ export type Theme = 'light' | 'dark';
 export type Density = 'comfortable' | 'compact';
 export type Role = 'T' | 'A' | 'S';
 export type Route =
-  | 'week' | 'notes' | 'mine' | 'inbox' | 'allnotes' | 'projects' | 'project'
+  | 'week' | 'logbook' | 'notes' | 'mine' | 'inbox' | 'allnotes' | 'projects' | 'project'
   | 'techs' | 'users' | 'kpis' | 'audit' | 'config';
 /**
  * El vocabulario del SERVIDOR, que es el unico real: lo impone el CHECK

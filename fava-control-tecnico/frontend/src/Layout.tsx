@@ -10,6 +10,7 @@ import { useApiData } from './lib/api/useApiData';
 import { listNotes } from './lib/api/weeklyNotes';
 import type { Role, Route } from './types';
 import Week from './screens/Week';
+import Logbook from './screens/Logbook';
 import Notes from './screens/Notes';
 import MyStats from './screens/MyStats';
 import Inbox from './screens/Inbox';
@@ -32,6 +33,7 @@ function Screen() {
   const { state } = useApp();
   switch (state.route) {
     case 'week': return <Week />;
+    case 'logbook': return <Logbook />;
     case 'notes': return <Notes />;
     case 'mine': return <MyStats />;
     case 'inbox': return <Inbox />;
@@ -139,7 +141,7 @@ export default function Layout() {
     // entra en su semana, que es donde trabaja, y «Mis notas» queda de archivo.
     groups.push({
       title: t.grp_tecnico,
-      items: [mk('week', 'week', 'doc'), mk('notes', 'notes', 'doc'), mk('mine', 'mine', 'chart')],
+      items: [mk('week', 'week', 'doc'), mk('logbook', 'logbook', 'cal'), mk('notes', 'notes', 'doc'), mk('mine', 'mine', 'chart')],
     });
   }
   if (tiene('A') || tiene('S')) {
@@ -153,7 +155,7 @@ export default function Layout() {
   }
 
   const titleMap: Record<string, string> = {
-    week: t.t_week, notes: t.t_notes, mine: t.t_mine, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
+    week: t.t_week, logbook: t.t_logbook, notes: t.t_notes, mine: t.t_mine, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
     project: t.t_project, techs: t.t_techs, users: t.t_users, kpis: t.t_kpis, audit: t.t_audit, config: t.t_config,
   };
 

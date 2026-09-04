@@ -8,24 +8,16 @@ import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getCatalogs } from '../lib/api/catalogs';
 import { listProjectsForLog } from '../lib/api/projects';
+// Compartidas con la bitacora mensual: dos copias serian dos verdades. Ver lib/conceptos.ts
+import { ADMITE_FABRICA, SIN_PROYECTO } from '../lib/conceptos';
 import { getWeek, putEntries } from '../lib/api/dailyEntries';
 import type { ConceptCode } from '../lib/api/dailyEntries';
 import { diasDeSemana, hoyLocal, lunesDe } from '../lib/fecha';
 import DayExpenses from './DayExpenses';
 
-/**
- * Los conceptos que la CHECK `de_proyecto_por_concepto` deja ir SIN proyecto. Es la
- * misma lista que el motor: si se desincronizan, el servidor rechaza con un 23514 que
- * al técnico no le dice nada. Aquí sirve para no pedirle un proyecto que no tiene.
- */
-const SIN_PROYECTO: ConceptCode[] = ['LR', 'NR', 'IL', 'OTRO'];
-
 /** Inicial del dia, indexada por `getUTCDay()` (0 = domingo). Las fechas son
     'YYYY-MM-DD' leidas en UTC, nunca en el huso del movil (ver lib/fecha.ts). */
 const DIA_CORTO = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
-
-/** «En fábrica» es un MODIFICADOR del día completo y del festivo: dice DÓNDE ocurrió. */
-const ADMITE_FABRICA: ConceptCode[] = ['DC', 'DFD'];
 
 /**
  * La INCAPACIDAD se marca con una casilla, no eligiendo un concepto de la rejilla.

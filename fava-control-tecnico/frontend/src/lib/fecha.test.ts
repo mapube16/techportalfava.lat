@@ -3,7 +3,9 @@ import { describe, it, before, after } from 'node:test';
 // no lo tiene. El named import del namespace `assert` type-checa tal cual y da el
 // mismo objeto (equal === strictEqual).
 import { strict as assert } from 'node:assert';
-import { hoyLocal, sumarDias, lunesDe, diasDeSemana, primerDiaMesAnterior } from './fecha';
+import {
+  hoyLocal, sumarDias, lunesDe, diasDeSemana, primerDiaMesAnterior, rejillaDelMes, sumarMeses,
+} from './fecha';
 
 /**
  * Los 4 husos del DISPOSITIVO.
@@ -85,6 +87,37 @@ for (const [zona, offset, d0230, d0330, d2230] of HUSOS) {
       assert.equal(primerDiaMesAnterior('2026-07-14'), '2026-06-01');
       assert.equal(primerDiaMesAnterior('2026-03-31'), '2026-02-01');
       assert.equal(primerDiaMesAnterior('2026-11-01'), '2026-10-01');
+    });
+
+    // BIT-11: la rejilla de la bitacora mensual.
+    it('rejillaDelMes son 42 celdas que empiezan en lunes y cubren el mes', () => {
+      const sep = rejillaDelMes('2026-09-15');
+      assert.equal(sep.length, 42, '42 celdas: 6 semanas, alto estable entre meses');
+      assert.equal(sep[0], '2026-08-31', 'arranca en el lunes de la semana del dia 1');
+      assert.equal(sep.at(-1), '2026-10-11');
+      // Cubrir el mes ENTERO es la razon de ser de la rejilla: si el 30 se saliera,
+      // habria un dia del mes que no se puede pintar.
+      assert.ok(sep.includes('2026-09-01') && sep.includes('2026-09-30'));
+      // El dia 1 en lunes es el borde que rompe una rejilla mal centrada.
+      const jun = rejillaDelMes('2026-06-10');
+      assert.equal(jun[0], '2026-06-01');
+      assert.ok(jun.includes('2026-06-30'));
+      // Febrero de un bisiesto entra entero.
+      const feb = rejillaDelMes('2028-02-01');
+      assert.ok(feb.includes('2028-02-29'));
+      // 42 celdas = el tope exacto del GET y del PUT: from..to son 41 dias de
+      // diferencia, dentro de RANGO_MAX_DIAS (42). Si esto crece, el mes deja de
+      // caber en una peticion.
+      const dif = (Date.parse(`${sep.at(-1)}T00:00:00Z`) - Date.parse(`${sep[0]}T00:00:00Z`)) / 86_400_000;
+      assert.equal(dif, 41);
+    });
+
+    it('sumarMeses cae siempre en el dia 1 y cruza el ano', () => {
+      assert.equal(sumarMeses('2026-09-15', 1), '2026-10-01');
+      assert.equal(sumarMeses('2026-12-31', 1), '2027-01-01');
+      assert.equal(sumarMeses('2026-01-10', -1), '2025-12-01');
+      // El 31 de marzo menos un mes NO es el 31 de febrero: por eso se ancla al dia 1.
+      assert.equal(sumarMeses('2026-03-31', -1), '2026-02-01');
     });
   });
 }

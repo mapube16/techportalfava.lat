@@ -31,6 +31,7 @@ const ARCHIVOS = [
   // elige proyecto, maquina y concepto. Si alguna vuelve a una lista cableada, el
   // «sin texto libre» del criterio 4 se rompe justo por donde entran los datos.
   'screens/Week.tsx',
+  'screens/Logbook.tsx',
   'components/LogDayDrawer.tsx',
   // Anadidas en 04-05: el flujo de aprobacion. Si alguna vuelve a una lista cableada
   // de notas o de acciones, el estado deja de venir del servidor -que es quien manda
