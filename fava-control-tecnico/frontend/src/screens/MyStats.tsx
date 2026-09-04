@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ApiState, ConceptCode as ConceptChip, Empty, nf, conceptColor } from '../ui';
+import { ApiState, ConceptCode as ConceptChip, Empty, nf } from '../ui';
 import { svg, ICON } from '../icons';
 import { useApp } from '../state';
 import { useApiData } from '../lib/api/useApiData';
@@ -172,24 +172,6 @@ export default function MyStats() {
           <CardTitle>{t.mine_by_concept}</CardTitle>
         </CardHeader>
         <CardContent className="p-3 flex flex-col gap-1.5">
-          {/* La mezcla, de un vistazo (diseno 2a). La lista de abajo da el numero
-              exacto; esta barra da la PROPORCION, que es lo que se pregunta uno al
-              mirar su ano: cuanto fue obra y cuanto viaje. Sin ella hay que comparar
-              nueve cifras a ojo. */}
-          <div className="flex h-3.5 rounded-md overflow-hidden mb-2" role="presentation">
-            {/* Ancho y color son datos (porcentaje calculado, color del catalogo):
-                ninguno de los dos puede ser una clase de Tailwind. */}
-            {data.concepts.map((c) => (
-              <div
-                key={c.code}
-                title={`${c.code} · ${nf(c.days)}`}
-                style={{
-                  width: `${(c.days / data.totalDays) * 100}%`,
-                  background: conceptColor(c.code),
-                }}
-              />
-            ))}
-          </div>
           {data.concepts.map((c) => (
             <div key={c.code} className="flex items-center gap-2.5 px-1 py-1.5">
               <ConceptChip code={c.code} />
