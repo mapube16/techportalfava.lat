@@ -8,6 +8,8 @@ import { useApp } from './state';
 import { useIsMobile } from './lib/useIsMobile';
 import { useApiData } from './lib/api/useApiData';
 import { listNotes } from './lib/api/weeklyNotes';
+import { getWeek } from './lib/api/dailyEntries';
+import { diasDeSemana, hoyLocal, lunesDe, semanaIso } from './lib/fecha';
 import type { Role, Route } from './types';
 import Week from './screens/Week';
 import Logbook from './screens/Logbook';
@@ -167,6 +169,28 @@ export default function Layout() {
   // Identidad real de /api/me. `roleList` es informativo: dice qué rol tiene esta
   // cuenta, no ofrece cambiarlo.
   const me = state.me?.status === 'ok' ? state.me.user : null;
+
+  /**
+   * El avance de la semana EN CURSO para la tarjeta del pie.
+   *
+   * Se pide solo si la cuenta registra dias. Comparte endpoint y semana con la
+   * pantalla «Mi semana», asi que el numero es el mismo que se ve alli — y el
+   * denominador son los 7 dias, por lo de siempre: DFD es festivo y DVSF/DVRC son
+   * viajes, que caen en fin de semana a menudo.
+   */
+  const semanaHoy = lunesDe(hoyLocal());
+  const semanaActual = semanaIso(semanaHoy);
+  const { data: miSemana } = useApiData(
+    () => {
+      if (!state.myRoles.includes('T')) return Promise.resolve(null);
+      const d = diasDeSemana(semanaHoy);
+      return getWeek(d[0], d[6]);
+    },
+    [state.myRoles.join(), semanaHoy, state.dataVersion],
+  );
+  const avanceSemana = t.week_progress
+    .replace('{n}', String((miSemana?.entries ?? []).filter((e) => e.conceptCode).length))
+    .replace('{d}', '7');
   const roleList = state.myRoles.map((r) => roleLabel[r]).join(' · ');
 
   // Buscador, idioma y tema. En escritorio van en el encabezado; en
@@ -274,6 +298,25 @@ export default function Layout() {
               </div>
             ))}
           </nav>
+
+          {/* LA SEMANA EN CURSO, al pie de la barra (diseno 1a). Dice en que semana
+              estas y cuanto llevas registrado desde CUALQUIER pantalla, que es la
+              pregunta que el tecnico se hace sin tener que ir a mirarla. Solo para
+              quien registra dias: a un admin sin bitacora no le dice nada. */}
+          {tiene('T') ? (
+            <button
+              type="button"
+              onClick={() => irA('week')}
+              className="mx-3 mb-1 p-3 rounded-lg border border-nav-line bg-nav-2 text-left cursor-pointer hover:border-accent-brand/60 transition-colors"
+            >
+              <div className="text-[10.5px] text-nav-ink-2">
+                {t.nav_week_n.replace('{n}', String(semanaActual.semana))} · {semanaActual.anho}
+              </div>
+              <div className="text-[13px] font-bold text-nav-ink mt-0.5">
+                {avanceSemana}
+              </div>
+            </button>
+          ) : null}
 
           {movil ? (
             // En movil estos controles caen SOBRE la barra navy y sus colores salen

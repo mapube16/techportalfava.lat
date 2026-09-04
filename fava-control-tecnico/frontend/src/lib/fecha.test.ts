@@ -4,7 +4,7 @@ import { describe, it, before, after } from 'node:test';
 // mismo objeto (equal === strictEqual).
 import { strict as assert } from 'node:assert';
 import {
-  hoyLocal, sumarDias, lunesDe, diasDeSemana, primerDiaMesAnterior, rejillaDelMes, sumarMeses,
+  hoyLocal, sumarDias, lunesDe, diasDeSemana, primerDiaMesAnterior, rejillaDelMes, sumarMeses, semanaIso,
 } from './fecha';
 
 /**
@@ -110,6 +110,19 @@ for (const [zona, offset, d0230, d0330, d2230] of HUSOS) {
       // caber en una peticion.
       const dif = (Date.parse(`${sep.at(-1)}T00:00:00Z`) - Date.parse(`${sep[0]}T00:00:00Z`)) / 86_400_000;
       assert.equal(dif, 41);
+    });
+
+    // El rotulo «Semana 36 · 2026» del panel lateral.
+    it('semanaIso sigue la regla del primer jueves', () => {
+      // Comprobados contra el calendario ISO.
+      assert.deepEqual(semanaIso('2026-08-31'), { semana: 36, anho: 2026 });
+      assert.deepEqual(semanaIso('2026-09-06'), { semana: 36, anho: 2026 }, 'el domingo es de la MISMA semana');
+      assert.deepEqual(semanaIso('2026-01-01'), { semana: 1, anho: 2026 });
+      // Los bordes que rompen una cuenta ingenua: dias de enero que pertenecen a la
+      // ultima semana del ano ANTERIOR, y viceversa.
+      assert.deepEqual(semanaIso('2027-01-01'), { semana: 53, anho: 2026 }, 'enero en la semana 53 del ano previo');
+      assert.deepEqual(semanaIso('2023-01-01'), { semana: 52, anho: 2022 });
+      assert.deepEqual(semanaIso('2024-12-30'), { semana: 1, anho: 2025 }, 'diciembre ya es la semana 1 del siguiente');
     });
 
     it('sumarMeses cae siempre en el dia 1 y cruza el ano', () => {

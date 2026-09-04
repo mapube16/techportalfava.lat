@@ -72,3 +72,24 @@ export const sumarMeses = (iso: string, n: number): string => {
   const total = a * 12 + (m - 1) + n;
   return `${Math.floor(total / 12)}-${dos((total % 12) + 1)}-01`;
 };
+
+/**
+ * El numero de semana ISO-8601 de `iso`, para el rotulo «Semana 36 · 2026».
+ *
+ * La regla ISO: la semana 1 es la que contiene el primer JUEVES del ano. Por eso se
+ * cuenta desde el jueves de la semana de `iso` y no desde su lunes — un ano que empieza
+ * en viernes tiene sus primeros dias en la semana 52 o 53 del anterior, y el jueves es
+ * lo unico que decide a que ano pertenece la semana entera.
+ *
+ * Devuelve tambien el ANO de la semana, que no siempre es el del dia: el 1 de enero de
+ * 2027 cae en la semana 53 de 2026, y rotularlo «Semana 53 · 2027» seria falso.
+ */
+export const semanaIso = (iso: string): { semana: number; anho: number } => {
+  // Jueves de esta semana: lunes + 3.
+  const jueves = sumarDias(lunesDe(iso), 3);
+  const anho = Number(jueves.slice(0, 4));
+  // Dias transcurridos desde el 1 de enero de ESE ano hasta este jueves.
+  const dias =
+    (Date.parse(`${jueves}T00:00:00Z`) - Date.parse(`${anho}-01-01T00:00:00Z`)) / 86_400_000;
+  return { semana: Math.floor(dias / 7) + 1, anho };
+};

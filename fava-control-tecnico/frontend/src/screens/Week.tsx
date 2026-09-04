@@ -179,10 +179,23 @@ export default function Week() {
                     {e?.conceptCode ? (
                       <ConceptPill code={e.conceptCode} lang={state.lang} />
                     ) : (
-                      <span className="text-[12.5px] text-muted-foreground">{t.week_empty_day}</span>
+                      // El hueco se dice en naranja, como el diseno: en gris se leia
+                      // igual que una fila normal y habia que contar los que faltaban.
+                      <span
+                        className={`text-[12.5px] ${vacio ? 'text-warn font-semibold' : 'text-muted-foreground'}`}
+                      >
+                        {t.week_empty_day}
+                      </span>
                     )}
                   </div>
                 <div className="text-[13px] text-muted-foreground leading-relaxed min-w-0">
+                  {/* Sin concepto no hay proyecto ni descripcion que ensenar: la
+                      columna diria nada. El diseno la usa para repetir el aviso. */}
+                  {!e?.conceptCode ? (
+                    <span className={vacio ? 'text-warn font-semibold' : 'text-muted-foreground'}>
+                      {t.week_empty_day}
+                    </span>
+                  ) : null}
                   {/* De qué proyecto fue ESTE día. Sin esto, una semana en tres obras
                       era una lista de descripciones sin dueño. */}
                   {e?.projectName ? (

@@ -217,6 +217,21 @@ export default function Logbook() {
                     alternar(f);
                   }}
                   onMouseEnter={() => pintar(f)}
+                  // Doble clic = abrir ESE dia en el cajon. La rejilla pinta en bloque
+                  // —una descripcion para toda la seleccion— y hay cosas que son de un
+                  // solo dia: la nota, los gastos, las maquinas adicionales. Sin esto
+                  // habia que ir a «Mi semana» y navegar hasta la semana correcta.
+                  onDoubleClick={() => patch({ logOpen: true, logDate: f })}
+                  // Por que un dia no se deja tocar. Sin el titulo, un dia futuro se
+                  // ve igual que uno bloqueado por estar aprobado, y el tecnico no
+                  // tiene forma de distinguirlos.
+                  title={
+                    puede
+                      ? t.lb_open_day
+                      : f > data.maxDate
+                        ? t.lb_future
+                        : t.lb_too_old
+                  }
                   aria-pressed={marcado}
                   aria-current={f === hoy ? 'date' : undefined}
                   className={`relative rounded-lg border-[1.5px] p-1.5 min-h-[62px] flex flex-col justify-between text-left transition-colors ${
@@ -259,6 +274,11 @@ export default function Logbook() {
             ) : (
               t.lb_hint
             )}
+            {/* Que el futuro no se registre es la regla del servidor (ventana =
+                hoy + 14 h), no una limitacion de esta pantalla: nadie puede declarar
+                el dia que todavia no ha trabajado. Decirlo aqui evita leer la rejilla
+                gris como una averia. */}
+            <div className="mt-1">{t.lb_future_note}</div>
           </div>
         </div>
       </Card>
