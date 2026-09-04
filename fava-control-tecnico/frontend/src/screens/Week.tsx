@@ -157,9 +157,11 @@ export default function Week() {
         <div>
           {dias.map((fecha, i) => {
             const e = porFecha.get(fecha);
-            // El dia SIN registrar se tinta (diseno 1a): un hueco tiene que verse como
-            // un hueco, no como una fila mas con la celda vacia.
-            const vacio = !e?.conceptCode;
+            // El HUECO se tinta (diseno 1a): tiene que verse como un hueco y no como
+            // una fila mas con la celda vacia. Solo los dias ya pasados: si no, una
+            // semana futura salia entera naranja y el aviso perdia todo su sentido.
+            // Es el mismo criterio que usa `pendiente` para el panel de la derecha.
+            const vacio = !e?.conceptCode && fecha <= hoy;
             return (
               <div
                 key={fecha}
