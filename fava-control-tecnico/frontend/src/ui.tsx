@@ -115,6 +115,18 @@ export function ConceptPill({ code, lang }: { code: string; lang: Lang }) {
   );
 }
 
+/**
+ * El COLOR de un concepto, y solo el color.
+ *
+ * Vive aqui porque `ui.tsx` ya es el unico sitio que toca el catalogo de i18n, y
+ * porque `check-no-free-text.mjs` veta importar `CONCEPTS` en las pantallas de captura
+ * —con razon: de ahi salieron etiquetas cableadas—. El mapa codigo->color si es legitimo
+ * (lo dice el propio mensaje del script), asi que se expone como funcion y las
+ * pantallas piden un color sin poder alcanzar las etiquetas.
+ */
+export const conceptColor = (code: string): string =>
+  CONCEPTS.find((x) => x.c === code)?.color ?? 'var(--steel)';
+
 export function ConceptCode({ code }: { code: string }) {
   const cc = CONCEPTS.find((x) => x.c === code) || CONCEPTS[0];
   return (

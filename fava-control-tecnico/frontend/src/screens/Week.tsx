@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ApiState, Card, ConceptPill, StatusPill } from '../ui';
-import { CONCEPTS } from '../i18n';
+import { ApiState, Card, ConceptPill, StatusPill, conceptColor } from '../ui';
 import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getWeek } from '../lib/api/dailyEntries';
@@ -160,7 +159,7 @@ export default function Week() {
         <div className="flex gap-1.5 px-4.5 py-3 border-b border-border md:hidden">
           {dias.map((fecha, i) => {
             const e = porFecha.get(fecha);
-            const cc = e?.conceptCode ? CONCEPTS.find((x) => x.c === e.conceptCode) : null;
+            const color = e?.conceptCode ? conceptColor(e.conceptCode) : null;
             const esHoy = fecha === hoy;
             return (
               <button
@@ -169,11 +168,11 @@ export default function Week() {
                 aria-label={`${t.days[i]} ${diaDe(fecha)}`}
                 aria-current={esHoy ? 'date' : undefined}
                 className={`flex-1 rounded-lg py-1.5 cursor-pointer transition-colors ${
-                  cc ? 'text-white border-0' : 'bg-muted text-muted-foreground border border-dashed border-line-2'
+                  color ? 'text-white border-0' : 'bg-muted text-muted-foreground border border-dashed border-line-2'
                 } ${esHoy ? 'ring-2 ring-accent-brand ring-offset-1' : ''}`}
                 /* El color del concepto es un dato del catalogo, no una clase: Tailwind
                    no puede generar una utilidad por cada color en tiempo de compilacion. */
-                style={cc ? { background: cc.color } : undefined}
+                style={color ? { background: color } : undefined}
               >
                 <div className="text-[9.5px] font-bold opacity-80">{t.days[i].slice(0, 1)}</div>
                 <div className="text-[13px] font-bold font-cond">{diaDe(fecha)}</div>

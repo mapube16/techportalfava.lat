@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ApiState, ConceptCode as ConceptChip, Empty, nf } from '../ui';
-import { CONCEPTS } from '../i18n';
+import { ApiState, ConceptCode as ConceptChip, Empty, nf, conceptColor } from '../ui';
 import { svg, ICON } from '../icons';
 import { useApp } from '../state';
 import { useApiData } from '../lib/api/useApiData';
@@ -178,21 +177,18 @@ export default function MyStats() {
               mirar su ano: cuanto fue obra y cuanto viaje. Sin ella hay que comparar
               nueve cifras a ojo. */}
           <div className="flex h-3.5 rounded-md overflow-hidden mb-2" role="presentation">
-            {data.concepts.map((c) => {
-              const cc = CONCEPTS.find((x) => x.c === c.code);
-              // Ancho y color son datos (porcentaje calculado, color del catalogo):
-              // ninguno de los dos puede ser una clase de Tailwind.
-              return (
-                <div
-                  key={c.code}
-                  title={`${c.code} · ${nf(c.days)}`}
-                  style={{
-                    width: `${(c.days / data.totalDays) * 100}%`,
-                    background: cc?.color ?? 'var(--steel)',
-                  }}
-                />
-              );
-            })}
+            {/* Ancho y color son datos (porcentaje calculado, color del catalogo):
+                ninguno de los dos puede ser una clase de Tailwind. */}
+            {data.concepts.map((c) => (
+              <div
+                key={c.code}
+                title={`${c.code} · ${nf(c.days)}`}
+                style={{
+                  width: `${(c.days / data.totalDays) * 100}%`,
+                  background: conceptColor(c.code),
+                }}
+              />
+            ))}
           </div>
           {data.concepts.map((c) => (
             <div key={c.code} className="flex items-center gap-2.5 px-1 py-1.5">
