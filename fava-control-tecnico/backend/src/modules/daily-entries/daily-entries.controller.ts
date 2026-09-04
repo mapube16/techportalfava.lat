@@ -17,8 +17,20 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** El cuerpo de la Nota Semanal imprime esto: 2000 caracteres son 25 lineas de PDF. */
 const DESCRIPCION_MAX = 2000;
 
-/** Una semana. Mas dias no es «rellenar la semana», es otra cosa que nadie ha pedido. */
-const DIAS_MAX = 7;
+/**
+ * La rejilla de un mes: 6 semanas de 7 dias, que es lo que ocupa un mes cualquiera
+ * con sus dias de relleno.
+ *
+ * Eran 7 —«una semana; mas dias no es rellenar la semana, es otra cosa que nadie ha
+ * pedido»—. Ya lo han pedido: la bitacora mensual pinta un concepto sobre varios dias
+ * seleccionados a la vez, y una comision de tres semanas son 21 dias de un tiron. Con
+ * el tope en 7 habria que trocear en cuatro peticiones, y como cada una es su propia
+ * transaccion, un fallo a mitad dejaria el mes a medio pintar sin forma de deshacerlo.
+ *
+ * 42 y no «sin limite»: sigue habiendo techo (la transaccion no crece indefinidamente)
+ * y es exactamente lo que la pantalla puede seleccionar.
+ */
+const DIAS_MAX = 42;
 
 /**
  * Los dias del guardado MASIVO: cada uno con SU descripcion, y el resto de la jornada

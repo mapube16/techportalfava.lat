@@ -32,7 +32,8 @@ export default function Week() {
   const [errEnvio, setErrEnvio] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
-  const semana = lunes ?? lunesDe(hoyLocal());
+  const hoy = hoyLocal();
+  const semana = lunes ?? lunesDe(hoy);
   const dias = diasDeSemana(semana);
 
   const { data, error } = useApiData(() => getWeek(dias[0], dias[6]), [semana, state.dataVersion]);
@@ -82,6 +83,31 @@ export default function Week() {
   const estados = new Set(registrados.map((e) => e.status));
   const estado = estados.size === 1 ? [...estados][0] : null;
 
+  /**
+   * El avance de la semana (diseno 1a).
+   *
+   * Cuenta los dias CON CONCEPTO sobre los siete, y no «sobre 5 laborables»: aqui el
+   * fin de semana se registra igual —DFD es festivo/dominical y DVSF/DVRC son viajes,
+   * que caen en sabado a menudo—. Un denominador de 5 daria «7 de 5» en una semana
+   * con viaje el domingo.
+   */
+  const conConcepto = registrados.filter((e) => e.conceptCode).length;
+  const pctSemana = Math.round((conConcepto / dias.length) * 100);
+
+  /**
+   * El hueco que hay que tapar HOY (diseno 1a: «Falta el jueves»).
+   *
+   * Solo mira dias ya pasados o el de hoy: un viernes sin registrar cuando es martes
+   * no es un olvido, es futuro. Sin ese filtro el aviso saldria siempre, y un aviso
+   * que sale siempre deja de leerse.
+   */
+  const pendiente = dias.find((d) => d <= hoy && !porFecha.get(d)?.conceptCode) ?? null;
+  const idxPendiente = pendiente ? dias.indexOf(pendiente) : -1;
+
+  const progreso = t.week_progress
+    .replace('{n}', String(conConcepto))
+    .replace('{d}', String(dias.length));
+
   const nav = (dir: -1 | 1, off: boolean) => (
     <Button
       variant="outline"
@@ -96,8 +122,11 @@ export default function Week() {
   );
 
   return (
-    <div className="max-w-[820px] mx-auto flex flex-col gap-4">
-      <Card>
+    // Dos columnas en escritorio (diseno 1a): la semana a la izquierda y el panel de
+    // la nota a la derecha. En movil el panel BAJA debajo de la tabla en vez de
+    // encogerse, que a 390px seria ilegible.
+    <div className="max-w-[1100px] mx-auto flex flex-col md:flex-row gap-4 items-start">
+      <Card className="flex-1 min-w-0 w-full">
         <div className="flex items-center justify-between gap-2 px-4.5 py-3.5 border-b border-border flex-wrap">
           <div className="flex items-center gap-2.5 min-w-0">
             {nav(-1, atrasBloqueado)}
@@ -115,29 +144,43 @@ export default function Week() {
           {estado ? <StatusPill st={estado} t={t} /> : null}
         </div>
 
+        {/* La cabecera de la tabla (diseno 1a). Las tres columnas dejan de ser un
+            acuerdo tacito entre filas y se nombran: DIA / CONCEPTO / PROYECTO Y
+            TRABAJO. En movil se oculta —las filas se leen como tarjetas apiladas y un
+            encabezado de tabla sobre una sola columna estorba. */}
+        <div className="hidden md:grid grid-cols-[64px_150px_1fr] gap-0 px-4.5 py-2.5 bg-surface-2 border-b border-border text-[10.5px] font-bold uppercase tracking-[.06em] text-muted-foreground">
+          <div>{t.col_day}</div>
+          <div>{t.col_concept}</div>
+          <div>{t.col_work}</div>
+        </div>
+
         <div>
           {dias.map((fecha, i) => {
             const e = porFecha.get(fecha);
+            // El dia SIN registrar se tinta (diseno 1a): un hueco tiene que verse como
+            // un hueco, no como una fila mas con la celda vacia.
+            const vacio = !e?.conceptCode;
             return (
               <div
                 key={fecha}
                 onClick={() => patch({ logOpen: true, logDate: fecha })}
-                className={`flex gap-3.5 p-row items-start cursor-pointer hover:bg-muted/50 transition-colors ${
-                  i ? 'border-t border-border' : ''
-                }`}
+                className={`grid grid-cols-[44px_1fr] md:grid-cols-[64px_150px_1fr] gap-x-3.5 gap-y-1 p-row items-start cursor-pointer transition-colors ${
+                  vacio ? 'bg-warn-tint/40 hover:bg-warn-tint/70' : 'hover:bg-muted/50'
+                } ${i ? 'border-t border-border' : ''}`}
               >
-                <div className="w-11 shrink-0">
+                <div>
                   <div className="text-[11px] text-muted-foreground font-semibold">{t.days[i]}</div>
                   <div className="text-base font-bold font-cond">{diaDe(fecha)}</div>
                 </div>
-                <div className="w-[150px] shrink-0">
-                  {e?.conceptCode ? (
-                    <ConceptPill code={e.conceptCode} lang={state.lang} />
-                  ) : (
-                    <span className="text-[12.5px] text-muted-foreground">{t.week_empty_day}</span>
-                  )}
-                </div>
-                <div className="flex-1 text-[13px] text-muted-foreground leading-relaxed min-w-0">
+                <div className="md:contents">
+                  <div>
+                    {e?.conceptCode ? (
+                      <ConceptPill code={e.conceptCode} lang={state.lang} />
+                    ) : (
+                      <span className="text-[12.5px] text-muted-foreground">{t.week_empty_day}</span>
+                    )}
+                  </div>
+                <div className="text-[13px] text-muted-foreground leading-relaxed min-w-0">
                   {/* De qué proyecto fue ESTE día. Sin esto, una semana en tres obras
                       era una lista de descripciones sin dueño. */}
                   {e?.projectName ? (
@@ -154,6 +197,7 @@ export default function Week() {
                   {e?.commessaShort ? (
                     <span className="ml-2 font-mono text-[11.5px] text-primary">{e.commessaShort}</span>
                   ) : null}
+                  </div>
                 </div>
               </div>
             );
@@ -161,75 +205,141 @@ export default function Week() {
         </div>
       </Card>
 
-      {/* Las notas que produjo ESTA semana. Una por proyecto, cada una con su cliente,
-          su estado y su firma. Estuvieron en «Mis notas» con el argumento de que aquí
-          «no hay forma de decir cuál de los dos clientes estás firmando» — la hay:
-          cada tarjeta lleva el nombre de su proyecto, y encima se ven los días que la
-          originaron, que una lista aparte no puede enseñar. */}
-      {deLaSemana.length ? (
-        <div className="flex flex-col gap-2.5">
-          {deLaSemana.map((n) => (
-            <Card key={n.id}>
-              <div className="flex items-center gap-3 flex-wrap p-4">
-                <div className="flex-1 min-w-[180px]">
-                  <div className="text-[14px] font-bold">{n.projectName}</div>
-                  <div className="text-[12.5px] text-muted-foreground">{n.clientName}</div>
-                </div>
-                <StatusPill st={n.status} t={t} />
-                {/* Solo se firma lo ENVIADO y sin firma previa: el servidor rechaza lo
-                    demás, y ofrecer el botón igual sería prometer algo que no pasa. */}
-                {n.status === 'submitted' && !n.signed ? (
-                  <Button onClick={() => setFirmandoLocal(n)} className="min-h-11 md:min-h-9">
-                    {t.btn_signnote}
-                  </Button>
-                ) : null}
+      {/* EL PANEL DE LA NOTA (diseno 1a). La semana se lee a la izquierda y se ACTUA
+          aqui: cuanto llevas, que falta, y los dos botones. Antes el boton de enviar
+          estaba al pie de la pagina, debajo de las notas, y el aviso de que faltaba un
+          dia no existia: el fallo se descubria al pulsar. */}
+      <div className="w-full md:w-[272px] md:flex-none flex flex-col gap-3.5">
+        <Card>
+          <div className="p-4">
+            <div className="text-[13px] font-bold">{t.week_note_panel}</div>
+            {/* De QUE proyecto es la nota. Con dos obras en la semana hay dos notas y
+                el panel tiene que decir cuales, no hablar de «la nota» en abstracto. */}
+            <div className="text-[11.5px] text-muted-foreground mt-0.5 leading-relaxed">
+              {deLaSemana.length
+                ? deLaSemana.map((n) => n.projectName).join(' · ')
+                : t.week_note_none}
+            </div>
+
+            <div
+              className="h-1.5 rounded-full bg-muted overflow-hidden mt-3.5"
+              role="progressbar"
+              aria-valuenow={conConcepto}
+              aria-valuemin={0}
+              aria-valuemax={dias.length}
+              aria-label={progreso}
+            >
+              {/* El ancho es un porcentaje calculado: no hay una clase de Tailwind por
+                  cada valor posible, asi que va en `style` a proposito. */}
+              <div
+                className={`h-full rounded-full transition-all ${conConcepto === dias.length ? 'bg-ok' : 'bg-primary'}`}
+                style={{ width: `${pctSemana}%` }}
+              />
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-1.5">{progreso}</div>
+
+            <div className="flex flex-col gap-2 mt-3.5">
+              <Button
+                onClick={() => {
+                  // NOTA-01: el servidor deriva UNA NOTA POR PROYECTO. El tecnico no
+                  // elige ninguna, solo manda su semana.
+                  setErrEnvio(null);
+                  setEnviando(true);
+                  submitWeek(semana)
+                    .then((creadas) => {
+                      showToast('submitted');
+                      // Se ENCADENA con la firma y NO se cambia de pantalla: la firma
+                      // es el consentimiento de ESTE envio. Van TODAS las notas
+                      // creadas, no la primera: al firmar una se abre la siguiente
+                      // sola. Con `creadas[0]`, una semana en dos proyectos dejaba la
+                      // segunda sin firma y sin pedirla.
+                      patch({ porFirmar: creadas.map((n) => n.id) });
+                      refresh();
+                    })
+                    .catch((e: unknown) => setErrEnvio(codigo(e)))
+                    .finally(() => setEnviando(false));
+                }}
+                disabled={enviando}
+                className="w-full min-h-11"
+              >
+                {t.btn_submit}
+              </Button>
+              {/* «Ver PDF» solo cuando HAY una nota que ver. Sin notas el boton abriria
+                  un visor vacio, que es peor que no ofrecerlo. */}
+              {deLaSemana.length ? (
                 <Button
                   variant="outline"
-                  onClick={() => patch({ pdfOpen: true, pdfNoteId: n.id, pdfSigned: n.signed })}
-                  className="min-h-11 md:min-h-9"
+                  onClick={() =>
+                    patch({
+                      pdfOpen: true,
+                      pdfNoteId: deLaSemana[0].id,
+                      pdfSigned: deLaSemana[0].signed,
+                    })
+                  }
+                  className="w-full min-h-11"
                 >
                   {t.btn_pdf}
                 </Button>
+              ) : null}
+            </div>
+            <div className="text-[10.5px] text-muted-foreground leading-relaxed mt-2.5">
+              {t.gen_pdf_note}
+            </div>
+          </div>
+        </Card>
+
+        {/* EL AVISO DEL HUECO (diseno 1a). Solo si hay un dia pasado sin concepto:
+            un aviso que sale siempre deja de leerse. */}
+        {pendiente ? (
+          <div className="bg-warn-tint border border-warn rounded-card p-3.5">
+            <div className="text-[11.5px] font-bold text-warn">
+              {t.week_gap_title.replace('{d}', t.days_full[idxPendiente])}
+            </div>
+            <div className="text-[11.5px] text-muted-foreground leading-relaxed mt-1">
+              {t.week_gap_body}
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => patch({ logOpen: true, logDate: pendiente })}
+              className="w-full min-h-11 mt-2.5"
+            >
+              {t.week_gap_cta}
+            </Button>
+          </div>
+        ) : null}
+
+        {/* Las notas de ESTA semana, una por proyecto: cada una con su estado, su
+            firma y su PDF. Viven aqui —y no en «Mis notas»— porque son el resultado de
+            los dias que se estan viendo: firmar mirando la semana que la origino es la
+            unica forma de saber que se esta firmando. */}
+        {deLaSemana.map((n) => (
+          <Card key={n.id}>
+            <div className="p-3.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-[12.5px] font-bold truncate">{n.projectName}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">{n.clientName}</div>
+                </div>
+                <StatusPill st={n.status} t={t} />
               </div>
+              {/* Solo se firma lo ENVIADO y sin firma previa: el servidor rechaza lo
+                  demas, y ofrecer el boton igual seria prometer algo que no pasa. */}
+              {n.status === 'submitted' && !n.signed ? (
+                <Button onClick={() => setFirmandoLocal(n)} className="w-full min-h-11 mt-2.5">
+                  {t.btn_signnote}
+                </Button>
+              ) : null}
               {n.returnComment ? (
-                <div className="mx-4 mb-4 flex gap-2.5 bg-warn-tint border border-warn rounded-lg px-3 py-2.5">
-                  <div>
-                    <div className="text-xs font-bold text-warn">{t.returned_note}</div>
-                    <div className="text-[12.5px] text-muted-foreground mt-0.5">{n.returnComment}</div>
+                <div className="mt-2.5 bg-warn-tint border border-warn rounded-lg px-3 py-2.5">
+                  <div className="text-[11px] font-bold text-warn">{t.returned_note}</div>
+                  <div className="text-[11.5px] text-muted-foreground mt-0.5 leading-relaxed">
+                    {n.returnComment}
                   </div>
                 </div>
               ) : null}
-            </Card>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="flex gap-3 flex-wrap justify-end items-center">
-        <div className="flex-1 text-xs text-muted-foreground min-w-[200px]">{t.gen_pdf_note}</div>
-        <Button
-          onClick={() => {
-            // NOTA-01: el servidor deriva UNA NOTA POR PROYECTO. El técnico no elige
-            // ninguna, solo manda su semana.
-            setErrEnvio(null);
-            setEnviando(true);
-            submitWeek(semana)
-              .then((creadas) => {
-                showToast('submitted');
-                // Se ENCADENA con la firma y NO se cambia de pantalla: la firma es el
-                // consentimiento de ESTE envio. Van TODAS las notas creadas, no la
-                // primera: al firmar una se abre la siguiente sola. Con `creadas[0]`, una
-                // semana en dos proyectos dejaba la segunda sin firma y sin pedirla.
-                patch({ porFirmar: creadas.map((n) => n.id) });
-                refresh();
-              })
-              .catch((e: unknown) => setErrEnvio(codigo(e)))
-              .finally(() => setEnviando(false));
-          }}
-          disabled={enviando}
-          className="min-h-11 md:min-h-9"
-        >
-          {t.btn_submit} →
-        </Button>
+            </div>
+          </Card>
+        ))}
       </div>
 
       {/* No poder enviar la semana no es un campo mal escrito: es un cambio de plan

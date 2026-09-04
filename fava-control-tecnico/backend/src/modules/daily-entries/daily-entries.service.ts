@@ -36,8 +36,16 @@ const FILA = {
   machineModel: { select: { code: true } },
 } as const;
 
-/** Rango maximo del `GET`: sin techo, un `from=2020-01-01` se trae la tabla entera. */
-const RANGO_MAX_DIAS = 30;
+/**
+ * Rango maximo del `GET`: sin techo, un `from=2020-01-01` se trae la tabla entera.
+ *
+ * 42 = la rejilla de la bitacora mensual (6 semanas de 7 dias). Con 30 no cabia: un
+ * mes con sus dias de relleno se pedia en dos llamadas y la pantalla parpadeaba al
+ * pintarse por mitades. Es el mismo numero que `DIAS_MAX` del controlador —lo que se
+ * puede leer de una vez es lo que se puede escribir de una vez— y sigue acotando la
+ * consulta a un mes largo.
+ */
+const RANGO_MAX_DIAS = 42;
 
 const DIA_MS = 86_400_000;
 

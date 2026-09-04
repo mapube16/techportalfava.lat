@@ -285,7 +285,7 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
     ['sin from ni to', ''],
     ['solo con from', `?from=${SEMANA.from}`],
     ['con to anterior a from', `?from=${SEMANA.to}&to=${SEMANA.from}`],
-    ['con un rango de mas de 31 dias', `?from=${dia(-40)}&to=${dia(0)}`],
+    ['con un rango de mas de 43 dias', `?from=${dia(-50)}&to=${dia(0)}`],
   ])('el GET %s responde 400 RANGO_INVALIDO', async (_caso, query) => {
     const { body } = await http()
       .get(`/api/daily-entries${query}`)
@@ -294,9 +294,11 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
     expect(body.message).toBe('RANGO_INVALIDO');
   });
 
-  it('un rango de 31 dias exactos se acepta', async () => {
+  // 43 dias inclusive = RANGO_MAX_DIAS (42) de diferencia: la rejilla de la bitacora
+  // mensual, que son 6 semanas de 7 dias. Con el tope anterior de 31 no cabia.
+  it('un rango de 43 dias exactos se acepta (la rejilla del mes)', async () => {
     await http()
-      .get(`/api/daily-entries?from=${dia(0)}&to=${dia(30)}`)
+      .get(`/api/daily-entries?from=${dia(0)}&to=${dia(42)}`)
       .set(auth(tokenA))
       .expect(200);
   });
