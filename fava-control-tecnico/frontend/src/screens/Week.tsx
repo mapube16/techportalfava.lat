@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ApiState, Card, ConceptPill, StatusPill } from '../ui';
+import { CONCEPTS } from '../i18n';
 import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getWeek } from '../lib/api/dailyEntries';
@@ -32,7 +33,8 @@ export default function Week() {
   const [errEnvio, setErrEnvio] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
-  const semana = lunes ?? lunesDe(hoyLocal());
+  const hoy = hoyLocal();
+  const semana = lunes ?? lunesDe(hoy);
   const dias = diasDeSemana(semana);
 
   const { data, error } = useApiData(() => getWeek(dias[0], dias[6]), [semana, state.dataVersion]);
@@ -82,6 +84,21 @@ export default function Week() {
   const estados = new Set(registrados.map((e) => e.status));
   const estado = estados.size === 1 ? [...estados][0] : null;
 
+  /**
+   * El avance de la semana, del diseno 1a.
+   *
+   * Cuenta los dias CON CONCEPTO sobre los siete, y no «sobre 5 laborables»: aqui el
+   * fin de semana se registra igual (DFD es festivo/dominical, DVSF/DVRC son viajes que
+   * caen en sabado a menudo). Un denominador de 5 daria 7 de 5 en una semana con viaje
+   * el domingo.
+   *
+   * Es la misma cuenta que ya decide `estado` unas lineas arriba — `registrados` filtra
+   * las entradas que existen, y una entrada sin `conceptCode` es un dia abierto en el
+   * cajon pero sin rellenar, que para el tecnico no esta registrado.
+   */
+  const conConcepto = registrados.filter((e) => e.conceptCode).length;
+  const pctSemana = Math.round((conConcepto / dias.length) * 100);
+
   const nav = (dir: -1 | 1, off: boolean) => (
     <Button
       variant="outline"
@@ -113,6 +130,56 @@ export default function Week() {
             {nav(1, adelanteBloqueado)}
           </div>
           {estado ? <StatusPill st={estado} t={t} /> : null}
+        </div>
+
+        {/* El avance de la semana (diseno 1a). Estaba solo en el texto del boton de
+            enviar: se leia el fallo al pulsar, no antes. Aqui se ve al entrar. */}
+        <div className="px-4.5 pt-3 pb-3.5 border-b border-border">
+          <div
+            className="h-1.5 rounded-full bg-muted overflow-hidden"
+            role="progressbar"
+            aria-valuenow={conConcepto}
+            aria-valuemin={0}
+            aria-valuemax={dias.length}
+            aria-label={t.week_progress.replace('{n}', String(conConcepto)).replace('{d}', String(dias.length))}
+          >
+            {/* Porcentaje calculado: no hay una clase de Tailwind por cada valor. */}
+            <div
+              className={`h-full rounded-full transition-all ${conConcepto === dias.length ? 'bg-ok' : 'bg-primary'}`}
+              style={{ width: `${pctSemana}%` }}
+            />
+          </div>
+          <div className="text-[11.5px] text-muted-foreground mt-1.5">
+            {t.week_progress.replace('{n}', String(conConcepto)).replace('{d}', String(dias.length))}
+          </div>
+        </div>
+
+        {/* La semana de un vistazo (diseno 1a). En movil la lista de siete filas no
+            cabe sin scroll y no hay forma de ver los huecos sin recorrerla; esta tira
+            los ensena de golpe. En escritorio la tabla ya lo dice, asi que se oculta. */}
+        <div className="flex gap-1.5 px-4.5 py-3 border-b border-border md:hidden">
+          {dias.map((fecha, i) => {
+            const e = porFecha.get(fecha);
+            const cc = e?.conceptCode ? CONCEPTS.find((x) => x.c === e.conceptCode) : null;
+            const esHoy = fecha === hoy;
+            return (
+              <button
+                key={fecha}
+                onClick={() => patch({ logOpen: true, logDate: fecha })}
+                aria-label={`${t.days[i]} ${diaDe(fecha)}`}
+                aria-current={esHoy ? 'date' : undefined}
+                className={`flex-1 rounded-lg py-1.5 cursor-pointer transition-colors ${
+                  cc ? 'text-white border-0' : 'bg-muted text-muted-foreground border border-dashed border-line-2'
+                } ${esHoy ? 'ring-2 ring-accent-brand ring-offset-1' : ''}`}
+                /* El color del concepto es un dato del catalogo, no una clase: Tailwind
+                   no puede generar una utilidad por cada color en tiempo de compilacion. */
+                style={cc ? { background: cc.color } : undefined}
+              >
+                <div className="text-[9.5px] font-bold opacity-80">{t.days[i].slice(0, 1)}</div>
+                <div className="text-[13px] font-bold font-cond">{diaDe(fecha)}</div>
+              </button>
+            );
+          })}
         </div>
 
         <div>

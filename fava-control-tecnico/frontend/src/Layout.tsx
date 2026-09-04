@@ -213,12 +213,15 @@ export default function Layout() {
         {/* SIDEBAR — en movil es un panel deslizante; ver `.fava-aside` en index.css */}
         <aside
           id="fava-nav"
-          className="fava-aside bg-card border-r border-border"
+          className="fava-aside bg-nav border-r border-nav-line"
           data-open={menuAbierto ? 'true' : 'false'}
         >
-          <div className="px-[18px] pt-[18px] pb-3.5 border-b border-border">
-            <FavaLogo height={44} onDark={state.theme === 'dark'} />
-            <div className="text-[10px] tracking-[1.5px] text-muted-foreground uppercase mt-2">
+          {/* `onDark` fijo: la barra es navy en los dos temas, asi que el logo va
+              siempre en su version clara. Atarlo a `state.theme` lo pintaba navy
+              sobre navy en el tema claro — invisible. */}
+          <div className="px-[18px] pt-[18px] pb-3.5 border-b border-nav-line">
+            <FavaLogo height={44} onDark />
+            <div className="text-[10px] tracking-[1.5px] text-nav-ink-2 uppercase mt-2">
               {t.brand_sub}
             </div>
           </div>
@@ -226,7 +229,7 @@ export default function Layout() {
           <nav className="flex-1 overflow-y-auto px-2.5 py-3">
             {groups.map((g) => (
               <div key={g.title} className="mb-3.5">
-                <div className="text-[10px] font-bold tracking-[1.4px] uppercase text-muted-foreground px-2.5 py-1.5">
+                <div className="text-[10px] font-bold tracking-[1.4px] uppercase text-nav-ink-2 px-2.5 py-1.5">
                   {g.title}
                 </div>
                 {g.items.map((it) => {
@@ -235,12 +238,18 @@ export default function Layout() {
                     <button
                       key={it.key}
                       onClick={() => irA(it.route)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 mb-0.5 min-h-11 md:min-h-0 rounded-md text-[13.5px] text-left cursor-pointer transition-colors ${
+                      className={`relative w-full flex items-center gap-3 px-3 py-2 mb-0.5 min-h-11 md:min-h-0 rounded-md text-[13.5px] text-left cursor-pointer transition-colors ${
                         active
-                          ? 'font-semibold text-primary bg-primary-tint'
-                          : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'font-semibold text-white bg-accent-brand/16'
+                          : 'font-medium text-nav-ink-2 hover:bg-white/10 hover:text-nav-ink'
                       }`}
                     >
+                      {/* La marca naranja del activo: 3px pegados al borde izquierdo.
+                          Es lo que distingue el destino actual sin depender del color
+                          del texto, que aqui es blanco sobre navy en los dos casos. */}
+                      {active ? (
+                        <span className="absolute left-1 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-sm bg-accent-brand" />
+                      ) : null}
                       <span className="flex size-[18px] shrink-0">{it.icon}</span>
                       <span className="flex-1 text-left">{it.label}</span>
                       {it.badge ? (
@@ -256,20 +265,32 @@ export default function Layout() {
           </nav>
 
           {movil ? (
-            <div className="p-3 border-t border-border flex flex-wrap gap-2">{controles}</div>
+            // En movil estos controles caen SOBRE la barra navy, y sus colores salen
+            // del tema (bg-muted es casi blanco en claro): quedaba un bloque palido
+            // pegado al navy. `data-theme="dark"` reusa la paleta oscura que ya existe
+            // en vez de reestilizar los cuatro controles a mano.
+            <div data-theme="dark" className="p-3 border-t border-nav-line flex flex-wrap gap-2">
+              {controles}
+            </div>
           ) : null}
 
-          <div className="p-3 border-t border-border">
-            <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-muted">
+          <div className="p-3 border-t border-nav-line">
+            <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-nav-2">
               <div className="size-8 rounded-full bg-primary-700 text-white grid place-items-center text-xs font-bold shrink-0">
                 {initials(me?.displayName || '?')}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-[13px] font-semibold truncate">{me?.displayName}</div>
-                <div className="text-[11px] text-muted-foreground truncate">{me?.email}</div>
-                <div className="text-[11px] text-muted-foreground">{roleList}</div>
+                <div className="text-[13px] font-semibold truncate text-nav-ink">{me?.displayName}</div>
+                <div className="text-[11px] text-nav-ink-2 truncate">{me?.email}</div>
+                <div className="text-[11px] text-nav-ink-2">{roleList}</div>
               </div>
-              <Button variant="ghost" size="icon" onClick={logout} aria-label="logout" className="shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={logout}
+                aria-label="logout"
+                className="shrink-0 text-nav-ink-2 hover:text-nav-ink hover:bg-white/10"
+              >
                 <LogOut className="size-4" />
               </Button>
             </div>

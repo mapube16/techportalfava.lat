@@ -110,6 +110,15 @@
   --color-input: var(--border-2);
   --color-ring: var(--info);
 
+  /* La barra lateral es OSCURA en los dos temas, como el diseno: es la unica
+     superficie de la app que no sigue al tema. Sus colores por tanto no pueden salir
+     de --surface/--text, que se invierten; van en tokens propios. */
+  --color-nav: var(--nav);
+  --color-nav-2: var(--nav-2);
+  --color-nav-line: var(--nav-line);
+  --color-nav-ink: var(--nav-ink);
+  --color-nav-ink-2: var(--nav-ink-2);
+
   /* shadcn compone sus radios desde uno base. El nuestro es 10px. */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -195,6 +204,13 @@
     0 28px 56px rgba(19, 35, 48, 0.1),
     0 56px 88px rgba(19, 35, 48, 0.06);
   --radius: 10px;
+  /* Fijos en los dos temas: el navy del diseno. Que la barra no cambie es el ancla
+     visual de la app — en oscuro el resto baja y ella se queda donde estaba. */
+  --nav: #132330;
+  --nav-2: #182734;
+  --nav-line: #26384a;
+  --nav-ink: #e9eff4;
+  --nav-ink-2: #9fb0be;
   color: var(--text);
   background: var(--bg);
 }
