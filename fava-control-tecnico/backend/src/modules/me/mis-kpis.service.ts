@@ -2,6 +2,8 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { ConceptCode } from '../../generated/prisma/enums';
 import type { UserModel } from '../../generated/prisma/models';
+// La MISMA regla que el tablero del admin (KPI-02): una definición, dos consumidores.
+import { FUERA_DEL_DENOMINADOR, PRODUCTIVOS } from '../kpis/kpis.service';
 
 /**
  * KPIs OPERATIVOS del propio técnico — su memoria de trabajo, no su evaluación.
@@ -19,9 +21,13 @@ import type { UserModel } from '../../generated/prisma/models';
  * LO QUE NO SALE DE AQUÍ, y no por olvido:
  *   · `contract_value`, `normal_hours`, `order_sold_days` — lo comercial no es suyo.
  *   · Datos de OTROS técnicos. Sin comparación no hay ranking entre personas.
- *   · La utilización. Es la única cifra que se lee como juicio, y para «cuántos días
- *     llevo en esta máquina» no hace falta. Los días por concepto dicen lo mismo sin
- *     invitar a compararse con nadie.
+ *
+ * LA UTILIZACIÓN SÍ SALE, pero solo la PROPIA. Estuvo fuera («es la única cifra que
+ * se lee como juicio»); el diseño 2a la pone como cabecera de la pantalla del
+ * técnico y el usuario la eligió. Lo que la hacía un juicio era compararse con
+ * otros, y aquí no hay nadie más: es su número, con la misma regla del admin
+ * (`PRODUCTIVOS` / `FUERA_DEL_DENOMINADOR`, KPI-02) para que no existan dos
+ * utilizaciones distintas de la misma persona.
  */
 
 /** Una máquina en la que trabajó, con los días que le dedicó. */
@@ -52,6 +58,40 @@ export interface MiConcepto {
   days: number;
 }
 
+/** Días por mes, para la línea del diseño 2a. `month` es 'YYYY-MM'. */
+export interface MiMes {
+  month: string;
+  days: number;
+}
+
+export interface MiUtilizacion {
+  productive: number;
+  /** Productivos + no productivos. Fuera: los excluidos (IL). */
+  denominator: number;
+  /** `null` sin días disponibles: sin denominador no hay porcentaje, no un 0 %. */
+  pct: number | null;
+}
+
+/**
+ * La utilización PROPIA a partir de los días por concepto. Pura: es la misma
+ * aritmética que `KpisService.utilizacion` fila a fila, y se prueba sin base.
+ */
+export function utilizacionDe(conceptos: MiConcepto[]): MiUtilizacion {
+  let productive = 0;
+  let nonProductive = 0;
+  for (const c of conceptos) {
+    if (FUERA_DEL_DENOMINADOR.includes(c.code)) continue;
+    if (PRODUCTIVOS.includes(c.code)) productive += c.days;
+    else nonProductive += c.days;
+  }
+  const denominator = productive + nonProductive;
+  return {
+    productive,
+    denominator,
+    pct: denominator ? Math.round((productive / denominator) * 1000) / 10 : null,
+  };
+}
+
 export interface MisKpis {
   year: number | null;
   /** Los años en los que tiene jornadas. Para el selector, sin inventar un rango. */
@@ -64,6 +104,8 @@ export interface MisKpis {
   machines: MiMaquina[];
   projects: MiProyecto[];
   concepts: MiConcepto[];
+  months: MiMes[];
+  utilization: MiUtilizacion;
 }
 
 interface FilaMaquina {
@@ -118,12 +160,13 @@ export class MisKpisService {
      */
     const filtro = { technicianId, ...(year ? { year } : {}) };
 
-    const [maquinas, proyectos, conceptos, anios, notas] = await Promise.all([
+    const [maquinas, proyectos, conceptos, anios, notas, meses] = await Promise.all([
       this.maquinas(filtro),
       this.proyectos(filtro),
       this.conceptos(filtro),
       this.anios(technicianId),
       this.notas(filtro),
+      this.meses(filtro),
     ]);
 
     return {
@@ -139,7 +182,28 @@ export class MisKpisService {
       machines: maquinas,
       projects: proyectos,
       concepts: conceptos,
+      months: meses,
+      utilization: utilizacionDe(conceptos),
     };
+  }
+
+  /**
+   * Días CON concepto por mes. `to_char` sobre la columna DATE, sin pasar por el
+   * huso del proceso: es la misma razón por la que `iso()` no usa getters.
+   */
+  private meses(f: { technicianId: string; year?: number }): Promise<MiMes[]> {
+    const year = f.year ?? null;
+    return this.prisma.client.$queryRaw<MiMes[]>`
+      SELECT to_char(de.date, 'YYYY-MM') AS month,
+             COUNT(*)::int              AS days
+        FROM daily_entries de
+       WHERE de.technician_id = ${f.technicianId}::uuid
+         AND de.concept_code IS NOT NULL
+         AND de.date <= CURRENT_DATE
+         AND (${year}::int IS NULL OR EXTRACT(YEAR FROM de.date)::int = ${year}::int)
+       GROUP BY 1
+       ORDER BY 1
+    `;
   }
 
   /**

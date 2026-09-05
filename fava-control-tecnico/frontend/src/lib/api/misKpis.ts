@@ -35,6 +35,19 @@ export interface MiConcepto {
   days: number;
 }
 
+/** Días por mes, 'YYYY-MM'. Para la línea de «Mis días por mes». */
+export interface MiMes {
+  month: string;
+  days: number;
+}
+
+export interface MiUtilizacion {
+  productive: number;
+  denominator: number;
+  /** `null` sin días disponibles. */
+  pct: number | null;
+}
+
 export interface MisKpis {
   year: number | null;
   /** Los años CON jornadas suyas. El selector sale de aquí, no de un rango inventado. */
@@ -46,6 +59,9 @@ export interface MisKpis {
   machines: MiMaquina[];
   projects: MiProyecto[];
   concepts: MiConcepto[];
+  months: MiMes[];
+  /** La PROPIA, con la regla del admin (KPI-02). Solo la suya: aquí no hay nadie más. */
+  utilization: MiUtilizacion;
 }
 
 /** `year` a `null` = todo su histórico. */
