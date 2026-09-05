@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { svg, ICON } from '../icons';
 import { CONCEPT_COLOR } from '../i18n';
 import { FieldError, inputStyle, inputError } from '../ui';
 import { useApp } from '../state';
@@ -82,6 +83,14 @@ export default function LogDayDrawer() {
     async () => (await getWeek(fecha, fecha)).entries[0] ?? null,
     [fecha],
   );
+
+  /**
+   * BIT-05 en el CLIENTE: el dia enviado o aprobado es solo lectura. El servidor ya lo
+   * rechaza (JORNADA_BLOQUEADA), pero la pantalla dejaba editar los campos y pulsar
+   * Guardar, y el tecnico entendia que «le dejaba modificar» un dia ya aprobado por
+   * Andrea. Aqui se dice antes de intentarlo, y el boton no se ofrece.
+   */
+  const bloqueado = Boolean(existente) && existente!.status !== 'draft' && existente!.status !== 'returned';
 
   useEffect(() => {
     if (!existente) return;
@@ -475,21 +484,25 @@ export default function LogDayDrawer() {
               Solo con un día porque un gasto es de una fecha concreta, no de las cinco
               de un montaje. Se guarda al instante, con su propio endpoint. */}
           {dias.length <= 1 ? (
-            <DayExpenses
-              fecha={fecha}
-              bloqueado={Boolean(existente) && existente!.status !== 'draft' && existente!.status !== 'returned'}
-            />
+            <DayExpenses fecha={fecha} bloqueado={bloqueado} />
           ) : null}
 
           {errApi ? <FieldError msg={errTexto(errApi)} /> : null}
 
-          <Button
-            onClick={save}
-            disabled={guardando}
-            className="w-full py-6 text-[15px] justify-center min-h-11 mt-1"
-          >
-            {guardando ? t.loading : t.btn_saveday}
-          </Button>
+          {bloqueado && dias.length <= 1 ? (
+            <div className="flex gap-2.5 bg-warn-tint border border-warn rounded-lg px-3 py-2.5 text-[12px] text-muted-foreground leading-relaxed">
+              <span className="text-warn shrink-0">{svg(ICON.triangle, { w: 16 })}</span>
+              <span>{errTexto('JORNADA_BLOQUEADA')}</span>
+            </div>
+          ) : (
+            <Button
+              onClick={save}
+              disabled={guardando}
+              className="w-full py-6 text-[15px] justify-center min-h-11 mt-1"
+            >
+              {guardando ? t.loading : t.btn_saveday}
+            </Button>
+          )}
         </div>
       </div>
     </div>

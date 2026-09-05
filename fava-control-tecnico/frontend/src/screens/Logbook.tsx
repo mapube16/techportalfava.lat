@@ -78,7 +78,14 @@ export default function Logbook() {
    * haga el cliente: marcar un dia que despues no se puede escribir seria prometer
    * algo que el PUT va a rechazar.
    */
-  const editable = (f: string) => f >= data.minDate && f <= data.maxDate;
+  // Y ademas el ESTADO del dia: enviado o aprobado es solo lectura (BIT-05). El
+  // servidor lo rechaza igual, pero dejar marcar un dia aprobado y fallar al aplicar
+  // era decirle al tecnico «puedes» y luego «no».
+  const cerrado = (f: string) => {
+    const st = porFecha.get(f)?.status;
+    return st === 'submitted' || st === 'approved';
+  };
+  const editable = (f: string) => f >= data.minDate && f <= data.maxDate && !cerrado(f);
 
   const alternar = (f: string) => {
     if (!editable(f)) return;
@@ -228,9 +235,11 @@ export default function Logbook() {
                   title={
                     puede
                       ? t.lb_open_day
-                      : f > data.maxDate
-                        ? t.lb_future
-                        : t.lb_too_old
+                      : cerrado(f)
+                        ? t.lb_locked
+                        : f > data.maxDate
+                          ? t.lb_future
+                          : t.lb_too_old
                   }
                   aria-pressed={marcado}
                   aria-current={f === hoy ? 'date' : undefined}
