@@ -100,6 +100,18 @@ export function estadoDe(c: { approved: number; submitted: number; draftWeeks: n
 export const aplica = (code: string, employmentType: string) =>
   !((code === 'LR' && employmentType === 'EXTERNO') || (code === 'NR' && employmentType === 'INTERNO'));
 
+/**
+ * La celda que se devuelve. «—» SOLO si el concepto no aplica Y no hay nada: el
+ * servidor bloquea LR a externos, pero NR a internos no (sale en datos reales), y
+ * un día que existe no se esconde detrás de un guion — se pinta, y que se vea raro.
+ * Esconderlo lo dejaría fuera del total y de la nómina sin que nadie lo notara.
+ */
+export const celda = (applies: boolean, base: Celda | undefined): Celda => {
+  const c = base ?? { approved: 0, pending: 0 };
+  if (applies) return c;
+  return (c.approved ?? 0) > 0 || c.pending > 0 ? c : { approved: null, pending: 0 };
+};
+
 interface FilaCruda {
   technician_id: string;
   status: string;
@@ -179,9 +191,7 @@ export class LiquidacionService {
       if (!tec.isActive && !t) continue;
       const cells: Record<string, Celda> = {};
       for (const c of conceptos) {
-        cells[c.code] = aplica(c.code, tec.employmentType)
-          ? (t?.cells.get(c.code) ?? { approved: 0, pending: 0 })
-          : { approved: null, pending: 0 };
+        cells[c.code] = celda(aplica(c.code, tec.employmentType), t?.cells.get(c.code));
       }
       rows.push({
         technicianId: tec.id,

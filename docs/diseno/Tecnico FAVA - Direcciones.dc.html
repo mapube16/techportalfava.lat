@@ -61,7 +61,7 @@ html:root,html [data-theme]{
 .stat{height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font:500 11px 'Roboto Mono',monospace}
 .mono{font-family:'Roboto Mono',monospace}
 .cond{font-family:'Roboto Condensed',sans-serif}
-.dv-next{margin:26px 0 0;font:400 12.5px/1.6 Roboto,sans-serif;color:#63727f}
+.dv-next{margin:26px 0 0;font:400 12.5px/1.6 Roboto,sans-serif;color:#5a6b7a}
 </style>
 </helmet>
 
@@ -93,6 +93,302 @@ html:root,html [data-theme]{
   <symbol id="hi-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"/></symbol>
   <symbol id="hi-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 1 0 0-18m0 18a9 9 0 1 1 0-18m0 18c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3M3.6 9h16.8M3.6 15h16.8"/></symbol>
 </svg>
+
+<section class="dv-turn" id="t6">
+<div class="dv-thd"><span class="dv-tid">6</span><span class="dv-tname">«Mi resumen» — rehecha</span></div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div style="margin:0 0 26px;max-width:82ch">
+  <p style="margin:0 0 14px;font:400 13.5px/1.7 Roboto,sans-serif;color:var(--color-text-subtle);text-wrap:pretty">Siete tarjetas apiladas en una columna de 820&nbsp;px: <strong>dos pantallas de scroll para 19 días de datos</strong>, con 900&nbsp;px de blanco a cada lado. Ocho cosas concretas que corregir, todas leídas contra <span class="mono" style="color:var(--color-primary)">screens/MyStats.tsx</span>:</p>
+  <ol style="margin:0;padding-left:20px;font:400 12.5px/1.75 Roboto,sans-serif;color:var(--color-text-subtle)">
+    <li><strong style="color:var(--color-text-body)">La línea de dos puntos no es una tendencia.</strong> <span class="mono">months.length &gt;= 2</span> ya dibuja una línea: agosto→septiembre es un segmento que solo dice «bajó», y sin eje no dice cuánto. Doce columnas de mes lo arreglan y funcionan desde el primer mes.</li>
+    <li><strong style="color:var(--color-text-body)">Las barras de 1 día son astillas.</strong> Con <span class="mono">max=9</span>, cinco de los siete proyectos quedan en un 11&nbsp;% de barra: imposible comparar. Un punto por día se cuenta de un vistazo.</li>
+    <li><strong style="color:var(--color-text-body)">«4 aprobadas / 4 devueltas» son dos cuatros apilados</strong> y se lee como «volvieron las 4». Y lo devuelto es lo único sobre lo que hay que actuar: merece una fila con acción, no un subtítulo.</li>
+    <li><strong style="color:var(--color-text-body)">El nombre del cliente repite el del proyecto</strong> en 5 de las 7 filas («DAKOTA GROWERS» sobre «DAKOTA GROWERS»). Si son iguales, sobra uno.</li>
+    <li><strong style="color:var(--color-text-body)">Máquina y proyecto son la misma tarjeta dos veces.</strong> Un control segmentado ahorra una pantalla entera.</li>
+    <li><strong style="color:var(--color-text-body)">El gauge ocupa una tarjeta de 180&nbsp;px para un número.</strong> Cabe en una casilla con las otras dos cifras.</li>
+    <li><strong style="color:var(--color-text-body)">«Montaggio Meccanico - Montaggio elettrico - Collaudo Software PC 2000»</strong> no es un nombre de máquina, son tres fases concatenadas, y se corta. La commessa (<span class="mono">3502</span>) es lo que de verdad la identifica.</li>
+    <li><strong style="color:var(--color-text-body)">Aparece NR para un técnico interno.</strong> Si NR es solo de externos —como en la liquidación— aquí hay un dato mal clasificado. Esto no lo arregla el diseño: es una pregunta para ti.</li>
+  </ol>
+</div></sc-if>
+<div class="dv-opts">
+
+<div class="dv-opt" id="6a">
+  <div class="dv-olabel"><span class="dv-oid">6a</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:var(--color-text-body)">Una pantalla, sin scroll.</strong> Las tres cifras arriba en una fila, el año completo en doce columnas, y el desglose en un solo bloque con control segmentado. Lo mismo que había, en un tercio del alto.</span></sc-if></div>
+  <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
+    <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#42505c">techportalfava.lat/mi-resumen</span></div>
+    <div style="display:flex;height:856px">
+      <div style="width:216px;flex:none;background:var(--fava-nav);border-right:1px solid var(--fava-nav-line);display:flex;flex-direction:column;min-height:0">
+        <div style="flex:none;padding:16px 18px 12px;border-bottom:1px solid var(--fava-nav-line)">
+          <img src="assets/fava-logo-ondark.svg" alt="FAVA Latino America" style="height:32px;display:block">
+          <div style="font:400 10px Roboto,sans-serif;letter-spacing:1.5px;color:var(--fava-nav-ink-2);text-transform:uppercase;margin-top:8px">Control Técnico</div>
+          <div style="font:400 10.5px Roboto,sans-serif;color:var(--fava-nav-ink-2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Techportal (pruebas) · Técnico · Super Admin</div>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 10px 0">
+          <sc-for list="{{ navMine }}" as="g" hint-placeholder-count="3">
+            <div style="margin-bottom:12px">
+              <div style="font:700 10px Roboto,sans-serif;letter-spacing:1.4px;color:var(--fava-nav-ink-2);text-transform:uppercase;padding:5px 10px">{{ g.title }}</div>
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="6">
+                <div style="position:relative;display:flex;align-items:center;gap:12px;padding:6px 12px;margin-bottom:2px;border-radius:6px;background:{{ it.bg }};color:{{ it.fg }};font-size:13.5px;font-family:Roboto,sans-serif;font-weight:{{ it.weight }}">
+                  <sc-if value="{{ it.active }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;left:4px;top:50%;transform:translateY(-50%);width:3px;height:16px;border-radius:2px;background:var(--fava-brand)"></span></sc-if>
+                  <svg width="17" height="17" style="flex:none"><use href="{{ it.icon }}"></use></svg>
+                  <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.label }}</span>
+                  <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ true }}"><span style="min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--fava-brand-ink);color:#fff;font:700 10px Roboto,sans-serif;display:grid;place-items:center">{{ it.badge }}</span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:none;margin:0 12px 4px;padding:11px;border:1px solid var(--fava-nav-line);border-radius:8px;background:var(--fava-nav-2)">
+          <div style="font:400 10.5px Roboto,sans-serif;color:var(--fava-nav-ink-2)">Semana 36 · 2026</div>
+          <div style="font:700 13px Roboto,sans-serif;color:var(--fava-nav-ink);margin-top:2px">7 de 7 días registrados</div>
+        </div>
+        <div style="flex:none;padding:12px;border-top:1px solid var(--fava-nav-line)">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;background:var(--fava-nav-2)">
+            <div style="width:32px;height:32px;flex:none;border-radius:50%;background:var(--color-primary);color:var(--color-on-primary);display:grid;place-items:center;font:700 12px Roboto,sans-serif">TC</div>
+            <div style="min-width:0;flex:1">
+              <div style="font:600 13px Roboto,sans-serif;color:var(--fava-nav-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Techportal (prue…</div>
+              <div style="font:400 11px Roboto,sans-serif;color:var(--fava-nav-ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">techportal@favalatin…</div>
+            </div>
+            <svg width="16" height="16" style="flex:none;color:var(--fava-nav-ink-2)"><use href="#hi-logout"></use></svg>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;background:var(--color-background);min-width:0">
+        <div style="height:60px;flex:none;background:var(--color-surface);border-bottom:1px solid var(--color-outline);display:flex;align-items:center;gap:14px;padding:0 24px">
+          <div style="flex:1;min-width:0">
+            <div style="font:700 16px Roboto,sans-serif;color:var(--color-text-body)">Mi resumen</div>
+            <div style="font:400 11px Roboto,sans-serif;color:var(--color-text-subtle)">Lo que llevas registrado este año</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <span style="font:600 12px Roboto,sans-serif;color:var(--color-on-primary);background:var(--color-primary);border:1px solid var(--color-primary);border-radius:6px;padding:7px 13px">2026</span>
+            <span style="font:500 12px Roboto,sans-serif;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;padding:7px 13px;background:var(--color-surface)">Todos los años</span>
+          </div>
+          <span style="display:flex;align-items:center;gap:6px;font:500 12px Roboto,sans-serif;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;padding:7px 11px;background:var(--color-surface)"><svg width="15" height="15"><use href="#hi-globe"></use></svg>ES</span>
+          <span style="display:grid;place-items:center;width:34px;height:34px;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;background:var(--color-surface)"><svg width="16" height="16"><use href="#hi-moon"></use></svg></span>
+        </div>
+        <div style="flex:1;padding:18px 22px;display:flex;flex-direction:column;gap:13px;min-height:0">
+
+          <div style="display:flex;gap:12px">
+            <div style="flex:1.35;background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px">
+              <svg viewBox="0 0 168 168" width="96" height="96" style="flex:none">
+                <path d="{{ gauge.bg }}" fill="none" stroke="var(--color-surface-container-high)" stroke-width="17" stroke-linecap="round"></path>
+                <path d="{{ gauge.val }}" fill="none" stroke="var(--fava-brand)" stroke-width="17" stroke-linecap="round"></path>
+                <text x="84" y="88" text-anchor="middle" style="font:700 40px 'Roboto Condensed',sans-serif;fill:var(--color-text-body)">{{ kpi.pct }}%</text>
+              </svg>
+              <div style="min-width:0">
+                <div style="font:700 12.5px Roboto,sans-serif;color:var(--color-text-body)">Utilización</div>
+                <div style="font:400 11.5px/1.6 Roboto,sans-serif;color:var(--fava-draft-ink);margin-top:4px"><span class="mono" style="font-weight:500;color:var(--color-text-body)">{{ kpi.productive }}</span> de <span class="mono" style="font-weight:500;color:var(--color-text-body)">{{ kpi.denominator }}</span> días registrados fueron productivos.</div>
+                <div style="font:400 10.5px/1.5 Roboto,sans-serif;color:var(--color-text-subtle);margin-top:6px">Los 3 restantes no van a ningún proyecto.</div>
+              </div>
+            </div>
+            <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;justify-content:center">
+              <div style="display:flex;align-items:center;gap:8px;color:var(--fava-draft-ink)"><svg width="15" height="15"><use href="#hi-cal"></use></svg><span style="font:600 10.5px Roboto,sans-serif">Días registrados</span></div>
+              <div class="cond" style="font:700 34px/1 'Roboto Condensed',sans-serif;color:var(--color-text-body);margin-top:8px">{{ kpi.totalDays }}</div>
+              <div style="font:400 11px Roboto,sans-serif;color:var(--color-text-subtle);margin-top:4px">en {{ kpi.projectCount }} proyectos</div>
+            </div>
+            <div style="flex:1.15;background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;gap:8px;color:var(--fava-draft-ink)"><svg width="15" height="15"><use href="#hi-badge"></use></svg><span style="font:600 10.5px Roboto,sans-serif">Mis notas</span></div>
+              <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px">
+                <span class="cond" style="font:700 34px/1 'Roboto Condensed',sans-serif;color:var(--fava-ok-ink)">{{ kpi.approved }}</span>
+                <span style="font:400 11px Roboto,sans-serif;color:var(--color-text-subtle)">aprobadas</span>
+              </div>
+              <div style="margin-top:auto;display:flex;align-items:center;gap:9px;background:#fbe4d1;border-radius:7px;padding:8px 10px">
+                <svg width="15" height="15" style="flex:none;color:#8a4400"><use href="#hi-pencil"></use></svg>
+                <span style="flex:1;min-width:0;font:600 11px Roboto,sans-serif;color:#8a4400">{{ kpi.returned }} devueltas · corregir</span>
+                <span style="font:400 12px Roboto,sans-serif;color:#8a4400">→</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;padding:14px 16px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between">
+              <div style="font:700 12px Roboto,sans-serif;color:var(--color-text-body)">Mi año, mes a mes</div>
+              <div style="font:400 10.5px Roboto,sans-serif;color:var(--color-text-subtle)">días registrados · máximo 13 en agosto</div>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:6px;height:96px;margin-top:14px">
+              <sc-for list="{{ kpi.months }}" as="m" hint-placeholder-count="12">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%">
+                  <span class="mono" style="font-family:'Roboto Mono',monospace;font-size:11px;font-weight:{{ m.weight }};color:{{ m.fg }}">{{ m.days }}</span>
+                  <span style="width:100%;height:{{ m.h }};border-radius:3px 3px 0 0;background:{{ m.bg }}"></span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid var(--color-surface-container-low)">
+              <sc-for list="{{ kpi.months }}" as="m" hint-placeholder-count="12">
+                <span style="flex:1;text-align:center;font-family:Roboto,sans-serif;font-size:10.5px;font-weight:{{ m.weight }};color:{{ m.fg }}">{{ m.label }}</span>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="flex:1;display:flex;gap:12px;min-height:0">
+            <div style="width:266px;flex:none;background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;padding:14px 16px">
+              <div style="font:700 12px Roboto,sans-serif;color:var(--color-text-body)">Días por concepto</div>
+              <div style="display:flex;height:14px;border-radius:4px;overflow:hidden;margin-top:12px">
+                <sc-for list="{{ kpi.concepts }}" as="c" hint-placeholder-count="3">
+                  <div style="width:{{ c.w }};background:{{ c.fill }}"></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px;margin-top:13px">
+                <sc-for list="{{ kpi.concepts }}" as="c" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <span class="mono" style="font:500 10px 'Roboto Mono',monospace;color:#fff;background:{{ c.ink }};border-radius:4px;padding:3px 6px;min-width:38px;text-align:center">{{ c.code }}</span>
+                    <span style="flex:1;min-width:0;font:400 11.5px Roboto,sans-serif;color:var(--fava-draft-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.label }}</span>
+                    <span class="mono" style="font:400 11.5px 'Roboto Mono',monospace;color:var(--color-text-subtle)">{{ c.days }}</span>
+                    <span class="mono" style="font:700 11.5px 'Roboto Mono',monospace;color:var(--color-text-body);width:34px;text-align:right">{{ c.pctNum }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font:400 10.5px/1.55 Roboto,sans-serif;color:var(--color-text-subtle);margin-top:14px;padding-top:12px;border-top:1px solid var(--color-surface-container-low)">NR es «no remunerado», que en la liquidación es un concepto solo de externos. Habría que revisar por qué aparece aquí.</div>
+            </div>
+            <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;display:flex;flex-direction:column;min-width:0;overflow:hidden">
+              <div style="flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid var(--color-outline)">
+                <div style="font:700 12px Roboto,sans-serif;color:var(--color-text-body)">Dónde estuve</div>
+                <div style="display:flex;background:var(--color-surface-container-low);border-radius:7px;padding:2px">
+                  <span style="font:600 11px Roboto,sans-serif;color:var(--color-text-body);background:var(--color-surface);border-radius:5px;padding:5px 12px;box-shadow:0 1px 2px rgba(19,35,48,.08)">Proyecto</span>
+                  <span style="font:500 11px Roboto,sans-serif;color:var(--fava-draft-ink);padding:5px 12px">Máquina</span>
+                </div>
+              </div>
+              <div style="flex:1;min-height:0;overflow-y:auto">
+                <sc-for list="{{ kpi.projects }}" as="p" hint-placeholder-count="7">
+                  <div style="display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid var(--color-surface-container-low)">
+                    <div style="min-width:0;flex:1">
+                      <div style="font:600 12.5px Roboto,sans-serif;color:var(--color-text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div>
+                      <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+                        <sc-if value="{{ p.client }}" hint-placeholder-val="{{ true }}"><span style="font:400 10.5px Roboto,sans-serif;color:var(--color-text-subtle);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.client }}</span></sc-if>
+                        <span class="mono" style="font:400 10px 'Roboto Mono',monospace;color:var(--color-text-subtle);white-space:nowrap">{{ p.range }}</span>
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:3px;flex:none">
+                      <sc-for list="{{ p.dots }}" as="d" hint-placeholder-count="3">
+                        <span style="width:7px;height:14px;border-radius:2px;background:var(--color-primary)"></span>
+                      </sc-for>
+                    </div>
+                    <div class="mono" style="flex:none;width:44px;text-align:right;font:700 13px 'Roboto Mono',monospace;color:var(--color-text-body)">{{ p.days }}<span style="font:400 10px 'Roboto Mono',monospace;color:var(--color-text-subtle)"> d</span></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></sc-if>
+</div>
+
+<div class="dv-opt" id="6b">
+  <div class="dv-olabel"><span class="dv-oid">6b</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:var(--color-text-body)">La pestaña «Máquina» y el teléfono.</strong> La commessa pasa a ser el identificador y el nombre largo respira en dos líneas. En el móvil, la misma jerarquía en una columna: cifras, año, desglose.</span></sc-if></div>
+  <div class="dv-pair">
+    <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div style="width:472px;background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(19,35,48,.06)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid var(--color-outline)">
+        <div style="font:700 12px Roboto,sans-serif;color:var(--color-text-body)">Dónde estuve</div>
+        <div style="display:flex;background:var(--color-surface-container-low);border-radius:7px;padding:2px">
+          <span style="font:500 11px Roboto,sans-serif;color:var(--fava-draft-ink);padding:5px 12px">Proyecto</span>
+          <span style="font:600 11px Roboto,sans-serif;color:var(--color-text-body);background:var(--color-surface);border-radius:5px;padding:5px 12px;box-shadow:0 1px 2px rgba(19,35,48,.08)">Máquina</span>
+        </div>
+      </div>
+      <sc-for list="{{ kpi.machines }}" as="m" hint-placeholder-count="2">
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:11px 16px;border-bottom:1px solid var(--color-surface-container-low)">
+          <div style="min-width:0;flex:1">
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <sc-if value="{{ m.commessa }}" hint-placeholder-val="{{ true }}"><span class="mono" style="font:500 11px 'Roboto Mono',monospace;color:var(--color-on-primary);background:var(--color-primary);border-radius:4px;padding:2px 6px;flex:none">{{ m.commessa }}</span></sc-if>
+              <span style="font:600 12.5px/1.4 Roboto,sans-serif;color:var(--color-text-body);text-wrap:pretty">{{ m.label }}</span>
+            </div>
+            <div style="font:400 10.5px Roboto,sans-serif;color:var(--color-text-subtle);margin-top:3px">{{ m.project }}</div>
+          </div>
+          <div style="display:flex;gap:3px;flex:none;margin-top:3px">
+            <sc-for list="{{ m.dots }}" as="d" hint-placeholder-count="3">
+              <span style="width:7px;height:14px;border-radius:2px;background:var(--color-primary)"></span>
+            </sc-for>
+          </div>
+          <div class="mono" style="flex:none;width:44px;text-align:right;font:700 13px 'Roboto Mono',monospace;color:var(--color-text-body);margin-top:1px">{{ m.days }}<span style="font:400 10px 'Roboto Mono',monospace;color:var(--color-text-subtle)"> d</span></div>
+        </div>
+      </sc-for>
+      <div style="padding:11px 16px;font:400 10.5px/1.55 Roboto,sans-serif;color:var(--color-text-subtle)">Solo 11 de los 16 días productivos tienen máquina asignada: los otros 5 se registraron sin ella.</div>
+    </div></sc-if>
+
+    <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+      <div class="stat ph-stat" style="color:#e9eff4;background:var(--fava-nav)"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div style="flex:none;background:var(--fava-nav);padding:2px 18px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font:400 10.5px Roboto,sans-serif;letter-spacing:.08em;color:var(--fava-brand-on-dark);text-transform:uppercase">Mi resumen</div>
+            <div class="cond" style="font:700 20px 'Roboto Condensed',sans-serif;color:#fff;margin-top:3px">2026</div>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:5px">
+            <span class="cond" style="font:700 30px 'Roboto Condensed',sans-serif;color:var(--fava-brand-on-dark)">{{ kpi.pct }}%</span>
+            <span style="font:400 10px Roboto,sans-serif;color:var(--fava-nav-ink-2)">util.</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:7px;margin-top:13px">
+          <span style="flex:1;background:var(--fava-nav-2);border-radius:8px;padding:8px 10px"><span style="display:block;font:400 9.5px Roboto,sans-serif;color:var(--fava-nav-ink-2)">Días</span><span class="cond" style="display:block;font:700 17px 'Roboto Condensed',sans-serif;color:#fff">{{ kpi.totalDays }}</span></span>
+          <span style="flex:1;background:var(--fava-nav-2);border-radius:8px;padding:8px 10px"><span style="display:block;font:400 9.5px Roboto,sans-serif;color:var(--fava-nav-ink-2)">Proyectos</span><span class="cond" style="display:block;font:700 17px 'Roboto Condensed',sans-serif;color:#fff">{{ kpi.projectCount }}</span></span>
+          <span style="flex:1;background:var(--fava-nav-2);border-radius:8px;padding:8px 10px"><span style="display:block;font:400 9.5px Roboto,sans-serif;color:var(--fava-nav-ink-2)">Aprobadas</span><span class="cond" style="display:block;font:700 17px 'Roboto Condensed',sans-serif;color:#7fd7a4">{{ kpi.approved }}</span></span>
+        </div>
+      </div>
+      <div class="ph-scroll" style="background:var(--color-background);padding:13px 13px 22px;display:flex;flex-direction:column;gap:10px">
+        <div style="background:#fbe4d1;border-radius:12px;padding:12px 13px;display:flex;align-items:center;gap:10px">
+          <svg width="17" height="17" style="flex:none;color:#8a4400"><use href="#hi-pencil"></use></svg>
+          <span style="flex:1;font:600 11.5px Roboto,sans-serif;color:#8a4400">{{ kpi.returned }} notas devueltas · corregir</span>
+          <span style="font:400 13px Roboto,sans-serif;color:#8a4400">→</span>
+        </div>
+        <div style="background:var(--color-surface);border-radius:12px;padding:13px 14px">
+          <div style="font:700 11.5px Roboto,sans-serif;color:var(--color-text-body)">Mi año, mes a mes</div>
+          <div style="display:flex;align-items:flex-end;gap:4px;height:64px;margin-top:11px">
+            <sc-for list="{{ kpi.months }}" as="m" hint-placeholder-count="12">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%">
+                <span class="mono" style="font-family:'Roboto Mono',monospace;font-size:9.5px;font-weight:{{ m.weight }};color:{{ m.fg }}">{{ m.days }}</span>
+                <span style="width:100%;height:{{ m.h }};border-radius:2px 2px 0 0;background:{{ m.bg }}"></span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:4px;margin-top:6px">
+            <sc-for list="{{ kpi.months }}" as="m" hint-placeholder-count="12">
+              <span style="flex:1;text-align:center;font-family:Roboto,sans-serif;font-size:8.5px;font-weight:{{ m.weight }};color:{{ m.fg }}">{{ m.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:var(--color-surface);border-radius:12px;padding:13px 14px">
+          <div style="font:700 11.5px Roboto,sans-serif;color:var(--color-text-body)">Días por concepto</div>
+          <div style="display:flex;height:12px;border-radius:4px;overflow:hidden;margin-top:11px">
+            <sc-for list="{{ kpi.concepts }}" as="c" hint-placeholder-count="3">
+              <div style="width:{{ c.w }};background:{{ c.fill }}"></div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:11px">
+            <sc-for list="{{ kpi.concepts }}" as="c" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="mono" style="font:500 9.5px 'Roboto Mono',monospace;color:#fff;background:{{ c.ink }};border-radius:4px;padding:3px 6px;min-width:36px;text-align:center">{{ c.code }}</span>
+                <span style="flex:1;min-width:0;font:400 11px Roboto,sans-serif;color:var(--fava-draft-ink)">{{ c.label }}</span>
+                <span class="mono" style="font:700 11px 'Roboto Mono',monospace;color:var(--color-text-body)">{{ c.days }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:var(--color-surface);border-radius:12px;overflow:hidden">
+          <div style="padding:12px 14px 10px;font:700 11.5px Roboto,sans-serif;color:var(--color-text-body)">Dónde estuve</div>
+          <sc-for list="{{ kpi.projects }}" as="p" hint-placeholder-count="7">
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid var(--color-surface-container-low)">
+              <div style="min-width:0;flex:1">
+                <div style="font:600 11.5px Roboto,sans-serif;color:var(--color-text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div>
+                <div class="mono" style="font:400 9.5px 'Roboto Mono',monospace;color:var(--color-text-subtle);margin-top:2px">{{ p.range }}</div>
+              </div>
+              <div class="mono" style="flex:none;font:700 12.5px 'Roboto Mono',monospace;color:var(--color-text-body)">{{ p.days }}<span style="font:400 9.5px 'Roboto Mono',monospace;color:var(--color-text-subtle)"> d</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div class="ph-bar" style="background:var(--color-surface);border-top:1px solid var(--color-outline);padding:11px 8px 22px;display:flex;justify-content:space-around">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--color-text-subtle);min-width:56px"><svg width="21" height="21"><use href="#hi-cal"></use></svg><span style="font:500 9.5px Roboto,sans-serif">Semana</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--color-text-subtle);min-width:56px"><svg width="21" height="21"><use href="#hi-pencil"></use></svg><span style="font:500 9.5px Roboto,sans-serif">Registrar</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--color-text-subtle);min-width:56px"><svg width="21" height="21"><use href="#hi-doc"></use></svg><span style="font:500 9.5px Roboto,sans-serif">Notas</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--color-primary);min-width:56px"><svg width="21" height="21"><use href="#hi-chart"></use></svg><span style="font:700 9.5px Roboto,sans-serif">Resumen</span></div>
+      </div>
+    </div></div></sc-if>
+  </div>
+</div>
+
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-next">Dos preguntas que salieron de los datos y no puedo resolver yo: por qué un técnico interno tiene días <span class="mono">NR</span>, y si «4 aprobadas / 4 devueltas» es correcto o son las mismas cuatro notas contadas dos veces.</p></sc-if>
+</section>
 
 <section class="dv-turn" id="t5">
 <div class="dv-thd"><span class="dv-tid">5</span><span class="dv-tname">«Liquidación del mes» — la vista del día 25</span></div>
@@ -171,7 +467,7 @@ html:root,html [data-theme]{
           </div>
 
           <div style="background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;overflow:hidden">
-            <div style="display:grid;grid-template-columns:196px repeat(9,38px) 52px 152px;align-items:end;padding:9px 14px;background:var(--color-surface-container-low);border-bottom:1px solid var(--color-outline)">
+            <div style="display:grid;grid-template-columns:170px repeat(9,38px) 52px 140px;align-items:end;padding:9px 14px;background:var(--color-surface-container-low);border-bottom:1px solid var(--color-outline)">
               <div style="font:700 10px Roboto,sans-serif;letter-spacing:.06em;color:var(--fava-draft-ink);text-transform:uppercase">Técnico</div>
               <sc-for list="{{ liqConcepts }}" as="c" hint-placeholder-count="9">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
@@ -183,7 +479,7 @@ html:root,html [data-theme]{
               <div style="font:700 10px Roboto,sans-serif;letter-spacing:.06em;color:var(--fava-draft-ink);text-transform:uppercase;padding-left:14px">Estado</div>
             </div>
             <sc-for list="{{ liqRows }}" as="r" hint-placeholder-count="6">
-              <div style="display:grid;grid-template-columns:196px repeat(9,38px) 52px 152px;align-items:center;height:40px;padding:0 14px;border-bottom:1px solid var(--color-surface-container-low);background:{{ r.rowBg }}">
+              <div style="display:grid;grid-template-columns:170px repeat(9,38px) 52px 140px;align-items:center;height:40px;padding:0 14px;border-bottom:1px solid var(--color-surface-container-low);background:{{ r.rowBg }}">
                 <div style="display:flex;align-items:center;gap:9px;min-width:0">
                   <span style="width:24px;height:24px;flex:none;border-radius:50%;background:var(--color-primary-container);color:var(--color-primary);display:grid;place-items:center;font:700 9.5px Roboto,sans-serif">{{ r.initials }}</span>
                   <span style="min-width:0">
@@ -224,7 +520,7 @@ html:root,html [data-theme]{
       <div style="padding:16px 22px;display:flex;flex-direction:column;gap:12px">
 
           <div style="background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;overflow:hidden">
-            <div style="display:grid;grid-template-columns:196px repeat(9,38px) 52px 152px;align-items:end;padding:9px 14px;background:var(--color-surface-container-low);border-bottom:1px solid var(--color-outline)">
+            <div style="display:grid;grid-template-columns:170px repeat(9,38px) 52px 140px;align-items:end;padding:9px 14px;background:var(--color-surface-container-low);border-bottom:1px solid var(--color-outline)">
               <div style="font:700 10px Roboto,sans-serif;letter-spacing:.06em;color:var(--fava-draft-ink);text-transform:uppercase">Técnico</div>
               <sc-for list="{{ liqConcepts }}" as="c" hint-placeholder-count="9">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
@@ -236,7 +532,7 @@ html:root,html [data-theme]{
               <div style="font:700 10px Roboto,sans-serif;letter-spacing:.06em;color:var(--fava-draft-ink);text-transform:uppercase;padding-left:14px">Estado</div>
             </div>
             <sc-for list="{{ liqRowsOk }}" as="r" hint-placeholder-count="6">
-              <div style="display:grid;grid-template-columns:196px repeat(9,38px) 52px 152px;align-items:center;height:40px;padding:0 14px;border-bottom:1px solid var(--color-surface-container-low);background:{{ r.rowBg }}">
+              <div style="display:grid;grid-template-columns:170px repeat(9,38px) 52px 140px;align-items:center;height:40px;padding:0 14px;border-bottom:1px solid var(--color-surface-container-low);background:{{ r.rowBg }}">
                 <div style="display:flex;align-items:center;gap:9px;min-width:0">
                   <span style="width:24px;height:24px;flex:none;border-radius:50%;background:var(--color-primary-container);color:var(--color-primary);display:grid;place-items:center;font:700 9.5px Roboto,sans-serif">{{ r.initials }}</span>
                   <span style="min-width:0">
@@ -296,33 +592,24 @@ html:root,html [data-theme]{
       </div>
     </div>
     <div class="ph-scroll" style="background:var(--color-background);padding:13px 13px 22px;display:flex;flex-direction:column;gap:9px">
-      <div style="background:var(--color-surface);border-radius:12px;padding:13px 14px;border-left:3px solid #e6c976">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="width:30px;height:30px;flex:none;border-radius:50%;background:var(--color-primary-container);color:var(--color-primary);display:grid;place-items:center;font:700 11px Roboto,sans-serif">IC</span>
-          <div style="flex:1;min-width:0">
-            <div style="font:600 12.5px Roboto,sans-serif;color:var(--color-text-body)">Ivan Cortés</div>
-            <div style="font:400 10.5px Roboto,sans-serif;color:var(--color-text-subtle)">Interno</div>
-          </div>
-          <div class="cond" style="font:700 22px 'Roboto Condensed',sans-serif;color:var(--color-text-body)">20</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:7px;margin-top:10px;font:700 10.5px Roboto,sans-serif;color:#8a5406;background:#fdf3d9;border-radius:20px;padding:5px 10px;width:fit-content">2 días sin aprobar</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--color-surface-container-low)">
-          <span style="display:flex;align-items:center;gap:5px;font:400 10.5px Roboto,sans-serif;color:var(--fava-draft-ink);background:var(--color-surface-container-low);border-radius:6px;padding:4px 8px"><span class="mono" style="color:#146c42;font-weight:500">DC</span>15</span>
-          <span style="display:flex;align-items:center;gap:5px;font:400 10.5px Roboto,sans-serif;color:var(--fava-draft-ink);background:var(--color-surface-container-low);border-radius:6px;padding:4px 8px"><span class="mono" style="color:#0a6a6a;font-weight:500">DVSF</span>1</span>
-          <span style="display:flex;align-items:center;gap:5px;font:400 10.5px Roboto,sans-serif;color:var(--fava-draft-ink);background:var(--color-surface-container-low);border-radius:6px;padding:4px 8px"><span class="mono" style="color:#0a6a6a;font-weight:500">DVRC</span>1</span>
-          <span style="display:flex;align-items:center;gap:5px;font:400 10.5px Roboto,sans-serif;color:var(--fava-draft-ink);background:var(--color-surface-container-low);border-radius:6px;padding:4px 8px"><span class="mono" style="color:#b35400;font-weight:500">LR</span>3</span>
-        </div>
-      </div>
       <sc-for list="{{ liqRows }}" as="r" hint-placeholder-count="6">
-        <div style="background:var(--color-surface);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
-          <span style="width:30px;height:30px;flex:none;border-radius:50%;background:var(--color-surface-container-high);color:var(--fava-draft-ink);display:grid;place-items:center;font:700 11px Roboto,sans-serif">{{ r.initials }}</span>
-          <div style="flex:1;min-width:0">
-            <div style="font:600 12.5px Roboto,sans-serif;color:var(--color-text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div>
-            <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
-              <span style="font:700 9.5px Roboto,sans-serif;color:{{ r.fg }};background:{{ r.bg }};border-radius:20px;padding:3px 8px;white-space:nowrap">{{ r.state }}</span>
+        <div style="background:var(--color-surface);border-radius:12px;padding:12px 14px;border-left:3px solid {{ r.rail }}">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:30px;height:30px;flex:none;border-radius:50%;background:{{ r.avBg }};color:{{ r.avFg }};display:grid;place-items:center;font:700 11px Roboto,sans-serif">{{ r.initials }}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font:600 12.5px Roboto,sans-serif;color:var(--color-text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div>
+              <div style="font:400 10.5px Roboto,sans-serif;color:var(--color-text-subtle)">{{ r.tipo }}</div>
             </div>
+            <div class="cond" style="font:700 21px 'Roboto Condensed',sans-serif;color:var(--color-text-body)">{{ r.total }}</div>
           </div>
-          <div class="cond" style="font:700 20px 'Roboto Condensed',sans-serif;color:var(--color-text-body)">{{ r.total }}</div>
+          <div style="display:flex;align-items:center;gap:7px;margin-top:9px;font:700 10.5px Roboto,sans-serif;color:{{ r.fg }};background:{{ r.bg }};border-radius:20px;padding:5px 10px;width:fit-content">{{ r.state }}</div>
+          <sc-if value="{{ r.expanded }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--color-surface-container-low)">
+              <sc-for list="{{ r.chips }}" as="ch" hint-placeholder-count="4">
+                <span style="display:flex;align-items:center;gap:5px;font:400 10.5px Roboto,sans-serif;color:var(--fava-draft-ink);background:var(--color-surface-container-low);border-radius:6px;padding:4px 8px"><span class="mono" style="color:{{ ch.ink }};font-weight:500">{{ ch.code }}</span>{{ ch.val }}</span>
+              </sc-for>
+            </div>
+          </sc-if>
         </div>
       </sc-for>
     </div>
@@ -1729,7 +2016,7 @@ class Component extends DCLogic {
       ['DFD', 'Festivo', '#8b5cf6', '#6532c4'],
       ['DVSF', 'Viaje salida', '#0ea5a5', '#0a6a6a'],
       ['DVRC', 'Viaje retorno', '#0ea5a5', '#0a6a6a'],
-      ['LR', 'Libre remun.', '#e86c00', '#b35400'],
+      ['LR', 'Libre remun.', '#e86c00', '#8a4400'],
       ['NR', 'No remun.', '#78889a', '#5a6b7a'],
       ['IL', 'Incapacidad', '#d64545', '#b0322b'],
       ['OTRO', 'Otro', '#a16207', '#8a5406'],
@@ -1755,7 +2042,7 @@ class Component extends DCLogic {
     const S = {
       ok:         (n) => ['Listo', 'var(--fava-ok-ink)', 'var(--fava-ok-tint)', 'Todo aprobado'],
       unapproved: (n) => [n + (n === 1 ? ' día sin aprobar' : ' días sin aprobar'), '#8a5406', '#fdf3d9', 'Ir a la bandeja'],
-      unsent:     (n) => [n + (n === 1 ? ' semana sin enviar' : ' semanas sin enviar'), 'var(--fava-brand-ink)', '#fbe4d1', 'Ver el técnico'],
+      unsent:     (n) => [n + (n === 1 ? ' semana sin enviar' : ' semanas sin enviar'), '#8a4400', '#fbe4d1', 'Ver el técnico'],
       none:       () => ['Sin días', 'var(--fava-draft-ink)', 'var(--fava-draft-tint)', 'Nada registrado'],
     };
     const cs = this.liqConcepts();
@@ -1771,13 +2058,24 @@ class Component extends DCLogic {
           code: cs[j].code,
           /* «—» atenuado: el concepto no aplica a este tipo de técnico. */
           val: v === null ? '—' : String(v),
-          fg: v === null ? 'var(--color-outline-variant)'
+          /* «—» tiene que LEERSE: es un dato, no un adorno. Lo que lo hace recesivo no
+             es un gris más claro (a 2,6:1 desaparece) sino el glifo mismo, sin color de
+             concepto y sin peso, frente a las cifras en su color. */
+          fg: v === null ? 'var(--color-text-subtle)'
             : v === 0 ? 'var(--color-text-subtle)'
             : cs[j].ink,
           weight: v ? '500' : '400',
           plus: state === 'unapproved' && j === 0 ? '+' + n : '',
         })),
         rowBg: i % 2 ? 'var(--color-surface-container-low)' : 'var(--color-surface)',
+        /* En el teléfono, una sola tarjeta viene desplegada: la que pide acción. */
+        expanded: state === 'unapproved' && n === 2,
+        rail: state === 'ok' ? 'var(--fava-ok-fill)' : state === 'unapproved' ? '#e6c976' : 'var(--fava-brand)',
+        avBg: state === 'ok' ? 'var(--color-surface-container-high)' : 'var(--color-primary-container)',
+        avFg: state === 'ok' ? 'var(--fava-draft-ink)' : 'var(--color-primary)',
+        chips: counts
+          .map((v, j) => ({ code: cs[j].code, val: String(v), ink: cs[j].ink, has: !!v }))
+          .filter((c) => c.has),
       };
     });
   }
@@ -1806,6 +2104,76 @@ class Component extends DCLogic {
       });
       return { ...g, items };
     });
+  }
+  /**
+   * «Mi resumen» con los datos reales de la captura, en la forma de `MisKpis`
+   * (lib/api/misKpis.ts): utilization{pct,productive,denominator}, totalDays,
+   * projectCount, notes{approved,returned}, months[], concepts[], machines[], projects[].
+   *
+   * Las cuentas cuadran: DC 16 = productive = suma de días por proyecto; DC+NR+OTRO = 19
+   * = totalDays = denominator. Los 3 días no productivos son los que no van a un proyecto.
+   */
+  misKpis() {
+    const concepts = [
+      ['DC', 'Día completo', 16, '#1f9d5b', '#146c42'],
+      ['NR', 'No remunerado', 2, '#78889a', '#5a6b7a'],
+      ['OTRO', 'Otro', 1, '#a16207', '#8a5406'],
+    ];
+    const total = 19;
+    /* Los 12 meses, no solo los que tienen días: un año con dos puntos no es una
+       tendencia, y un mes vacío es un dato — no una ausencia de dato. */
+    const byMonth = { 8: 13, 9: 6 };
+    const maxMes = 13;
+    const projects = [
+      ['ZZ DEMO - Pasta Nova', 'Cliente Demo S.p.A.', 9, '2026-08-17', '2026-08-27'],
+      ['AJ Calidad ante todo - VIERCI', 'AJ Calidad ante todo - VIERCI', 2, '2026-09-03', '2026-09-05'],
+      ['AJ Calidad ante Todo', 'AJ Calidad ante Todo', 1, '2026-09-04', '2026-09-04'],
+      ['DAKOTA GROWERS', 'DAKOTA GROWERS', 1, '2026-08-28', '2026-08-28'],
+      ['Eurimac_ Grecia kilkis', 'Eurimac_ Grecia kilkis', 1, '2026-09-02', '2026-09-02'],
+      ['JAV Marata - Brasil', 'JAV Marata - Brasil', 1, '2026-08-31', '2026-08-31'],
+      ['MOLINO CIBAO BOCEL - RD', 'MOLINO CIBAO BOCEL - RD', 1, '2026-08-29', '2026-08-29'],
+    ];
+    const machines = [
+      ['DEMO Linea B - PC4500', '', 'ZZ DEMO - Pasta Nova', 9],
+      ['Montaggio Meccanico - Montaggio elettrico - Collaudo Software PC 2000', '3502', 'AJ Calidad ante todo - VIERCI', 2],
+    ];
+    return {
+      pct: '84', productive: '16', denominator: '19',
+      totalDays: '19', projectCount: '7',
+      approved: '4', returned: '4',
+      concepts: concepts.map(([code, label, days, fill, ink]) => ({
+        code, label, days: String(days), fill, ink,
+        pctNum: Math.round((days / total) * 100) + '%',
+        w: ((days / total) * 100).toFixed(1) + '%',
+      })),
+      months: Array.from({ length: 12 }, (_, i) => {
+        const m = i + 1;
+        const d = byMonth[m] ?? 0;
+        return {
+          label: ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][i],
+          days: d ? String(d) : '',
+          /* Alto mínimo de 3 px para que un mes vacío siga siendo una casilla visible. */
+          h: d ? Math.round(6 + (d / maxMes) * 74) + 'px' : '3px',
+          bg: d ? 'var(--color-primary)' : 'var(--color-outline-variant)',
+          fg: d ? 'var(--color-text-body)' : 'var(--color-text-subtle)',
+          weight: d ? '700' : '400',
+        };
+      }),
+      projects: projects.map(([name, client, days, from, to]) => ({
+        name, days: String(days),
+        /* El cliente solo si NO repite el nombre del proyecto: en 5 de las 7 filas
+           reales era la misma cadena dos veces. */
+        client: client.trim().toLowerCase() === name.trim().toLowerCase() ? '' : client,
+        range: from === to ? from : from + ' → ' + to,
+        /* Un punto por día en vez de una barra: con 5 proyectos de 1 día, las barras
+           eran astillas de 3 px que no se podían comparar. */
+        dots: Array.from({ length: days }, (_, k) => ({ k: String(k) })),
+      })),
+      machines: machines.map(([label, commessa, project, days]) => ({
+        label, commessa, project, days: String(days),
+        dots: Array.from({ length: days }, (_, k) => ({ k: String(k) })),
+      })),
+    };
   }
   /** El menú real de Layout.tsx: 14 destinos en tres grupos, para una cuenta T+A+S. */
   navFava() {
@@ -1860,6 +2228,15 @@ class Component extends DCLogic {
       notasFiltros: this.notasFiltros(),
       navFava: this.navFava(),
       navLiq: this.navLiq(),
+      kpi: this.misKpis(),
+      navMine: this.navFava().map((g) => ({
+        ...g,
+        items: g.items.map((it) => {
+          const on = it.label === 'Mi resumen';
+          return { ...it, active: on, fg: on ? '#fff' : 'var(--fava-nav-ink-2)',
+            weight: on ? '600' : '500', bg: on ? 'rgba(232,108,0,.16)' : 'transparent' };
+        }),
+      })),
       liqConcepts: this.liqConcepts(),
       liqRows: this.liqRows(),
       liqSummary: this.liqSummary(),

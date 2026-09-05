@@ -436,3 +436,22 @@
     display: none;
   }
 }
+
+/*
+ * Las hojas modales del tecnico (la firma). En movil ocupan la pantalla ENTERA con la
+ * altura real del viewport —`dvh`, que descuenta la barra de Safari; `vh` queda de
+ * respaldo para navegadores viejos— y el pie con el boton no se desplaza con el cuerpo.
+ * En escritorio vuelven a ser un dialogo centrado con tope de alto. Es CSS y no clases
+ * porque `100dvh` con respaldo son dos declaraciones de la misma propiedad, y eso
+ * Tailwind no lo expresa en una clase.
+ */
+.fava-sheet {
+  height: 100vh;
+  height: 100dvh;
+}
+@media (min-width: 900px) {
+  .fava-sheet {
+    height: auto;
+    max-height: 92vh;
+  }
+}

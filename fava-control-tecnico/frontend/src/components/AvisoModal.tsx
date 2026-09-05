@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useApp } from '../state';
@@ -14,6 +15,10 @@ import { useApp } from '../state';
  *
  * Se cierra con el botón, con la X, con Escape y pulsando fuera: es informativo, no
  * decide nada, y encerrar a alguien en un cartel que ya leyó es de mal gusto.
+ *
+ * Se monta en `document.body` (portal) por lo mismo que `SignNoteModal`: lo renderizan
+ * pantallas que viven dentro del envoltorio animado de la ruta, y un `fixed` ahí dentro
+ * queda atrapado bajo la barra inferior del móvil.
  */
 export default function AvisoModal({
   titulo,
@@ -25,7 +30,7 @@ export default function AvisoModal({
   onClose: () => void;
 }) {
   const { t } = useApp();
-  return (
+  return createPortal(
     <div
       onClick={onClose}
       role="alertdialog"
@@ -59,6 +64,7 @@ export default function AvisoModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -62,6 +62,8 @@ export interface MisKpis {
   months: MiMes[];
   /** La PROPIA, con la regla del admin (KPI-02). Solo la suya: aquí no hay nadie más. */
   utilization: MiUtilizacion;
+  /** Jornadas con alguna máquina. Contra los productivos: «solo 11 de 16 tienen máquina». */
+  daysWithMachine: number;
 }
 
 /** `year` a `null` = todo su histórico. */

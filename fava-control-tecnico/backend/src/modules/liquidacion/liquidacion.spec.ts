@@ -3,7 +3,7 @@
  * del estado, y qué concepto no aplica a qué tipo de técnico. Si alguna se cae,
  * Andrea paga un día en el mes equivocado, o cierra un mes que no está cerrado.
  */
-import { aplica, estadoDe, rangoDe } from './liquidacion.service';
+import { aplica, celda, estadoDe, rangoDe } from './liquidacion.service';
 
 describe('rangoDe', () => {
   it('corte: del 26 del mes anterior al 25 de este', () => {
@@ -36,6 +36,17 @@ describe('estadoDe', () => {
     expect(estadoDe({ approved: 10, submitted: 2, draftWeeks: 0 })).toEqual({ kind: 'unapproved', n: 2 });
     expect(estadoDe({ approved: 10, submitted: 0, draftWeeks: 0 })).toEqual({ kind: 'ready' });
     expect(estadoDe({ approved: 0, submitted: 0, draftWeeks: 0 })).toEqual({ kind: 'none' });
+  });
+});
+
+describe('celda', () => {
+  it('«—» solo cuando el concepto no aplica Y no hay días; un día que existe se pinta', () => {
+    expect(celda(false, undefined)).toEqual({ approved: null, pending: 0 });
+    expect(celda(false, { approved: 0, pending: 0 })).toEqual({ approved: null, pending: 0 });
+    // NR de un interno: el servidor lo permite y no puede desaparecer de la nómina.
+    expect(celda(false, { approved: 2, pending: 0 })).toEqual({ approved: 2, pending: 0 });
+    expect(celda(false, { approved: 0, pending: 1 })).toEqual({ approved: 0, pending: 1 });
+    expect(celda(true, undefined)).toEqual({ approved: 0, pending: 0 });
   });
 });
 

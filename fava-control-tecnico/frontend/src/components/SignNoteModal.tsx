@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { hi } from '../icons';
@@ -34,6 +35,16 @@ import type { Gasto, WeeklyNote } from '../lib/api/weeklyNotes';
  * Se guardan ANTES de firmar, en su propia petición: son un recurso aparte
  * (`PUT /expenses`) y el servidor los bloquea en cuanto la nota tiene firma, así que
  * este es literalmente el último momento en que se pueden escribir.
+ *
+ * SE MONTA EN `document.body` (portal). Lo renderizan «Mi semana» y «Mis notas», o sea
+ * DENTRO de `<main>` y del envoltorio `.fava-anim` de la ruta, que anima `transform` y
+ * con eso captura a cualquier `position: fixed` de dentro: en el móvil el diálogo
+ * quedaba por debajo de la barra inferior, no se desplazaba y el botón de firmar no se
+ * alcanzaba. El cajón de la jornada no lo sufría porque `Layout` lo monta fuera.
+ *
+ * Y EN MÓVIL ES UNA HOJA A PANTALLA COMPLETA (diseño 3c, paso 2): cabecera fija,
+ * cuerpo con scroll, y el botón de firmar en un pie que no se mueve — es lo único que
+ * garantiza que se pueda enviar aunque el lienzo ocupe media pantalla.
  */
 
 /** Una firma en curso: los datos del firmante y su lienzo. */
@@ -207,16 +218,18 @@ export default function SignNoteModal({
     );
   };
 
-  return (
-    <div onClick={onClose} className="fixed inset-0 z-60 bg-black/50 grid place-items-center p-5 fava-anim">
+  return createPortal(
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-60 bg-black/50 flex items-end md:items-center md:justify-center md:p-5 fava-anim"
+    >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[620px] bg-card rounded-2xl shadow-pop max-h-[92vh] overflow-y-auto fava-anim"
+        className="fava-sheet w-full md:max-w-[620px] bg-card rounded-t-[20px] md:rounded-2xl shadow-pop flex flex-col fava-anim"
       >
-        {/* Pegada arriba: el diálogo se desplaza por dentro, y sin esto el título y la
-            X se iban de pantalla en cuanto bajabas a firmar — que es justo cuando uno
-            quiere poder cerrar. */}
-        <div className="sticky top-0 z-10 bg-card flex items-start justify-between px-5.5 pt-5 pb-1">
+        {/* Cabecera fija: el cuerpo se desplaza por dentro, y el título y la X no se van
+            de pantalla al bajar a firmar — que es justo cuando uno quiere poder cerrar. */}
+        <div className="flex-none bg-card flex items-start justify-between px-5.5 pt-5 pb-2 border-b border-border md:border-0">
           <div>
             <div className="text-lg font-bold">{t.sign_modal_title}</div>
             <div className="text-[12.5px] text-muted-foreground mt-0.5 max-w-[420px]">{t.sign_modal_sub}</div>
@@ -226,7 +239,7 @@ export default function SignNoteModal({
           </Button>
         </div>
 
-        <div className="px-5.5 pb-5.5 pt-3.5 flex flex-col gap-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5.5 pb-5.5 pt-3.5 flex flex-col gap-4">
           <div className="text-[12.5px] text-muted-foreground">
             <span className="font-semibold text-foreground">{nota.projectName}</span> · {nota.clientName} · {nota.weekStart}
           </div>
@@ -268,17 +281,20 @@ export default function SignNoteModal({
           </details>
 
           {err ? <FieldError msg={errTexto(err)} /> : null}
+        </div>
 
-          <div className="flex gap-2.5 justify-end">
-            <Button variant="outline" onClick={onClose} className="min-h-11 md:min-h-9">
-              {t.btn_cancel}
-            </Button>
-            <Button onClick={firmar} disabled={!listo || firmando} className="min-h-11 md:min-h-9">
-              {firmando ? t.btn_signing : t.btn_signnote}
-            </Button>
-          </div>
+        {/* EL BOTÓN SIEMPRE A LA VISTA (diseño 3c): el pie no se desplaza con el cuerpo.
+            Antes iba al final del contenido y en el móvil no se llegaba a él. */}
+        <div className="flex-none flex gap-2.5 justify-end px-5.5 pt-3 pb-[max(env(safe-area-inset-bottom),14px)] md:pb-5 border-t border-border md:border-0 bg-card">
+          <Button variant="outline" onClick={onClose} className="min-h-11 md:min-h-9">
+            {t.btn_cancel}
+          </Button>
+          <Button onClick={firmar} disabled={!listo || firmando} className="min-h-11 md:min-h-9 flex-1 md:flex-none">
+            {firmando ? t.btn_signing : t.btn_signnote}
+          </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

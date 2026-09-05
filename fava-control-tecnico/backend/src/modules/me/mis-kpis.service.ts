@@ -106,6 +106,12 @@ export interface MisKpis {
   concepts: MiConcepto[];
   months: MiMes[];
   utilization: MiUtilizacion;
+  /**
+   * Jornadas con al menos una máquina (la principal o una adicional de BIT-10). Se
+   * compara con los días productivos para decir «solo 11 de 16 tienen máquina»: el
+   * dato que Andrea reparte a mano cuando falta.
+   */
+  daysWithMachine: number;
 }
 
 interface FilaMaquina {
@@ -160,13 +166,14 @@ export class MisKpisService {
      */
     const filtro = { technicianId, ...(year ? { year } : {}) };
 
-    const [maquinas, proyectos, conceptos, anios, notas, meses] = await Promise.all([
+    const [maquinas, proyectos, conceptos, anios, notas, meses, conMaquina] = await Promise.all([
       this.maquinas(filtro),
       this.proyectos(filtro),
       this.conceptos(filtro),
       this.anios(technicianId),
       this.notas(filtro),
       this.meses(filtro),
+      this.conMaquina(filtro),
     ]);
 
     return {
@@ -184,7 +191,25 @@ export class MisKpisService {
       concepts: conceptos,
       months: meses,
       utilization: utilizacionDe(conceptos),
+      daysWithMachine: conMaquina,
     };
+  }
+
+  /** Jornadas con máquina: la principal, o alguna adicional. Cada día cuenta UNA vez. */
+  private conMaquina(f: { technicianId: string; year?: number }): Promise<number> {
+    const year = f.year ?? null;
+    return this.prisma.client
+      .$queryRaw<{ n: number }[]>`
+        SELECT COUNT(*)::int AS n
+          FROM daily_entries de
+         WHERE de.technician_id = ${f.technicianId}::uuid
+           AND de.concept_code IS NOT NULL
+           AND de.date <= CURRENT_DATE
+           AND (${year}::int IS NULL OR EXTRACT(YEAR FROM de.date)::int = ${year}::int)
+           AND (de.order_id IS NOT NULL
+                OR EXISTS (SELECT 1 FROM daily_entry_orders deo WHERE deo.daily_entry_id = de.id))
+      `
+      .then((r) => r[0]?.n ?? 0);
   }
 
   /**
