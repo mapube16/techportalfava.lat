@@ -7,6 +7,7 @@ import { useApiData } from '../lib/api/useApiData';
 import { getPendientes } from '../lib/api/pendientes';
 import { listNotes } from '../lib/api/weeklyNotes';
 import { hoyLocal, lunesDe, semanaIso } from '../lib/fecha';
+import type { WeeklyNote } from '../lib/api/weeklyNotes';
 
 /**
  * Pendientes — la pantalla de entrada del técnico (diseño 3b).
@@ -27,7 +28,23 @@ import { hoyLocal, lunesDe, semanaIso } from '../lib/fecha';
  * NO es el «Inicio» que se quitó en `d2f1a2d`: aquel duplicaba «Mis notas» y tenía un
  * contador roto. Esta lista no repite ninguna otra pantalla: cada tarjeta lleva a la
  * pantalla donde se resuelve (la semana, o la nota a firmar).
+ *
+ * UNA TARJETA POR SEMANA, NO POR NOTA. Una semana en dos proyectos produce DOS notas
+ * (NOTA-01: una por proyecto, porque son dos clientes y dos firmas). Pintadas como dos
+ * tarjetas parecían trabajo duplicado — «¿por qué me piden firmar dos veces la semana
+ * 36?». Agrupadas por semana, la tarjeta dice «2 notas, una por proyecto» y nombra los
+ * proyectos: se entiende de un vistazo que es la misma semana partida en dos.
  */
+
+/** Las notas de una misma semana, para pintarlas como UNA tarjeta. */
+const porSemana = (notas: WeeklyNote[]) => {
+  const m = new Map<string, WeeklyNote[]>();
+  for (const n of notas) {
+    const k = n.weekStart.slice(0, 10);
+    m.set(k, [...(m.get(k) ?? []), n]);
+  }
+  return [...m.entries()].sort(([a], [b]) => (a < b ? 1 : -1));
+};
 
 type Tono = 'warn' | 'sent' | 'draft' | 'primary';
 
@@ -104,27 +121,35 @@ export default function Pending() {
 
   const items: Item[] = [];
 
-  for (const n of notas.filter((x) => x.status === 'returned')) {
+  /** «2 notas, una por proyecto» cuando la semana se partió; si es una, solo el proyecto. */
+  const cuantas = (ns: WeeklyNote[]) =>
+    ns.length > 1 ? `${t.pd_per_project.replace('{n}', String(ns.length))} · ` : '';
+
+  for (const [lunes, ns] of porSemana(notas.filter((x) => x.status === 'returned'))) {
     items.push({
-      key: `ret-${n.id}`,
+      key: `ret-${lunes}`,
       icon: hi('ureturn', { w: 18 }),
       tono: 'warn',
-      title: `${t.st_returned} · ${n.projectName}`,
-      body: n.returnComment ?? '',
+      title: `${t.st_returned} · ${t.notes_week.replace('{n}', num(lunes))}`,
+      // El motivo de cada una, con su proyecto delante cuando hay más de una.
+      body:
+        cuantas(ns) +
+        ns.map((n) => (ns.length > 1 ? `${n.projectName}: ` : '') + (n.returnComment ?? '')).join(' · '),
       cta: t.pd_fix,
-      onClick: () => abrirSemana(n.weekStart.slice(0, 10)),
+      onClick: () => abrirSemana(lunes),
     });
   }
 
-  for (const n of notas.filter((x) => x.status === 'submitted' && !x.signed)) {
+  for (const [lunes, ns] of porSemana(notas.filter((x) => x.status === 'submitted' && !x.signed))) {
     items.push({
-      key: `sig-${n.id}`,
+      key: `sig-${lunes}`,
       icon: hi('pencil', { w: 18 }),
       tono: 'sent',
-      title: `${t.btn_signnote} · ${n.projectName}`,
-      body: `${t.notes_week.replace('{n}', num(n.weekStart.slice(0, 10)))} · ${n.clientName}`,
+      title: `${t.btn_signnote} · ${t.notes_week.replace('{n}', num(lunes))}`,
+      body: cuantas(ns) + ns.map((n) => `${n.projectName} (${n.clientName})`).join(' · '),
       cta: t.btn_signnote,
-      onClick: () => abrirNota(n.id),
+      // Abre la primera; al firmarla, la siguiente sigue en la cola de «Mis notas».
+      onClick: () => abrirNota(ns[0].id),
     });
   }
 

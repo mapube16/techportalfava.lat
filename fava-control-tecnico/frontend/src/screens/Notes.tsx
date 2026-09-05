@@ -138,12 +138,19 @@ export default function Notes() {
               >
                 {/* La tarjeta del artboard 3b: la semana manda, el estado al lado, y el
                     motivo de la devolucion visible sin abrir nada. */}
+                {/* Semana Y proyecto en el titulo: una semana en dos obras da dos
+                    notas, y dos tarjetas «Semana 36» seguidas parecian la misma
+                    repetida. Con el proyecto al lado se ve que es la misma semana
+                    partida en dos clientes. */}
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-[12.5px] font-bold">{semana(n)}</div>
+                  <div className="text-[12.5px] font-bold min-w-0 truncate">
+                    {semana(n)} · <span className="text-primary">{n.projectName}</span>
+                  </div>
                   <StatusPill st={n.status} t={t} />
                 </div>
-                <div className="text-[11px] text-muted-foreground font-mono mt-0.5">{n.weekStart.slice(0, 10)}</div>
-                <div className="text-[11.5px] font-medium text-primary mt-1.5 truncate">{n.projectName}</div>
+                <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                  {n.weekStart.slice(0, 10)} · {n.clientName}
+                </div>
                 {n.returnComment ? (
                   <div className="text-[11px] text-warn mt-1 line-clamp-2">{n.returnComment}</div>
                 ) : n.signed ? (
