@@ -98,6 +98,11 @@ export default function Week() {
    * con viaje el domingo.
    */
   const conConcepto = registrados.filter((e) => e.conceptCode).length;
+  /** Dias por concepto de la semana, de mas a menos. Para el panel. */
+  const porConcepto = [...registrados.reduce((m, e) => {
+    if (e.conceptCode) m.set(e.conceptCode, (m.get(e.conceptCode) ?? 0) + 1);
+    return m;
+  }, new Map<string, number>())].sort((a, b) => b[1] - a[1]);
   const pctSemana = Math.round((conConcepto / dias.length) * 100);
 
   /**
@@ -131,8 +136,11 @@ export default function Week() {
     // Dos columnas en escritorio (diseno 1a): la semana a la izquierda y el panel de
     // la nota a la derecha. En movil el panel BAJA debajo de la tabla en vez de
     // encogerse, que a 390px seria ilegible.
-    <div className="max-w-[1100px] mx-auto flex flex-col md:flex-row gap-4 items-start">
-      <Card className="flex-1 min-w-0 w-full">
+    // Ancho completo, como el resto de pantallas: a 1920 px el tope de 1100 centrado
+    // dejaba 350 px de margen a cada lado y la pantalla se leia vacia.
+    <div className="flex flex-col md:flex-row gap-4 items-start">
+      <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
+      <Card className="w-full">
         <div className="flex items-center justify-between gap-2 px-4.5 py-3.5 border-b border-border flex-wrap">
           <div className="flex items-center gap-2.5 min-w-0">
             {nav(-1, atrasBloqueado)}
@@ -226,11 +234,59 @@ export default function Week() {
         </div>
       </Card>
 
+      {/* Las notas de ESTA semana, una por proyecto, DEBAJO de la tabla y en rejilla:
+          son el resultado de los dias que se acaban de leer, y apiladas en el panel
+          estiraban la columna derecha mientras la tabla terminaba a media pantalla.
+          Cada una con su estado, su firma y su PDF: el boton del panel solo abria la
+          primera, y una semana en cuatro proyectos tiene cuatro. */}
+      {deLaSemana.length ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {deLaSemana.map((n) => (
+            <Card key={n.id}>
+              <div className="p-3.5 flex flex-col gap-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-[12.5px] font-bold truncate">{n.projectName}</div>
+                    {n.clientName.trim().toLowerCase() !== n.projectName.trim().toLowerCase() ? (
+                      <div className="text-[11px] text-muted-foreground truncate">{n.clientName}</div>
+                    ) : null}
+                  </div>
+                  <StatusPill st={n.status} t={t} />
+                </div>
+                {n.returnComment ? (
+                  <div className="bg-warn-tint border border-warn rounded-lg px-3 py-2">
+                    <div className="text-[11px] font-bold text-warn">{t.returned_note}</div>
+                    <div className="text-[11.5px] text-muted-foreground mt-0.5 leading-relaxed">{n.returnComment}</div>
+                  </div>
+                ) : null}
+                <div className="flex gap-2 mt-auto">
+                  {/* Solo se firma lo ENVIADO y sin firma previa: el servidor rechaza lo
+                      demas, y ofrecer el boton igual seria prometer algo que no pasa. */}
+                  {n.status === 'submitted' && !n.signed ? (
+                    <Button onClick={() => setFirmandoLocal(n)} className="flex-1 min-h-11 md:min-h-9">
+                      {t.btn_signnote}
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="outline"
+                    onClick={() => patch({ pdfOpen: true, pdfNoteId: n.id, pdfSigned: n.signed })}
+                    className="flex-1 min-h-11 md:min-h-9"
+                  >
+                    {t.btn_pdf}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : null}
+      </div>
+
       {/* EL PANEL DE LA NOTA (diseno 1a). La semana se lee a la izquierda y se ACTUA
           aqui: cuanto llevas, que falta, y los dos botones. Antes el boton de enviar
           estaba al pie de la pagina, debajo de las notas, y el aviso de que faltaba un
           dia no existia: el fallo se descubria al pulsar. */}
-      <div className="w-full md:w-[272px] md:flex-none flex flex-col gap-3.5">
+      <div className="w-full md:w-[300px] md:flex-none flex flex-col gap-3.5">
         <Card>
           <div className="p-4">
             <div className="text-[13px] font-bold">{t.week_note_panel}</div>
@@ -309,6 +365,27 @@ export default function Week() {
           </div>
         </Card>
 
+        {/* LA SEMANA EN CIFRAS: cuantos dias de cada concepto. El panel se quedaba en
+            dos botones y una barra; esto es lo que el tecnico comprueba antes de
+            enviar («¿me quedo un viaje sin poner?»). */}
+        {porConcepto.length ? (
+          <Card>
+            <div className="p-4">
+              <div className="text-[11px] font-bold uppercase tracking-[.05em] text-muted-foreground">
+                {t.week_mix}
+              </div>
+              <div className="flex flex-col gap-2 mt-2.5">
+                {porConcepto.map(([code, n]) => (
+                  <div key={code} className="flex items-center justify-between gap-2">
+                    <ConceptPill code={code} lang={state.lang} />
+                    <span className="font-mono font-semibold text-[13px] tabular-nums">{n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        ) : null}
+
         {/* EL AVISO DEL HUECO (diseno 1a). Solo si hay un dia pasado sin concepto:
             un aviso que sale siempre deja de leerse. */}
         {pendiente ? (
@@ -329,38 +406,6 @@ export default function Week() {
           </div>
         ) : null}
 
-        {/* Las notas de ESTA semana, una por proyecto: cada una con su estado, su
-            firma y su PDF. Viven aqui —y no en «Mis notas»— porque son el resultado de
-            los dias que se estan viendo: firmar mirando la semana que la origino es la
-            unica forma de saber que se esta firmando. */}
-        {deLaSemana.map((n) => (
-          <Card key={n.id}>
-            <div className="p-3.5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="text-[12.5px] font-bold truncate">{n.projectName}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{n.clientName}</div>
-                </div>
-                <StatusPill st={n.status} t={t} />
-              </div>
-              {/* Solo se firma lo ENVIADO y sin firma previa: el servidor rechaza lo
-                  demas, y ofrecer el boton igual seria prometer algo que no pasa. */}
-              {n.status === 'submitted' && !n.signed ? (
-                <Button onClick={() => setFirmandoLocal(n)} className="w-full min-h-11 mt-2.5">
-                  {t.btn_signnote}
-                </Button>
-              ) : null}
-              {n.returnComment ? (
-                <div className="mt-2.5 bg-warn-tint border border-warn rounded-lg px-3 py-2.5">
-                  <div className="text-[11px] font-bold text-warn">{t.returned_note}</div>
-                  <div className="text-[11.5px] text-muted-foreground mt-0.5 leading-relaxed">
-                    {n.returnComment}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </Card>
-        ))}
       </div>
 
       {/* No poder enviar la semana no es un campo mal escrito: es un cambio de plan
