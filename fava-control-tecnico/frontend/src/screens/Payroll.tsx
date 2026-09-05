@@ -70,6 +70,8 @@ export default function Payroll() {
   if (!data) return <ApiState error={null} label={t.loading} />;
 
   const tipo = (e: string) => (e === 'EXTERNO' ? t.pr_external : t.pr_internal);
+  /** Lo que entraria al aprobar, sumado: se ensena bajo el total ademas de por celda. */
+  const pendientes = (r: FilaLiquidacion) => Object.values(r.cells).reduce((s, c) => s + c.pending, 0);
   const etiqueta = (c: { labelEs: string; labelIt: string }) => (state.lang === 'it' ? c.labelIt : c.labelEs);
 
   /** Descarga con nombre: `window.open` de un blob no lo tiene, y el archivo se reenvía. */
@@ -230,7 +232,14 @@ export default function Payroll() {
                       </div>
                     );
                   })}
-                  <div className="font-mono font-bold text-[13px] text-right">{r.total}</div>
+                  {/* El total tambien lleva su «+N»: un 0 a secas con seis dias esperando
+                      aprobacion se leia como «esta persona no tiene nada». */}
+                  <div className="text-right">
+                    <span className="font-mono font-bold text-[13px]">{r.total}</span>
+                    {pendientes(r) ? (
+                      <span className="block font-mono text-[9px] text-[#8a5406] -mt-0.5">+{pendientes(r)}</span>
+                    ) : null}
+                  </div>
                   <div className="pl-3.5">
                     <button
                       type="button"
@@ -264,7 +273,12 @@ export default function Payroll() {
                         <span className="block text-[10.5px] text-muted-foreground">{tipo(r.employmentType)}</span>
                         <span className={`inline-flex mt-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold ${e.cls}`}>{e.texto}</span>
                       </span>
-                      <span className="font-mono font-bold text-[20px] font-cond">{r.total}</span>
+                      <span className="text-right">
+                        <span className="block font-mono font-bold text-[20px] font-cond leading-none">{r.total}</span>
+                        {pendientes(r) ? (
+                          <span className="block font-mono text-[10px] text-[#8a5406]">+{pendientes(r)}</span>
+                        ) : null}
+                      </span>
                     </summary>
                     <div className="px-3.5 pb-3.5 flex flex-wrap gap-1.5 border-t border-border pt-3">
                       {data.concepts
