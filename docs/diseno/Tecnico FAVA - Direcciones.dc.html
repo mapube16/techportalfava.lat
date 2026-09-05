@@ -24,6 +24,14 @@ html:root,html [data-theme]{
  --color-background:#eef2f5;--color-outline:#dde3e9;--color-outline-variant:#c9d2da;
  --color-text-body:#132330;--color-text-subtle:#5a6b7a;--color-on-surface:#132330;--color-on-surface-variant:#5a6b7a;
  --color-on-primary-container:#104a78;--color-on-secondary:#fff;
+ /* Roles FAVA: navy de la barra (index.css) y los cuatro estados de nota. */
+ --fava-nav:#132330;--fava-nav-2:#182734;--fava-nav-line:#26384a;
+ --fava-nav-ink:#e9eff4;--fava-nav-ink-2:#9fb0be;--fava-nav-ink-3:#7d8b98;
+ --fava-brand:#e86c00;--fava-brand-ink:#b35400;--fava-brand-on-dark:#ffab5c;
+ --fava-ok-ink:#146c42;--fava-ok-tint:#e2f4ea;--fava-ok-fill:#1f9d5b;
+ --fava-sent-ink:#104a78;--fava-sent-tint:#e2eefd;--fava-sent-fill:#2182f6;
+ --fava-warn-ink:#a8352b;--fava-warn-tint:#fbe6e4;--fava-warn-fill:#e0655c;
+ --fava-draft-ink:#42505c;--fava-draft-tint:#eceff2;--fava-draft-fill:#78889a;
  --font-text:Roboto,system-ui,sans-serif;--font-display:'Roboto Condensed',Roboto,sans-serif;--font-mono:'Roboto Mono',ui-monospace,monospace;
  /* El bundle deriva estos alias en :root, donde ya resolvieron al tema oscuro:
     hay que volver a declararlos aquí, donde la paleta FAVA sí está vigente. */
@@ -76,7 +84,494 @@ html:root,html [data-theme]{
   <symbol id="hi-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></symbol>
   <symbol id="hi-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></symbol>
   <symbol id="hi-clipcheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75"/></symbol>
+  <symbol id="hi-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></symbol>
+  <symbol id="hi-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.75h-.152c-3.196 0-6.1-1.248-8.25-3.286Z"/></symbol>
+  <symbol id="hi-shield-plain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2.714A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.75h-.152c-3.196 0-6.1-1.248-8.25-3.286Z"/></symbol>
+  <symbol id="hi-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></symbol>
+  <symbol id="hi-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></symbol>
+  <symbol id="hi-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></symbol>
+  <symbol id="hi-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"/></symbol>
+  <symbol id="hi-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 1 0 0-18m0 18a9 9 0 1 1 0-18m0 18c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3M3.6 9h16.8M3.6 15h16.8"/></symbol>
 </svg>
+
+<section class="dv-turn" id="t5">
+<div class="dv-thd"><span class="dv-tid">5</span><span class="dv-tname">«Liquidación del mes» — la vista del día 25</span></div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p style="margin:0 0 26px;font:400 13.5px/1.7 Roboto,sans-serif;color:var(--color-text-subtle);max-width:78ch;text-wrap:pretty">Tienes razón: los datos ya están, pero ordenados <strong>por proyecto</strong>. Nómina se paga <strong>por persona</strong>, así que la vista que faltaba es una tabla de días por concepto y por técnico — la tabla dinámica que Andrea suma a mano cada día 25.<br><br>Dos decisiones que la hacen útil y no un informe más: <strong>solo cuenta lo aprobado</strong>, y la columna de estado dice a quién le falta algo para poder cerrar (que es el problema real del día 25, no sumar). No aparece ni un importe: la pantalla entrega cantidades, Andrea multiplica.</p></sc-if>
+<div class="dv-opts">
+
+<div class="dv-opt" id="5a">
+  <div class="dv-olabel"><span class="dv-oid">5a</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:var(--color-text-body)">Escritorio, mes con pendientes.</strong> El caso que importa: tres técnicos con algo abierto y tres listos, para ver cómo se leen los avisos juntos. Filas de 40&nbsp;px, números en Roboto&nbsp;Mono, y el «+2» atenuado bajo el conteo dice qué entraría al aprobar sin ensuciar la cifra pagable.</span></sc-if></div>
+  <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
+    <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#42505c">techportalfava.lat/liquidacion/2026-08</span></div>
+    <div style="display:flex;height:856px">
+      <div style="width:216px;flex:none;background:var(--fava-nav);border-right:1px solid var(--fava-nav-line);display:flex;flex-direction:column;min-height:0">
+        <div style="flex:none;padding:16px 18px 12px;border-bottom:1px solid var(--fava-nav-line)">
+          <img src="assets/fava-logo-ondark.svg" alt="FAVA Latino America" style="height:32px;display:block">
+          <div style="font:400 10px Roboto,sans-serif;letter-spacing:1.5px;color:var(--fava-nav-ink-2);text-transform:uppercase;margin-top:8px">Control Técnico</div>
+          <div style="font:400 10.5px Roboto,sans-serif;color:var(--fava-nav-ink-2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Andrea Scapin · Admin · Super Admin</div>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 10px 0">
+          <sc-for list="{{ navLiq }}" as="g" hint-placeholder-count="3">
+            <div style="margin-bottom:12px">
+              <div style="font:700 10px Roboto,sans-serif;letter-spacing:1.4px;color:var(--fava-nav-ink-2);text-transform:uppercase;padding:5px 10px">{{ g.title }}</div>
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="6">
+                <div style="position:relative;display:flex;align-items:center;gap:12px;padding:6px 12px;margin-bottom:2px;border-radius:6px;background:{{ it.bg }};color:{{ it.fg }};font-size:13.5px;font-family:Roboto,sans-serif;font-weight:{{ it.weight }}">
+                  <sc-if value="{{ it.active }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;left:4px;top:50%;transform:translateY(-50%);width:3px;height:16px;border-radius:2px;background:var(--fava-brand)"></span></sc-if>
+                  <svg width="17" height="17" style="flex:none"><use href="{{ it.icon }}"></use></svg>
+                  <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.label }}</span>
+                  <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ true }}"><span style="min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--fava-brand-ink);color:#fff;font:700 10px Roboto,sans-serif;display:grid;place-items:center">{{ it.badge }}</span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:none;padding:12px;border-top:1px solid var(--fava-nav-line)">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;background:var(--fava-nav-2)">
+            <div style="width:32px;height:32px;flex:none;border-radius:50%;background:var(--color-primary);color:var(--color-on-primary);display:grid;place-items:center;font:700 12px Roboto,sans-serif">AS</div>
+            <div style="min-width:0;flex:1">
+              <div style="font:600 13px Roboto,sans-serif;color:var(--fava-nav-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Andrea Scapin</div>
+              <div style="font:400 11px Roboto,sans-serif;color:var(--fava-nav-ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">andrea@favalatino.com</div>
+              <div style="font:400 11px Roboto,sans-serif;color:var(--fava-nav-ink-2)">Admin · Super Admin</div>
+            </div>
+            <svg width="16" height="16" style="flex:none;color:var(--fava-nav-ink-2)"><use href="#hi-logout"></use></svg>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;background:var(--color-background);min-width:0">
+        <div style="height:66px;flex:none;background:var(--color-surface);border-bottom:1px solid var(--color-outline);display:flex;align-items:center;gap:14px;padding:0 24px">
+          <div style="flex:1;min-width:0">
+            <div style="font:700 16px Roboto,sans-serif;color:var(--color-text-body)">Liquidación del mes</div>
+            <div style="font:400 11px Roboto,sans-serif;color:var(--color-text-subtle)">Días por concepto y por técnico, para pasar a nómina</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+            <span style="display:flex;align-items:center;gap:9px;font:500 12.5px Roboto,sans-serif;color:var(--color-text-body);border:1px solid var(--color-outline-variant);border-radius:6px;padding:7px 12px;background:var(--color-surface)">Agosto 2026 <span style="color:var(--color-text-subtle)">▾</span></span>
+            <span class="mono" style="font:400 10px 'Roboto Mono',monospace;color:var(--fava-brand-ink)">corte 26 jul – 25 ago 2026</span>
+          </div>
+          <span style="display:flex;align-items:center;gap:7px;font:500 12.5px Roboto,sans-serif;color:var(--color-text-body);border:1px solid var(--color-outline-variant);border-radius:6px;padding:8px 13px;background:var(--color-surface)"><svg width="15" height="15"><use href="#hi-download"></use></svg>Exportar CSV</span>
+          <span style="position:relative;display:grid;place-items:center;width:34px;height:34px;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;background:var(--color-surface)"><svg width="16" height="16"><use href="#hi-bell"></use></svg><span style="position:absolute;top:-3px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--fava-brand-ink);color:#fff;font:700 9.5px Roboto,sans-serif;display:grid;place-items:center">4</span></span>
+        </div>
+        <div style="flex:1;padding:18px 22px;display:flex;flex-direction:column;gap:14px;min-height:0">
+          <div style="display:flex;gap:10px">
+            <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;padding:12px 14px">
+              <div style="font:500 10.5px Roboto,sans-serif;color:var(--color-text-subtle)">Técnicos en el corte</div>
+              <div class="cond" style="font:700 24px 'Roboto Condensed',sans-serif;color:var(--color-text-body);margin-top:4px">{{ liqSummary.tecnicos }}</div>
+            </div>
+            <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;padding:12px 14px">
+              <div style="font:500 10.5px Roboto,sans-serif;color:var(--color-text-subtle)">Listos para nómina</div>
+              <div class="cond" style="font:700 24px 'Roboto Condensed',sans-serif;color:var(--fava-ok-ink);margin-top:4px">{{ liqSummary.listos }}</div>
+            </div>
+            <div style="flex:1;background:#fdf3d9;border:1px solid #e6c976;border-radius:10px;padding:12px 14px">
+              <div style="font:500 10.5px Roboto,sans-serif;color:#8a5406">Con pendientes</div>
+              <div class="cond" style="font:700 24px 'Roboto Condensed',sans-serif;color:#8a5406;margin-top:4px">{{ liqSummary.pendientes }}</div>
+            </div>
+            <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;padding:12px 14px">
+              <div style="font:500 10.5px Roboto,sans-serif;color:var(--color-text-subtle)">Días aprobados</div>
+              <div class="cond" style="font:700 24px 'Roboto Condensed',sans-serif;color:var(--color-primary);margin-top:4px">{{ liqSummary.dias }}</div>
+            </div>
+          </div>
+
+          <div style="background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:196px repeat(9,38px) 52px 152px;align-items:end;padding:9px 14px;background:var(--color-surface-container-low);border-bottom:1px solid var(--color-outline)">
+              <div style="font:700 10px Roboto,sans-serif;letter-spacing:.06em;color:var(--fava-draft-ink);text-transform:uppercase">Técnico</div>
+              <sc-for list="{{ liqConcepts }}" as="c" hint-placeholder-count="9">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                  <span style="width:16px;height:3px;border-radius:2px;background:{{ c.fill }}"></span>
+                  <span class="mono" style="font:500 10px 'Roboto Mono',monospace;color:{{ c.ink }}">{{ c.code }}</span>
+                </div>
+              </sc-for>
+              <div style="font:700 10px Roboto,sans-serif;letter-spacing:.06em;color:var(--fava-draft-ink);text-transform:uppercase;text-align:right">Total</div>
+              <div style="font:700 10px Roboto,sans-serif;letter-spacing:.06em;color:var(--fava-draft-ink);text-transform:uppercase;padding-left:14px">Estado</div>
+            </div>
+            <sc-for list="{{ liqRows }}" as="r" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:196px repeat(9,38px) 52px 152px;align-items:center;height:40px;padding:0 14px;border-bottom:1px solid var(--color-surface-container-low);background:{{ r.rowBg }}">
+                <div style="display:flex;align-items:center;gap:9px;min-width:0">
+                  <span style="width:24px;height:24px;flex:none;border-radius:50%;background:var(--color-primary-container);color:var(--color-primary);display:grid;place-items:center;font:700 9.5px Roboto,sans-serif">{{ r.initials }}</span>
+                  <span style="min-width:0">
+                    <span style="display:block;font:500 12.5px Roboto,sans-serif;color:var(--color-text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span>
+                    <span style="display:block;font:400 9.5px Roboto,sans-serif;color:var(--color-text-subtle)">{{ r.tipo }}</span>
+                  </span>
+                </div>
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="9">
+                  <div style="text-align:center">
+                    <span class="mono" style="font-family:'Roboto Mono',monospace;font-size:12px;font-weight:{{ c.weight }};color:{{ c.fg }}">{{ c.val }}</span>
+                    <sc-if value="{{ c.plus }}" hint-placeholder-val="{{ true }}"><span class="mono" style="display:block;font:400 9px 'Roboto Mono',monospace;color:#8a5406;margin-top:-2px">{{ c.plus }}</span></sc-if>
+                  </div>
+                </sc-for>
+                <div class="mono" style="font:700 13px 'Roboto Mono',monospace;color:var(--color-text-body);text-align:right">{{ r.total }}</div>
+                <div style="padding-left:14px"><span style="display:inline-flex;align-items:center;gap:6px;font:700 10px Roboto,sans-serif;color:{{ r.fg }};background:{{ r.bg }};border-radius:20px;padding:4px 9px;white-space:nowrap">{{ r.state }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:22px;flex-wrap:wrap;padding:2px">
+            <sc-for list="{{ liqConcepts }}" as="c" hint-placeholder-count="9">
+              <span style="display:flex;align-items:center;gap:7px;font:400 10.5px Roboto,sans-serif;color:var(--fava-draft-ink)"><span style="width:9px;height:9px;border-radius:2px;background:{{ c.fill }}"></span><span class="mono" style="color:{{ c.ink }};font-weight:500">{{ c.code }}</span>{{ c.label }}</span>
+            </sc-for>
+          </div>
+          <div style="font:400 11px/1.6 Roboto,sans-serif;color:var(--color-text-subtle);max-width:74ch">Las celdas en «—» son conceptos que no aplican a ese tipo de técnico: LR solo existe para internos y NR solo para externos. Un 0 diría «trabajó cero días»; «—» dice «este concepto no le corresponde».</div>
+        </div>
+      </div>
+    </div>
+  </div></sc-if>
+</div>
+
+<div class="dv-opt" id="5b">
+  <div class="dv-olabel"><span class="dv-oid">5b</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:var(--color-text-body)">Los otros tres estados.</strong> Mes cerrable, mes vacío y carga — solo la región de contenido, que es lo único que cambia.</span></sc-if></div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div style="width:784px;background:var(--color-background);border:1px solid var(--color-outline-variant);border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(19,35,48,.06)">
+      <div style="background:var(--fava-ok-tint);border-bottom:1px solid var(--fava-ok-fill);padding:9px 22px;display:flex;align-items:center;gap:10px;font:400 11.5px Roboto,sans-serif;color:var(--fava-ok-ink)">
+        <svg width="16" height="16"><use href="#hi-badge"></use></svg><strong style="font-weight:700">El mes se puede cerrar.</strong> Los 6 técnicos tienen todo aprobado: 124 días listos para nómina.
+      </div>
+      <div style="padding:16px 22px;display:flex;flex-direction:column;gap:12px">
+
+          <div style="background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:196px repeat(9,38px) 52px 152px;align-items:end;padding:9px 14px;background:var(--color-surface-container-low);border-bottom:1px solid var(--color-outline)">
+              <div style="font:700 10px Roboto,sans-serif;letter-spacing:.06em;color:var(--fava-draft-ink);text-transform:uppercase">Técnico</div>
+              <sc-for list="{{ liqConcepts }}" as="c" hint-placeholder-count="9">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                  <span style="width:16px;height:3px;border-radius:2px;background:{{ c.fill }}"></span>
+                  <span class="mono" style="font:500 10px 'Roboto Mono',monospace;color:{{ c.ink }}">{{ c.code }}</span>
+                </div>
+              </sc-for>
+              <div style="font:700 10px Roboto,sans-serif;letter-spacing:.06em;color:var(--fava-draft-ink);text-transform:uppercase;text-align:right">Total</div>
+              <div style="font:700 10px Roboto,sans-serif;letter-spacing:.06em;color:var(--fava-draft-ink);text-transform:uppercase;padding-left:14px">Estado</div>
+            </div>
+            <sc-for list="{{ liqRowsOk }}" as="r" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:196px repeat(9,38px) 52px 152px;align-items:center;height:40px;padding:0 14px;border-bottom:1px solid var(--color-surface-container-low);background:{{ r.rowBg }}">
+                <div style="display:flex;align-items:center;gap:9px;min-width:0">
+                  <span style="width:24px;height:24px;flex:none;border-radius:50%;background:var(--color-primary-container);color:var(--color-primary);display:grid;place-items:center;font:700 9.5px Roboto,sans-serif">{{ r.initials }}</span>
+                  <span style="min-width:0">
+                    <span style="display:block;font:500 12.5px Roboto,sans-serif;color:var(--color-text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span>
+                    <span style="display:block;font:400 9.5px Roboto,sans-serif;color:var(--color-text-subtle)">{{ r.tipo }}</span>
+                  </span>
+                </div>
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="9">
+                  <div style="text-align:center">
+                    <span class="mono" style="font-family:'Roboto Mono',monospace;font-size:12px;font-weight:{{ c.weight }};color:{{ c.fg }}">{{ c.val }}</span>
+                    <sc-if value="{{ c.plus }}" hint-placeholder-val="{{ true }}"><span class="mono" style="display:block;font:400 9px 'Roboto Mono',monospace;color:#8a5406;margin-top:-2px">{{ c.plus }}</span></sc-if>
+                  </div>
+                </sc-for>
+                <div class="mono" style="font:700 13px 'Roboto Mono',monospace;color:var(--color-text-body);text-align:right">{{ r.total }}</div>
+                <div style="padding-left:14px"><span style="display:inline-flex;align-items:center;gap:6px;font:700 10px Roboto,sans-serif;color:{{ r.fg }};background:{{ r.bg }};border-radius:20px;padding:4px 9px;white-space:nowrap">{{ r.state }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+      </div>
+    </div></sc-if>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div style="width:384px;height:266px;background:var(--color-background);border:1px solid var(--color-outline-variant);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:28px;text-align:center;box-shadow:0 2px 8px rgba(19,35,48,.06)">
+        <span style="width:44px;height:44px;border-radius:50%;background:var(--color-surface-container-high);color:var(--color-text-subtle);display:grid;place-items:center"><svg width="22" height="22"><use href="#hi-cal"></use></svg></span>
+        <div style="font:700 14px Roboto,sans-serif;color:var(--color-text-body)">Septiembre todavía no tiene días</div>
+        <div style="font:400 12px/1.6 Roboto,sans-serif;color:var(--color-text-subtle);max-width:38ch">El corte va del 26 de agosto al 25 de septiembre. Nadie ha enviado su semana aún.</div>
+        <span style="font:500 12px Roboto,sans-serif;color:var(--color-primary);border:1px solid var(--color-outline-variant);border-radius:6px;padding:8px 14px;background:var(--color-surface)">Ver agosto 2026</span>
+      </div></sc-if>
+      <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div style="width:384px;height:266px;background:var(--color-background);border:1px solid var(--color-outline-variant);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:9px;box-shadow:0 2px 8px rgba(19,35,48,.06)">
+        <div style="display:flex;gap:9px">
+          <div style="flex:1;height:52px;border-radius:8px;background:var(--color-surface-container-high)"></div>
+          <div style="flex:1;height:52px;border-radius:8px;background:var(--color-surface-container-high)"></div>
+          <div style="flex:1;height:52px;border-radius:8px;background:var(--color-surface-container-high)"></div>
+        </div>
+        <div style="flex:1;border-radius:8px;background:var(--color-surface);border:1px solid var(--color-outline);padding:11px;display:flex;flex-direction:column;gap:9px">
+          <div style="height:9px;width:64%;border-radius:2px;background:var(--color-surface-container-high)"></div>
+          <div style="height:9px;border-radius:2px;background:var(--color-surface-container-high)"></div>
+          <div style="height:9px;width:84%;border-radius:2px;background:var(--color-surface-container-high)"></div>
+          <div style="height:9px;width:72%;border-radius:2px;background:var(--color-surface-container-high)"></div>
+          <div style="margin-top:auto;font:400 11px Roboto,sans-serif;color:var(--color-text-subtle);text-align:center">Sumando los días aprobados…</div>
+        </div>
+      </div></sc-if>
+    </div>
+  </div>
+</div>
+
+<div class="dv-opt" id="5c">
+  <div class="dv-olabel"><span class="dv-oid">5c</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:var(--color-text-body)">Teléfono, solo consulta.</strong> Andrea mira esto fuera de la oficina, no lo edita. Una tarjeta por técnico con su total y su estado; los conceptos se despliegan solo en la que le interesa.</span></sc-if></div>
+  <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+    <div class="stat ph-stat" style="color:#e9eff4;background:var(--fava-nav)"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+    <div style="flex:none;background:var(--fava-nav);padding:2px 18px 16px">
+      <div style="font:400 10.5px Roboto,sans-serif;letter-spacing:.08em;color:var(--fava-brand-on-dark);text-transform:uppercase">Liquidación</div>
+      <div class="cond" style="font:700 20px 'Roboto Condensed',sans-serif;color:#fff;margin-top:4px">Agosto 2026</div>
+      <div class="mono" style="font:400 10.5px 'Roboto Mono',monospace;color:var(--fava-nav-ink-2);margin-top:3px">corte 26 jul – 25 ago</div>
+      <div style="display:flex;gap:7px;margin-top:12px">
+        <span style="flex:1;background:var(--fava-nav-2);border-radius:8px;padding:8px 10px"><span style="display:block;font:400 9.5px Roboto,sans-serif;color:var(--fava-nav-ink-2)">Listos</span><span class="cond" style="display:block;font:700 17px 'Roboto Condensed',sans-serif;color:#7fd7a4">{{ liqSummary.listos }} de {{ liqSummary.tecnicos }}</span></span>
+        <span style="flex:1;background:var(--fava-nav-2);border-radius:8px;padding:8px 10px"><span style="display:block;font:400 9.5px Roboto,sans-serif;color:var(--fava-nav-ink-2)">Días aprobados</span><span class="cond" style="display:block;font:700 17px 'Roboto Condensed',sans-serif;color:#fff">{{ liqSummary.dias }}</span></span>
+      </div>
+    </div>
+    <div class="ph-scroll" style="background:var(--color-background);padding:13px 13px 22px;display:flex;flex-direction:column;gap:9px">
+      <div style="background:var(--color-surface);border-radius:12px;padding:13px 14px;border-left:3px solid #e6c976">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:30px;height:30px;flex:none;border-radius:50%;background:var(--color-primary-container);color:var(--color-primary);display:grid;place-items:center;font:700 11px Roboto,sans-serif">IC</span>
+          <div style="flex:1;min-width:0">
+            <div style="font:600 12.5px Roboto,sans-serif;color:var(--color-text-body)">Ivan Cortés</div>
+            <div style="font:400 10.5px Roboto,sans-serif;color:var(--color-text-subtle)">Interno</div>
+          </div>
+          <div class="cond" style="font:700 22px 'Roboto Condensed',sans-serif;color:var(--color-text-body)">20</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:10px;font:700 10.5px Roboto,sans-serif;color:#8a5406;background:#fdf3d9;border-radius:20px;padding:5px 10px;width:fit-content">2 días sin aprobar</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--color-surface-container-low)">
+          <span style="display:flex;align-items:center;gap:5px;font:400 10.5px Roboto,sans-serif;color:var(--fava-draft-ink);background:var(--color-surface-container-low);border-radius:6px;padding:4px 8px"><span class="mono" style="color:#146c42;font-weight:500">DC</span>15</span>
+          <span style="display:flex;align-items:center;gap:5px;font:400 10.5px Roboto,sans-serif;color:var(--fava-draft-ink);background:var(--color-surface-container-low);border-radius:6px;padding:4px 8px"><span class="mono" style="color:#0a6a6a;font-weight:500">DVSF</span>1</span>
+          <span style="display:flex;align-items:center;gap:5px;font:400 10.5px Roboto,sans-serif;color:var(--fava-draft-ink);background:var(--color-surface-container-low);border-radius:6px;padding:4px 8px"><span class="mono" style="color:#0a6a6a;font-weight:500">DVRC</span>1</span>
+          <span style="display:flex;align-items:center;gap:5px;font:400 10.5px Roboto,sans-serif;color:var(--fava-draft-ink);background:var(--color-surface-container-low);border-radius:6px;padding:4px 8px"><span class="mono" style="color:#b35400;font-weight:500">LR</span>3</span>
+        </div>
+      </div>
+      <sc-for list="{{ liqRows }}" as="r" hint-placeholder-count="6">
+        <div style="background:var(--color-surface);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+          <span style="width:30px;height:30px;flex:none;border-radius:50%;background:var(--color-surface-container-high);color:var(--fava-draft-ink);display:grid;place-items:center;font:700 11px Roboto,sans-serif">{{ r.initials }}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font:600 12.5px Roboto,sans-serif;color:var(--color-text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+              <span style="font:700 9.5px Roboto,sans-serif;color:{{ r.fg }};background:{{ r.bg }};border-radius:20px;padding:3px 8px;white-space:nowrap">{{ r.state }}</span>
+            </div>
+          </div>
+          <div class="cond" style="font:700 20px 'Roboto Condensed',sans-serif;color:var(--color-text-body)">{{ r.total }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div class="ph-bar" style="background:var(--color-surface);border-top:1px solid var(--color-outline);padding:12px 14px 24px">
+      <div style="min-height:48px;border-radius:10px;border:1px solid var(--color-outline-variant);background:var(--color-surface-container-low);display:flex;align-items:center;justify-content:center;gap:8px;font:500 13.5px Roboto,sans-serif;color:var(--color-text-body)"><svg width="16" height="16"><use href="#hi-download"></use></svg>Exportar CSV</div>
+    </div>
+  </div></div></sc-if>
+</div>
+
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-next">Dos cosas que no inventé y habría que confirmar contigo: si el corte es realmente <strong>26 → 25</strong> (lo puse explícito bajo el selector porque es lo que más confunde), y si «OTRO» necesita mostrar su explicación al pasar el cursor. También falta decidir qué pasa con un técnico que cambia de interno a externo dentro del mismo corte.</p></sc-if>
+</section>
+
+<section class="dv-turn" id="t4">
+<div class="dv-thd"><span class="dv-tid">4</span><span class="dv-tname">«Mis notas» — rehecha sobre el código real</span></div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p style="margin:0 0 26px;font:400 13.5px/1.7 Roboto,sans-serif;color:var(--color-text-subtle);max-width:78ch;text-wrap:pretty">Lo que no funciona hoy: seis tarjetas de 100&nbsp;px para seis datos, hasta cuatro botones repetidos por fila, el estado perdido a la derecha del título, y la columna de 820&nbsp;px dejando ~700&nbsp;px de blanco. Un archivo no necesita tarjetas: necesita filas comparables de un barrido vertical.<br><br>Todo aquí sale de <span class="mono" style="color:var(--color-primary)">screens/Notes.tsx</span>, <span class="mono" style="color:var(--color-primary)">lib/api/weeklyNotes.ts</span> y <span class="mono" style="color:var(--color-primary)">Layout.tsx</span>: los 14 destinos en tres grupos, el logo real, los filtros <strong>Todas 6 / Abiertas 0 / Firmadas 4</strong> con sus contadores derivados, y el <span class="mono" style="color:var(--color-primary)">· Aiuto</span> de cada fila. No hay columna de «días» porque <span class="mono" style="color:var(--color-primary)">WeeklyNote</span> no la tiene.</p></sc-if>
+<div class="dv-opts">
+
+<div class="dv-opt" id="4a">
+  <div class="dv-olabel"><span class="dv-oid">4a</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:var(--color-text-body)">Tabla con carril de estado.</strong> Las seis notas en el alto que antes ocupaban dos tarjetas. El carril de color a la izquierda repite el estado sin gastar una columna. Las acciones se reducen a lo que la fuente permite en cada fila: <span class="mono">Vista PDF</span> siempre, <span class="mono">Descargar</span> solo con firma, <span class="mono">Firmar nota</span> solo si está abierta — con estas seis notas, nunca.</span></sc-if></div>
+  <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
+    <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#42505c">techportalfava.lat/mis-notas</span></div>
+    <div style="display:flex;height:856px">
+      <div style="width:216px;flex:none;background:var(--fava-nav);border-right:1px solid var(--fava-nav-line);display:flex;flex-direction:column;min-height:0">
+        <div style="flex:none;padding:16px 18px 12px;border-bottom:1px solid var(--fava-nav-line)">
+          <img src="assets/fava-logo-ondark.svg" alt="FAVA Latino America" style="height:32px;display:block">
+          <div style="font:400 10px Roboto,sans-serif;letter-spacing:1.5px;color:var(--fava-nav-ink-2);text-transform:uppercase;margin-top:8px">Control Técnico</div>
+          <div style="font:400 10.5px Roboto,sans-serif;color:var(--fava-nav-ink-2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Techportal (pruebas) · Técnico · Super Admin · Administrador</div>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 10px 0">
+          <sc-for list="{{ navFava }}" as="g" hint-placeholder-count="3">
+            <div style="margin-bottom:12px">
+              <div style="font:700 10px Roboto,sans-serif;letter-spacing:1.4px;color:var(--fava-nav-ink-2);text-transform:uppercase;padding:5px 10px">{{ g.title }}</div>
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="6">
+                <div style="position:relative;display:flex;align-items:center;gap:12px;padding:6px 12px;margin-bottom:2px;border-radius:6px;background:{{ it.bg }};color:{{ it.fg }};font-size:13.5px;font-family:Roboto,sans-serif;font-weight:{{ it.weight }}">
+                  <sc-if value="{{ it.active }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;left:4px;top:50%;transform:translateY(-50%);width:3px;height:16px;border-radius:2px;background:var(--fava-brand)"></span></sc-if>
+                  <svg width="17" height="17" style="flex:none"><use href="{{ it.icon }}"></use></svg>
+                  <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.label }}</span>
+                  <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ true }}"><span style="min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--fava-brand-ink);color:#fff;font:700 10px Roboto,sans-serif;display:grid;place-items:center">{{ it.badge }}</span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:none;margin:0 12px 4px;padding:11px;border:1px solid var(--fava-nav-line);border-radius:8px;background:var(--fava-nav-2)">
+          <div style="font:400 10.5px Roboto,sans-serif;color:var(--fava-nav-ink-2)">Semana 36 · 2026</div>
+          <div style="font:700 13px Roboto,sans-serif;color:var(--fava-nav-ink);margin-top:2px">7 de 7 días registrados</div>
+        </div>
+        <div style="flex:none;padding:12px;border-top:1px solid var(--fava-nav-line)">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;background:var(--fava-nav-2)">
+            <div style="width:32px;height:32px;flex:none;border-radius:50%;background:var(--color-primary);color:var(--color-on-primary);display:grid;place-items:center;font:700 12px Roboto,sans-serif">TC</div>
+            <div style="min-width:0;flex:1">
+              <div style="font:600 13px Roboto,sans-serif;color:var(--fava-nav-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Techportal (prue…</div>
+              <div style="font:400 11px Roboto,sans-serif;color:var(--fava-nav-ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">techportal@favalatin…</div>
+              <div style="font:400 11px Roboto,sans-serif;color:var(--fava-nav-ink-2)">Técnico · Super Admin · Administrador</div>
+            </div>
+            <svg width="16" height="16" style="flex:none;color:var(--fava-nav-ink-2)"><use href="#hi-logout"></use></svg>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;background:var(--color-background);min-width:0">
+        <div style="height:60px;flex:none;background:var(--color-surface);border-bottom:1px solid var(--color-outline);display:flex;align-items:center;gap:14px;padding:0 24px">
+          <div style="flex:1;min-width:0">
+            <div style="font:700 16px Roboto,sans-serif;color:var(--color-text-body)">Mis notas</div>
+            <div style="font:400 11px Roboto,sans-serif;color:var(--color-text-subtle)">6 notas · 4 firmadas · ninguna esperando acción tuya</div>
+          </div>
+          <span style="display:flex;align-items:center;gap:6px;font:500 12px Roboto,sans-serif;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;padding:7px 11px;background:var(--color-surface)"><svg width="15" height="15"><use href="#hi-globe"></use></svg>ES</span>
+          <span style="display:grid;place-items:center;width:34px;height:34px;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;background:var(--color-surface)"><svg width="16" height="16"><use href="#hi-moon"></use></svg></span>
+          <span style="position:relative;display:grid;place-items:center;width:34px;height:34px;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;background:var(--color-surface)"><svg width="16" height="16"><use href="#hi-bell"></use></svg><span style="position:absolute;top:-3px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--fava-brand-ink);color:#fff;font:700 9.5px Roboto,sans-serif;display:grid;place-items:center">4</span></span>
+        </div>
+        <div style="flex:1;padding:18px 24px;display:flex;flex-direction:column;gap:13px;min-height:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="display:flex;gap:6px">
+              <sc-for list="{{ notasFiltros }}" as="t" hint-placeholder-count="3">
+                <span style="display:flex;align-items:center;gap:7px;font:500 12px Roboto,sans-serif;color:{{ t.fg }};background:{{ t.bg }};border:1px solid {{ t.bd }};border-radius:6px;padding:7px 13px">{{ t.label }}<span class="mono" style="opacity:.7">{{ t.n }}</span></span>
+              </sc-for>
+            </div>
+            <span style="font:400 11.5px Roboto,sans-serif;color:var(--color-text-subtle)">Orden: semana descendente</span>
+          </div>
+          <div style="background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:4px 132px 1fr 96px 96px 156px;align-items:center;padding:10px 0;background:var(--color-surface-container-low);border-bottom:1px solid var(--color-outline);font:700 10px Roboto,sans-serif;letter-spacing:.06em;color:var(--fava-draft-ink);text-transform:uppercase">
+              <div></div><div style="padding-left:14px">Semana</div><div>Proyecto y cliente</div><div>Estado</div><div>Firma</div><div></div>
+            </div>
+            <sc-for list="{{ misNotas }}" as="n" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:4px 132px 1fr 96px 96px 156px;align-items:center;border-bottom:1px solid var(--color-surface-container-low);background:{{ n.rowBg }};min-height:56px">
+                <div style="align-self:stretch;background:{{ n.rail }}"></div>
+                <div style="padding-left:14px">
+                  <div style="font:700 13px Roboto,sans-serif;color:var(--color-text-body)">{{ n.week }}</div>
+                  <div class="mono" style="font:400 10.5px 'Roboto Mono',monospace;color:var(--color-text-subtle)">{{ n.weekStart }} · {{ n.role }}</div>
+                </div>
+                <div style="min-width:0;padding-right:14px">
+                  <div style="font:500 13px Roboto,sans-serif;color:var(--color-text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ n.project }}</div>
+                  <div style="font:400 11px Roboto,sans-serif;color:var(--color-text-subtle)">{{ n.client }}</div>
+                </div>
+                <div><span style="font:700 10.5px Roboto,sans-serif;color:{{ n.fg }};background:{{ n.bg }};border-radius:20px;padding:4px 10px">{{ n.state }}</span></div>
+                <div style="display:flex;align-items:center;gap:6px;font:500 11.5px Roboto,sans-serif;color:{{ n.firmaFg }}">
+                  <span class="mono" style="font:400 10px 'Roboto Mono',monospace;color:var(--color-text-subtle)">{{ n.version }}</span>{{ n.firma }}
+                </div>
+                <div style="display:flex;gap:6px;justify-content:flex-end;padding-right:14px">
+                  <span style="display:grid;place-items:center;width:32px;height:32px;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;background:var(--color-surface)"><svg width="15" height="15"><use href="#hi-eye"></use></svg></span>
+                  <sc-if value="{{ n.canDownload }}" hint-placeholder-val="{{ true }}"><span style="display:grid;place-items:center;width:32px;height:32px;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;background:var(--color-surface)"><svg width="15" height="15"><use href="#hi-download"></use></svg></span></sc-if>
+                  <span style="font:500 12px Roboto,sans-serif;color:var(--color-on-primary);background:var(--color-primary);border-radius:6px;padding:8px 14px">Abrir</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font:400 11px/1.6 Roboto,sans-serif;color:var(--color-text-subtle);max-width:70ch">«Abiertas 0» es correcto: <span class="mono">abierta = returned || (submitted &amp;&amp; !signed)</span>, y las dos enviadas ya están firmadas. La versión (<span class="mono">v2</span> en Cibao) avisa de una reapertura sin abrir la nota.</div>
+        </div>
+      </div>
+    </div>
+  </div></sc-if>
+</div>
+
+<div class="dv-opt" id="4b">
+  <div class="dv-olabel"><span class="dv-oid">4b</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:var(--color-text-body)">Lista + nota abierta.</strong> El blanco de la derecha pasa a ser la nota: sus 7 días de <span class="mono">GET /weekly-notes/:id/dias</span>, el cargo de esa semana, la versión y el estado de firma, sin abrir un PDF. «Abrir» deja de ser un botón por fila y se convierte en estar seleccionada.</span></sc-if></div>
+  <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
+    <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#42505c">techportalfava.lat/mis-notas</span></div>
+    <div style="display:flex;height:856px">
+      <div style="width:216px;flex:none;background:var(--fava-nav);border-right:1px solid var(--fava-nav-line);display:flex;flex-direction:column;min-height:0">
+        <div style="flex:none;padding:16px 18px 12px;border-bottom:1px solid var(--fava-nav-line)">
+          <img src="assets/fava-logo-ondark.svg" alt="FAVA Latino America" style="height:32px;display:block">
+          <div style="font:400 10px Roboto,sans-serif;letter-spacing:1.5px;color:var(--fava-nav-ink-2);text-transform:uppercase;margin-top:8px">Control Técnico</div>
+          <div style="font:400 10.5px Roboto,sans-serif;color:var(--fava-nav-ink-2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Techportal (pruebas) · Técnico · Super Admin · Administrador</div>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 10px 0">
+          <sc-for list="{{ navFava }}" as="g" hint-placeholder-count="3">
+            <div style="margin-bottom:12px">
+              <div style="font:700 10px Roboto,sans-serif;letter-spacing:1.4px;color:var(--fava-nav-ink-2);text-transform:uppercase;padding:5px 10px">{{ g.title }}</div>
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="6">
+                <div style="position:relative;display:flex;align-items:center;gap:12px;padding:6px 12px;margin-bottom:2px;border-radius:6px;background:{{ it.bg }};color:{{ it.fg }};font-size:13.5px;font-family:Roboto,sans-serif;font-weight:{{ it.weight }}">
+                  <sc-if value="{{ it.active }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;left:4px;top:50%;transform:translateY(-50%);width:3px;height:16px;border-radius:2px;background:var(--fava-brand)"></span></sc-if>
+                  <svg width="17" height="17" style="flex:none"><use href="{{ it.icon }}"></use></svg>
+                  <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.label }}</span>
+                  <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ true }}"><span style="min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--fava-brand-ink);color:#fff;font:700 10px Roboto,sans-serif;display:grid;place-items:center">{{ it.badge }}</span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:none;margin:0 12px 4px;padding:11px;border:1px solid var(--fava-nav-line);border-radius:8px;background:var(--fava-nav-2)">
+          <div style="font:400 10.5px Roboto,sans-serif;color:var(--fava-nav-ink-2)">Semana 36 · 2026</div>
+          <div style="font:700 13px Roboto,sans-serif;color:var(--fava-nav-ink);margin-top:2px">7 de 7 días registrados</div>
+        </div>
+        <div style="flex:none;padding:12px;border-top:1px solid var(--fava-nav-line)">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;background:var(--fava-nav-2)">
+            <div style="width:32px;height:32px;flex:none;border-radius:50%;background:var(--color-primary);color:var(--color-on-primary);display:grid;place-items:center;font:700 12px Roboto,sans-serif">TC</div>
+            <div style="min-width:0;flex:1">
+              <div style="font:600 13px Roboto,sans-serif;color:var(--fava-nav-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Techportal (prue…</div>
+              <div style="font:400 11px Roboto,sans-serif;color:var(--fava-nav-ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">techportal@favalatin…</div>
+              <div style="font:400 11px Roboto,sans-serif;color:var(--fava-nav-ink-2)">Técnico · Super Admin · Administrador</div>
+            </div>
+            <svg width="16" height="16" style="flex:none;color:var(--fava-nav-ink-2)"><use href="#hi-logout"></use></svg>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;background:var(--color-background);min-width:0">
+        <div style="height:60px;flex:none;background:var(--color-surface);border-bottom:1px solid var(--color-outline);display:flex;align-items:center;gap:14px;padding:0 24px">
+          <div style="flex:1;min-width:0">
+            <div style="font:700 16px Roboto,sans-serif;color:var(--color-text-body)">Mis notas</div>
+            
+          </div>
+          <span style="display:flex;align-items:center;gap:6px;font:500 12px Roboto,sans-serif;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;padding:7px 11px;background:var(--color-surface)"><svg width="15" height="15"><use href="#hi-globe"></use></svg>ES</span>
+          <span style="display:grid;place-items:center;width:34px;height:34px;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;background:var(--color-surface)"><svg width="16" height="16"><use href="#hi-moon"></use></svg></span>
+          <span style="position:relative;display:grid;place-items:center;width:34px;height:34px;color:var(--fava-draft-ink);border:1px solid var(--color-outline);border-radius:6px;background:var(--color-surface)"><svg width="16" height="16"><use href="#hi-bell"></use></svg><span style="position:absolute;top:-3px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--fava-brand-ink);color:#fff;font:700 9.5px Roboto,sans-serif;display:grid;place-items:center">4</span></span>
+        </div>
+        <div style="flex:1;display:flex;min-height:0">
+          <div style="width:286px;flex:none;background:var(--color-surface);border-right:1px solid var(--color-outline);display:flex;flex-direction:column;min-width:0">
+            <div style="flex:none;padding:13px 15px;border-bottom:1px solid var(--color-outline);display:flex;gap:5px">
+              <sc-for list="{{ notasFiltros }}" as="t" hint-placeholder-count="3">
+                <span style="display:flex;align-items:center;gap:6px;font:500 11px Roboto,sans-serif;color:{{ t.fg }};background:{{ t.bg }};border:1px solid {{ t.bd }};border-radius:6px;padding:5px 10px">{{ t.label }}<span class="mono" style="opacity:.7">{{ t.n }}</span></span>
+              </sc-for>
+            </div>
+            <div style="flex:1;min-height:0;overflow:hidden">
+              <sc-for list="{{ misNotas }}" as="n" hint-placeholder-count="6">
+                <div style="display:flex;gap:10px;padding:12px 15px;border-bottom:1px solid var(--color-surface-container-low);background:{{ n.rowBg }}">
+                  <div style="width:3px;flex:none;border-radius:2px;background:{{ n.rail }}"></div>
+                  <div style="min-width:0;flex:1">
+                    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+                      <span style="font:700 12.5px Roboto,sans-serif;color:var(--color-text-body)">{{ n.week }}</span>
+                      <span class="mono" style="font:400 10px 'Roboto Mono',monospace;color:var(--color-text-subtle)">{{ n.version }}</span>
+                    </div>
+                    <div style="font:400 11.5px Roboto,sans-serif;color:var(--fava-draft-ink);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ n.project }}</div>
+                    <div style="display:flex;align-items:center;gap:7px;margin-top:6px">
+                      <span style="font:700 9.5px Roboto,sans-serif;color:{{ n.fg }};background:{{ n.bg }};border-radius:20px;padding:3px 8px">{{ n.state }}</span>
+                      <span class="mono" style="font:400 10px 'Roboto Mono',monospace;color:var(--color-text-subtle)">{{ n.weekStart }} · {{ n.role }}</span>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex:1;background:var(--color-background);padding:20px 22px;display:flex;flex-direction:column;gap:13px;min-width:0">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
+              <div style="min-width:0">
+                <div style="font:700 10px Roboto,sans-serif;letter-spacing:.1em;color:#96470a;text-transform:uppercase">Semana 35 · 2026-08-24 · Aiuto</div>
+                <div class="cond" style="font:700 22px/1.15 'Roboto Condensed',sans-serif;color:var(--color-text-body);margin-top:5px">MOLINO CIBAO BOCEL - RD</div>
+                <div style="font:400 11.5px Roboto,sans-serif;color:var(--fava-draft-ink);margin-top:3px">Molino Cibao Bocel · versión 2 · reabierta y vuelta a firmar</div>
+              </div>
+              <div style="display:flex;gap:7px;align-items:center;flex:none">
+                <span style="font:700 10.5px Roboto,sans-serif;color:var(--fava-ok-ink);background:var(--fava-ok-tint);border-radius:20px;padding:5px 11px">Aprobada</span>
+                <span style="display:flex;align-items:center;gap:6px;font:500 11.5px Roboto,sans-serif;color:var(--color-text-body);border:1px solid var(--color-outline-variant);border-radius:6px;padding:7px 11px;background:var(--color-surface)"><svg width="14" height="14"><use href="#hi-eye"></use></svg>Vista PDF</span>
+                <span style="display:flex;align-items:center;gap:6px;font:500 11.5px Roboto,sans-serif;color:var(--color-on-primary);background:var(--color-primary);border-radius:6px;padding:7px 11px"><svg width="14" height="14"><use href="#hi-download"></use></svg>Descargar</span>
+              </div>
+            </div>
+            <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-outline);border-radius:10px;padding:16px 18px;display:flex;gap:18px;min-height:0">
+              <div style="flex:1;min-width:0">
+                <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.05em;color:var(--fava-draft-ink);text-transform:uppercase">Los 7 días de la nota</div>
+                <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+                  <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="7">
+                    <div style="display:flex;gap:11px;align-items:flex-start">
+                      <span style="width:9px;height:9px;flex:none;margin-top:4px;border-radius:50%;background:{{ t.dotBg }};border:2px solid {{ t.dotBorder }}"></span>
+                      <div style="min-width:0;flex:1">
+                        <div style="display:flex;gap:8px;align-items:baseline"><span style="font:700 11.5px Roboto,sans-serif;color:var(--color-text-body)">{{ t.label }}</span><span class="mono" style="font:500 10px 'Roboto Mono',monospace;color:{{ t.fg }}">{{ t.code }}</span></div>
+                        <div style="font:400 11.5px/1.45 Roboto,sans-serif;color:var(--fava-draft-ink)">{{ t.desc }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="width:206px;flex:none;display:flex;flex-direction:column;gap:14px;border-left:1px solid var(--color-surface-container-low);padding-left:18px">
+                <div>
+                  <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.05em;color:var(--fava-draft-ink);text-transform:uppercase">Firma</div>
+                  <div style="display:flex;align-items:center;gap:8px;margin-top:9px;font:500 12px Roboto,sans-serif;color:var(--fava-ok-ink)"><svg width="15" height="15"><use href="#hi-badge"></use></svg>Firmada por el técnico</div>
+                  <div style="font:400 10.5px/1.55 Roboto,sans-serif;color:var(--color-text-subtle);margin-top:7px">El recuadro «Timbre y firma del cliente» se imprime vacío: ese lo firma el cliente en el papel.</div>
+                </div>
+                <div>
+                  <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.05em;color:var(--fava-draft-ink);text-transform:uppercase">Gastos y anticipos</div>
+                  <div style="font:400 10.5px/1.55 Roboto,sans-serif;color:var(--color-text-subtle);margin-top:8px">Cuatro filas fijas de cada uno, tal como las imprime la nota. Se editan antes de firmar.</div>
+                  <div style="display:flex;flex-direction:column;gap:5px;margin-top:10px">
+                    <div style="height:11px;border-radius:2px;background:var(--color-surface-container-low)"></div>
+                    <div style="height:11px;border-radius:2px;background:var(--color-surface-container-low)"></div>
+                    <div style="height:11px;width:62%;border-radius:2px;background:var(--color-surface-container-low)"></div>
+                  </div>
+                </div>
+                <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--color-surface-container-low)">
+                  <div style="font:400 10.5px/1.55 Roboto,sans-serif;color:var(--color-text-subtle)">Corregir un día no se hace aquí: se abre «Mi semana» y se vuelve a enviar.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></sc-if>
+</div>
+
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-next">Ojo con una cosa que salió al leer el código: <span class="mono" style="color:var(--color-primary)">signNote</span> firma <strong>el técnico</strong>, y el recuadro del cliente se imprime vacío para firmarlo a mano. Mi <a class="dv-oid" href="#3c">3c</a> (el cliente firmando en el teléfono) contradice eso — dime si lo rehago según la fuente o si esa es la intención a futuro.</p></sc-if>
+</section>
 
 <section class="dv-turn" id="t3">
 <div class="dv-thd"><span class="dv-tid">3</span><span class="dv-tname">El recorrido completo del técnico — las cinco pantallas que faltaban</span></div>
@@ -89,7 +584,7 @@ html:root,html [data-theme]{
     <div class="stat ph-stat" style="color:#e9eff4;background:#104a78"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
     <div class="ph-scroll" style="background:linear-gradient(180deg,#104a78 0%,#133e5d 100%);padding:64px 24px 28px;display:flex;flex-direction:column;justify-content:space-between">
       <div>
-        <div style="width:48px;height:48px;border-radius:12px;background:#e86c00;display:flex;align-items:center;justify-content:center;font:700 22px 'Roboto Condensed',sans-serif;color:#fff">F</div>
+        <div style="width:48px;height:48px;border-radius:12px;background:#b35400;display:flex;align-items:center;justify-content:center;font:700 22px 'Roboto Condensed',sans-serif;color:#fff">F</div>
         <div class="cond" style="font:700 30px/1.1 'Roboto Condensed',sans-serif;color:#fff;margin-top:24px">Control<br>Técnico</div>
         <div style="font:400 13px/1.6 Roboto,sans-serif;color:#cfdbe4;margin-top:12px;max-width:26ch">Bitácora de campo y nota de prestación semanal. FAVA Latino America S.A.S.</div>
       </div>
@@ -104,7 +599,7 @@ html:root,html [data-theme]{
           </span>
           Entrar con Microsoft
         </div>
-        <div style="font:400 11px/1.5 Roboto,sans-serif;color:#95a2ab;text-align:center">Con tu cuenta corporativa @favalatino.com</div>
+        <div style="font:400 11px/1.5 Roboto,sans-serif;color:#5a6b7a;text-align:center">Con tu cuenta corporativa @favalatino.com</div>
       </div>
     </div>
   </div></div></sc-if>
@@ -118,7 +613,7 @@ html:root,html [data-theme]{
       <div style="flex:none;background:#fff;border-bottom:1px solid #dde3e9;padding:4px 18px 14px">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div class="cond" style="font:700 19px 'Roboto Condensed',sans-serif;color:#132330">Pendientes</div>
-          <div style="position:relative;display:flex;color:#5a6b7a"><svg width="20" height="20"><use href="#hi-bell"></use></svg><span style="position:absolute;top:-4px;right:-5px;min-width:15px;height:15px;border-radius:8px;background:#e86c00;color:#fff;font:700 9.5px Roboto,sans-serif;display:flex;align-items:center;justify-content:center;padding:0 3px">2</span></div>
+          <div style="position:relative;display:flex;color:#5a6b7a"><svg width="20" height="20"><use href="#hi-bell"></use></svg><span style="position:absolute;top:-4px;right:-5px;min-width:15px;height:15px;border-radius:8px;background:#b35400;color:#fff;font:700 9.5px Roboto,sans-serif;display:flex;align-items:center;justify-content:center;padding:0 3px">2</span></div>
         </div>
       </div>
       <div class="ph-scroll" style="background:#eef2f5;padding:13px 13px 22px;display:flex;flex-direction:column;gap:10px">
@@ -160,7 +655,7 @@ html:root,html [data-theme]{
               <div style="font:700 12.5px Roboto,sans-serif;color:#132330">Semana {{ n.wk }}</div>
               <span style="font:700 10.5px Roboto,sans-serif;color:{{ n.fg }};background:{{ n.bg }};border-radius:20px;padding:4px 10px">{{ n.state }}</span>
             </div>
-            <div style="font:400 11px Roboto,sans-serif;color:#95a2ab;margin-top:3px">{{ n.range }}</div>
+            <div style="font:400 11px Roboto,sans-serif;color:#5a6b7a;margin-top:3px">{{ n.range }}</div>
             <div style="font:500 11.5px Roboto,sans-serif;color:#104a78;margin-top:8px">{{ n.project }}<span class="mono" style="font-weight:400;color:#5a6b7a;margin-left:7px">{{ n.machine }}</span></div>
             <div style="font:400 11.5px/1.5 Roboto,sans-serif;color:#5a6b7a;margin-top:4px">{{ n.hint }}</div>
           </div>
@@ -206,7 +701,7 @@ html:root,html [data-theme]{
         </div>
         <div style="background:#fff;border-radius:12px;padding:14px 15px">
           <div style="display:flex;justify-content:space-between;font:700 12px Roboto,sans-serif;color:#132330"><span>Gastos reembolsables</span><span class="mono">US$ 78</span></div>
-          <div style="font:400 11px Roboto,sans-serif;color:#95a2ab;margin-top:3px">Taxi aeropuerto y 3 almuerzos · recibos adjuntos</div>
+          <div style="font:400 11px Roboto,sans-serif;color:#5a6b7a;margin-top:3px">Taxi aeropuerto y 3 almuerzos · recibos adjuntos</div>
         </div>
       </div>
       <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:12px 14px 24px">
@@ -218,7 +713,7 @@ html:root,html [data-theme]{
       <div class="stat ph-stat" style="color:#132330;background:#fff"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
       <div style="flex:none;background:#fff;border-bottom:1px solid #dde3e9;padding:4px 18px 14px">
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font:400 12.5px Roboto,sans-serif;color:#95a2ab">Paso 2 de 3</span>
+          <span style="font:400 12.5px Roboto,sans-serif;color:#5a6b7a">Paso 2 de 3</span>
           <span style="font:700 12px Roboto,sans-serif;color:#132330">Firma</span>
         </div>
         <div style="font:400 12px/1.55 Roboto,sans-serif;color:#5a6b7a;margin-top:9px">Pásale el teléfono a <strong style="color:#132330">Jorge Bocel</strong>, jefe de planta.</div>
@@ -236,21 +731,21 @@ html:root,html [data-theme]{
           <div style="margin-top:10px;border:1.5px dashed #c9d2da;border-radius:10px;height:150px;display:flex;align-items:center;justify-content:center;background:#fafbfc">
             <svg viewBox="0 0 240 90" style="width:210px;height:80px"><path d="M14 64 C36 12 52 80 74 44 C92 16 104 74 128 50 C148 30 160 70 186 36 C202 16 214 58 232 30" fill="none" stroke="#132330" stroke-width="3" stroke-linecap="round"></path></svg>
           </div>
-          <div style="font:400 10.5px/1.5 Roboto,sans-serif;color:#95a2ab;margin-top:8px">Se sella con la fecha, la hora y el nombre de quien firma.</div>
+          <div style="font:400 10.5px/1.5 Roboto,sans-serif;color:#5a6b7a;margin-top:8px">Se sella con la fecha, la hora y el nombre de quien firma.</div>
         </div>
       </div>
       <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:12px 14px 24px">
-        <div style="min-height:52px;border-radius:26px;background:#e86c00;display:flex;align-items:center;justify-content:center;font:500 14.5px Roboto,sans-serif;color:#fff">Confirmar firma</div>
+        <div style="min-height:52px;border-radius:26px;background:#b35400;display:flex;align-items:center;justify-content:center;font:500 14.5px Roboto,sans-serif;color:#fff">Confirmar firma</div>
       </div>
     </div></div></sc-if>
 
     <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
-      <div class="stat ph-stat" style="color:#e9eff4;background:#1f9d5b"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div class="stat ph-stat" style="color:#fff;background:#167945"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
       <div class="ph-scroll" style="background:#eef2f5;padding:0 0 22px;display:flex;flex-direction:column">
-        <div style="background:#1f9d5b;padding:8px 20px 30px;color:#fff">
+        <div style="background:#167945;padding:8px 20px 30px;color:#fff">
           <svg width="38" height="38" style="color:#fff"><use href="#hi-badge"></use></svg>
           <div class="cond" style="font:700 24px/1.15 'Roboto Condensed',sans-serif;margin-top:14px">Nota firmada</div>
-          <div style="font:400 12.5px/1.6 Roboto,sans-serif;color:#dff2e6;margin-top:6px">Semana 36 cerrada. Ya está en la bandeja de Andrea para aprobación.</div>
+          <div style="font:400 12.5px/1.6 Roboto,sans-serif;color:#fff;margin-top:6px">Semana 36 cerrada. Ya está en la bandeja de Andrea para aprobación.</div>
         </div>
         <div style="padding:14px 13px;display:flex;flex-direction:column;gap:10px">
           <div style="background:#fff;border-radius:12px;padding:14px 15px">
@@ -260,7 +755,7 @@ html:root,html [data-theme]{
             <div style="display:flex;justify-content:space-between;font:400 11.5px Roboto,sans-serif;color:#5a6b7a;margin-top:6px"><span>Folio</span><span class="mono" style="color:#132330">NP-2026-0361</span></div>
             <div style="margin-top:12px;border-top:1px solid #f0f3f6;padding-top:11px;display:flex;align-items:center;gap:11px">
               <svg viewBox="0 0 200 60" style="width:96px;height:32px;flex:none"><path d="M10 42 C28 8 40 52 56 30 C70 12 78 48 96 34 C112 22 120 46 140 26 C154 12 168 40 190 22" fill="none" stroke="#132330" stroke-width="2.4" stroke-linecap="round"></path></svg>
-              <span style="font:400 10.5px/1.5 Roboto,sans-serif;color:#95a2ab">Firma capturada en obra</span>
+              <span style="font:400 10.5px/1.5 Roboto,sans-serif;color:#5a6b7a">Firma capturada en obra</span>
             </div>
           </div>
           <div style="background:#e2eefd;border-radius:12px;padding:13px 14px;display:flex;gap:11px;align-items:flex-start">
@@ -281,11 +776,11 @@ html:root,html [data-theme]{
   <div class="dv-olabel"><span class="dv-oid">3d</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:#132330">Detalle de proyecto.</strong> Lo que el técnico necesita saber sin llamar a nadie: cuántos días se vendieron por fase, cuántos van ejecutados, y quién más está en el sitio. En escritorio es la misma pantalla con la matriz completa de fases.</span></sc-if></div>
   <div class="dv-pair">
     <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
-      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#63727f">techportalfava.lat/proyectos/oa-2311</span></div>
+      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#42505c">techportalfava.lat/proyectos/oa-2311</span></div>
       <div style="display:flex;height:560px">
         <div style="width:222px;flex:none;background:#132330;padding:18px 12px;display:flex;flex-direction:column;gap:3px">
           <div style="display:flex;align-items:center;gap:10px;padding:0 6px 18px">
-            <div style="width:30px;height:30px;border-radius:8px;background:#e86c00;display:flex;align-items:center;justify-content:center;font:700 16px 'Roboto Condensed',sans-serif;color:#fff">F</div>
+            <div style="width:30px;height:30px;border-radius:8px;background:#b35400;display:flex;align-items:center;justify-content:center;font:700 16px 'Roboto Condensed',sans-serif;color:#fff">F</div>
             <div><div style="font:700 12.5px Roboto,sans-serif;color:#fff">Control Técnico</div><div style="font:400 10.5px Roboto,sans-serif;color:#7d8b98">Ivan Cortés · Mecánico</div></div>
           </div>
           <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;color:#9fb0be;font:500 12.5px Roboto,sans-serif"><svg width="18" height="18"><use href="#hi-cal"></use></svg>Mi semana</div>
@@ -296,7 +791,7 @@ html:root,html [data-theme]{
         <div style="flex:1;background:#eef2f5;padding:20px 24px;display:flex;flex-direction:column;gap:14px;min-width:0">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
             <div>
-              <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.1em;color:#e86c00;text-transform:uppercase">OA 2311 · commessa 4471</div>
+              <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.1em;color:#96470a;text-transform:uppercase">OA 2311 · commessa 4471</div>
               <div class="cond" style="font:700 25px/1.15 'Roboto Condensed',sans-serif;color:#132330;margin-top:4px">Molino Cibao Bocel</div>
               <div style="display:flex;align-items:center;gap:7px;font:400 12px Roboto,sans-serif;color:#5a6b7a;margin-top:5px"><svg width="14" height="14"><use href="#hi-pin"></use></svg>Santiago de los Caballeros, República Dominicana</div>
             </div>
@@ -337,9 +832,9 @@ html:root,html [data-theme]{
               <div style="background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:14px 15px;flex:1">
                 <div style="font:700 11px Roboto,sans-serif;letter-spacing:.05em;color:#63727f;text-transform:uppercase">Equipo en sitio</div>
                 <div style="display:flex;flex-direction:column;gap:10px;margin-top:11px">
-                  <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:#cfdbe4;display:flex;align-items:center;justify-content:center;font:700 10.5px Roboto,sans-serif;color:#104a78">IC</span><div><div style="font:500 11.5px Roboto,sans-serif;color:#132330">Ivan Cortés</div><div style="font:400 10px Roboto,sans-serif;color:#95a2ab">Mecánico · tú</div></div></div>
-                  <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 10.5px Roboto,sans-serif;color:#5a6b7a">LR</span><div><div style="font:500 11.5px Roboto,sans-serif;color:#132330">Leomar Ríos</div><div style="font:400 10px Roboto,sans-serif;color:#95a2ab">Eléctrico</div></div></div>
-                  <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 10.5px Roboto,sans-serif;color:#5a6b7a">JB</span><div><div style="font:500 11.5px Roboto,sans-serif;color:#132330">Jorge Bocel</div><div style="font:400 10px Roboto,sans-serif;color:#95a2ab">Cliente · firma las notas</div></div></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:#cfdbe4;display:flex;align-items:center;justify-content:center;font:700 10.5px Roboto,sans-serif;color:#104a78">IC</span><div><div style="font:500 11.5px Roboto,sans-serif;color:#132330">Ivan Cortés</div><div style="font:400 10px Roboto,sans-serif;color:#5a6b7a">Mecánico · tú</div></div></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 10.5px Roboto,sans-serif;color:#5a6b7a">LR</span><div><div style="font:500 11.5px Roboto,sans-serif;color:#132330">Leomar Ríos</div><div style="font:400 10px Roboto,sans-serif;color:#5a6b7a">Eléctrico</div></div></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 10.5px Roboto,sans-serif;color:#5a6b7a">JB</span><div><div style="font:500 11.5px Roboto,sans-serif;color:#132330">Jorge Bocel</div><div style="font:400 10px Roboto,sans-serif;color:#5a6b7a">Cliente · firma las notas</div></div></div>
                 </div>
               </div>
             </div>
@@ -351,7 +846,7 @@ html:root,html [data-theme]{
     <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
       <div class="stat ph-stat" style="color:#e9eff4;background:#132330"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
       <div style="flex:none;background:#132330;padding:2px 18px 16px">
-        <div style="font:400 10.5px Roboto,sans-serif;letter-spacing:.08em;color:#e86c00;text-transform:uppercase">OA 2311 · commessa 4471</div>
+        <div style="font:400 10.5px Roboto,sans-serif;letter-spacing:.08em;color:#ffab5c;text-transform:uppercase">OA 2311 · commessa 4471</div>
         <div class="cond" style="font:700 20px 'Roboto Condensed',sans-serif;color:#fff;margin-top:5px">Molino Cibao Bocel</div>
         <div style="display:flex;align-items:center;gap:7px;font:400 11px Roboto,sans-serif;color:#cfdbe4;margin-top:4px"><svg width="13" height="13"><use href="#hi-pin"></use></svg>Santiago, República Dominicana</div>
       </div>
@@ -359,7 +854,7 @@ html:root,html [data-theme]{
         <div style="background:#fff;border-radius:12px;padding:14px 15px">
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div style="font:700 11.5px Roboto,sans-serif;color:#132330">Días por fase</div>
-            <span style="font:400 10px Roboto,sans-serif;color:#95a2ab">eseguito / venduto</span>
+            <span style="font:400 10px Roboto,sans-serif;color:#5a6b7a">eseguito / venduto</span>
           </div>
           <div style="display:flex;flex-direction:column;gap:13px;margin-top:13px">
             <sc-for list="{{ phases }}" as="p" hint-placeholder-count="4">
@@ -379,9 +874,9 @@ html:root,html [data-theme]{
         <div style="background:#fff;border-radius:12px;padding:14px 15px">
           <div style="font:700 11.5px Roboto,sans-serif;color:#132330">Equipo en sitio</div>
           <div style="display:flex;flex-direction:column;gap:10px;margin-top:11px">
-            <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:50%;background:#cfdbe4;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#104a78">IC</span><div><div style="font:500 12px Roboto,sans-serif;color:#132330">Ivan Cortés</div><div style="font:400 10.5px Roboto,sans-serif;color:#95a2ab">Mecánico · tú</div></div></div>
-            <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#5a6b7a">LR</span><div><div style="font:500 12px Roboto,sans-serif;color:#132330">Leomar Ríos</div><div style="font:400 10.5px Roboto,sans-serif;color:#95a2ab">Eléctrico</div></div></div>
-            <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#5a6b7a">JB</span><div><div style="font:500 12px Roboto,sans-serif;color:#132330">Jorge Bocel</div><div style="font:400 10.5px Roboto,sans-serif;color:#95a2ab">Cliente · firma las notas</div></div></div>
+            <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:50%;background:#cfdbe4;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#104a78">IC</span><div><div style="font:500 12px Roboto,sans-serif;color:#132330">Ivan Cortés</div><div style="font:400 10.5px Roboto,sans-serif;color:#5a6b7a">Mecánico · tú</div></div></div>
+            <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#5a6b7a">LR</span><div><div style="font:500 12px Roboto,sans-serif;color:#132330">Leomar Ríos</div><div style="font:400 10.5px Roboto,sans-serif;color:#5a6b7a">Eléctrico</div></div></div>
+            <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#5a6b7a">JB</span><div><div style="font:500 12px Roboto,sans-serif;color:#132330">Jorge Bocel</div><div style="font:400 10.5px Roboto,sans-serif;color:#5a6b7a">Cliente · firma las notas</div></div></div>
           </div>
         </div>
         <div style="background:#fff;border-radius:12px;padding:14px 15px;display:flex;gap:6px">
@@ -410,11 +905,11 @@ html:root,html [data-theme]{
   <div class="dv-pair">
 
     <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
-      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#63727f">techportalfava.lat/kpis</span></div>
+      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#42505c">techportalfava.lat/kpis</span></div>
       <div style="display:flex;height:748px">
         <div style="width:222px;flex:none;background:#132330;padding:18px 12px;display:flex;flex-direction:column;gap:3px">
           <div style="display:flex;align-items:center;gap:10px;padding:0 6px 18px">
-            <div style="width:30px;height:30px;border-radius:8px;background:#e86c00;display:flex;align-items:center;justify-content:center;font:700 16px 'Roboto Condensed',sans-serif;color:#fff">F</div>
+            <div style="width:30px;height:30px;border-radius:8px;background:#b35400;display:flex;align-items:center;justify-content:center;font:700 16px 'Roboto Condensed',sans-serif;color:#fff">F</div>
             <div><div style="font:700 12.5px Roboto,sans-serif;color:#fff">Control Técnico</div><div style="font:400 10.5px Roboto,sans-serif;color:#7d8b98">FAVA Latino America</div></div>
           </div>
           <sc-for list="{{ nav }}" as="n" hint-placeholder-count="8">
@@ -437,7 +932,7 @@ html:root,html [data-theme]{
             <div style="display:flex;align-items:center;gap:12px">
               <span style="font:500 11px Roboto,sans-serif;color:#5a6b7a;border:1px solid #dde3e9;border-radius:20px;padding:5px 11px;background:#f4f7f9">2026</span>
               <span style="font:500 11px Roboto,sans-serif;color:#5a6b7a;border:1px solid #dde3e9;border-radius:20px;padding:5px 11px;background:#f4f7f9">ES / IT</span>
-              <div style="position:relative;display:flex;color:#5a6b7a"><svg width="20" height="20"><use href="#hi-inbox"></use></svg><span style="position:absolute;top:-4px;right:-5px;min-width:15px;height:15px;border-radius:8px;background:#e86c00;color:#fff;font:700 9.5px Roboto,sans-serif;display:flex;align-items:center;justify-content:center;padding:0 3px">6</span></div>
+              <div style="position:relative;display:flex;color:#5a6b7a"><svg width="20" height="20"><use href="#hi-inbox"></use></svg><span style="position:absolute;top:-4px;right:-5px;min-width:15px;height:15px;border-radius:8px;background:#b35400;color:#fff;font:700 9.5px Roboto,sans-serif;display:flex;align-items:center;justify-content:center;padding:0 3px">6</span></div>
               <div style="width:30px;height:30px;border-radius:50%;background:#cfdbe4;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#104a78">AS</div>
             </div>
           </div>
@@ -450,7 +945,7 @@ html:root,html [data-theme]{
                     <span style="font:500 10.5px Roboto,sans-serif;letter-spacing:.03em">{{ k.label }}</span>
                   </div>
                   <div class="cond" style="font:700 26px/1.1 'Roboto Condensed',sans-serif;color:{{ k.fg }};margin-top:8px">{{ k.value }}</div>
-                  <div style="font:400 10.5px Roboto,sans-serif;color:#95a2ab;margin-top:2px">{{ k.sub }}</div>
+                  <div style="font:400 10.5px Roboto,sans-serif;color:#5a6b7a;margin-top:2px">{{ k.sub }}</div>
                 </div>
               </sc-for>
             </div>
@@ -467,7 +962,7 @@ html:root,html [data-theme]{
                   <sc-for list="{{ bar.ticks }}" as="t" hint-placeholder-count="6">
                     <g>
                       <line x1="{{ bar.axisL }}" x2="{{ bar.axisR }}" y1="{{ t.y }}" y2="{{ t.y }}" stroke="#e8edf1" stroke-width="1"></line>
-                      <text x="{{ t.tx }}" y="{{ t.y }}" text-anchor="end" dominant-baseline="middle" style="font:400 10px 'Roboto Mono',monospace;fill:#95a2ab">{{ t.v }}</text>
+                      <text x="{{ t.tx }}" y="{{ t.y }}" text-anchor="end" dominant-baseline="middle" style="font:400 10px 'Roboto Mono',monospace;fill:#5a6b7a">{{ t.v }}</text>
                     </g>
                   </sc-for>
                   <sc-for list="{{ bar.bars }}" as="b" hint-placeholder-count="10">
@@ -494,13 +989,13 @@ html:root,html [data-theme]{
               <div style="flex:1;background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:14px 16px;min-width:0">
                 <div style="display:flex;align-items:center;justify-content:space-between">
                   <div style="font:700 12px Roboto,sans-serif;color:#132330">Días ejecutados por mes</div>
-                  <span style="font:400 10.5px Roboto,sans-serif;color:#95a2ab">sep en curso</span>
+                  <span style="font:400 10.5px Roboto,sans-serif;color:#5a6b7a">sep en curso</span>
                 </div>
                 <svg viewBox="0 0 520 176" width="100%" height="150" style="margin-top:4px;overflow:visible">
                   <sc-for list="{{ line.ticks }}" as="t" hint-placeholder-count="4">
                     <g>
                       <line x1="{{ line.axisL }}" x2="{{ line.axisR }}" y1="{{ t.y }}" y2="{{ t.y }}" stroke="#e8edf1" stroke-width="1"></line>
-                      <text x="{{ t.tx }}" y="{{ t.y }}" text-anchor="end" dominant-baseline="middle" style="font:400 10px 'Roboto Mono',monospace;fill:#95a2ab">{{ t.v }}</text>
+                      <text x="{{ t.tx }}" y="{{ t.y }}" text-anchor="end" dominant-baseline="middle" style="font:400 10px 'Roboto Mono',monospace;fill:#5a6b7a">{{ t.v }}</text>
                     </g>
                   </sc-for>
                   <path d="{{ line.area }}" fill="url(#fadeAzul)"></path>
@@ -568,12 +1063,12 @@ html:root,html [data-theme]{
           <div style="background:#fff;border-radius:12px;padding:13px 14px">
             <div style="display:flex;align-items:center;gap:7px;color:#63727f"><svg width="15" height="15"><use href="#hi-clock"></use></svg><span style="font:500 10px Roboto,sans-serif">Mis días</span></div>
             <div class="cond" style="font:700 25px 'Roboto Condensed',sans-serif;color:#132330;margin-top:6px">142</div>
-            <div style="font:400 10px Roboto,sans-serif;color:#95a2ab">en 4 proyectos</div>
+            <div style="font:400 10px Roboto,sans-serif;color:#5a6b7a">en 4 proyectos</div>
           </div>
           <div style="background:#fff;border-radius:12px;padding:13px 14px">
             <div style="display:flex;align-items:center;gap:7px;color:#63727f"><svg width="15" height="15"><use href="#hi-clipcheck"></use></svg><span style="font:500 10px Roboto,sans-serif">Notas OK</span></div>
-            <div class="cond" style="font:700 25px 'Roboto Condensed',sans-serif;color:#1f9d5b;margin-top:6px">31</div>
-            <div style="font:400 10px Roboto,sans-serif;color:#95a2ab">1 devuelta</div>
+            <div class="cond" style="font:700 25px 'Roboto Condensed',sans-serif;color:#167945;margin-top:6px">31</div>
+            <div style="font:400 10px Roboto,sans-serif;color:#5a6b7a">1 devuelta</div>
           </div>
         </div>
         <div style="background:#fff;border-radius:12px;padding:14px 15px">
@@ -582,7 +1077,7 @@ html:root,html [data-theme]{
             <path d="{{ line.area }}" fill="url(#fadeAzul)"></path>
             <path d="{{ line.path }}" fill="none" stroke="#104a78" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></path>
             <sc-for list="{{ line.labels }}" as="l" hint-placeholder-count="9">
-              <text x="{{ l.x }}" y="{{ line.labelY }}" text-anchor="middle" style="font:400 12px Roboto,sans-serif;fill:#95a2ab">{{ l.label }}</text>
+              <text x="{{ l.x }}" y="{{ line.labelY }}" text-anchor="middle" style="font:400 12px Roboto,sans-serif;fill:#5a6b7a">{{ l.label }}</text>
             </sc-for>
           </svg>
         </div>
@@ -625,11 +1120,11 @@ html:root,html [data-theme]{
   <div class="dv-pair">
 
     <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
-      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#63727f">techportalfava.lat/semana</span></div>
+      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#42505c">techportalfava.lat/semana</span></div>
       <div style="display:flex;height:660px">
         <div style="width:222px;flex:none;background:#132330;padding:18px 14px;display:flex;flex-direction:column;gap:4px">
           <div style="display:flex;align-items:center;gap:10px;padding:0 6px 18px">
-            <div style="width:30px;height:30px;border-radius:8px;background:#e86c00;display:flex;align-items:center;justify-content:center;font:700 16px 'Roboto Condensed',sans-serif;color:#fff">F</div>
+            <div style="width:30px;height:30px;border-radius:8px;background:#b35400;display:flex;align-items:center;justify-content:center;font:700 16px 'Roboto Condensed',sans-serif;color:#fff">F</div>
             <div><div style="font:700 12.5px Roboto,sans-serif;color:#fff">Control Técnico</div><div style="font:400 10.5px Roboto,sans-serif;color:#7d8b98">Ivan Cortés · Mecánico</div></div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:8px;background:rgba(232,108,0,.16);font:500 13px Roboto,sans-serif;color:#fff"><span style="width:3px;height:16px;background:#e86c00;border-radius:2px"></span>Mi semana</div>
@@ -637,7 +1132,7 @@ html:root,html [data-theme]{
           <div style="display:flex;align-items:center;gap:13px;padding:11px 15px;font:400 13px Roboto,sans-serif;color:#9fb0be">Mis proyectos</div>
           <div style="display:flex;align-items:center;gap:13px;padding:11px 15px;font:400 13px Roboto,sans-serif;color:#9fb0be">Mis KPIs</div>
           <div style="margin-top:auto;padding:12px;border:1px solid #26384a;border-radius:8px;background:#182734">
-            <div style="font:400 10.5px Roboto,sans-serif;color:#7d8b98">Semana 36 · 2026</div>
+            <div style="font:400 10.5px Roboto,sans-serif;color:#9fb0be">Semana 36 · 2026</div>
             <div style="font:700 13px Roboto,sans-serif;color:#e9eff4;margin-top:2px">3 de 5 días</div>
           </div>
         </div>
@@ -676,7 +1171,7 @@ html:root,html [data-theme]{
                 </div>
               </div>
               <div style="background:#fbe4d1;border:1px solid #e86c00;border-radius:10px;padding:14px">
-                <div style="font:700 11.5px Roboto,sans-serif;color:#b35400">Falta el jueves</div>
+                <div style="font:700 11.5px Roboto,sans-serif;color:#a8352b">Falta el jueves</div>
                 <div style="font:400 11.5px/1.5 Roboto,sans-serif;color:#8a4400;margin-top:3px">Hoy es 3 de sep y no tiene concepto. La nota no se puede enviar sin sus 7 días.</div>
               </div>
             </div>
@@ -703,7 +1198,7 @@ html:root,html [data-theme]{
       </div>
       <div class="ph-scroll" style="padding:14px 14px 22px;display:flex;flex-direction:column;gap:9px;background:#eef2f5">
         <sc-for list="{{ mobileRows }}" as="r" hint-placeholder-count="4">
-          <div style="background:#fff;border:1px solid #dde3e9;border-left:3px solid {{ r.pillFg }};border-radius:10px;padding:12px 13px">
+          <div style="background:#fff;border:1px solid #dde3e9;border-left:3px solid {{ r.railFill }};border-radius:10px;padding:12px 13px">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
               <div style="font:700 12px Roboto,sans-serif;color:#132330">{{ r.dowFull }} {{ r.day }}</div>
               <span style="font:700 10.5px Roboto,sans-serif;color:{{ r.pillFg }};background:{{ r.pillBg }};border-radius:20px;padding:3px 9px">{{ r.code }}</span>
@@ -733,12 +1228,12 @@ html:root,html [data-theme]{
   <div class="dv-pair">
 
     <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
-      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#63727f">techportalfava.lat/bitacora/2026-09</span></div>
+      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#42505c">techportalfava.lat/bitacora/2026-09</span></div>
       <div style="display:flex;height:760px;background:#fff">
         <div style="flex:1;padding:22px 26px;display:flex;flex-direction:column;min-width:0">
           <div style="display:flex;align-items:flex-end;justify-content:space-between">
             <div>
-              <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.12em;color:#e86c00;text-transform:uppercase">Bitácora · Ivan Cortés</div>
+              <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.12em;color:#b35400;text-transform:uppercase">Bitácora · Ivan Cortés</div>
               <div class="cond" style="font:700 27px/1.1 'Roboto Condensed',sans-serif;color:#132330;margin-top:5px">Septiembre 2026</div>
             </div>
             <div style="display:flex;gap:16px;text-align:right">
@@ -759,8 +1254,8 @@ html:root,html [data-theme]{
           </div>
           <div style="margin-top:16px;display:flex;align-items:center;gap:9px;font:400 11.5px Roboto,sans-serif;color:#5a6b7a">
             <span style="font-weight:700;color:#132330">3 días seleccionados</span>
-            <span style="color:#c9d2da">·</span> 8, 9 y 10 de sep
-            <span style="color:#c9d2da">·</span> arrastra para seleccionar, ⇧ para rango
+            <span style="color:#5a6b7a">·</span> 8, 9 y 10 de sep
+            <span style="color:#5a6b7a">·</span> arrastra para seleccionar, ⇧ para rango
           </div>
         </div>
         <div style="width:296px;flex:none;border-left:1px solid #dde3e9;background:#f4f7f9;padding:22px 20px;display:flex;flex-direction:column;gap:16px">
@@ -769,7 +1264,7 @@ html:root,html [data-theme]{
             <sc-for list="{{ keypad }}" as="k" hint-placeholder-count="8">
               <div style="border:1.5px solid {{ k.border }};background:{{ k.bg }};border-radius:9px;padding:10px 11px;min-height:56px;display:flex;flex-direction:column;justify-content:center">
                 <div class="mono" style="font:500 13px 'Roboto Mono',monospace;color:{{ k.fg }}">{{ k.code }}</div>
-                <div style="font:400 10.5px/1.3 Roboto,sans-serif;color:#5a6b7a;margin-top:2px">{{ k.label }}</div>
+                <div style="font:400 10.5px/1.3 Roboto,sans-serif;color:{{ k.sub }};margin-top:2px">{{ k.label }}</div>
               </div>
             </sc-for>
           </div>
@@ -777,7 +1272,7 @@ html:root,html [data-theme]{
           <div style="display:flex;flex-direction:column;gap:10px">
             <div>
               <div style="font:700 10.5px Roboto,sans-serif;color:#63727f;text-transform:uppercase;letter-spacing:.06em">Proyecto</div>
-              <div style="margin-top:5px;background:#fff;border:1px solid #c9d2da;border-radius:8px;padding:9px 11px;font:500 12.5px Roboto,sans-serif;color:#132330;display:flex;justify-content:space-between">Molino Cibao Bocel — RD <span style="color:#95a2ab">▾</span></div>
+              <div style="margin-top:5px;background:#fff;border:1px solid #c9d2da;border-radius:8px;padding:9px 11px;font:500 12.5px Roboto,sans-serif;color:#132330;display:flex;justify-content:space-between">Molino Cibao Bocel — RD <span style="color:#5a6b7a">▾</span></div>
             </div>
             <div>
               <div style="font:700 10.5px Roboto,sans-serif;color:#63727f;text-transform:uppercase;letter-spacing:.06em">Máquina</div>
@@ -805,7 +1300,7 @@ html:root,html [data-theme]{
         <div style="display:flex;align-items:center;justify-content:space-between">
           <span style="font:400 13px Roboto,sans-serif;color:#cfdbe4">Cancelar</span>
           <span style="font:700 12.5px Roboto,sans-serif;color:#fff">Jueves 3 sep</span>
-          <span style="font:500 13px Roboto,sans-serif;color:#95a2ab">Guardar</span>
+          <span style="font:500 13px Roboto,sans-serif;color:#cfdbe4">Guardar</span>
         </div>
         <div style="margin-top:14px;font:400 11.5px Roboto,sans-serif;color:#cfdbe4">¿Qué fue tu día?</div>
       </div>
@@ -813,7 +1308,7 @@ html:root,html [data-theme]{
         <sc-for list="{{ keypad }}" as="k" hint-placeholder-count="8">
           <div style="border:1.5px solid {{ k.border }};background:{{ k.bg }};border-radius:11px;padding:9px 8px;min-height:60px;display:flex;flex-direction:column;justify-content:center">
             <div class="mono" style="font:500 13.5px 'Roboto Mono',monospace;color:{{ k.fg }}">{{ k.code }}</div>
-            <div style="font:400 9px/1.25 Roboto,sans-serif;color:#5a6b7a;margin-top:2px">{{ k.label }}</div>
+            <div style="font:400 9px/1.25 Roboto,sans-serif;color:{{ k.sub }};margin-top:2px">{{ k.label }}</div>
           </div>
         </sc-for>
       </div>
@@ -828,11 +1323,11 @@ html:root,html [data-theme]{
         </div>
         <div style="background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:11px 13px;flex:1">
           <div style="font:700 10px Roboto,sans-serif;color:#63727f;text-transform:uppercase;letter-spacing:.06em">Trabajo realizado</div>
-          <div style="font:400 12.5px/1.5 Roboto,sans-serif;color:#95a2ab;margin-top:4px">Toca para dictar o escribir…</div>
+          <div style="font:400 12.5px/1.5 Roboto,sans-serif;color:#5a6b7a;margin-top:4px">Toca para dictar o escribir…</div>
         </div>
       </div>
       <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:12px 14px 24px">
-        <div style="min-height:48px;border-radius:10px;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:500 14px Roboto,sans-serif;color:#95a2ab">Elige un concepto para guardar</div>
+        <div style="min-height:48px;border-radius:10px;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:500 14px Roboto,sans-serif;color:#5a6b7a">Elige un concepto para guardar</div>
       </div>
     </div></div></sc-if>
 
@@ -844,7 +1339,7 @@ html:root,html [data-theme]{
   <div class="dv-pair">
 
     <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
-      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#63727f">techportalfava.lat/bitacora</span></div>
+      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#42505c">techportalfava.lat/bitacora</span></div>
       <div style="display:flex;flex-direction:column;height:600px;background:#fff">
         <div style="flex:none;background:#e2eefd;border-bottom:1px solid #2182f6;padding:9px 22px;display:flex;align-items:center;gap:10px;font:400 11.5px Roboto,sans-serif;color:#0e4d7a">
           <span style="width:7px;height:7px;border-radius:50%;background:#2182f6"></span>
@@ -881,7 +1376,7 @@ html:root,html [data-theme]{
           <div style="flex:1;background:#f4f7f9;padding:20px 24px;display:flex;flex-direction:column;gap:14px;min-width:0">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
               <div>
-                <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.1em;color:#e86c00;text-transform:uppercase">Semana 36 · lista para cerrar</div>
+                <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.1em;color:#b35400;text-transform:uppercase">Semana 36 · lista para cerrar</div>
                 <div class="cond" style="font:700 24px/1.15 'Roboto Condensed',sans-serif;color:#132330;margin-top:4px">Molino Cibao Bocel — RD</div>
                 <div style="font:400 12px Roboto,sans-serif;color:#5a6b7a;margin-top:3px">OA 2311 · commessa 4471 · CTA1000 · Ivan Cortés</div>
               </div>
@@ -945,8 +1440,8 @@ html:root,html [data-theme]{
         <div style="background:#fff;border-radius:12px;padding:15px 15px;box-shadow:0 1px 2px rgba(19,35,48,.05),0 4px 12px rgba(19,35,48,.05)">
           <div style="font:700 10px Roboto,sans-serif;letter-spacing:.08em;color:#63727f;text-transform:uppercase">Hoy va así</div>
           <div style="display:flex;gap:10px;align-items:center;margin-top:11px">
-            <span style="font:500 15px 'Roboto Mono',monospace;color:#1f9d5b;background:#e2f4ea;border-radius:8px;padding:7px 12px">DC</span>
-            <div style="font:400 12px/1.45 Roboto,sans-serif;color:#5a6b7a">Día completo en fábrica<br><span style="color:#95a2ab">desde las 7:10</span></div>
+            <span style="font:500 15px 'Roboto Mono',monospace;color:#167945;background:#e2f4ea;border-radius:8px;padding:7px 12px">DC</span>
+            <div style="font:400 12px/1.45 Roboto,sans-serif;color:#5a6b7a">Día completo en fábrica<br><span style="color:#5a6b7a">desde las 7:10</span></div>
           </div>
           <div style="margin-top:13px;font:400 12.5px/1.6 Roboto,sans-serif;color:#132330">Montaggio: cierre de tramo 3 y ajuste de cadenas del pre-secadero. Pendiente prueba de vacío con Leomar.</div>
           <div style="display:flex;gap:7px;margin-top:12px">
@@ -956,7 +1451,7 @@ html:root,html [data-theme]{
           </div>
         </div>
         <div style="background:#fff;border-radius:12px;padding:14px 15px;display:flex;gap:12px;align-items:center">
-          <span style="width:34px;height:34px;flex:none;border-radius:9px;background:#fbe4d1;display:flex;align-items:center;justify-content:center;font:500 12px 'Roboto Mono',monospace;color:#b35400">$</span>
+          <span style="width:34px;height:34px;flex:none;border-radius:9px;background:#fbe4d1;display:flex;align-items:center;justify-content:center;font:500 12px 'Roboto Mono',monospace;color:#8a4400">$</span>
           <div style="flex:1;min-width:0"><div style="font:500 12.5px Roboto,sans-serif;color:#132330">Taxi aeropuerto</div><div style="font:400 11px Roboto,sans-serif;color:#63727f">Foto del recibo adjunta</div></div>
           <span class="mono" style="font:500 12.5px 'Roboto Mono',monospace;color:#132330">US$ 42</span>
         </div>
@@ -974,8 +1469,8 @@ html:root,html [data-theme]{
         </div>
       </div>
       <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:13px 14px 24px">
-        <div style="min-height:52px;border-radius:26px;background:#e86c00;display:flex;align-items:center;justify-content:center;gap:9px;font:500 14.5px Roboto,sans-serif;color:#fff">Cerrar el día <span style="opacity:.75">→</span></div>
-        <div style="font:400 10.5px Roboto,sans-serif;color:#95a2ab;text-align:center;margin-top:9px">Se guarda aquí y se sube cuando haya señal</div>
+        <div style="min-height:52px;border-radius:26px;background:#b35400;display:flex;align-items:center;justify-content:center;gap:9px;font:500 14.5px Roboto,sans-serif;color:#fff">Cerrar el día <span style="opacity:.75">→</span></div>
+        <div style="font:400 10.5px Roboto,sans-serif;color:#5a6b7a;text-align:center;margin-top:9px">Se guarda aquí y se sube cuando haya señal</div>
       </div>
     </div></div></sc-if>
 
@@ -989,15 +1484,16 @@ html:root,html [data-theme]{
 </x-import>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Peso del documento&quot;},&quot;showDesktop&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Peso del documento&quot;},&quot;showPhone&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Peso del documento&quot;},&quot;utilizacion&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:78,&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:1,&quot;unit&quot;:&quot;%&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Datos de los gráficos&quot;}}">
+/* [nombre, tinta (texto pequeño, ≥4.5:1), tinte de fondo, relleno saturado] */
 const CONCEPTS = {
-  DC:  ['Día completo',   '#1f9d5b', '#e2f4ea'],
-  DFD: ['Festivo',        '#e86c00', '#fbe4d1'],
-  DVSF:['Viaje salida',   '#2182f6', '#e2eefd'],
-  DVRC:['Viaje retorno',  '#2182f6', '#e2eefd'],
-  MD:  ['Medio día',      '#104a78', '#cfdbe4'],
-  LR:  ['Libre remun.',   '#78889a', '#eceff2'],
-  NR:  ['No remun.',      '#78889a', '#eceff2'],
-  IL:  ['Incapacidad',    '#78889a', '#eceff2'],
+  DC:  ['Día completo',   '#167945', '#e2f4ea', '#1f9d5b'],
+  DFD: ['Festivo',        '#8a4400', '#fbe4d1', '#e86c00'],
+  DVSF:['Viaje salida',   '#1565c0', '#e2eefd', '#2182f6'],
+  DVRC:['Viaje retorno',  '#1565c0', '#e2eefd', '#4f9dff'],
+  MD:  ['Medio día',      '#104a78', '#cfdbe4', '#104a78'],
+  LR:  ['Libre remun.',   '#5a6b7a', '#eceff2', '#78889a'],
+  NR:  ['No remun.',      '#5a6b7a', '#eceff2', '#78889a'],
+  IL:  ['Incapacidad',    '#5a6b7a', '#eceff2', '#78889a'],
 };
 const WEEK = [
   ['Lun','L',31,'DC','Molino Cibao Bocel — RD','CTA1000','Montaggio línea Pasta Larga: alineación de trafilas y prueba de vacío.'],
@@ -1012,7 +1508,6 @@ const WEEK = [
 /* Geometría de los gráficos. La gramática visual es la de MUI X Charts (banda de
    categorías, rejilla horizontal, ticks a la izquierda, leyenda arriba); en producción
    estos cuatro son <BarChart>, <LineChart>, <Gauge> y <BarChart layout="horizontal">. */
-const P = { azul: '#104a78', naranja: '#e86c00', ok: '#1f9d5b', info: '#2182f6', gris: '#95a2ab' };
 const polar = (cx, cy, r, a) => [cx + r * Math.cos((a * Math.PI) / 180), cy + r * Math.sin((a * Math.PI) / 180)];
 
 class Component extends DCLogic {
@@ -1027,8 +1522,8 @@ class Component extends DCLogic {
     const bars = [], labels = [];
     data.forEach(([name, vend, ejec], i) => {
       const bw = 24, x0 = L + i * band + band / 2 - bw - 3;
-      bars.push({ x: x0, y: y(vend), w: bw, h: T + ph - y(vend), fill: P.azul, key: name + 'v' });
-      bars.push({ x: x0 + bw + 6, y: y(ejec), w: bw, h: T + ph - y(ejec), fill: P.naranja, key: name + 'e' });
+      bars.push({ x: x0, y: y(vend), w: bw, h: T + ph - y(vend), fill: '#104a78', key: name + 'v' });
+      bars.push({ x: x0 + bw + 6, y: y(ejec), w: bw, h: T + ph - y(ejec), fill: '#e86c00', key: name + 'e' });
       labels.push({ x: L + i * band + band / 2, label: name });
     });
     const ticks = [0, 10, 20, 30, 40, 50].map((v) => ({ v: String(v), y: y(v), tx: L - 8 }));
@@ -1065,7 +1560,7 @@ class Component extends DCLogic {
     };
   }
   conceptBar() {
-    const rows = [['DC', 62, P.ok], ['DVSF', 12, P.info], ['DVRC', 11, '#4f9dff'], ['DFD', 8, P.naranja], ['MD', 4, P.azul], ['LR', 3, P.gris]];
+    const rows = [['DC', 62, '#1f9d5b'], ['DVSF', 12, '#2182f6'], ['DVRC', 11, '#4f9dff'], ['DFD', 8, '#e86c00'], ['MD', 4, '#104a78'], ['LR', 3, '#78889a']];
     let x = 0;
     return rows.map(([code, pct, fill]) => {
       const seg = { code, pct: String(pct) + '%', fill, x: String(x) + '%', w: String(pct) + '%' };
@@ -1082,11 +1577,12 @@ class Component extends DCLogic {
         dowFull: ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'][i],
         code: code ?? '—',
         codeLabel: c ? c[0] : 'Sin registrar',
-        pillFg: c ? c[1] : '#78889a',
+        pillFg: c ? c[1] : '#5a6b7a',
+        railFill: c ? c[3] : '#c9d2da',
         pillBg: c ? c[2] : '#eceff2',
         rowBg: today ? '#fbf5ef' : '#fff',
-        stripBg: c ? '#cfdbe4' : today ? '#e86c00' : '#f4f7f9',
-        stripFg: c ? '#104a78' : today ? '#fff' : '#95a2ab',
+        stripBg: c ? '#cfdbe4' : today ? '#b35400' : '#f4f7f9',
+        stripFg: c ? '#104a78' : today ? '#fff' : '#5a6b7a',
         project: project ?? (code ? '—' : 'Sin registrar'),
         machine: machine ?? '',
         desc: desc ?? '',
@@ -1109,8 +1605,8 @@ class Component extends DCLogic {
         code: code ?? (weekend ? '' : '—'),
         bg: selected ? '#fbe4d1' : c ? c[2] : weekend ? '#fafbfc' : '#fff',
         border: selected ? '#e86c00' : c ? c[2] : '#e8edf1',
-        numFg: selected ? '#b35400' : c ? c[1] : '#95a2ab',
-        codeFg: selected ? '#e86c00' : c ? c[1] : '#c9d2da',
+        numFg: selected ? '#8a4400' : c ? c[1] : '#5a6b7a',
+        codeFg: selected ? '#8a4400' : c ? c[1] : '#63727f',
       });
     }
     return cells;
@@ -1119,16 +1615,17 @@ class Component extends DCLogic {
     return ['DC','MD','DVSF','DVRC','DFD','LR','NR','IL'].map((code, i) => {
       const c = CONCEPTS[code];
       const on = i === 0;
-      return { code, label: c[0], fg: on ? '#fff' : c[1], bg: on ? '#104a78' : c[2], border: on ? '#104a78' : c[2] };
+      return { code, label: c[0], fg: on ? '#fff' : c[1], sub: on ? '#cfdbe4' : '#42505c',
+        bg: on ? '#104a78' : c[2], border: on ? '#104a78' : c[2] };
     });
   }
   queue() {
     const rows = [
-      ['Jue', 3, 'DC', 'En cola · sin señal', '#e86c00', 'Cibao · CTA1000 — Montaggio tramo 3', true],
-      ['Mié', 2, 'DVSF', 'En cola · sin señal', '#e86c00', 'Bogotá → Santiago · vuelo AV 8352', true],
-      ['Mar', 1, 'DC', 'Enviado', '#2182f6', 'Cibao · CTA1000 — alineación de trafilas', false],
-      ['Lun', 31, 'DC', 'Aprobado', '#1f9d5b', 'Cibao · CTA1000 — prueba de vacío', false],
-      ['Vie', 28, 'MD', 'Devuelto · falta descripción', '#e0655c', 'Lucchetti Chile · PL6000', false],
+      ['Jue', 3, 'DC', 'En cola · sin señal', '#b35400', 'Cibao · CTA1000 — Montaggio tramo 3', true],
+      ['Mié', 2, 'DVSF', 'En cola · sin señal', '#b35400', 'Bogotá → Santiago · vuelo AV 8352', true],
+      ['Mar', 1, 'DC', 'Enviado', '#1565c0', 'Cibao · CTA1000 — alineación de trafilas', false],
+      ['Lun', 31, 'DC', 'Aprobado', '#167945', 'Cibao · CTA1000 — prueba de vacío', false],
+      ['Vie', 28, 'MD', 'Devuelto · falta descripción', '#b83b30', 'Lucchetti Chile · PL6000', false],
     ];
     return rows.map(([dow, day, code, state, stateFg, line, active]) => {
       const c = CONCEPTS[code];
@@ -1148,25 +1645,193 @@ class Component extends DCLogic {
     ];
     return rows.map(([label, code, desc]) => {
       const c = CONCEPTS[code];
-      return { label, code, desc, fg: c[1], dotBg: c[2], dotBorder: c[1] };
+      return { label, code, desc, fg: c[1], dotBg: c[2], dotBorder: c[3] };
     });
   }
   notes() {
     const rows = [
-      ['36', '31 ago – 6 sep', 'Molino Cibao Bocel — RD', 'CTA1000', 'Borrador', '#5a6b7a', '#eceff2', '3 de 5 días · falta jueves y viernes'],
-      ['35', '24 – 30 ago', 'Molino Cibao Bocel — RD', 'CTA1000', 'Enviada', '#2182f6', '#e2eefd', 'Esperando firma de Jorge Bocel'],
-      ['34', '17 – 23 ago', 'Molino Cibao Bocel — RD', 'CTA1000', 'Aprobada', '#1f9d5b', '#e2f4ea', 'Firmada el 24 ago · PDF disponible'],
-      ['33', '10 – 16 ago', 'Lucchetti Chile', 'PL6000', 'Devuelta', '#e0655c', '#fbe6e4', 'Falta descripción del miércoles'],
-      ['32', '3 – 9 ago', 'Lucchetti Chile', 'PL6000', 'Aprobada', '#1f9d5b', '#e2f4ea', 'Firmada el 11 ago · PDF disponible'],
+      ['36', '31 ago – 6 sep', 'Molino Cibao Bocel — RD', 'CTA1000', 'Borrador', '#42505c', '#eceff2', '3 de 5 días · falta jueves y viernes'],
+      ['35', '24 – 30 ago', 'Molino Cibao Bocel — RD', 'CTA1000', 'Enviada', '#104a78', '#e2eefd', 'Esperando firma de Jorge Bocel'],
+      ['34', '17 – 23 ago', 'Molino Cibao Bocel — RD', 'CTA1000', 'Aprobada', '#146c42', '#e2f4ea', 'Firmada el 24 ago · PDF disponible'],
+      ['33', '10 – 16 ago', 'Lucchetti Chile', 'PL6000', 'Devuelta', '#a8352b', '#fbe6e4', 'Falta descripción del miércoles'],
+      ['32', '3 – 9 ago', 'Lucchetti Chile', 'PL6000', 'Aprobada', '#146c42', '#e2f4ea', 'Firmada el 11 ago · PDF disponible'],
     ];
     return rows.map(([wk, range, project, machine, state, fg, bg, hint]) => ({ wk, range, project, machine, state, fg, bg, hint }));
   }
+  /**
+   * La lista real de «Mis notas», con la forma de `WeeklyNote` (lib/api/weeklyNotes.ts):
+   * status ∈ draft|submitted|approved|returned, más `signed`, `roleTypeName`, `version`
+   * y `returnComment`. NO hay conteo de días en el tipo — esa columna no puede existir.
+   *
+   * `signed` se deduce de la captura, donde «Descargar PDF» solo se pinta si n.signed:
+   * lo tienen JAV Marata, Eurimac, Dakota y Cibao — los 4 de «Firmadas 4». Y por eso
+   * «Abiertas» es 0: abierta = returned || (submitted && !signed), y las dos enviadas
+   * ya están firmadas.
+   */
+  misNotas() {
+    const rows = [
+      [36, 'JAV Marata - Brasil',     'JAV Agroindustrial',   '2026-08-31', 'submitted', true,  'Aiuto', 1],
+      [36, 'Eurimac_ Grecia kilkis',  'Eurimac S.A.',         '2026-08-31', 'submitted', true,  'Aiuto', 1],
+      [35, 'ZZ DEMO - Pasta Nova',    'Pasta Nova Ltda.',     '2026-08-24', 'approved',  false, 'Aiuto', 1],
+      [35, 'DAKOTA GROWERS',          'Dakota Growers Pasta', '2026-08-24', 'approved',  true,  'Aiuto', 1],
+      [35, 'MOLINO CIBAO BOCEL - RD', 'Molino Cibao Bocel',   '2026-08-24', 'approved',  true,  'Aiuto', 2],
+      [34, 'ZZ DEMO - Pasta Nova',    'Pasta Nova Ltda.',     '2026-08-17', 'approved',  false, 'Aiuto', 1],
+    ];
+    /* Las cuatro etiquetas de StatusPill, con su rol de color. */
+    const S = {
+      draft:     ['Borrador', 'draft'],
+      submitted: ['Enviada',  'sent'],
+      approved:  ['Aprobada', 'ok'],
+      returned:  ['Devuelta', 'warn'],
+    };
+    return rows.map(([wk, project, client, weekStart, status, signed, role, version], i) => {
+      const [label, tone] = S[status];
+      const open = status === 'returned' || (status === 'submitted' && !signed);
+      return {
+        week: 'Semana ' + wk, project, client, weekStart, role, status,
+        state: label,
+        fg: `var(--fava-${tone}-ink)`,
+        bg: `var(--fava-${tone}-tint)`,
+        rail: `var(--fava-${tone}-fill)`,
+        signed, open,
+        firma: signed ? 'Firmada' : 'Sin firma',
+        firmaFg: signed ? 'var(--fava-ok-ink)' : 'var(--color-text-subtle)',
+        version: 'v' + version,
+        /* «Descargar PDF» solo existe con firma; «Firmar nota», solo si está abierta. */
+        canDownload: signed,
+        canSign: open,
+        rowBg: i === 4 ? 'var(--color-surface-container-low)' : 'var(--color-surface)',
+      };
+    });
+  }
+  /** Los contadores son los de Notes.tsx, derivados — no escritos a mano. */
+  notasFiltros() {
+    const d = this.misNotas();
+    return [
+      { key: 'all', label: 'Todas', n: String(d.length), on: true },
+      { key: 'open', label: 'Abiertas', n: String(d.filter((x) => x.open).length), on: false },
+      { key: 'signed', label: 'Firmadas', n: String(d.filter((x) => x.signed).length), on: false },
+    ].map((f) => ({
+      ...f,
+      fg: f.on ? 'var(--color-on-primary)' : 'var(--fava-draft-ink)',
+      bg: f.on ? 'var(--color-primary)' : 'var(--color-surface)',
+      bd: f.on ? 'var(--color-primary)' : 'var(--color-outline)',
+    }));
+  }
+  /**
+   * Los nueve conceptos de la liquidación. `fill` es el color pedido; `ink` es su
+   * versión oscura para el texto pequeño, que sobre blanco necesita ≥4.5:1.
+   */
+  liqConcepts() {
+    return [
+      ['DC', 'Día completo', '#1f9d5b', '#146c42'],
+      ['MD', 'Medio día', '#2182f6', '#1565c0'],
+      ['DFD', 'Festivo', '#8b5cf6', '#6532c4'],
+      ['DVSF', 'Viaje salida', '#0ea5a5', '#0a6a6a'],
+      ['DVRC', 'Viaje retorno', '#0ea5a5', '#0a6a6a'],
+      ['LR', 'Libre remun.', '#e86c00', '#b35400'],
+      ['NR', 'No remun.', '#78889a', '#5a6b7a'],
+      ['IL', 'Incapacidad', '#d64545', '#b0322b'],
+      ['OTRO', 'Otro', '#a16207', '#8a5406'],
+    ].map(([code, label, fill, ink]) => ({ code, label, fill, ink }));
+  }
+  /**
+   * Una fila por técnico. Los conteos son de días APROBADOS — lo único que se puede
+   * pasar a nómina; `pend` es lo que entraría al aprobar, y se muestra como «+N»
+   * atenuado en vez de sumarse.
+   *
+   * LR es solo de internos y NR solo de externos: la celda que no aplica va como «—»,
+   * nunca como 0, porque un 0 dice «trabajó cero» y esto dice «no existe el concepto».
+   */
+  liqRows() {
+    const rows = [
+      ['Leomar Klein',  'Interno', [18, 1, 2, 1, 1, 0, null, 0, 0], 'ok'],
+      ['Ivan Cortés',   'Interno', [15, 0, 0, 1, 1, 3, null, 0, 0], 'unapproved', 2],
+      ['Camilo Cruz',   'Interno', [19, 0, 1, 0, 0, 0, null, 2, 0], 'ok'],
+      ['Felipe Sena',   'Externo', [12, 2, 0, 1, 1, null, 4, 0, 1], 'unsent', 1],
+      ['Andrea Scapin', 'Interno', [20, 0, 0, 0, 0, 0, null, 0, 0], 'ok'],
+      ['Luca Carraro',  'Interno', [14, 0, 0, 2, 2, 0, null, 0, 0], 'unapproved', 3],
+    ];
+    const S = {
+      ok:         (n) => ['Listo', 'var(--fava-ok-ink)', 'var(--fava-ok-tint)', 'Todo aprobado'],
+      unapproved: (n) => [n + (n === 1 ? ' día sin aprobar' : ' días sin aprobar'), '#8a5406', '#fdf3d9', 'Ir a la bandeja'],
+      unsent:     (n) => [n + (n === 1 ? ' semana sin enviar' : ' semanas sin enviar'), 'var(--fava-brand-ink)', '#fbe4d1', 'Ver el técnico'],
+      none:       () => ['Sin días', 'var(--fava-draft-ink)', 'var(--fava-draft-tint)', 'Nada registrado'],
+    };
+    const cs = this.liqConcepts();
+    return rows.map(([name, tipo, counts, state, n], i) => {
+      const [label, fg, bg, action] = S[state](n);
+      const total = counts.reduce((a, v) => a + (v ?? 0), 0);
+      return {
+        name, tipo, total: String(total),
+        initials: name.split(' ').map((w) => w[0]).join('').slice(0, 2),
+        state: label, fg, bg, action,
+        pending: state === 'unapproved',
+        cells: counts.map((v, j) => ({
+          code: cs[j].code,
+          /* «—» atenuado: el concepto no aplica a este tipo de técnico. */
+          val: v === null ? '—' : String(v),
+          fg: v === null ? 'var(--color-outline-variant)'
+            : v === 0 ? 'var(--color-text-subtle)'
+            : cs[j].ink,
+          weight: v ? '500' : '400',
+          plus: state === 'unapproved' && j === 0 ? '+' + n : '',
+        })),
+        rowBg: i % 2 ? 'var(--color-surface-container-low)' : 'var(--color-surface)',
+      };
+    });
+  }
+  /** El resumen de arriba se deriva de las filas: no es un número escrito a mano. */
+  liqSummary() {
+    const r = this.liqRows();
+    const listos = r.filter((x) => x.state === 'Listo').length;
+    return {
+      tecnicos: String(r.length),
+      listos: String(listos),
+      pendientes: String(r.length - listos),
+      dias: String(r.reduce((a, x) => a + Number(x.total), 0)),
+    };
+  }
+  /** El mismo menú, con «Liquidación del mes» entre Técnicos y KPIs. */
+  navLiq() {
+    return this.navFava().map((g) => {
+      if (g.title !== 'ADMINISTRACIÓN') {
+        return { ...g, items: g.items.map((it) => ({ ...it, active: false, fg: 'var(--fava-nav-ink-2)', weight: '500', bg: 'transparent' })) };
+      }
+      const items = g.items.map((it) => ({ ...it, active: false, fg: 'var(--fava-nav-ink-2)', weight: '500', bg: 'transparent' }));
+      const at = items.findIndex((it) => it.label === 'KPIs');
+      items.splice(at, 0, {
+        icon: '#hi-clipcheck', label: 'Liquidación del mes', active: true, badge: '',
+        fg: '#fff', weight: '600', bg: 'rgba(232,108,0,.16)',
+      });
+      return { ...g, items };
+    });
+  }
+  /** El menú real de Layout.tsx: 14 destinos en tres grupos, para una cuenta T+A+S. */
+  navFava() {
+    const G = [
+      ['TÉCNICO', [['hi-bell', 'Pendientes'], ['hi-doc', 'Mi semana'], ['hi-cal', 'Mi bitácora'],
+        ['hi-shield-plain', 'Cerrar semana'], ['hi-doc', 'Mis notas', true], ['hi-chart', 'Mi resumen']]],
+      ['ADMINISTRACIÓN', [['hi-inbox', 'Bandeja de aprobación', false, '4'], ['hi-doc', 'Notas semanales'],
+        ['hi-folder', 'Proyectos'], ['hi-users', 'Técnicos'], ['hi-users', 'Usuarios y roles'], ['hi-chart', 'KPIs']]],
+      ['SUPER ADMIN', [['hi-shield', 'Auditoría'], ['hi-cog', 'Configuración']]],
+    ];
+    return G.map(([title, items]) => ({
+      title,
+      items: items.map(([icon, label, active, badge]) => ({
+        icon: '#' + icon, label, active: !!active, badge: badge ?? '',
+        fg: active ? '#fff' : 'var(--fava-nav-ink-2)',
+        weight: active ? '600' : '500',
+        bg: active ? 'rgba(232,108,0,.16)' : 'transparent',
+      })),
+    }));
+  }
   pending() {
     return [
-      ['hi-pencil', '#e86c00', '#fbe4d1', 'Dos días sin registrar', 'Jueves 3 y viernes 4 de septiembre. La nota de la semana 36 no se puede enviar sin ellos.', 'Registrar ahora'],
-      ['hi-doc', '#e0655c', '#fbe6e4', 'Semana 33 devuelta', 'Andrea Scapin pidió detallar el trabajo del miércoles 13 de agosto.', 'Corregir y reenviar'],
-      ['hi-pin', '#2182f6', '#e2eefd', 'Viaje de retorno el 12 de septiembre', 'Recuerda registrarlo como DVRC el día del vuelo, no al llegar.', 'Ver itinerario'],
-      ['hi-badge', '#1f9d5b', '#e2f4ea', 'Semana 34 aprobada', 'Firmada por el cliente el 24 de agosto. Ya cuenta en tus KPIs.', 'Ver PDF'],
+      ['hi-pencil', '#b35400', '#fbe4d1', 'Dos días sin registrar', 'Jueves 3 y viernes 4 de septiembre. La nota de la semana 36 no se puede enviar sin ellos.', 'Registrar ahora'],
+      ['hi-doc', '#b83b30', '#fbe6e4', 'Semana 33 devuelta', 'Andrea Scapin pidió detallar el trabajo del miércoles 13 de agosto.', 'Corregir y reenviar'],
+      ['hi-pin', '#1565c0', '#e2eefd', 'Viaje de retorno el 12 de septiembre', 'Recuerda registrarlo como DVRC el día del vuelo, no al llegar.', 'Ver itinerario'],
+      ['hi-badge', '#167945', '#e2f4ea', 'Semana 34 aprobada', 'Firmada por el cliente el 24 de agosto. Ya cuenta en tus KPIs.', 'Ver PDF'],
     ].map(([icon, fg, bg, title, body, cta]) => ({ icon: '#' + icon, fg, bg, title, body, cta }));
   }
   projectPhases() {
@@ -1191,6 +1856,17 @@ class Component extends DCLogic {
       queue: this.queue(),
       timeline: this.timeline(),
       notes: this.notes(),
+      misNotas: this.misNotas(),
+      notasFiltros: this.notasFiltros(),
+      navFava: this.navFava(),
+      navLiq: this.navLiq(),
+      liqConcepts: this.liqConcepts(),
+      liqRows: this.liqRows(),
+      liqSummary: this.liqSummary(),
+      liqRowsOk: this.liqRows().map((r) => ({
+        ...r, state: 'Listo', fg: 'var(--fava-ok-ink)', bg: 'var(--fava-ok-tint)',
+        pending: false, cells: r.cells.map((c) => ({ ...c, plus: '' })),
+      })),
       pending: this.pending(),
       phases: this.projectPhases(),
       bar: this.barChart(),

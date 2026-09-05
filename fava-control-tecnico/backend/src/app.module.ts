@@ -21,6 +21,7 @@ import { MeModule } from './modules/me/me.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { WeeklyNotesModule } from './modules/weekly-notes/weekly-notes.module';
 import { KpisModule } from './modules/kpis/kpis.module';
+import { LiquidacionModule } from './modules/liquidacion/liquidacion.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { TechniciansModule } from './modules/technicians/technicians.module';
 import { UsersModule } from './modules/users/users.module';
@@ -58,6 +59,7 @@ const staticRoot =
     TechniciansModule,
     ProjectsModule,
     KpisModule,
+    LiquidacionModule,
     WeeklyNotesModule,
     AuditModule,
     DailyEntriesModule,

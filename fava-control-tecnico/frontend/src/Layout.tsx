@@ -22,6 +22,7 @@ import ProjectDetail from './screens/ProjectDetail';
 import Techs from './screens/Techs';
 import Users from './screens/Users';
 import Kpis from './screens/Kpis';
+import Payroll from './screens/Payroll';
 import Audit from './screens/Audit';
 import Config from './screens/Config';
 import LogDayDrawer from './components/LogDayDrawer';
@@ -47,6 +48,7 @@ function Screen() {
     case 'project': return <ProjectDetail />;
     case 'techs': return <Techs />;
     case 'users': return <Users />;
+    case 'payroll': return <Payroll />;
     case 'kpis': return <Kpis />;
     case 'audit': return <Audit />;
     case 'config': return <Config />;
@@ -151,7 +153,7 @@ export default function Layout() {
   if (tiene('A') || tiene('S')) {
     groups.push({
       title: t.grp_admin,
-      items: [mk('inbox', 'inbox', 'inbox', count), mk('allnotes', 'allnotes', 'doc'), mk('projects', 'projects', 'folder'), mk('techs', 'techs', 'users'), mk('users', 'users', 'users'), mk('kpis', 'kpis', 'chart')],
+      items: [mk('inbox', 'inbox', 'inbox', count), mk('allnotes', 'allnotes', 'doc'), mk('projects', 'projects', 'folder'), mk('techs', 'techs', 'users'), mk('users', 'users', 'users'), mk('payroll', 'payroll', 'doc'), mk('kpis', 'kpis', 'chart')],
     });
   }
   if (tiene('S')) {
@@ -160,7 +162,7 @@ export default function Layout() {
 
   const titleMap: Record<string, string> = {
     pending: t.t_pending, week: t.t_week, logbook: t.t_logbook, notes: t.t_notes, mine: t.t_mine, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
-    project: t.t_project, techs: t.t_techs, users: t.t_users, kpis: t.t_kpis, audit: t.t_audit, config: t.t_config,
+    project: t.t_project, techs: t.t_techs, users: t.t_users, payroll: t.t_payroll, kpis: t.t_kpis, audit: t.t_audit, config: t.t_config,
   };
 
   const themeIcon = state.theme === 'dark' ? svg(ICON.sun, { w: 17 }) : svg(ICON.moon, { w: 17 });

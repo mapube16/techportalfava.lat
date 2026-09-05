@@ -4,7 +4,7 @@ export type Density = 'comfortable' | 'compact';
 export type Role = 'T' | 'A' | 'S';
 export type Route =
   | 'pending' | 'week' | 'logbook' | 'notes' | 'mine' | 'inbox' | 'allnotes' | 'projects' | 'project'
-  | 'techs' | 'users' | 'kpis' | 'audit' | 'config';
+  | 'techs' | 'users' | 'payroll' | 'kpis' | 'audit' | 'config';
 /**
  * El vocabulario del SERVIDOR, que es el unico real: lo impone el CHECK
  * `wn_status_valido` de la migracion. El prototipo decia `sent` y eso sobrevivio en el
