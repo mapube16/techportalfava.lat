@@ -8,6 +8,7 @@ import { codigo, useApiData } from '../lib/api/useApiData';
 import SignNoteModal from '../components/SignNoteModal';
 import { downloadNotePdf, listNotes } from '../lib/api/weeklyNotes';
 import type { WeeklyNote } from '../lib/api/weeklyNotes';
+import { semanaIso } from '../lib/fecha';
 
 /**
  * Las notas del TECNICO. No las crea ni las elige (NOTA-01): salen solas al enviar la
@@ -32,6 +33,8 @@ export default function Notes() {
   );
   const [firmando, setFirmando] = useState<WeeklyNote | null>(null);
   const [errPdf, setErrPdf] = useState<string | null>(null);
+  /** Todas / Abiertas / Firmadas (diseno 3b). «Abierta» = aun pide algo del tecnico. */
+  const [filtro, setFiltro] = useState<'all' | 'open' | 'signed'>('all');
 
   if (error) return <ApiState error={error} label={t.err_load} />;
   if (!data) return <ApiState error={null} label={t.loading} />;
@@ -64,16 +67,40 @@ export default function Notes() {
       });
   };
 
+  const abierta = (n: WeeklyNote) => n.status === 'returned' || (n.status === 'submitted' && !n.signed);
+  const lista = data.filter((n) => (filtro === 'all' ? true : filtro === 'open' ? abierta(n) : n.signed));
+  const filtros: ['all' | 'open' | 'signed', string, number][] = [
+    ['all', t.notes_f_all, data.length],
+    ['open', t.notes_f_open, data.filter(abierta).length],
+    ['signed', t.notes_f_signed, data.filter((n) => n.signed).length],
+  ];
+
   return (
     <>
       <div className="max-w-[820px] mx-auto flex flex-col gap-3">
+        <div className="flex gap-2 flex-wrap">
+          {filtros.map(([k, label, n]) => (
+            <Button
+              key={k}
+              variant={filtro === k ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFiltro(k)}
+              className="min-h-11 md:min-h-8"
+            >
+              {label}
+              <span className="tabular-nums opacity-70">{n}</span>
+            </Button>
+          ))}
+        </div>
         {errPdf ? <div className="text-[12.5px] text-warn">{t.pdf_error}: {errPdf}</div> : null}
-        {data.map((n) => (
+        {lista.map((n) => (
           <Card key={n.id}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex-1 min-w-[200px]">
-                  <div className="text-[14.5px] font-bold">{n.projectName}</div>
+                  <div className="text-[14.5px] font-bold">
+                    {t.notes_week.replace('{n}', String(semanaIso(n.weekStart.slice(0, 10)).semana))} · {n.projectName}
+                  </div>
                   <div className="text-[12.5px] text-muted-foreground font-mono">
                     {n.weekStart}
                     {n.roleTypeName ? ` · ${n.roleTypeName}` : ''}

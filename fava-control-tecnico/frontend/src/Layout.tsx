@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Globe, LogOut, Menu, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { svg, ICON, FavaLogo } from './icons';
+import { svg, hi, ICON, FavaLogo } from './icons';
 import { initials } from './ui';
 import { useApp } from './state';
 import { useIsMobile } from './lib/useIsMobile';
@@ -11,6 +11,7 @@ import { listNotes } from './lib/api/weeklyNotes';
 import { getWeek } from './lib/api/dailyEntries';
 import { diasDeSemana, hoyLocal, lunesDe, semanaIso } from './lib/fecha';
 import type { Role, Route } from './types';
+import Pending from './screens/Pending';
 import Week from './screens/Week';
 import Logbook from './screens/Logbook';
 import CloseDay from './screens/CloseDay';
@@ -35,6 +36,7 @@ import Toast from './components/Toast';
 function Screen() {
   const { state } = useApp();
   switch (state.route) {
+    case 'pending': return <Pending />;
     case 'week': return <Week />;
     case 'logbook': return <Logbook />;
     case 'closeday': return <CloseDay />;
@@ -141,11 +143,11 @@ export default function Layout() {
   const tiene = (r: Role) => state.myRoles.includes(r);
   const groups: { title: string; items: NavItem[] }[] = [];
   if (tiene('T')) {
-    // Sin «Inicio»: era la lista de «Mis notas» con dos botones encima. El tecnico
-    // entra en su semana, que es donde trabaja, y «Mis notas» queda de archivo.
+    // Primero lo que le falta (diseno 3b), despues donde trabaja. «Mis notas» queda
+    // de archivo, con filtros.
     groups.push({
       title: t.grp_tecnico,
-      items: [mk('week', 'week', 'doc'), mk('logbook', 'logbook', 'cal'), mk('closeday', 'closeday', 'shieldPlain'), mk('notes', 'notes', 'doc'), mk('mine', 'mine', 'chart')],
+      items: [mk('pending', 'pending', 'bell'), mk('week', 'week', 'doc'), mk('logbook', 'logbook', 'cal'), mk('closeday', 'closeday', 'shieldPlain'), mk('notes', 'notes', 'doc'), mk('mine', 'mine', 'chart')],
     });
   }
   if (tiene('A') || tiene('S')) {
@@ -159,7 +161,7 @@ export default function Layout() {
   }
 
   const titleMap: Record<string, string> = {
-    week: t.t_week, logbook: t.t_logbook, closeday: t.t_closeday, notes: t.t_notes, mine: t.t_mine, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
+    pending: t.t_pending, week: t.t_week, logbook: t.t_logbook, closeday: t.t_closeday, notes: t.t_notes, mine: t.t_mine, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
     project: t.t_project, techs: t.t_techs, users: t.t_users, kpis: t.t_kpis, audit: t.t_audit, config: t.t_config,
   };
 
@@ -412,6 +414,43 @@ export default function Layout() {
               </div>
             )}
           </main>
+
+          {/* LA BARRA INFERIOR DEL TECNICO EN MOVIL (diseno 3a/3b/3c): los cuatro
+              destinos del dia a un toque, sin abrir el panel. Solo movil y solo para
+              quien registra dias: un admin en el telefono sigue con el panel. «Registrar»
+              no es una ruta, abre el cajon de hoy. `sticky bottom-0` y no otra columna:
+              el contenedor no acota su alto y la barra se iria debajo del contenido. */}
+          {movil && tiene('T') ? (
+            <nav
+              aria-label={t.grp_tecnico}
+              className="sticky bottom-0 z-20 flex-none bg-card border-t border-border flex justify-around px-2 pt-1.5 pb-[max(env(safe-area-inset-bottom),10px)]"
+            >
+              {(
+                [
+                  ['week', svg(ICON.cal, { w: 21 }), t.tab_week, () => irA('week'), ['week', 'logbook']],
+                  ['log', hi('pencil', { w: 21 }), t.tab_log, () => patch({ logOpen: true, logDate: null }), []],
+                  ['pending', svg(ICON.doc, { w: 21 }), t.tab_notes, () => irA('pending'), ['pending', 'notes', 'closeday']],
+                  ['mine', svg(ICON.chart, { w: 21 }), t.tab_kpis, () => irA('mine'), ['mine']],
+                ] as [string, ReactNode, string, () => void, Route[]][]
+              ).map(([key, icon, label, onClick, rutas]) => {
+                const on = rutas.includes(state.route);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={onClick}
+                    aria-current={on ? 'page' : undefined}
+                    className={`flex flex-col items-center gap-1 min-w-14 min-h-11 px-2 py-1 rounded-md cursor-pointer ${
+                      on ? 'text-primary font-bold' : 'text-muted-foreground font-medium'
+                    }`}
+                  >
+                    {icon}
+                    <span className="text-[9.5px]">{label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          ) : null}
         </div>
       </div>
 

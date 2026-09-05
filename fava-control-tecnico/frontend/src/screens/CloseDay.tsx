@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ApiState, Card, Empty, StatusPill, money } from '../ui';
 import { CONCEPT_COLOR } from '../i18n';
@@ -39,9 +39,15 @@ export default function CloseDay() {
   const { state, t, patch } = useApp();
   const miTecnico = state.me?.status === 'ok' ? state.me.user.technicianId : null;
 
-  /** El filtro de la cola. «Pendientes» es lo que hay que hacer, y es el que abre. */
-  const [filtro, setFiltro] = useState<'pend' | 'sent' | 'all'>('pend');
-  const [abiertaId, setAbiertaId] = useState<string | null>(null);
+  /** El filtro de la cola. «Pendientes» es lo que hay que hacer, y es el que abre.
+      Si se llega con una nota concreta, «Todas»: la pedida podria no ser pendiente. */
+  const [filtro, setFiltro] = useState<'pend' | 'sent' | 'all'>(state.noteFocus ? 'all' : 'pend');
+  const [abiertaId, setAbiertaId] = useState<string | null>(state.noteFocus);
+  // Consumida al montar, como `weekStart` en la semana.
+  useEffect(() => {
+    if (state.noteFocus) patch({ noteFocus: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [firmando, setFirmando] = useState<WeeklyNote | null>(null);
 
   const { data: notas, error } = useApiData(

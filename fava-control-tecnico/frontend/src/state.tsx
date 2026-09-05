@@ -17,11 +17,12 @@ export type KpiSeg = 'project' | 'tech' | 'phase';
 /** 'boot' = aún no sabemos; el resto lo dicta GET /api/me. */
 export type SessionStatus = 'boot' | 'anon' | 'ok' | 'not_invited' | 'deactivated';
 
-// El tecnico entra DONDE TRABAJA. Antes aterrizaba en «Inicio», que era la lista de
-// notas con dos botones encima y un contador roto («67 / 7», porque contaba notas de
-// todos los tiempos en vez de dias de la semana). No tenia ni un dato que no
-// estuviera en «Mis notas».
-const FIRST_ROUTE: Record<Role, Route> = { T: 'week', A: 'inbox', S: 'kpis' };
+// El tecnico entra en LO QUE LE FALTA (diseno 3b): notas devueltas, notas por firmar,
+// semanas sin enviar, el corte del 25. Cada tarjeta lleva a donde se resuelve.
+//
+// No es el «Inicio» que se quito: aquel era «Mis notas» con dos botones encima y un
+// contador roto («67 / 7», notas de todos los tiempos en vez de dias de la semana).
+const FIRST_ROUTE: Record<Role, Route> = { T: 'pending', A: 'inbox', S: 'kpis' };
 // Si el usuario tiene varios roles, el más alto manda al entrar.
 const ROLE_RANK: Role[] = ['S', 'A', 'T'];
 
@@ -41,6 +42,14 @@ export interface AppState {
   logOpen: boolean;
   /** Fecha 'YYYY-MM-DD' que abre el drawer. `null` = hoy. Sale de la fila de la semana. */
   logDate: string | null;
+  /**
+   * El lunes que «Mi semana» abre al entrar. `null` = la de hoy. Lo pone Pendientes:
+   * «Semana 34 sin enviar» tiene que aterrizar en la 34, no en la de hoy. La pantalla
+   * lo consume al montar y lo limpia.
+   */
+  weekStart: string | null;
+  /** La nota que «Cerrar semana» deja abierta al entrar. Mismo trato que `weekStart`. */
+  noteFocus: string | null;
   returnOpen: boolean;
   returnId: string | null;
   /** El `updated_at` que se leyó al abrir el modal: el bloqueo optimista del devolver. */
@@ -99,6 +108,8 @@ const initialState: AppState = {
   kpiSeg: 'project',
   logOpen: false,
   logDate: null,
+  weekStart: null,
+  noteFocus: null,
   returnOpen: false,
   returnId: null,
   returnUpdatedAt: null,

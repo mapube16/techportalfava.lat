@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ApiState, Card, ConceptPill, StatusPill } from '../ui';
 import { useApp } from '../state';
@@ -27,8 +27,14 @@ const MES_IT = ['', 'gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set
 
 export default function Week() {
   const { state, t, patch, showToast, refresh, errTexto } = useApp();
-  /** Lunes de la semana visible. `null` = la de hoy, que se resuelve al renderizar. */
-  const [lunes, setLunes] = useState<string | null>(null);
+  /** Lunes de la semana visible. `null` = la de hoy, que se resuelve al renderizar.
+      Arranca en la que pidio Pendientes, si la hay. */
+  const [lunes, setLunes] = useState<string | null>(state.weekStart);
+  // Consumida: si se quedara puesta, la proxima visita normal abriria esa misma semana.
+  useEffect(() => {
+    if (state.weekStart) patch({ weekStart: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [errEnvio, setErrEnvio] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 

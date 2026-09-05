@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/design-system-09ccaca0-a3e3-4ef0-b6c6-740ad5865a77/_ds_bundle.css">
+<link rel="stylesheet" href="_ds/design-system-09ccaca0-a3e3-4ef0-b6c6-740ad5865a77/styles.css">
+<script src="_ds/design-system-09ccaca0-a3e3-4ef0-b6c6-740ad5865a77/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Condensed:wght@600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#e6ebef;font-family:Roboto,system-ui,sans-serif}
+a{color:#104a78;text-decoration:none}a:hover{color:#e86c00}
+html:root,html [data-theme]{
+ --color-primary:#104a78;--color-on-primary:#fff;--color-primary-container:#cfdbe4;
+ --color-secondary:#5a6b7a;--color-tertiary:#e86c00;
+ --color-surface:#fff;--color-surface-container-lowest:#fff;--color-surface-container-low:#f4f7f9;
+ --color-surface-container:#f4f7f9;--color-surface-container-high:#e8edf1;--color-surface-container-highest:#e8edf1;
+ --color-background:#eef2f5;--color-outline:#dde3e9;--color-outline-variant:#c9d2da;
+ --color-text-body:#132330;--color-text-subtle:#5a6b7a;--color-on-surface:#132330;--color-on-surface-variant:#5a6b7a;
+ --color-on-primary-container:#104a78;--color-on-secondary:#fff;
+ --font-text:Roboto,system-ui,sans-serif;--font-display:'Roboto Condensed',Roboto,sans-serif;--font-mono:'Roboto Mono',ui-monospace,monospace;
+ /* El bundle deriva estos alias en :root, donde ya resolvieron al tema oscuro:
+    hay que volver a declararlos aquí, donde la paleta FAVA sí está vigente. */
+ --color-button-primary-bg-base:#104a78;--color-button-primary-bg-hover:#0e4d7a;--color-button-primary-bg-active:#133e5d;
+ --color-button-primary-text-base:#fff;--color-button-primary-border-base:transparent;
+ --color-button-secondary-bg-base:#f4f7f9;--color-button-secondary-text-base:#132330;--color-button-secondary-border-base:#c9d2da;
+ --color-button-ghost-text-base:#104a78;
+}
+.dv-turn{padding:44px 48px 36px;border-bottom:1px solid rgba(19,35,48,.09)}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}
+.dv-tid{font:600 10px 'Roboto Mono',monospace;padding:3px 7px;background:#132330;color:#fff;border-radius:4px}
+.dv-tname{font:700 14px/1.2 Roboto,sans-serif;color:#132330}
+.dv-opts{display:flex;flex-wrap:wrap;gap:44px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:12px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'Roboto Mono',monospace;padding:3px 7px;background:rgba(19,35,48,.09);color:#132330;border-radius:5px}
+.dv-olabel{display:flex;align-items:baseline;gap:10px;font:400 12.5px/1.4 Roboto,sans-serif;color:#5a6b7a;max-width:900px}
+.dv-opt:target .dv-oid{background:#e86c00;color:#fff}
+.dv-pair{display:flex;gap:22px;align-items:flex-start}
+.dsk{width:1000px;background:#eef2f5;border:1px solid #c9d2da;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(19,35,48,.08),0 12px 32px rgba(19,35,48,.1)}
+.dsk-bar{height:34px;background:#e8edf1;border-bottom:1px solid #dde3e9;display:flex;align-items:center;gap:7px;padding:0 13px}
+.dot{width:10px;height:10px;border-radius:50%}
+.phone{width:330px;background:#0b131c;border-radius:44px;padding:9px;box-shadow:0 2px 8px rgba(19,35,48,.08),0 12px 32px rgba(19,35,48,.1)}
+.phone-in{width:312px;height:675px;background:#eef2f5;border-radius:36px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.ph-stat{flex:none}
+.ph-scroll{flex:1;min-height:0;overflow-y:auto}
+.ph-bar{flex:none}
+.stat{height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font:500 11px 'Roboto Mono',monospace}
+.mono{font-family:'Roboto Mono',monospace}
+.cond{font-family:'Roboto Condensed',sans-serif}
+.dv-next{margin:26px 0 0;font:400 12.5px/1.6 Roboto,sans-serif;color:#63727f}
+</style>
+</helmet>
+
+<x-import component-from-global-scope="Helix.HelixProvider" theme="light" density="comfortable" hint-size="100%,100%">
+<svg style="display:none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <defs><linearGradient id="fadeAzul" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#104a78" stop-opacity=".22"></stop><stop offset="100%" stop-color="#104a78" stop-opacity="0"></stop></linearGradient></defs>
+  <symbol id="hi-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"/></symbol>
+  <symbol id="hi-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></symbol>
+  <symbol id="hi-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859M12 3v8.25m0 0-3-3m3 3 3-3"/></symbol>
+  <symbol id="hi-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z"/></symbol>
+  <symbol id="hi-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437 1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008Z"/></symbol>
+  <symbol id="hi-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></symbol>
+  <symbol id="hi-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z"/></symbol>
+  <symbol id="hi-cog" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></symbol>
+  <symbol id="hi-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></symbol>
+  <symbol id="hi-trend" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941"/></symbol>
+  <symbol id="hi-badge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"/></symbol>
+  <symbol id="hi-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5"/></symbol>
+  <symbol id="hi-offline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m3 3 8.735 8.735m0 0a.374.374 0 1 1 .53.53m-.53-.53.53.53m0 0L21 21M14.652 9.348a3.75 3.75 0 0 1 0 5.304m2.121-7.425a6.75 6.75 0 0 1 0 9.546m2.121-11.667c3.808 3.807 3.808 9.98 0 13.788m-9.546-4.242a3.733 3.733 0 0 1-1.06-2.122m-1.061 4.243a6.75 6.75 0 0 1-1.625-6.929m-.496 9.05c-3.068-3.067-3.664-7.67-1.79-11.334M12 12h.008v.008H12V12Z"/></symbol>
+  <symbol id="hi-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></symbol>
+  <symbol id="hi-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></symbol>
+  <symbol id="hi-clipcheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75"/></symbol>
+</svg>
+
+<section class="dv-turn" id="t3">
+<div class="dv-thd"><span class="dv-tid">3</span><span class="dv-tname">El recorrido completo del técnico — las cinco pantallas que faltaban</span></div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p style="margin:0 0 26px;font:400 13.5px/1.7 Roboto,sans-serif;color:#5a6b7a;max-width:78ch;text-wrap:pretty">Todo en el lenguaje de <a href="#1c">1c</a> + <a href="#2a">2a</a>: offline-first, Heroicons 24/outline y la gramática de MUI X Charts. Con esto el técnico tiene el recorrido cerrado — entrar, ver qué le falta, corregir lo devuelto, firmar en obra y consultar su proyecto.</p></sc-if>
+<div class="dv-opts">
+
+<div class="dv-opt" id="3a">
+  <div class="dv-olabel"><span class="dv-oid">3a</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:#132330">Acceso.</strong> Un solo botón: SSO de Microsoft, la cuenta que el técnico ya usa. Sin contraseñas propias que administrar ni recuperar desde una obra sin señal.</span></sc-if></div>
+  <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+    <div class="stat ph-stat" style="color:#e9eff4;background:#104a78"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+    <div class="ph-scroll" style="background:linear-gradient(180deg,#104a78 0%,#133e5d 100%);padding:64px 24px 28px;display:flex;flex-direction:column;justify-content:space-between">
+      <div>
+        <div style="width:48px;height:48px;border-radius:12px;background:#e86c00;display:flex;align-items:center;justify-content:center;font:700 22px 'Roboto Condensed',sans-serif;color:#fff">F</div>
+        <div class="cond" style="font:700 30px/1.1 'Roboto Condensed',sans-serif;color:#fff;margin-top:24px">Control<br>Técnico</div>
+        <div style="font:400 13px/1.6 Roboto,sans-serif;color:#cfdbe4;margin-top:12px;max-width:26ch">Bitácora de campo y nota de prestación semanal. FAVA Latino America S.A.S.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:11px;background:#0e4d7a;border-radius:10px;padding:12px 14px">
+          <svg width="17" height="17" style="color:#cfdbe4;flex:none"><use href="#hi-offline"></use></svg>
+          <span style="font:400 11.5px/1.5 Roboto,sans-serif;color:#cfdbe4">Una vez dentro, la app funciona sin señal.</span>
+        </div>
+        <div style="min-height:56px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;gap:12px;font:500 14.5px Roboto,sans-serif;color:#132330">
+          <span style="display:grid;grid-template-columns:9px 9px;grid-template-rows:9px 9px;gap:2px;flex:none">
+            <span style="background:#f25022"></span><span style="background:#7fba00"></span><span style="background:#00a4ef"></span><span style="background:#ffb900"></span>
+          </span>
+          Entrar con Microsoft
+        </div>
+        <div style="font:400 11px/1.5 Roboto,sans-serif;color:#95a2ab;text-align:center">Con tu cuenta corporativa @favalatino.com</div>
+      </div>
+    </div>
+  </div></div></sc-if>
+</div>
+
+<div class="dv-opt" id="3b">
+  <div class="dv-olabel"><span class="dv-oid">3b</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:#132330">Pendientes y mis notas.</strong> Lo primero al entrar no es un menú: es la lista de lo que le falta. Debajo, sus notas con los cuatro estados del ciclo — borrador, enviada, aprobada, devuelta — y el motivo visible cuando algo vuelve.</span></sc-if></div>
+  <div class="dv-pair">
+    <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+      <div class="stat ph-stat" style="color:#132330;background:#fff"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div style="flex:none;background:#fff;border-bottom:1px solid #dde3e9;padding:4px 18px 14px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="cond" style="font:700 19px 'Roboto Condensed',sans-serif;color:#132330">Pendientes</div>
+          <div style="position:relative;display:flex;color:#5a6b7a"><svg width="20" height="20"><use href="#hi-bell"></use></svg><span style="position:absolute;top:-4px;right:-5px;min-width:15px;height:15px;border-radius:8px;background:#e86c00;color:#fff;font:700 9.5px Roboto,sans-serif;display:flex;align-items:center;justify-content:center;padding:0 3px">2</span></div>
+        </div>
+      </div>
+      <div class="ph-scroll" style="background:#eef2f5;padding:13px 13px 22px;display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ pending }}" as="p" hint-placeholder-count="4">
+          <div style="background:#fff;border-radius:12px;padding:13px 14px;display:flex;gap:12px">
+            <span style="width:34px;height:34px;flex:none;border-radius:9px;background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center">
+              <svg width="18" height="18"><use href="{{ p.icon }}"></use></svg>
+            </span>
+            <div style="min-width:0;flex:1">
+              <div style="font:700 12.5px Roboto,sans-serif;color:#132330">{{ p.title }}</div>
+              <div style="font:400 11.5px/1.55 Roboto,sans-serif;color:#5a6b7a;margin-top:3px">{{ p.body }}</div>
+              <div style="font:700 11.5px Roboto,sans-serif;color:{{ p.fg }};margin-top:8px">{{ p.cta }} →</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:11px 8px 22px;display:flex;justify-content:space-around">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#63727f;min-width:56px"><svg width="21" height="21"><use href="#hi-cal"></use></svg><span style="font:500 9.5px Roboto,sans-serif">Semana</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#63727f;min-width:56px"><svg width="21" height="21"><use href="#hi-pencil"></use></svg><span style="font:500 9.5px Roboto,sans-serif">Registrar</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#104a78;min-width:56px"><svg width="21" height="21"><use href="#hi-doc"></use></svg><span style="font:700 9.5px Roboto,sans-serif">Notas</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#63727f;min-width:56px"><svg width="21" height="21"><use href="#hi-chart"></use></svg><span style="font:500 9.5px Roboto,sans-serif">KPIs</span></div>
+      </div>
+    </div></div></sc-if>
+
+    <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+      <div class="stat ph-stat" style="color:#132330;background:#fff"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div style="flex:none;background:#fff;border-bottom:1px solid #dde3e9;padding:4px 18px 12px">
+        <div class="cond" style="font:700 19px 'Roboto Condensed',sans-serif;color:#132330">Mis notas</div>
+        <div style="display:flex;gap:6px;margin-top:11px">
+          <span style="font:700 11px Roboto,sans-serif;color:#fff;background:#132330;border-radius:20px;padding:5px 11px">Todas</span>
+          <span style="font:400 11px Roboto,sans-serif;color:#5a6b7a;border:1px solid #dde3e9;border-radius:20px;padding:5px 11px">Abiertas 2</span>
+          <span style="font:400 11px Roboto,sans-serif;color:#5a6b7a;border:1px solid #dde3e9;border-radius:20px;padding:5px 11px">Firmadas</span>
+        </div>
+      </div>
+      <div class="ph-scroll" style="background:#eef2f5;padding:13px 13px 22px;display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ notes }}" as="n" hint-placeholder-count="5">
+          <div style="background:#fff;border-radius:12px;padding:13px 14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="font:700 12.5px Roboto,sans-serif;color:#132330">Semana {{ n.wk }}</div>
+              <span style="font:700 10.5px Roboto,sans-serif;color:{{ n.fg }};background:{{ n.bg }};border-radius:20px;padding:4px 10px">{{ n.state }}</span>
+            </div>
+            <div style="font:400 11px Roboto,sans-serif;color:#95a2ab;margin-top:3px">{{ n.range }}</div>
+            <div style="font:500 11.5px Roboto,sans-serif;color:#104a78;margin-top:8px">{{ n.project }}<span class="mono" style="font-weight:400;color:#5a6b7a;margin-left:7px">{{ n.machine }}</span></div>
+            <div style="font:400 11.5px/1.5 Roboto,sans-serif;color:#5a6b7a;margin-top:4px">{{ n.hint }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:11px 8px 22px;display:flex;justify-content:space-around">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#63727f;min-width:56px"><svg width="21" height="21"><use href="#hi-cal"></use></svg><span style="font:500 9.5px Roboto,sans-serif">Semana</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#63727f;min-width:56px"><svg width="21" height="21"><use href="#hi-pencil"></use></svg><span style="font:500 9.5px Roboto,sans-serif">Registrar</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#104a78;min-width:56px"><svg width="21" height="21"><use href="#hi-doc"></use></svg><span style="font:700 9.5px Roboto,sans-serif">Notas</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#63727f;min-width:56px"><svg width="21" height="21"><use href="#hi-chart"></use></svg><span style="font:500 9.5px Roboto,sans-serif">KPIs</span></div>
+      </div>
+    </div></div></sc-if>
+  </div>
+</div>
+
+<div class="dv-opt" id="3c">
+  <div class="dv-olabel"><span class="dv-oid">3c</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:#132330">Firmar en obra, paso a paso.</strong> Los tres momentos que antes solo existían en el panel de escritorio: repasar la semana, pasarle el teléfono al cliente, y el acuse con el PDF. La firma se captura a pantalla girada, con el dedo, y queda sellada con hora y nombre.</span></sc-if></div>
+  <div class="dv-pair">
+    <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+      <div class="stat ph-stat" style="color:#e9eff4;background:#132330"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div style="flex:none;background:#132330;padding:2px 18px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font:400 12.5px Roboto,sans-serif;color:#7d8b98">Paso 1 de 3</span>
+          <span style="font:700 12px Roboto,sans-serif;color:#fff">Repasar</span>
+        </div>
+        <div class="cond" style="font:700 20px 'Roboto Condensed',sans-serif;color:#fff;margin-top:10px">Semana 36 · Cibao</div>
+        <div style="font:400 11.5px Roboto,sans-serif;color:#cfdbe4;margin-top:3px">5 días · US$ 78 en gastos</div>
+      </div>
+      <div class="ph-scroll" style="background:#eef2f5;padding:13px 13px 22px;display:flex;flex-direction:column;gap:10px">
+        <div style="background:#fff;border-radius:12px;padding:14px 15px">
+          <div style="font:700 10px Roboto,sans-serif;letter-spacing:.08em;color:#63727f;text-transform:uppercase">Los 7 días</div>
+          <div style="display:flex;flex-direction:column;gap:9px;margin-top:11px">
+            <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="7">
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <span style="width:9px;height:9px;flex:none;margin-top:4px;border-radius:50%;background:{{ t.dotBg }};border:2px solid {{ t.dotBorder }}"></span>
+                <div style="min-width:0;flex:1">
+                  <div style="display:flex;gap:7px;align-items:baseline"><span style="font:700 11.5px Roboto,sans-serif;color:#132330">{{ t.label }}</span><span class="mono" style="font:500 10px 'Roboto Mono',monospace;color:{{ t.fg }}">{{ t.code }}</span></div>
+                  <div style="font:400 11.5px/1.45 Roboto,sans-serif;color:#5a6b7a">{{ t.desc }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px 15px">
+          <div style="display:flex;justify-content:space-between;font:700 12px Roboto,sans-serif;color:#132330"><span>Gastos reembolsables</span><span class="mono">US$ 78</span></div>
+          <div style="font:400 11px Roboto,sans-serif;color:#95a2ab;margin-top:3px">Taxi aeropuerto y 3 almuerzos · recibos adjuntos</div>
+        </div>
+      </div>
+      <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:12px 14px 24px">
+        <div style="min-height:52px;border-radius:26px;background:#104a78;display:flex;align-items:center;justify-content:center;gap:9px;font:500 14.5px Roboto,sans-serif;color:#fff">Pedir firma al cliente <span style="opacity:.75">→</span></div>
+      </div>
+    </div></div></sc-if>
+
+    <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+      <div class="stat ph-stat" style="color:#132330;background:#fff"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div style="flex:none;background:#fff;border-bottom:1px solid #dde3e9;padding:4px 18px 14px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font:400 12.5px Roboto,sans-serif;color:#95a2ab">Paso 2 de 3</span>
+          <span style="font:700 12px Roboto,sans-serif;color:#132330">Firma</span>
+        </div>
+        <div style="font:400 12px/1.55 Roboto,sans-serif;color:#5a6b7a;margin-top:9px">Pásale el teléfono a <strong style="color:#132330">Jorge Bocel</strong>, jefe de planta.</div>
+      </div>
+      <div class="ph-scroll" style="background:#eef2f5;padding:13px 13px 22px;display:flex;flex-direction:column;gap:11px">
+        <div style="background:#fff;border-radius:12px;padding:14px 15px">
+          <div style="font:700 10px Roboto,sans-serif;letter-spacing:.08em;color:#63727f;text-transform:uppercase">Declara y firma</div>
+          <div style="font:400 12px/1.6 Roboto,sans-serif;color:#132330;margin-top:8px">Confirmo que el técnico <strong>Ivan Cortés</strong> prestó servicio en <strong>Molino Cibao Bocel</strong> los 5 días laborables del 31 de agosto al 6 de septiembre de 2026, según el detalle anterior.</div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px 15px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font:700 10px Roboto,sans-serif;letter-spacing:.08em;color:#63727f;text-transform:uppercase">Firma aquí</div>
+            <span style="font:500 11px Roboto,sans-serif;color:#104a78">Borrar</span>
+          </div>
+          <div style="margin-top:10px;border:1.5px dashed #c9d2da;border-radius:10px;height:150px;display:flex;align-items:center;justify-content:center;background:#fafbfc">
+            <svg viewBox="0 0 240 90" style="width:210px;height:80px"><path d="M14 64 C36 12 52 80 74 44 C92 16 104 74 128 50 C148 30 160 70 186 36 C202 16 214 58 232 30" fill="none" stroke="#132330" stroke-width="3" stroke-linecap="round"></path></svg>
+          </div>
+          <div style="font:400 10.5px/1.5 Roboto,sans-serif;color:#95a2ab;margin-top:8px">Se sella con la fecha, la hora y el nombre de quien firma.</div>
+        </div>
+      </div>
+      <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:12px 14px 24px">
+        <div style="min-height:52px;border-radius:26px;background:#e86c00;display:flex;align-items:center;justify-content:center;font:500 14.5px Roboto,sans-serif;color:#fff">Confirmar firma</div>
+      </div>
+    </div></div></sc-if>
+
+    <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+      <div class="stat ph-stat" style="color:#e9eff4;background:#1f9d5b"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div class="ph-scroll" style="background:#eef2f5;padding:0 0 22px;display:flex;flex-direction:column">
+        <div style="background:#1f9d5b;padding:8px 20px 30px;color:#fff">
+          <svg width="38" height="38" style="color:#fff"><use href="#hi-badge"></use></svg>
+          <div class="cond" style="font:700 24px/1.15 'Roboto Condensed',sans-serif;margin-top:14px">Nota firmada</div>
+          <div style="font:400 12.5px/1.6 Roboto,sans-serif;color:#dff2e6;margin-top:6px">Semana 36 cerrada. Ya está en la bandeja de Andrea para aprobación.</div>
+        </div>
+        <div style="padding:14px 13px;display:flex;flex-direction:column;gap:10px">
+          <div style="background:#fff;border-radius:12px;padding:14px 15px">
+            <div style="font:700 10px Roboto,sans-serif;letter-spacing:.08em;color:#63727f;text-transform:uppercase">Acuse</div>
+            <div style="display:flex;justify-content:space-between;font:400 11.5px Roboto,sans-serif;color:#5a6b7a;margin-top:10px"><span>Firmó</span><span style="color:#132330;font-weight:500">Jorge Bocel</span></div>
+            <div style="display:flex;justify-content:space-between;font:400 11.5px Roboto,sans-serif;color:#5a6b7a;margin-top:6px"><span>Fecha y hora</span><span class="mono" style="color:#132330">6 sep · 17:52</span></div>
+            <div style="display:flex;justify-content:space-between;font:400 11.5px Roboto,sans-serif;color:#5a6b7a;margin-top:6px"><span>Folio</span><span class="mono" style="color:#132330">NP-2026-0361</span></div>
+            <div style="margin-top:12px;border-top:1px solid #f0f3f6;padding-top:11px;display:flex;align-items:center;gap:11px">
+              <svg viewBox="0 0 200 60" style="width:96px;height:32px;flex:none"><path d="M10 42 C28 8 40 52 56 30 C70 12 78 48 96 34 C112 22 120 46 140 26 C154 12 168 40 190 22" fill="none" stroke="#132330" stroke-width="2.4" stroke-linecap="round"></path></svg>
+              <span style="font:400 10.5px/1.5 Roboto,sans-serif;color:#95a2ab">Firma capturada en obra</span>
+            </div>
+          </div>
+          <div style="background:#e2eefd;border-radius:12px;padding:13px 14px;display:flex;gap:11px;align-items:flex-start">
+            <svg width="18" height="18" style="color:#2182f6;flex:none;margin-top:1px"><use href="#hi-offline"></use></svg>
+            <span style="font:400 11.5px/1.55 Roboto,sans-serif;color:#0e4d7a">Sin señal en Cibao: el PDF se generó local y se sube en cuanto haya red.</span>
+          </div>
+        </div>
+      </div>
+      <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:12px 14px 24px;display:flex;gap:9px">
+        <div style="flex:1;min-height:48px;border-radius:10px;border:1px solid #c9d2da;background:#f4f7f9;display:flex;align-items:center;justify-content:center;gap:8px;font:500 13px Roboto,sans-serif;color:#132330"><svg width="16" height="16"><use href="#hi-doc"></use></svg>Ver PDF</div>
+        <div style="flex:1;min-height:48px;border-radius:10px;background:#104a78;display:flex;align-items:center;justify-content:center;font:500 13px Roboto,sans-serif;color:#fff">Listo</div>
+      </div>
+    </div></div></sc-if>
+  </div>
+</div>
+
+<div class="dv-opt" id="3d">
+  <div class="dv-olabel"><span class="dv-oid">3d</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:#132330">Detalle de proyecto.</strong> Lo que el técnico necesita saber sin llamar a nadie: cuántos días se vendieron por fase, cuántos van ejecutados, y quién más está en el sitio. En escritorio es la misma pantalla con la matriz completa de fases.</span></sc-if></div>
+  <div class="dv-pair">
+    <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
+      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#63727f">techportalfava.lat/proyectos/oa-2311</span></div>
+      <div style="display:flex;height:560px">
+        <div style="width:222px;flex:none;background:#132330;padding:18px 12px;display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;align-items:center;gap:10px;padding:0 6px 18px">
+            <div style="width:30px;height:30px;border-radius:8px;background:#e86c00;display:flex;align-items:center;justify-content:center;font:700 16px 'Roboto Condensed',sans-serif;color:#fff">F</div>
+            <div><div style="font:700 12.5px Roboto,sans-serif;color:#fff">Control Técnico</div><div style="font:400 10.5px Roboto,sans-serif;color:#7d8b98">Ivan Cortés · Mecánico</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;color:#9fb0be;font:500 12.5px Roboto,sans-serif"><svg width="18" height="18"><use href="#hi-cal"></use></svg>Mi semana</div>
+          <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;color:#9fb0be;font:500 12.5px Roboto,sans-serif"><svg width="18" height="18"><use href="#hi-doc"></use></svg>Mis notas</div>
+          <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;background:rgba(232,108,0,.16);color:#fff;font:500 12.5px Roboto,sans-serif"><svg width="18" height="18"><use href="#hi-building"></use></svg>Mis proyectos</div>
+          <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;color:#9fb0be;font:500 12.5px Roboto,sans-serif"><svg width="18" height="18"><use href="#hi-chart"></use></svg>Mis KPIs</div>
+        </div>
+        <div style="flex:1;background:#eef2f5;padding:20px 24px;display:flex;flex-direction:column;gap:14px;min-width:0">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+            <div>
+              <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.1em;color:#e86c00;text-transform:uppercase">OA 2311 · commessa 4471</div>
+              <div class="cond" style="font:700 25px/1.15 'Roboto Condensed',sans-serif;color:#132330;margin-top:4px">Molino Cibao Bocel</div>
+              <div style="display:flex;align-items:center;gap:7px;font:400 12px Roboto,sans-serif;color:#5a6b7a;margin-top:5px"><svg width="14" height="14"><use href="#hi-pin"></use></svg>Santiago de los Caballeros, República Dominicana</div>
+            </div>
+            <x-import component-from-global-scope="Helix.Badge" tone="info" hint-size="auto,22px">En ejecución</x-import>
+          </div>
+          <div style="display:flex;gap:14px;flex:1;min-height:0">
+            <div style="flex:1;background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:15px 17px;min-width:0">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="font:700 12px Roboto,sans-serif;color:#132330">Días por fase</div>
+                <div style="display:flex;gap:14px;font:400 10.5px Roboto,sans-serif;color:#5a6b7a">
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:2px;background:#c9d2da"></span>Venduto</span>
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:2px;background:#104a78"></span>Eseguito</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:15px;margin-top:16px">
+                <sc-for list="{{ phases }}" as="p" hint-placeholder-count="4">
+                  <div>
+                    <div style="display:flex;justify-content:space-between;align-items:baseline">
+                      <span style="font:500 12px Roboto,sans-serif;color:#132330">{{ p.phase }}</span>
+                      <span class="mono" style="font:500 11px 'Roboto Mono',monospace;color:#5a6b7a">{{ p.ejec }} / {{ p.vend }} d · {{ p.pct }}</span>
+                    </div>
+                    <div style="position:relative;height:14px;border-radius:3px;background:#f4f7f9;margin-top:6px;overflow:hidden">
+                      <div style="position:absolute;left:0;top:0;bottom:0;width:{{ p.wVend }};background:#c9d2da;border-radius:3px"></div>
+                      <div style="position:absolute;left:0;top:0;bottom:0;width:{{ p.wEjec }};background:{{ p.fill }};border-radius:3px"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="width:262px;flex:none;display:flex;flex-direction:column;gap:12px">
+              <div style="background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:14px 15px">
+                <div style="font:700 11px Roboto,sans-serif;letter-spacing:.05em;color:#63727f;text-transform:uppercase">Máquinas</div>
+                <div style="display:flex;gap:6px;margin-top:10px">
+                  <x-import component-from-global-scope="Helix.Chip" label="CTA1000" selected="{{ true }}" hint-size="auto,30px"></x-import>
+                  <x-import component-from-global-scope="Helix.Chip" label="PC4500" hint-size="auto,30px"></x-import>
+                </div>
+              </div>
+              <div style="background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:14px 15px;flex:1">
+                <div style="font:700 11px Roboto,sans-serif;letter-spacing:.05em;color:#63727f;text-transform:uppercase">Equipo en sitio</div>
+                <div style="display:flex;flex-direction:column;gap:10px;margin-top:11px">
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:#cfdbe4;display:flex;align-items:center;justify-content:center;font:700 10.5px Roboto,sans-serif;color:#104a78">IC</span><div><div style="font:500 11.5px Roboto,sans-serif;color:#132330">Ivan Cortés</div><div style="font:400 10px Roboto,sans-serif;color:#95a2ab">Mecánico · tú</div></div></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 10.5px Roboto,sans-serif;color:#5a6b7a">LR</span><div><div style="font:500 11.5px Roboto,sans-serif;color:#132330">Leomar Ríos</div><div style="font:400 10px Roboto,sans-serif;color:#95a2ab">Eléctrico</div></div></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 10.5px Roboto,sans-serif;color:#5a6b7a">JB</span><div><div style="font:500 11.5px Roboto,sans-serif;color:#132330">Jorge Bocel</div><div style="font:400 10px Roboto,sans-serif;color:#95a2ab">Cliente · firma las notas</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></sc-if>
+
+    <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+      <div class="stat ph-stat" style="color:#e9eff4;background:#132330"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div style="flex:none;background:#132330;padding:2px 18px 16px">
+        <div style="font:400 10.5px Roboto,sans-serif;letter-spacing:.08em;color:#e86c00;text-transform:uppercase">OA 2311 · commessa 4471</div>
+        <div class="cond" style="font:700 20px 'Roboto Condensed',sans-serif;color:#fff;margin-top:5px">Molino Cibao Bocel</div>
+        <div style="display:flex;align-items:center;gap:7px;font:400 11px Roboto,sans-serif;color:#cfdbe4;margin-top:4px"><svg width="13" height="13"><use href="#hi-pin"></use></svg>Santiago, República Dominicana</div>
+      </div>
+      <div class="ph-scroll" style="background:#eef2f5;padding:13px 13px 22px;display:flex;flex-direction:column;gap:10px">
+        <div style="background:#fff;border-radius:12px;padding:14px 15px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font:700 11.5px Roboto,sans-serif;color:#132330">Días por fase</div>
+            <span style="font:400 10px Roboto,sans-serif;color:#95a2ab">eseguito / venduto</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:13px;margin-top:13px">
+            <sc-for list="{{ phases }}" as="p" hint-placeholder-count="4">
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font:500 11.5px Roboto,sans-serif;color:#132330">{{ p.phase }}</span>
+                  <span class="mono" style="font:500 10.5px 'Roboto Mono',monospace;color:#5a6b7a">{{ p.ejec }}/{{ p.vend }}</span>
+                </div>
+                <div style="position:relative;height:12px;border-radius:3px;background:#f4f7f9;margin-top:5px;overflow:hidden">
+                  <div style="position:absolute;left:0;top:0;bottom:0;width:{{ p.wVend }};background:#c9d2da;border-radius:3px"></div>
+                  <div style="position:absolute;left:0;top:0;bottom:0;width:{{ p.wEjec }};background:{{ p.fill }};border-radius:3px"></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px 15px">
+          <div style="font:700 11.5px Roboto,sans-serif;color:#132330">Equipo en sitio</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:11px">
+            <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:50%;background:#cfdbe4;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#104a78">IC</span><div><div style="font:500 12px Roboto,sans-serif;color:#132330">Ivan Cortés</div><div style="font:400 10.5px Roboto,sans-serif;color:#95a2ab">Mecánico · tú</div></div></div>
+            <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#5a6b7a">LR</span><div><div style="font:500 12px Roboto,sans-serif;color:#132330">Leomar Ríos</div><div style="font:400 10.5px Roboto,sans-serif;color:#95a2ab">Eléctrico</div></div></div>
+            <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:50%;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#5a6b7a">JB</span><div><div style="font:500 12px Roboto,sans-serif;color:#132330">Jorge Bocel</div><div style="font:400 10.5px Roboto,sans-serif;color:#95a2ab">Cliente · firma las notas</div></div></div>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px 15px;display:flex;gap:6px">
+          <x-import component-from-global-scope="Helix.Chip" label="CTA1000" selected="{{ true }}" hint-size="auto,30px"></x-import>
+          <x-import component-from-global-scope="Helix.Chip" label="PC4500" hint-size="auto,30px"></x-import>
+        </div>
+      </div>
+      <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:12px 14px 24px">
+        <div style="min-height:48px;border-radius:10px;background:#104a78;display:flex;align-items:center;justify-content:center;font:500 14px Roboto,sans-serif;color:#fff">Registrar día en este proyecto</div>
+      </div>
+    </div></sc-if>
+  </div>
+</div>
+
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-next">El recorrido del técnico queda cerrado: <a class="dv-oid" href="#3a">3a</a> entrar · <a class="dv-oid" href="#3b">3b</a> qué me falta · <a class="dv-oid" href="#1b">1b</a> registrar · <a class="dv-oid" href="#3c">3c</a> firmar · <a class="dv-oid" href="#3d">3d</a> mi proyecto · <a class="dv-oid" href="#2a">2a</a> mis KPIs. Siguiente paso natural: volverlo interactivo con navegación real entre las seis.</p></sc-if>
+</section>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><span class="dv-tid">2</span><span class="dv-tname">El aplicativo completo, reinventado — Heroicons + gráficos</span></div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p style="margin:0 0 26px;font:400 13.5px/1.7 Roboto,sans-serif;color:#5a6b7a;max-width:78ch;text-wrap:pretty">Iconografía real de <a href="https://github.com/tailwindlabs/heroicons">Heroicons</a> 24/outline (trazo 1,5 px, el mismo peso que la tipografía), y los cuatro gráficos con la gramática de <a href="https://mui.com/x/react-charts/">MUI X Charts</a>: banda de categorías, rejilla horizontal tenue, ticks a la izquierda, leyenda arriba y el <em>gauge</em> de 270°. En producción son <span class="mono" style="color:#104a78">&lt;BarChart&gt;</span>, <span class="mono" style="color:#104a78">&lt;LineChart&gt;</span>, <span class="mono" style="color:#104a78">&lt;Gauge&gt;</span> y un <span class="mono" style="color:#104a78">&lt;BarChart layout="horizontal" stack&gt;</span> con la paleta FAVA pasada por <span class="mono" style="color:#104a78">colors</span>.</p></sc-if>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+  <div class="dv-olabel"><span class="dv-oid">2a</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:#132330">Panel de operaciones.</strong> Todo el aplicativo bajo un mismo marco: barra lateral con los ocho destinos de los tres roles, cabecera con la bandeja en vivo, y el tablero de vendido/ejecutado como pantalla de aterrizaje del Admin. Los números dejan de ser tablas dinámicas mantenidas a mano.</span></sc-if></div>
+  <div class="dv-pair">
+
+    <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
+      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#63727f">techportalfava.lat/kpis</span></div>
+      <div style="display:flex;height:748px">
+        <div style="width:222px;flex:none;background:#132330;padding:18px 12px;display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;align-items:center;gap:10px;padding:0 6px 18px">
+            <div style="width:30px;height:30px;border-radius:8px;background:#e86c00;display:flex;align-items:center;justify-content:center;font:700 16px 'Roboto Condensed',sans-serif;color:#fff">F</div>
+            <div><div style="font:700 12.5px Roboto,sans-serif;color:#fff">Control Técnico</div><div style="font:400 10.5px Roboto,sans-serif;color:#7d8b98">FAVA Latino America</div></div>
+          </div>
+          <sc-for list="{{ nav }}" as="n" hint-placeholder-count="8">
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;background:{{ n.bg }};color:{{ n.fg }};font:500 12.5px Roboto,sans-serif">
+              <svg width="18" height="18" style="flex:none"><use href="{{ n.icon }}"></use></svg>
+              {{ n.label }}
+            </div>
+          </sc-for>
+          <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-top:1px solid #26384a">
+            <div style="width:30px;height:30px;border-radius:50%;background:#22364a;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#cfdbe4">AS</div>
+            <div style="min-width:0"><div style="font:500 11.5px Roboto,sans-serif;color:#e9eff4">Andrea Scapin</div><div style="font:400 10px Roboto,sans-serif;color:#7d8b98">Admin · Super Admin</div></div>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;background:#eef2f5;min-width:0">
+          <div style="height:56px;flex:none;background:#fff;border-bottom:1px solid #dde3e9;display:flex;align-items:center;justify-content:space-between;padding:0 22px">
+            <div>
+              <div style="font:400 10.5px Roboto,sans-serif;color:#63727f">Tableros</div>
+              <div style="font:700 14.5px Roboto,sans-serif;color:#132330">Vendido vs. ejecutado</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="font:500 11px Roboto,sans-serif;color:#5a6b7a;border:1px solid #dde3e9;border-radius:20px;padding:5px 11px;background:#f4f7f9">2026</span>
+              <span style="font:500 11px Roboto,sans-serif;color:#5a6b7a;border:1px solid #dde3e9;border-radius:20px;padding:5px 11px;background:#f4f7f9">ES / IT</span>
+              <div style="position:relative;display:flex;color:#5a6b7a"><svg width="20" height="20"><use href="#hi-inbox"></use></svg><span style="position:absolute;top:-4px;right:-5px;min-width:15px;height:15px;border-radius:8px;background:#e86c00;color:#fff;font:700 9.5px Roboto,sans-serif;display:flex;align-items:center;justify-content:center;padding:0 3px">6</span></div>
+              <div style="width:30px;height:30px;border-radius:50%;background:#cfdbe4;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,sans-serif;color:#104a78">AS</div>
+            </div>
+          </div>
+          <div style="flex:1;padding:18px 22px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+              <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+                <div style="background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:13px 14px">
+                  <div style="display:flex;align-items:center;gap:8px;color:#63727f">
+                    <svg width="16" height="16"><use href="{{ k.icon }}"></use></svg>
+                    <span style="font:500 10.5px Roboto,sans-serif;letter-spacing:.03em">{{ k.label }}</span>
+                  </div>
+                  <div class="cond" style="font:700 26px/1.1 'Roboto Condensed',sans-serif;color:{{ k.fg }};margin-top:8px">{{ k.value }}</div>
+                  <div style="font:400 10.5px Roboto,sans-serif;color:#95a2ab;margin-top:2px">{{ k.sub }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:14px">
+              <div style="flex:1;background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:14px 16px;min-width:0">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="font:700 12px Roboto,sans-serif;color:#132330">Días por proyecto</div>
+                  <div style="display:flex;gap:14px;font:400 10.5px Roboto,sans-serif;color:#5a6b7a">
+                    <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:2px;background:#104a78"></span>Venduto</span>
+                    <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:2px;background:#e86c00"></span>Eseguito</span>
+                  </div>
+                </div>
+                <svg viewBox="0 0 552 226" width="100%" height="212" style="margin-top:6px;overflow:visible">
+                  <sc-for list="{{ bar.ticks }}" as="t" hint-placeholder-count="6">
+                    <g>
+                      <line x1="{{ bar.axisL }}" x2="{{ bar.axisR }}" y1="{{ t.y }}" y2="{{ t.y }}" stroke="#e8edf1" stroke-width="1"></line>
+                      <text x="{{ t.tx }}" y="{{ t.y }}" text-anchor="end" dominant-baseline="middle" style="font:400 10px 'Roboto Mono',monospace;fill:#95a2ab">{{ t.v }}</text>
+                    </g>
+                  </sc-for>
+                  <sc-for list="{{ bar.bars }}" as="b" hint-placeholder-count="10">
+                    <rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" fill="{{ b.fill }}" rx="2"></rect>
+                  </sc-for>
+                  <line x1="{{ bar.axisL }}" x2="{{ bar.axisR }}" y1="{{ bar.axisY }}" y2="{{ bar.axisY }}" stroke="#c9d2da" stroke-width="1"></line>
+                  <sc-for list="{{ bar.labels }}" as="l" hint-placeholder-count="5">
+                    <text x="{{ l.x }}" y="{{ bar.labelY }}" text-anchor="middle" style="font:400 10.5px Roboto,sans-serif;fill:#5a6b7a">{{ l.label }}</text>
+                  </sc-for>
+                </svg>
+              </div>
+              <div style="width:232px;flex:none;background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;align-items:center">
+                <div style="font:700 12px Roboto,sans-serif;color:#132330;align-self:flex-start">Utilización de técnicos</div>
+                <svg viewBox="0 0 168 168" width="164" height="164" style="margin-top:6px">
+                  <path d="{{ gauge.bg }}" fill="none" stroke="#e8edf1" stroke-width="16" stroke-linecap="round"></path>
+                  <path d="{{ gauge.val }}" fill="none" stroke="#104a78" stroke-width="16" stroke-linecap="round"></path>
+                  <text x="84" y="80" text-anchor="middle" style="font:700 34px 'Roboto Condensed',sans-serif;fill:#132330">{{ gauge.pct }}%</text>
+                  <text x="84" y="100" text-anchor="middle" style="font:400 11px Roboto,sans-serif;fill:#63727f">15 técnicos</text>
+                </svg>
+                <div style="font:400 10.5px/1.5 Roboto,sans-serif;color:#63727f;text-align:center;margin-top:4px">Días facturables sobre días disponibles del trimestre.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:14px;flex:1;min-height:0">
+              <div style="flex:1;background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:14px 16px;min-width:0">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="font:700 12px Roboto,sans-serif;color:#132330">Días ejecutados por mes</div>
+                  <span style="font:400 10.5px Roboto,sans-serif;color:#95a2ab">sep en curso</span>
+                </div>
+                <svg viewBox="0 0 520 176" width="100%" height="150" style="margin-top:4px;overflow:visible">
+                  <sc-for list="{{ line.ticks }}" as="t" hint-placeholder-count="4">
+                    <g>
+                      <line x1="{{ line.axisL }}" x2="{{ line.axisR }}" y1="{{ t.y }}" y2="{{ t.y }}" stroke="#e8edf1" stroke-width="1"></line>
+                      <text x="{{ t.tx }}" y="{{ t.y }}" text-anchor="end" dominant-baseline="middle" style="font:400 10px 'Roboto Mono',monospace;fill:#95a2ab">{{ t.v }}</text>
+                    </g>
+                  </sc-for>
+                  <path d="{{ line.area }}" fill="url(#fadeAzul)"></path>
+                  <path d="{{ line.path }}" fill="none" stroke="#104a78" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"></path>
+                  <sc-for list="{{ line.pts }}" as="p" hint-placeholder-count="9">
+                    <circle cx="{{ p.cx }}" cy="{{ p.cy }}" r="3.4" fill="#fff" stroke="#104a78" stroke-width="2"></circle>
+                  </sc-for>
+                  <sc-for list="{{ line.labels }}" as="l" hint-placeholder-count="9">
+                    <text x="{{ l.x }}" y="{{ line.labelY }}" text-anchor="middle" style="font:400 10px Roboto,sans-serif;fill:#5a6b7a">{{ l.label }}</text>
+                  </sc-for>
+                </svg>
+              </div>
+              <div style="width:300px;flex:none;background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:14px 16px">
+                <div style="font:700 12px Roboto,sans-serif;color:#132330">Mezcla de conceptos</div>
+                <div style="display:flex;height:16px;border-radius:4px;overflow:hidden;margin-top:12px">
+                  <sc-for list="{{ conceptSegs }}" as="s" hint-placeholder-count="6">
+                    <div style="width:{{ s.w }};background:{{ s.fill }}"></div>
+                  </sc-for>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:7px;margin-top:13px">
+                  <sc-for list="{{ conceptSegs }}" as="s" hint-placeholder-count="6">
+                    <div style="display:flex;align-items:center;gap:9px;font:400 11px Roboto,sans-serif;color:#5a6b7a">
+                      <span style="width:9px;height:9px;border-radius:2px;background:{{ s.fill }};flex:none"></span>
+                      <span class="mono" style="font:500 11px 'Roboto Mono',monospace;color:#132330;width:38px">{{ s.code }}</span>
+                      <span style="flex:1"></span>
+                      <span class="mono" style="color:#132330">{{ s.pct }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </sc-if><sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+      <div class="stat ph-stat" style="color:#e9eff4;background:#104a78"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div style="background:#104a78;padding:2px 18px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font:400 11px Roboto,sans-serif;color:#cfdbe4">Mis KPIs · 2026</div>
+            <div class="cond" style="font:700 21px 'Roboto Condensed',sans-serif;color:#fff;margin-top:2px">Ivan Cortés</div>
+          </div>
+          <div style="display:flex;gap:5px;align-items:center;background:#0e4d7a;border-radius:20px;padding:6px 10px;color:#cfdbe4">
+            <svg width="14" height="14"><use href="#hi-offline"></use></svg>
+            <span style="font:400 10.5px Roboto,sans-serif">2 en cola</span>
+          </div>
+        </div>
+      </div>
+      <div class="ph-scroll" style="background:#eef2f5;padding:14px 14px 22px;display:flex;flex-direction:column;gap:11px">
+        <div style="background:#fff;border-radius:12px;padding:14px 15px;display:flex;align-items:center;gap:14px">
+          <svg viewBox="0 0 168 168" width="112" height="112" style="flex:none">
+            <path d="{{ gaugeMobile.bg }}" fill="none" stroke="#e8edf1" stroke-width="18" stroke-linecap="round"></path>
+            <path d="{{ gaugeMobile.val }}" fill="none" stroke="#e86c00" stroke-width="18" stroke-linecap="round"></path>
+            <text x="84" y="84" text-anchor="middle" style="font:700 36px 'Roboto Condensed',sans-serif;fill:#132330">{{ gaugeMobile.pct }}%</text>
+            <text x="84" y="106" text-anchor="middle" style="font:400 12px Roboto,sans-serif;fill:#63727f">mi utilización</text>
+          </svg>
+          <div style="min-width:0">
+            <div style="font:700 12px Roboto,sans-serif;color:#132330">Trimestre en curso</div>
+            <div style="font:400 11.5px/1.6 Roboto,sans-serif;color:#5a6b7a;margin-top:4px">54 de 64 días disponibles ya están facturados a un proyecto.</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+          <div style="background:#fff;border-radius:12px;padding:13px 14px">
+            <div style="display:flex;align-items:center;gap:7px;color:#63727f"><svg width="15" height="15"><use href="#hi-clock"></use></svg><span style="font:500 10px Roboto,sans-serif">Mis días</span></div>
+            <div class="cond" style="font:700 25px 'Roboto Condensed',sans-serif;color:#132330;margin-top:6px">142</div>
+            <div style="font:400 10px Roboto,sans-serif;color:#95a2ab">en 4 proyectos</div>
+          </div>
+          <div style="background:#fff;border-radius:12px;padding:13px 14px">
+            <div style="display:flex;align-items:center;gap:7px;color:#63727f"><svg width="15" height="15"><use href="#hi-clipcheck"></use></svg><span style="font:500 10px Roboto,sans-serif">Notas OK</span></div>
+            <div class="cond" style="font:700 25px 'Roboto Condensed',sans-serif;color:#1f9d5b;margin-top:6px">31</div>
+            <div style="font:400 10px Roboto,sans-serif;color:#95a2ab">1 devuelta</div>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px 15px">
+          <div style="font:700 11.5px Roboto,sans-serif;color:#132330">Mis días por mes</div>
+          <svg viewBox="0 0 520 176" width="100%" height="104" style="margin-top:8px;overflow:visible">
+            <path d="{{ line.area }}" fill="url(#fadeAzul)"></path>
+            <path d="{{ line.path }}" fill="none" stroke="#104a78" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></path>
+            <sc-for list="{{ line.labels }}" as="l" hint-placeholder-count="9">
+              <text x="{{ l.x }}" y="{{ line.labelY }}" text-anchor="middle" style="font:400 12px Roboto,sans-serif;fill:#95a2ab">{{ l.label }}</text>
+            </sc-for>
+          </svg>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px 15px">
+          <div style="font:700 11.5px Roboto,sans-serif;color:#132330">Mezcla de conceptos</div>
+          <div style="display:flex;height:14px;border-radius:4px;overflow:hidden;margin-top:11px">
+            <sc-for list="{{ conceptSegs }}" as="s" hint-placeholder-count="6">
+              <div style="width:{{ s.w }};background:{{ s.fill }}"></div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:11px">
+            <sc-for list="{{ conceptSegs }}" as="s" hint-placeholder-count="6">
+              <span style="display:flex;align-items:center;gap:6px;font:400 10.5px Roboto,sans-serif;color:#5a6b7a"><span style="width:8px;height:8px;border-radius:2px;background:{{ s.fill }}"></span><span class="mono" style="color:#132330">{{ s.code }}</span>{{ s.pct }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:11px 8px 22px;display:flex;justify-content:space-around">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#63727f;min-width:56px"><svg width="21" height="21"><use href="#hi-cal"></use></svg><span style="font:500 9.5px Roboto,sans-serif">Semana</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#63727f;min-width:56px"><svg width="21" height="21"><use href="#hi-pencil"></use></svg><span style="font:500 9.5px Roboto,sans-serif">Registrar</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#63727f;min-width:56px"><svg width="21" height="21"><use href="#hi-doc"></use></svg><span style="font:500 9.5px Roboto,sans-serif">Notas</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#104a78;min-width:56px"><svg width="21" height="21"><use href="#hi-chart"></use></svg><span style="font:700 9.5px Roboto,sans-serif">KPIs</span></div>
+      </div>
+    </div></div></sc-if>
+
+  </div>
+</div>
+
+</div>
+<p class="dv-next">Prueba a decir: «lleva los iconos y los gráficos de <a class="dv-oid" href="#2a">2a</a> a la bitácora de <a class="dv-oid" href="#1c">1c</a>» · «añade el detalle de proyecto y la bandeja de aprobación con este marco» · «hazlo interactivo con navegación real».</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><span class="dv-tid">1</span><span class="dv-tname">Reinventar el técnico — de escritorio a móvil, tres direcciones</span></div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p style="margin:0 0 26px;font:400 13.5px/1.7 Roboto,sans-serif;color:#5a6b7a;max-width:78ch;text-wrap:pretty">Paleta, tipografía y tokens tomados de <span class="mono" style="color:#104a78">frontend/src/index.css</span>; conceptos (DC, DFD, DVSF, DVRC, LR, NR, MD, IL), roles y estados de nota, de <span class="mono" style="color:#104a78">docs/CONTEXTO-PROYECTO-FAVA.md</span>. Referentes de field-service (ServiceTitan, Jobber, Busybusy, ClockShark): captura offline con cola de sincronización, firma en sitio, y el técnico verificando sus propios días antes del ciclo de aprobación. Cada dirección se muestra en escritorio (1000&nbsp;px) y en teléfono (390&nbsp;px) — el mismo modelo, no dos productos.</p></sc-if>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+  <div class="dv-olabel"><span class="dv-oid">1a</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:#132330">La semana, responsive.</strong> Lo que ya existe, ordenado: la semana es la unidad de trabajo en las dos pantallas. En escritorio, tabla de 7 filas con la nota al costado; en móvil, la misma lista y un panel inferior para capturar. Riesgo bajo, cero reeducación.</span></sc-if></div>
+  <div class="dv-pair">
+
+    <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
+      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#63727f">techportalfava.lat/semana</span></div>
+      <div style="display:flex;height:660px">
+        <div style="width:222px;flex:none;background:#132330;padding:18px 14px;display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:10px;padding:0 6px 18px">
+            <div style="width:30px;height:30px;border-radius:8px;background:#e86c00;display:flex;align-items:center;justify-content:center;font:700 16px 'Roboto Condensed',sans-serif;color:#fff">F</div>
+            <div><div style="font:700 12.5px Roboto,sans-serif;color:#fff">Control Técnico</div><div style="font:400 10.5px Roboto,sans-serif;color:#7d8b98">Ivan Cortés · Mecánico</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:8px;background:rgba(232,108,0,.16);font:500 13px Roboto,sans-serif;color:#fff"><span style="width:3px;height:16px;background:#e86c00;border-radius:2px"></span>Mi semana</div>
+          <div style="display:flex;align-items:center;gap:13px;padding:11px 15px;font:400 13px Roboto,sans-serif;color:#9fb0be">Mis notas</div>
+          <div style="display:flex;align-items:center;gap:13px;padding:11px 15px;font:400 13px Roboto,sans-serif;color:#9fb0be">Mis proyectos</div>
+          <div style="display:flex;align-items:center;gap:13px;padding:11px 15px;font:400 13px Roboto,sans-serif;color:#9fb0be">Mis KPIs</div>
+          <div style="margin-top:auto;padding:12px;border:1px solid #26384a;border-radius:8px;background:#182734">
+            <div style="font:400 10.5px Roboto,sans-serif;color:#7d8b98">Semana 36 · 2026</div>
+            <div style="font:700 13px Roboto,sans-serif;color:#e9eff4;margin-top:2px">3 de 5 días</div>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;background:#eef2f5">
+          <div style="height:58px;flex:none;background:#fff;border-bottom:1px solid #dde3e9;display:flex;align-items:center;justify-content:space-between;padding:0 24px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="width:32px;height:32px;border:1px solid #c9d2da;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#5a6b7a;background:#fff">←</span>
+              <span style="font:700 15px Roboto,sans-serif;color:#132330">Semana del 31 ago – 6 sep 2026</span>
+              <span style="width:32px;height:32px;border:1px solid #c9d2da;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#5a6b7a;background:#fff">→</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font:500 11px Roboto,sans-serif;color:#5a6b7a;border:1px solid #dde3e9;border-radius:20px;padding:5px 11px;background:#f4f7f9">ES / IT</span>
+              <x-import component-from-global-scope="Helix.Badge" tone="neutral" hint-size="auto,22px">Borrador</x-import>
+            </div>
+          </div>
+          <div style="flex:1;padding:20px 24px;display:flex;gap:20px;overflow:hidden">
+            <div style="flex:1;background:#fff;border:1px solid #dde3e9;border-radius:10px;overflow:hidden">
+              <div style="display:grid;grid-template-columns:64px 132px 1fr;gap:0;padding:10px 16px;background:#f4f7f9;border-bottom:1px solid #dde3e9;font:700 10.5px Roboto,sans-serif;letter-spacing:.06em;color:#63727f;text-transform:uppercase"><div>Día</div><div>Concepto</div><div>Proyecto y trabajo</div></div>
+              <sc-for list="{{ weekRows }}" as="r" hint-placeholder-count="7">
+                <div style="display:grid;grid-template-columns:64px 132px 1fr;align-items:start;gap:0;padding:10px 16px;border-bottom:1px solid #f0f3f6;background:{{ r.rowBg }}">
+                  <div><div style="font:700 10.5px Roboto,sans-serif;color:#63727f">{{ r.dow }}</div><div class="cond" style="font:700 17px 'Roboto Condensed',sans-serif;color:#132330">{{ r.day }}</div></div>
+                  <div><span style="display:inline-flex;align-items:center;gap:6px;font:700 11px Roboto,sans-serif;color:{{ r.pillFg }};background:{{ r.pillBg }};border-radius:20px;padding:4px 10px">{{ r.code }}<span style="font-weight:400;opacity:.85">{{ r.codeLabel }}</span></span></div>
+                  <div><div style="font:700 12px Roboto,sans-serif;color:#132330">{{ r.project }}<span class="mono" style="font-weight:400;color:#5a6b7a;margin-left:8px">{{ r.machine }}</span></div><div style="font:400 12.5px/1.5 Roboto,sans-serif;color:#5a6b7a;margin-top:2px">{{ r.desc }}</div></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="width:252px;flex:none;display:flex;flex-direction:column;gap:14px">
+              <div style="background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:16px">
+                <div style="font:700 12px Roboto,sans-serif;color:#132330">Nota de prestación</div>
+                <div style="font:400 11.5px/1.5 Roboto,sans-serif;color:#5a6b7a;margin-top:4px">Molino Cibao Bocel — RD</div>
+                <div style="height:6px;border-radius:3px;background:#e8edf1;margin:14px 0 6px;overflow:hidden"><div style="width:60%;height:100%;background:#104a78"></div></div>
+                <div style="font:400 11px Roboto,sans-serif;color:#63727f">3 de 5 días laborables registrados</div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+                  <x-import component-from-global-scope="Helix.Button" variant="primary" fullWidth="{{ true }}" hint-size="100%,40px">Enviar semana</x-import>
+                  <x-import component-from-global-scope="Helix.Button" variant="secondary" fullWidth="{{ true }}" hint-size="100%,40px">Ver PDF</x-import>
+                </div>
+              </div>
+              <div style="background:#fbe4d1;border:1px solid #e86c00;border-radius:10px;padding:14px">
+                <div style="font:700 11.5px Roboto,sans-serif;color:#b35400">Falta el jueves</div>
+                <div style="font:400 11.5px/1.5 Roboto,sans-serif;color:#8a4400;margin-top:3px">Hoy es 3 de sep y no tiene concepto. La nota no se puede enviar sin sus 7 días.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </sc-if><sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+      <div class="stat ph-stat" style="color:#132330;background:#fff"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div style="background:#fff;padding:6px 18px 14px;border-bottom:1px solid #dde3e9">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font:700 17px 'Roboto Condensed',sans-serif;color:#132330">Mi semana</div><div style="font:400 11.5px Roboto,sans-serif;color:#63727f">31 ago – 6 sep · Semana 36</div></div>
+          <x-import component-from-global-scope="Helix.Badge" tone="neutral" hint-size="auto,22px">Borrador</x-import>
+        </div>
+        <div style="display:flex;gap:5px;margin-top:14px">
+          <sc-for list="{{ weekRows }}" as="r" hint-placeholder-count="7">
+            <div style="flex:1;text-align:center;padding:7px 0;border-radius:8px;background:{{ r.stripBg }}">
+              <div style="font:700 9.5px Roboto,sans-serif;color:{{ r.stripFg }};opacity:.75">{{ r.dow1 }}</div>
+              <div style="font:700 13px 'Roboto Condensed',sans-serif;color:{{ r.stripFg }}">{{ r.day }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div class="ph-scroll" style="padding:14px 14px 22px;display:flex;flex-direction:column;gap:9px;background:#eef2f5">
+        <sc-for list="{{ mobileRows }}" as="r" hint-placeholder-count="4">
+          <div style="background:#fff;border:1px solid #dde3e9;border-left:3px solid {{ r.pillFg }};border-radius:10px;padding:12px 13px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="font:700 12px Roboto,sans-serif;color:#132330">{{ r.dowFull }} {{ r.day }}</div>
+              <span style="font:700 10.5px Roboto,sans-serif;color:{{ r.pillFg }};background:{{ r.pillBg }};border-radius:20px;padding:3px 9px">{{ r.code }}</span>
+            </div>
+            <div style="font:700 11.5px Roboto,sans-serif;color:#104a78;margin-top:7px">{{ r.project }}<span class="mono" style="font-weight:400;color:#5a6b7a;margin-left:7px">{{ r.machine }}</span></div>
+            <div style="font:400 12px/1.5 Roboto,sans-serif;color:#5a6b7a;margin-top:2px">{{ r.desc }}</div>
+          </div>
+        </sc-for>
+        <div style="background:#fff;border:1.5px dashed #c9d2da;border-radius:10px;padding:16px 13px;text-align:center">
+          <div style="font:700 12px Roboto,sans-serif;color:#132330">Jueves 3 — hoy</div>
+          <div style="font:400 11.5px Roboto,sans-serif;color:#63727f;margin-top:3px">Sin registrar</div>
+        </div>
+      </div>
+      <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:12px 14px 22px">
+        <div style="min-height:48px;border-radius:10px;background:#104a78;display:flex;align-items:center;justify-content:center;font:500 14px Roboto,sans-serif;color:#fff">Registrar jornada de hoy</div>
+        <div style="display:flex;justify-content:space-around;margin-top:12px;font:500 10.5px Roboto,sans-serif">
+          <span style="color:#104a78">Semana</span><span style="color:#63727f">Notas</span><span style="color:#63727f">Proyectos</span><span style="color:#63727f">KPIs</span>
+        </div>
+      </div>
+    </div></div></sc-if>
+
+  </div>
+</div>
+
+<div class="dv-opt" id="1b">
+  <div class="dv-olabel"><span class="dv-oid">1b</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:#132330">Teclado de conceptos.</strong> Invierte el modelo: no se captura un día, se <em>pinta</em> un mes. En escritorio se seleccionan varios días de la cuadrícula y se aplica un concepto de un golpe (una comisión de tres semanas en Cibao = tres arrastres). En móvil, el mismo teclado: ocho botones grandes, dos toques por día, usable con guantes.</span></sc-if></div>
+  <div class="dv-pair">
+
+    <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
+      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#63727f">techportalfava.lat/bitacora/2026-09</span></div>
+      <div style="display:flex;height:760px;background:#fff">
+        <div style="flex:1;padding:22px 26px;display:flex;flex-direction:column;min-width:0">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between">
+            <div>
+              <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.12em;color:#e86c00;text-transform:uppercase">Bitácora · Ivan Cortés</div>
+              <div class="cond" style="font:700 27px/1.1 'Roboto Condensed',sans-serif;color:#132330;margin-top:5px">Septiembre 2026</div>
+            </div>
+            <div style="display:flex;gap:16px;text-align:right">
+              <div><div class="cond" style="font:700 22px 'Roboto Condensed',sans-serif;color:#132330">18</div><div style="font:400 10.5px Roboto,sans-serif;color:#63727f">días registrados</div></div>
+              <div><div class="cond" style="font:700 22px 'Roboto Condensed',sans-serif;color:#e86c00">4</div><div style="font:400 10.5px Roboto,sans-serif;color:#63727f">huecos</div></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:20px;font:700 10px Roboto,sans-serif;letter-spacing:.08em;color:#63727f;text-transform:uppercase">
+            <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:7px;flex:1">
+            <sc-for list="{{ monthCells }}" as="c" hint-placeholder-count="35">
+              <div style="border:1.5px solid {{ c.border }};background:{{ c.bg }};border-radius:8px;padding:7px 8px;display:flex;flex-direction:column;justify-content:space-between;min-height:0">
+                <div style="font:700 12px 'Roboto Condensed',sans-serif;color:{{ c.numFg }}">{{ c.num }}</div>
+                <div style="font:700 9.5px 'Roboto Mono',monospace;color:{{ c.codeFg }}">{{ c.code }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:9px;font:400 11.5px Roboto,sans-serif;color:#5a6b7a">
+            <span style="font-weight:700;color:#132330">3 días seleccionados</span>
+            <span style="color:#c9d2da">·</span> 8, 9 y 10 de sep
+            <span style="color:#c9d2da">·</span> arrastra para seleccionar, ⇧ para rango
+          </div>
+        </div>
+        <div style="width:296px;flex:none;border-left:1px solid #dde3e9;background:#f4f7f9;padding:22px 20px;display:flex;flex-direction:column;gap:16px">
+          <div style="font:700 12px Roboto,sans-serif;letter-spacing:.05em;color:#132330;text-transform:uppercase">Aplicar a la selección</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <sc-for list="{{ keypad }}" as="k" hint-placeholder-count="8">
+              <div style="border:1.5px solid {{ k.border }};background:{{ k.bg }};border-radius:9px;padding:10px 11px;min-height:56px;display:flex;flex-direction:column;justify-content:center">
+                <div class="mono" style="font:500 13px 'Roboto Mono',monospace;color:{{ k.fg }}">{{ k.code }}</div>
+                <div style="font:400 10.5px/1.3 Roboto,sans-serif;color:#5a6b7a;margin-top:2px">{{ k.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="height:1px;background:#dde3e9"></div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div>
+              <div style="font:700 10.5px Roboto,sans-serif;color:#63727f;text-transform:uppercase;letter-spacing:.06em">Proyecto</div>
+              <div style="margin-top:5px;background:#fff;border:1px solid #c9d2da;border-radius:8px;padding:9px 11px;font:500 12.5px Roboto,sans-serif;color:#132330;display:flex;justify-content:space-between">Molino Cibao Bocel — RD <span style="color:#95a2ab">▾</span></div>
+            </div>
+            <div>
+              <div style="font:700 10.5px Roboto,sans-serif;color:#63727f;text-transform:uppercase;letter-spacing:.06em">Máquina</div>
+              <div style="display:flex;gap:6px;margin-top:5px">
+                <x-import component-from-global-scope="Helix.Chip" label="CTA1000" selected="{{ true }}" hint-size="auto,30px"></x-import>
+                <x-import component-from-global-scope="Helix.Chip" label="PC4500" hint-size="auto,30px"></x-import>
+              </div>
+            </div>
+            <div>
+              <div style="font:700 10.5px Roboto,sans-serif;color:#63727f;text-transform:uppercase;letter-spacing:.06em">Descripción del trabajo</div>
+              <div style="margin-top:5px;background:#fff;border:1px solid #c9d2da;border-radius:8px;padding:9px 11px;font:400 12px/1.5 Roboto,sans-serif;color:#5a6b7a;min-height:56px">Montaggio: cierre de tramo 3 y ajuste de cadenas del pre-secadero.</div>
+            </div>
+          </div>
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+            <x-import component-from-global-scope="Helix.Button" variant="primary" fullWidth="{{ true }}" hint-size="100%,40px">Aplicar a 3 días</x-import>
+            <div style="font:400 10.5px/1.5 Roboto,sans-serif;color:#63727f;text-align:center">Cada día queda como registro propio: la regla de un registro por día se respeta.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </sc-if><sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+      <div class="stat ph-stat" style="color:#fff;background:#104a78"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div style="background:#104a78;padding:4px 18px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font:400 13px Roboto,sans-serif;color:#cfdbe4">Cancelar</span>
+          <span style="font:700 12.5px Roboto,sans-serif;color:#fff">Jueves 3 sep</span>
+          <span style="font:500 13px Roboto,sans-serif;color:#95a2ab">Guardar</span>
+        </div>
+        <div style="margin-top:14px;font:400 11.5px Roboto,sans-serif;color:#cfdbe4">¿Qué fue tu día?</div>
+      </div>
+      <div style="flex:none;background:#fff;padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        <sc-for list="{{ keypad }}" as="k" hint-placeholder-count="8">
+          <div style="border:1.5px solid {{ k.border }};background:{{ k.bg }};border-radius:11px;padding:9px 8px;min-height:60px;display:flex;flex-direction:column;justify-content:center">
+            <div class="mono" style="font:500 13.5px 'Roboto Mono',monospace;color:{{ k.fg }}">{{ k.code }}</div>
+            <div style="font:400 9px/1.25 Roboto,sans-serif;color:#5a6b7a;margin-top:2px">{{ k.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div class="ph-scroll" style="background:#f4f7f9;border-top:1px solid #dde3e9;padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div style="background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:11px 13px">
+          <div style="font:700 10px Roboto,sans-serif;color:#63727f;text-transform:uppercase;letter-spacing:.06em">Proyecto · igual que ayer</div>
+          <div style="font:500 13px Roboto,sans-serif;color:#132330;margin-top:3px">Molino Cibao Bocel — RD</div>
+          <div style="display:flex;gap:6px;margin-top:9px">
+            <span style="font:500 11px 'Roboto Mono',monospace;color:#104a78;background:#cfdbe4;border-radius:20px;padding:4px 10px">CTA1000</span>
+            <span style="font:400 11px 'Roboto Mono',monospace;color:#63727f;border:1px solid #dde3e9;border-radius:20px;padding:4px 10px">PC4500</span>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:11px 13px;flex:1">
+          <div style="font:700 10px Roboto,sans-serif;color:#63727f;text-transform:uppercase;letter-spacing:.06em">Trabajo realizado</div>
+          <div style="font:400 12.5px/1.5 Roboto,sans-serif;color:#95a2ab;margin-top:4px">Toca para dictar o escribir…</div>
+        </div>
+      </div>
+      <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:12px 14px 24px">
+        <div style="min-height:48px;border-radius:10px;background:#e8edf1;display:flex;align-items:center;justify-content:center;font:500 14px Roboto,sans-serif;color:#95a2ab">Elige un concepto para guardar</div>
+      </div>
+    </div></div></sc-if>
+
+  </div>
+</div>
+
+<div class="dv-opt" id="1c">
+  <div class="dv-olabel"><span class="dv-oid">1c</span><sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><span><strong style="color:#132330">Cerrar el día.</strong> La dirección más lejos del Excel: la app es un compañero de obra, no un formulario. Todo se guarda sin señal y una cola visible dice qué falta subir; el día se cierra con un gesto y la semana termina en la firma del cliente, en el teléfono, delante de él. En escritorio, la misma cola pero en dos paneles para repasar y corregir rápido.</span></sc-if></div>
+  <div class="dv-pair">
+
+    <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}"><div class="dsk">
+      <div class="dsk-bar"><span class="dot" style="background:#e0655c"></span><span class="dot" style="background:#e3b341"></span><span class="dot" style="background:#54b262"></span><span class="mono" style="margin-left:12px;font-size:10.5px;color:#63727f">techportalfava.lat/bitacora</span></div>
+      <div style="display:flex;flex-direction:column;height:600px;background:#fff">
+        <div style="flex:none;background:#e2eefd;border-bottom:1px solid #2182f6;padding:9px 22px;display:flex;align-items:center;gap:10px;font:400 11.5px Roboto,sans-serif;color:#0e4d7a">
+          <span style="width:7px;height:7px;border-radius:50%;background:#2182f6"></span>
+          <strong style="font-weight:700">2 registros en cola.</strong> Se guardaron sin señal en Cibao y se subirán solos. Nada se pierde.
+        </div>
+        <div style="flex:1;display:flex;min-height:0">
+          <div style="width:318px;flex:none;border-right:1px solid #dde3e9;display:flex;flex-direction:column;min-height:0">
+            <div style="padding:16px 18px 12px;border-bottom:1px solid #dde3e9">
+              <div class="cond" style="font:700 19px 'Roboto Condensed',sans-serif;color:#132330">Mis días</div>
+              <div style="display:flex;gap:6px;margin-top:11px">
+                <span style="font:700 11px Roboto,sans-serif;color:#fff;background:#132330;border-radius:20px;padding:5px 11px">Pendientes 3</span>
+                <span style="font:400 11px Roboto,sans-serif;color:#5a6b7a;border:1px solid #dde3e9;border-radius:20px;padding:5px 11px">Enviados</span>
+                <span style="font:400 11px Roboto,sans-serif;color:#5a6b7a;border:1px solid #dde3e9;border-radius:20px;padding:5px 11px">Todos</span>
+              </div>
+            </div>
+            <div style="flex:1;overflow:hidden">
+              <sc-for list="{{ queue }}" as="q" hint-placeholder-count="5">
+                <div style="padding:13px 18px;border-bottom:1px solid #f0f3f6;background:{{ q.bg }};display:flex;gap:12px;align-items:flex-start">
+                  <div style="width:38px;flex:none;text-align:center">
+                    <div style="font:700 9.5px Roboto,sans-serif;color:#63727f">{{ q.dow }}</div>
+                    <div class="cond" style="font:700 19px 'Roboto Condensed',sans-serif;color:{{ q.numFg }}">{{ q.day }}</div>
+                  </div>
+                  <div style="min-width:0;flex:1">
+                    <div style="display:flex;align-items:center;gap:7px">
+                      <span style="font:700 10.5px 'Roboto Mono',monospace;color:{{ q.fg }};background:{{ q.tint }};border-radius:4px;padding:2px 6px">{{ q.code }}</span>
+                      <span style="font:400 10.5px Roboto,sans-serif;color:{{ q.stateFg }}">{{ q.state }}</span>
+                    </div>
+                    <div style="font:400 11.5px/1.45 Roboto,sans-serif;color:#5a6b7a;margin-top:4px">{{ q.line }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex:1;background:#f4f7f9;padding:20px 24px;display:flex;flex-direction:column;gap:14px;min-width:0">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
+              <div>
+                <div style="font:700 10.5px Roboto,sans-serif;letter-spacing:.1em;color:#e86c00;text-transform:uppercase">Semana 36 · lista para cerrar</div>
+                <div class="cond" style="font:700 24px/1.15 'Roboto Condensed',sans-serif;color:#132330;margin-top:4px">Molino Cibao Bocel — RD</div>
+                <div style="font:400 12px Roboto,sans-serif;color:#5a6b7a;margin-top:3px">OA 2311 · commessa 4471 · CTA1000 · Ivan Cortés</div>
+              </div>
+              <x-import component-from-global-scope="Helix.Badge" tone="info" hint-size="auto,22px">Enviada</x-import>
+            </div>
+            <div style="display:flex;gap:14px;flex:1;min-height:0">
+              <div style="flex:1;background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:11px;min-width:0">
+                <div style="font:700 11px Roboto,sans-serif;letter-spacing:.05em;color:#63727f;text-transform:uppercase">Los 7 días</div>
+                <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="7">
+                  <div style="display:flex;gap:11px;align-items:flex-start">
+                    <div style="width:8px;flex:none;display:flex;flex-direction:column;align-items:center;padding-top:4px">
+                      <span style="width:8px;height:8px;border-radius:50%;background:{{ t.dotBg }};border:2px solid {{ t.dotBorder }}"></span>
+                      <span style="width:2px;flex:1;min-height:14px;background:#e8edf1"></span>
+                    </div>
+                    <div style="min-width:0;flex:1">
+                      <div style="display:flex;gap:8px;align-items:baseline"><span style="font:700 11.5px Roboto,sans-serif;color:#132330">{{ t.label }}</span><span style="font:500 10px 'Roboto Mono',monospace;color:{{ t.fg }}">{{ t.code }}</span></div>
+                      <div style="font:400 11.5px/1.45 Roboto,sans-serif;color:#5a6b7a">{{ t.desc }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="width:250px;flex:none;display:flex;flex-direction:column;gap:12px">
+                <div style="background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:14px 15px">
+                  <div style="font:700 11px Roboto,sans-serif;letter-spacing:.05em;color:#63727f;text-transform:uppercase">Gastos</div>
+                  <div style="display:flex;justify-content:space-between;font:400 11.5px Roboto,sans-serif;color:#5a6b7a;margin-top:9px"><span>Taxi aeropuerto</span><span class="mono" style="color:#132330">US$ 42</span></div>
+                  <div style="display:flex;justify-content:space-between;font:400 11.5px Roboto,sans-serif;color:#5a6b7a;margin-top:5px"><span>Almuerzos ×3</span><span class="mono" style="color:#132330">US$ 36</span></div>
+                  <div style="height:1px;background:#dde3e9;margin:10px 0"></div>
+                  <div style="display:flex;justify-content:space-between;font:700 12px Roboto,sans-serif;color:#132330"><span>Total</span><span class="mono">US$ 78</span></div>
+                </div>
+                <div style="background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:14px 15px;flex:1">
+                  <div style="font:700 11px Roboto,sans-serif;letter-spacing:.05em;color:#63727f;text-transform:uppercase">Firma del cliente</div>
+                  <div style="margin-top:10px;border:1px dashed #c9d2da;border-radius:8px;height:74px;display:flex;align-items:center;justify-content:center;background:#fafbfc">
+                    <svg viewBox="0 0 200 60" style="width:150px;height:46px"><path d="M10 42 C28 8 40 52 56 30 C70 12 78 48 96 34 C112 22 120 46 140 26 C154 12 168 40 190 22" fill="none" stroke="#132330" stroke-width="2.4" stroke-linecap="round"></path></svg>
+                  </div>
+                  <div style="font:400 10.5px/1.5 Roboto,sans-serif;color:#63727f;margin-top:8px">Firmado en obra el 3 sep, 17:52 · Jorge Bocel, jefe de planta</div>
+                </div>
+                <x-import component-from-global-scope="Helix.Button" variant="secondary" fullWidth="{{ true }}" hint-size="100%,40px">Descargar PDF</x-import>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </sc-if><sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}"><div class="phone"><div class="phone-in">
+      <div class="stat ph-stat" style="color:#e9eff4;background:#132330"><span>9:41</span><span style="display:flex;gap:5px"><span style="width:15px;height:8px;border:1.5px solid currentColor;border-radius:2px"></span><span style="width:20px;height:9px;border:1.5px solid currentColor;border-radius:3px"></span></span></div>
+      <div style="background:#132330;padding:2px 18px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font:400 11px Roboto,sans-serif;color:#7d8b98">Jueves 3 de septiembre</div>
+            <div class="cond" style="font:700 21px 'Roboto Condensed',sans-serif;color:#fff;margin-top:2px">Cibao · CTA1000</div>
+          </div>
+          <div style="width:38px;height:38px;border-radius:50%;background:#22364a;display:flex;align-items:center;justify-content:center;font:700 13px Roboto,sans-serif;color:#cfdbe4">IC</div>
+        </div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:8px;background:#22364a;border-radius:20px;padding:7px 12px">
+          <span style="width:6px;height:6px;border-radius:50%;background:#e3b341"></span>
+          <span style="font:400 11px Roboto,sans-serif;color:#cfdbe4">Sin señal · 2 registros en cola</span>
+        </div>
+      </div>
+      <div class="ph-scroll" style="background:#eef2f5;padding:14px 14px 22px;display:flex;flex-direction:column;gap:10px">
+        <div style="background:#fff;border-radius:12px;padding:15px 15px;box-shadow:0 1px 2px rgba(19,35,48,.05),0 4px 12px rgba(19,35,48,.05)">
+          <div style="font:700 10px Roboto,sans-serif;letter-spacing:.08em;color:#63727f;text-transform:uppercase">Hoy va así</div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:11px">
+            <span style="font:500 15px 'Roboto Mono',monospace;color:#1f9d5b;background:#e2f4ea;border-radius:8px;padding:7px 12px">DC</span>
+            <div style="font:400 12px/1.45 Roboto,sans-serif;color:#5a6b7a">Día completo en fábrica<br><span style="color:#95a2ab">desde las 7:10</span></div>
+          </div>
+          <div style="margin-top:13px;font:400 12.5px/1.6 Roboto,sans-serif;color:#132330">Montaggio: cierre de tramo 3 y ajuste de cadenas del pre-secadero. Pendiente prueba de vacío con Leomar.</div>
+          <div style="display:flex;gap:7px;margin-top:12px">
+            <span style="font:500 11px Roboto,sans-serif;color:#104a78;background:#cfdbe4;border-radius:20px;padding:5px 11px">+ Foto</span>
+            <span style="font:500 11px Roboto,sans-serif;color:#104a78;background:#cfdbe4;border-radius:20px;padding:5px 11px">+ Gasto</span>
+            <span style="font:500 11px Roboto,sans-serif;color:#104a78;background:#cfdbe4;border-radius:20px;padding:5px 11px">+ Nota</span>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px 15px;display:flex;gap:12px;align-items:center">
+          <span style="width:34px;height:34px;flex:none;border-radius:9px;background:#fbe4d1;display:flex;align-items:center;justify-content:center;font:500 12px 'Roboto Mono',monospace;color:#b35400">$</span>
+          <div style="flex:1;min-width:0"><div style="font:500 12.5px Roboto,sans-serif;color:#132330">Taxi aeropuerto</div><div style="font:400 11px Roboto,sans-serif;color:#63727f">Foto del recibo adjunta</div></div>
+          <span class="mono" style="font:500 12.5px 'Roboto Mono',monospace;color:#132330">US$ 42</span>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px 15px">
+          <div style="font:700 10px Roboto,sans-serif;letter-spacing:.08em;color:#63727f;text-transform:uppercase">Esta semana</div>
+          <div style="display:flex;gap:5px;margin-top:11px">
+            <sc-for list="{{ weekRows }}" as="r" hint-placeholder-count="7">
+              <div style="flex:1;height:38px;border-radius:7px;background:{{ r.stripBg }};display:flex;flex-direction:column;align-items:center;justify-content:center">
+                <span style="font:700 9px Roboto,sans-serif;color:{{ r.stripFg }};opacity:.8">{{ r.dow1 }}</span>
+                <span style="font:700 11px 'Roboto Condensed',sans-serif;color:{{ r.stripFg }}">{{ r.day }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font:400 11px Roboto,sans-serif;color:#63727f;margin-top:9px">Al cerrar el viernes se arma la nota y se pide la firma de Jorge Bocel.</div>
+        </div>
+      </div>
+      <div class="ph-bar" style="background:#fff;border-top:1px solid #dde3e9;padding:13px 14px 24px">
+        <div style="min-height:52px;border-radius:26px;background:#e86c00;display:flex;align-items:center;justify-content:center;gap:9px;font:500 14.5px Roboto,sans-serif;color:#fff">Cerrar el día <span style="opacity:.75">→</span></div>
+        <div style="font:400 10.5px Roboto,sans-serif;color:#95a2ab;text-align:center;margin-top:9px">Se guarda aquí y se sube cuando haya señal</div>
+      </div>
+    </div></div></sc-if>
+
+  </div>
+</div>
+
+</div>
+<p class="dv-next">Prueba a decir: «vuelve <a class="dv-oid" href="#1c">1c</a> interactivo, con la firma funcionando» · «mezcla el teclado de <a class="dv-oid" href="#1b">1b</a> dentro de la semana de <a class="dv-oid" href="#1a">1a</a>» · «muéstrame <a class="dv-oid" href="#1c">1c</a> en modo oscuro y bajo el sol» · «nuevas direcciones».</p>
+</section>
+
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Peso del documento&quot;},&quot;showDesktop&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Peso del documento&quot;},&quot;showPhone&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Peso del documento&quot;},&quot;utilizacion&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:78,&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:1,&quot;unit&quot;:&quot;%&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Datos de los gráficos&quot;}}">
+const CONCEPTS = {
+  DC:  ['Día completo',   '#1f9d5b', '#e2f4ea'],
+  DFD: ['Festivo',        '#e86c00', '#fbe4d1'],
+  DVSF:['Viaje salida',   '#2182f6', '#e2eefd'],
+  DVRC:['Viaje retorno',  '#2182f6', '#e2eefd'],
+  MD:  ['Medio día',      '#104a78', '#cfdbe4'],
+  LR:  ['Libre remun.',   '#78889a', '#eceff2'],
+  NR:  ['No remun.',      '#78889a', '#eceff2'],
+  IL:  ['Incapacidad',    '#78889a', '#eceff2'],
+};
+const WEEK = [
+  ['Lun','L',31,'DC','Molino Cibao Bocel — RD','CTA1000','Montaggio línea Pasta Larga: alineación de trafilas y prueba de vacío.'],
+  ['Mar','M',1,'DC','Molino Cibao Bocel — RD','CTA1000','Montaggio: cierre de tramo 3 y ajuste de cadenas del pre-secadero.'],
+  ['Mié','M',2,'DVSF',null,'Bogotá → Santiago','Día de viaje, salida de fábrica. Vuelo AV 8352.'],
+  ['Jue','J',3,null,null,null,null],
+  ['Vie','V',4,null,null,null,null],
+  ['Sáb','S',5,null,null,null,null],
+  ['Dom','D',6,null,null,null,null],
+];
+
+/* Geometría de los gráficos. La gramática visual es la de MUI X Charts (banda de
+   categorías, rejilla horizontal, ticks a la izquierda, leyenda arriba); en producción
+   estos cuatro son <BarChart>, <LineChart>, <Gauge> y <BarChart layout="horizontal">. */
+const P = { azul: '#104a78', naranja: '#e86c00', ok: '#1f9d5b', info: '#2182f6', gris: '#95a2ab' };
+const polar = (cx, cy, r, a) => [cx + r * Math.cos((a * Math.PI) / 180), cy + r * Math.sin((a * Math.PI) / 180)];
+
+class Component extends DCLogic {
+  barChart() {
+    const data = [
+      ['Cibao RD', 45, 38], ['Lucchetti', 30, 33], ['JAV Brasil', 22, 14],
+      ['Pasta Sole', 18, 18], ['J Macedo', 26, 21],
+    ];
+    const W = 552, H = 226, L = 34, R = 6, T = 14, B = 30;
+    const pw = W - L - R, ph = H - T - B, max = 50, band = pw / data.length;
+    const y = (v) => T + ph - (v / max) * ph;
+    const bars = [], labels = [];
+    data.forEach(([name, vend, ejec], i) => {
+      const bw = 24, x0 = L + i * band + band / 2 - bw - 3;
+      bars.push({ x: x0, y: y(vend), w: bw, h: T + ph - y(vend), fill: P.azul, key: name + 'v' });
+      bars.push({ x: x0 + bw + 6, y: y(ejec), w: bw, h: T + ph - y(ejec), fill: P.naranja, key: name + 'e' });
+      labels.push({ x: L + i * band + band / 2, label: name });
+    });
+    const ticks = [0, 10, 20, 30, 40, 50].map((v) => ({ v: String(v), y: y(v), tx: L - 8 }));
+    return { W: String(W), H: String(H), bars, labels, ticks, axisY: String(T + ph), axisL: String(L), axisR: String(W - R), labelY: String(T + ph + 18) };
+  }
+  lineChart() {
+    const vals = [96, 88, 102, 110, 94, 120, 112, 105, 74];
+    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep'];
+    const W = 520, H = 176, L = 32, R = 8, T = 14, B = 26;
+    const pw = W - L - R, ph = H - T - B, max = 130;
+    const px = (i) => L + (i / (vals.length - 1)) * pw;
+    const py = (v) => T + ph - (v / max) * ph;
+    const pts = vals.map((v, i) => ({ cx: String(px(i)), cy: String(py(v)), key: meses[i] }));
+    const line = vals.map((v, i) => `${i ? 'L' : 'M'}${px(i).toFixed(1)} ${py(v).toFixed(1)}`).join(' ');
+    return {
+      W: String(W), H: String(H),
+      path: line,
+      area: `${line} L${px(vals.length - 1).toFixed(1)} ${T + ph} L${L} ${T + ph} Z`,
+      pts,
+      labels: meses.map((m, i) => ({ x: String(px(i)), label: m })),
+      ticks: [0, 40, 80, 120].map((v) => ({ v: String(v), y: String(py(v)), tx: String(L - 7) })),
+      axisY: String(T + ph), axisL: String(L), axisR: String(W - R), labelY: String(T + ph + 16),
+    };
+  }
+  gauge(pct) {
+    const cx = 84, cy = 84, r = 62, start = 135, sweep = 270;
+    const [sx, sy] = polar(cx, cy, r, start);
+    const [ex, ey] = polar(cx, cy, r, start + sweep);
+    const [vx, vy] = polar(cx, cy, r, start + sweep * (pct / 100));
+    return {
+      bg: `M${sx.toFixed(1)} ${sy.toFixed(1)} A${r} ${r} 0 1 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`,
+      val: `M${sx.toFixed(1)} ${sy.toFixed(1)} A${r} ${r} 0 ${pct > 50 ? 1 : 0} 1 ${vx.toFixed(1)} ${vy.toFixed(1)}`,
+      pct: String(pct),
+    };
+  }
+  conceptBar() {
+    const rows = [['DC', 62, P.ok], ['DVSF', 12, P.info], ['DVRC', 11, '#4f9dff'], ['DFD', 8, P.naranja], ['MD', 4, P.azul], ['LR', 3, P.gris]];
+    let x = 0;
+    return rows.map(([code, pct, fill]) => {
+      const seg = { code, pct: String(pct) + '%', fill, x: String(x) + '%', w: String(pct) + '%' };
+      x += pct;
+      return seg;
+    });
+  }
+  rows() {
+    return WEEK.map(([dow, dow1, day, code, project, machine, desc], i) => {
+      const c = code ? CONCEPTS[code] : null;
+      const today = day === 3;
+      return {
+        dow, dow1, day,
+        dowFull: ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'][i],
+        code: code ?? '—',
+        codeLabel: c ? c[0] : 'Sin registrar',
+        pillFg: c ? c[1] : '#78889a',
+        pillBg: c ? c[2] : '#eceff2',
+        rowBg: today ? '#fbf5ef' : '#fff',
+        stripBg: c ? '#cfdbe4' : today ? '#e86c00' : '#f4f7f9',
+        stripFg: c ? '#104a78' : today ? '#fff' : '#95a2ab',
+        project: project ?? (code ? '—' : 'Sin registrar'),
+        machine: machine ?? '',
+        desc: desc ?? '',
+        filled: !!code,
+      };
+    });
+  }
+  /** Septiembre 2026 empieza en martes: la cuadrícula abre con un hueco de lunes. */
+  month() {
+    const filled = {1:'DC',2:'DVSF',3:null,4:null,7:'DC',8:null,9:null,10:null,11:'DC',14:'DC',15:'DC',16:'DC',17:'DC',18:'MD',21:'DC',22:'DC',23:'DFD',24:'DC',25:'DVRC',28:'LR',29:'DC',30:'DC'};
+    const sel = [8, 9, 10];
+    const cells = [{ num: '', code: '', bg: '#fafbfc', border: '#f0f3f6', numFg: '#c9d2da', codeFg: '#c9d2da' }];
+    for (let d = 1; d <= 30; d++) {
+      const code = filled[d];
+      const c = code ? CONCEPTS[code] : null;
+      const selected = sel.includes(d);
+      const weekend = [5, 6, 12, 13, 19, 20, 26, 27].includes(d);
+      cells.push({
+        num: String(d),
+        code: code ?? (weekend ? '' : '—'),
+        bg: selected ? '#fbe4d1' : c ? c[2] : weekend ? '#fafbfc' : '#fff',
+        border: selected ? '#e86c00' : c ? c[2] : '#e8edf1',
+        numFg: selected ? '#b35400' : c ? c[1] : '#95a2ab',
+        codeFg: selected ? '#e86c00' : c ? c[1] : '#c9d2da',
+      });
+    }
+    return cells;
+  }
+  keypad() {
+    return ['DC','MD','DVSF','DVRC','DFD','LR','NR','IL'].map((code, i) => {
+      const c = CONCEPTS[code];
+      const on = i === 0;
+      return { code, label: c[0], fg: on ? '#fff' : c[1], bg: on ? '#104a78' : c[2], border: on ? '#104a78' : c[2] };
+    });
+  }
+  queue() {
+    const rows = [
+      ['Jue', 3, 'DC', 'En cola · sin señal', '#e86c00', 'Cibao · CTA1000 — Montaggio tramo 3', true],
+      ['Mié', 2, 'DVSF', 'En cola · sin señal', '#e86c00', 'Bogotá → Santiago · vuelo AV 8352', true],
+      ['Mar', 1, 'DC', 'Enviado', '#2182f6', 'Cibao · CTA1000 — alineación de trafilas', false],
+      ['Lun', 31, 'DC', 'Aprobado', '#1f9d5b', 'Cibao · CTA1000 — prueba de vacío', false],
+      ['Vie', 28, 'MD', 'Devuelto · falta descripción', '#e0655c', 'Lucchetti Chile · PL6000', false],
+    ];
+    return rows.map(([dow, day, code, state, stateFg, line, active]) => {
+      const c = CONCEPTS[code];
+      return { dow, day: String(day), code, state, stateFg, line, fg: c[1], tint: c[2],
+        bg: active && day === 3 ? '#f4f7f9' : '#fff', numFg: '#132330' };
+    });
+  }
+  timeline() {
+    const rows = [
+      ['Lun 31', 'DC', 'Alineación de trafilas y prueba de vacío.'],
+      ['Mar 1', 'DC', 'Cierre de tramo 3, ajuste de cadenas.'],
+      ['Mié 2', 'DVSF', 'Día de viaje, salida de fábrica.'],
+      ['Jue 3', 'DC', 'Puesta en marcha del pre-secadero con planta.'],
+      ['Vie 4', 'DC', 'Capacitación al equipo de mantenimiento.'],
+      ['Sáb 5', 'DFD', 'Turno festivo a solicitud del cliente.'],
+      ['Dom 6', 'LR', 'Libre remunerado.'],
+    ];
+    return rows.map(([label, code, desc]) => {
+      const c = CONCEPTS[code];
+      return { label, code, desc, fg: c[1], dotBg: c[2], dotBorder: c[1] };
+    });
+  }
+  notes() {
+    const rows = [
+      ['36', '31 ago – 6 sep', 'Molino Cibao Bocel — RD', 'CTA1000', 'Borrador', '#5a6b7a', '#eceff2', '3 de 5 días · falta jueves y viernes'],
+      ['35', '24 – 30 ago', 'Molino Cibao Bocel — RD', 'CTA1000', 'Enviada', '#2182f6', '#e2eefd', 'Esperando firma de Jorge Bocel'],
+      ['34', '17 – 23 ago', 'Molino Cibao Bocel — RD', 'CTA1000', 'Aprobada', '#1f9d5b', '#e2f4ea', 'Firmada el 24 ago · PDF disponible'],
+      ['33', '10 – 16 ago', 'Lucchetti Chile', 'PL6000', 'Devuelta', '#e0655c', '#fbe6e4', 'Falta descripción del miércoles'],
+      ['32', '3 – 9 ago', 'Lucchetti Chile', 'PL6000', 'Aprobada', '#1f9d5b', '#e2f4ea', 'Firmada el 11 ago · PDF disponible'],
+    ];
+    return rows.map(([wk, range, project, machine, state, fg, bg, hint]) => ({ wk, range, project, machine, state, fg, bg, hint }));
+  }
+  pending() {
+    return [
+      ['hi-pencil', '#e86c00', '#fbe4d1', 'Dos días sin registrar', 'Jueves 3 y viernes 4 de septiembre. La nota de la semana 36 no se puede enviar sin ellos.', 'Registrar ahora'],
+      ['hi-doc', '#e0655c', '#fbe6e4', 'Semana 33 devuelta', 'Andrea Scapin pidió detallar el trabajo del miércoles 13 de agosto.', 'Corregir y reenviar'],
+      ['hi-pin', '#2182f6', '#e2eefd', 'Viaje de retorno el 12 de septiembre', 'Recuerda registrarlo como DVRC el día del vuelo, no al llegar.', 'Ver itinerario'],
+      ['hi-badge', '#1f9d5b', '#e2f4ea', 'Semana 34 aprobada', 'Firmada por el cliente el 24 de agosto. Ya cuenta en tus KPIs.', 'Ver PDF'],
+    ].map(([icon, fg, bg, title, body, cta]) => ({ icon: '#' + icon, fg, bg, title, body, cta }));
+  }
+  projectPhases() {
+    const rows = [
+      ['Montaggio meccanico', 62, 58, '#104a78'],
+      ['Montaggio elettrico', 28, 26, '#2182f6'],
+      ['Avviamento', 24, 11, '#e86c00'],
+      ['Formazione cliente', 12, 0, '#95a2ab'],
+    ];
+    const max = 70;
+    return rows.map(([phase, vend, ejec, fill]) => ({
+      phase, vend: String(vend), ejec: String(ejec), fill,
+      wVend: (vend / max * 100).toFixed(1) + '%',
+      wEjec: (ejec / max * 100).toFixed(1) + '%',
+      pct: vend ? Math.round((ejec / vend) * 100) + '%' : '—',
+    }));
+  }
+  renderVals() {
+    const weekRows = this.rows();
+    return {
+      weekRows,
+      queue: this.queue(),
+      timeline: this.timeline(),
+      notes: this.notes(),
+      pending: this.pending(),
+      phases: this.projectPhases(),
+      bar: this.barChart(),
+      line: this.lineChart(),
+      showNotes: this.props.showNotes ?? true,
+      showDesktop: this.props.showDesktop ?? true,
+      showPhone: this.props.showPhone ?? true,
+      gauge: this.gauge(this.props.utilizacion ?? 78),
+      gaugeMobile: this.gauge(Math.min(100, (this.props.utilizacion ?? 78) + 6)),
+      conceptSegs: this.conceptBar(),
+      nav: [
+        ['hi-cal', 'Mi semana', true], ['hi-doc', 'Mis notas', false], ['hi-inbox', 'Aprobación', false],
+        ['hi-building', 'Proyectos', false], ['hi-wrench', 'Técnicos', false], ['hi-users', 'Usuarios', false],
+        ['hi-chart', 'KPIs', false], ['hi-cog', 'Configuración', false],
+      ].map(([icon, label, active]) => ({ icon: '#' + icon, label, active,
+        bg: active ? 'rgba(232,108,0,.16)' : 'transparent', fg: active ? '#fff' : '#9fb0be' })),
+      kpis: [
+        ['hi-clock', 'Días ejecutados', '801', 'YTD 2026', '#132330'],
+        ['hi-trend', 'Vendido vs ejecutado', '−17', 'días de delta', '#e86c00'],
+        ['hi-badge', 'Notas aprobadas', '94 %', 'primer intento', '#1f9d5b'],
+        ['hi-bell', 'En bandeja', '6', 'esperando revisión', '#2182f6'],
+      ].map(([icon, label, value, sub, fg]) => ({ icon: '#' + icon, label, value, sub, fg })),
+      mobileRows: weekRows.filter((r) => r.filled),
+      monthCells: this.month(),
+      keypad: this.keypad(),
+    };
+  }
+}
+</script>
+</body>
+</html>
