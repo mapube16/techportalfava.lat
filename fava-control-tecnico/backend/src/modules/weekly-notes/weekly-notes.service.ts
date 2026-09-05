@@ -698,6 +698,34 @@ export class WeeklyNotesService {
       data: { status: destino },
     });
 
+    /**
+     * Y LOS DÍAS SIN PROYECTO DE ESA SEMANA, cuando la nota vuelve a ser editable.
+     *
+     * `enviarSemana` los aprueba de golpe (no entran en ninguna nota: nadie los firma),
+     * y la propagación de arriba filtra por `projectId`, así que una devolución no los
+     * tocaba: el técnico veía sus dos notas devueltas y el martes «OTRO» seguía
+     * bloqueado con un aviso que le decía «pide que te devuelvan la semana» — que ya
+     * estaba devuelta. Sin salida.
+     *
+     * Reabrirlos es seguro: no están en ningún documento aprobado de ningún cliente.
+     * Y corregirlos es a menudo el motivo de la devolución («ese OTRO era un día de
+     * JAV»). Al reenviar, `enviarSemana` los vuelve a aprobar sola.
+     *
+     * Solo cuando el destino es editable (devolver, reabrir): aprobar o enviar no los
+     * toca, que ya están cerrados.
+     */
+    if (EDITABLES.includes(destino)) {
+      await c.dailyEntry.updateMany({
+        where: {
+          technicianId: actual.technicianId,
+          projectId: null,
+          date: { gte: actual.weekStart, lte: fin },
+          status: 'approved',
+        },
+        data: { status: destino },
+      });
+    }
+
     await this.audit.registrar({
       actorId: actor.id,
       actorName: actor.name,

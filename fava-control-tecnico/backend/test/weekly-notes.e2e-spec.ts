@@ -175,6 +175,32 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
     expect(libre.status).toBe('approved');
   });
 
+  /**
+   * El caso de la captura del 2026-09-05: las DOS notas de la semana devueltas y el
+   * martes «OTRO» (sin proyecto) seguía bloqueado con un aviso que decía «pide que te
+   * devuelvan la semana». Los días sin proyecto se aprueban con el envío y la
+   * devolución solo reabría los del proyecto de la nota: no tenían salida.
+   */
+  it('devolver una nota reabre también los días SIN proyecto de esa semana', async () => {
+    const p = await crearProyecto();
+    await jornada({ projectId: p.id, date: '2026-03-02' });
+    await jornada({ projectId: null, date: '2026-03-03' });
+    const nota = (await enviar()).body[0];
+
+    await http()
+      .post(`/api/weekly-notes/${nota.id}/return`)
+      .set(auth(tokenAdmin))
+      .send({ reason: 'Ese OTRO del martes era un día del proyecto' })
+      .expect(201);
+
+    const libre = () => ownerClient.dailyEntry.findFirstOrThrow({ where: { projectId: null } });
+    expect((await libre()).status).toBe('returned');
+
+    // Y al reenviar vuelve a cerrarse solo, como en el primer envío.
+    await enviar();
+    expect((await libre()).status).toBe('approved');
+  });
+
   it('una semana sin jornadas → 400, no una nota vacía', async () => {
     const res = await enviar(400);
     expect(res.body.message).toBe('SEMANA_VACIA');
