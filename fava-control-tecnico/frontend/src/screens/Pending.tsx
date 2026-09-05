@@ -99,7 +99,7 @@ export default function Pending() {
   };
   const abrirNota = (id: string) => {
     patch({ noteFocus: id });
-    go('closeday');
+    go('notes');
   };
 
   const items: Item[] = [];

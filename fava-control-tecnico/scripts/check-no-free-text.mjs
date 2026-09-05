@@ -32,7 +32,6 @@ const ARCHIVOS = [
   // «sin texto libre» del criterio 4 se rompe justo por donde entran los datos.
   'screens/Week.tsx',
   'screens/Logbook.tsx',
-  'screens/CloseDay.tsx',
   'screens/Pending.tsx',
   'components/LogDayDrawer.tsx',
   // Anadidas en 04-05: el flujo de aprobacion. Si alguna vuelve a una lista cableada

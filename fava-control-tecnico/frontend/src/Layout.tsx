@@ -14,7 +14,6 @@ import type { Role, Route } from './types';
 import Pending from './screens/Pending';
 import Week from './screens/Week';
 import Logbook from './screens/Logbook';
-import CloseDay from './screens/CloseDay';
 import Notes from './screens/Notes';
 import MyStats from './screens/MyStats';
 import Inbox from './screens/Inbox';
@@ -39,7 +38,6 @@ function Screen() {
     case 'pending': return <Pending />;
     case 'week': return <Week />;
     case 'logbook': return <Logbook />;
-    case 'closeday': return <CloseDay />;
     case 'notes': return <Notes />;
     case 'mine': return <MyStats />;
     case 'inbox': return <Inbox />;
@@ -147,7 +145,7 @@ export default function Layout() {
     // de archivo, con filtros.
     groups.push({
       title: t.grp_tecnico,
-      items: [mk('pending', 'pending', 'bell'), mk('week', 'week', 'doc'), mk('logbook', 'logbook', 'cal'), mk('closeday', 'closeday', 'shieldPlain'), mk('notes', 'notes', 'doc'), mk('mine', 'mine', 'chart')],
+      items: [mk('pending', 'pending', 'bell'), mk('week', 'week', 'doc'), mk('logbook', 'logbook', 'cal'), mk('notes', 'notes', 'doc'), mk('mine', 'mine', 'chart')],
     });
   }
   if (tiene('A') || tiene('S')) {
@@ -161,7 +159,7 @@ export default function Layout() {
   }
 
   const titleMap: Record<string, string> = {
-    pending: t.t_pending, week: t.t_week, logbook: t.t_logbook, closeday: t.t_closeday, notes: t.t_notes, mine: t.t_mine, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
+    pending: t.t_pending, week: t.t_week, logbook: t.t_logbook, notes: t.t_notes, mine: t.t_mine, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
     project: t.t_project, techs: t.t_techs, users: t.t_users, kpis: t.t_kpis, audit: t.t_audit, config: t.t_config,
   };
 
@@ -429,7 +427,7 @@ export default function Layout() {
                 [
                   ['week', svg(ICON.cal, { w: 21 }), t.tab_week, () => irA('week'), ['week', 'logbook']],
                   ['log', hi('pencil', { w: 21 }), t.tab_log, () => patch({ logOpen: true, logDate: null }), []],
-                  ['pending', svg(ICON.doc, { w: 21 }), t.tab_notes, () => irA('pending'), ['pending', 'notes', 'closeday']],
+                  ['pending', svg(ICON.doc, { w: 21 }), t.tab_notes, () => irA('pending'), ['pending', 'notes']],
                   ['mine', svg(ICON.chart, { w: 21 }), t.tab_kpis, () => irA('mine'), ['mine']],
                 ] as [string, ReactNode, string, () => void, Route[]][]
               ).map(([key, icon, label, onClick, rutas]) => {
