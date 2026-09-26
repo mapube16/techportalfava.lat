@@ -39,6 +39,7 @@ function Screen() {
     case 'pending': return <Pending />;
     case 'week': return <Week />;
     case 'logbook': return <Logbook />;
+    case 'techlog': return <Logbook admin />;
     case 'notes': return <Notes />;
     case 'mine': return <MyStats />;
     case 'inbox': return <Inbox />;
@@ -153,7 +154,7 @@ export default function Layout() {
   if (tiene('A') || tiene('S')) {
     groups.push({
       title: t.grp_admin,
-      items: [mk('inbox', 'inbox', 'inbox', count), mk('allnotes', 'allnotes', 'doc'), mk('projects', 'projects', 'folder'), mk('techs', 'techs', 'users'), mk('users', 'users', 'users'), mk('payroll', 'payroll', 'doc'), mk('kpis', 'kpis', 'chart')],
+      items: [mk('inbox', 'inbox', 'inbox', count), mk('allnotes', 'allnotes', 'doc'), mk('techlog', 'techlog', 'cal'), mk('projects', 'projects', 'folder'), mk('techs', 'techs', 'users'), mk('users', 'users', 'users'), mk('payroll', 'payroll', 'doc'), mk('kpis', 'kpis', 'chart')],
     });
   }
   if (tiene('S')) {
@@ -161,7 +162,7 @@ export default function Layout() {
   }
 
   const titleMap: Record<string, string> = {
-    pending: t.t_pending, week: t.t_week, logbook: t.t_logbook, notes: t.t_notes, mine: t.t_mine, inbox: t.t_inbox, allnotes: t.t_allnotes, projects: t.t_projects,
+    pending: t.t_pending, week: t.t_week, logbook: t.t_logbook, notes: t.t_notes, mine: t.t_mine, inbox: t.t_inbox, allnotes: t.t_allnotes, techlog: t.t_techlog, projects: t.t_projects,
     project: t.t_project, techs: t.t_techs, users: t.t_users, payroll: t.t_payroll, kpis: t.t_kpis, audit: t.t_audit, config: t.t_config,
   };
 

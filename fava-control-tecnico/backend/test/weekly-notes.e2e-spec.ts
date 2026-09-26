@@ -706,24 +706,61 @@ describe('weekly-notes: envío, aprobación, devolución y auditoría (Fase 4)',
 
   // ── Reabrir ──
 
-  it('reabrir una nota aprobada es de Super Admin y exige motivo', async () => {
+  it('desaprobar (reopen) lo puede hacer un Admin, exige motivo y avisa al técnico', async () => {
     const p = await crearProyecto();
     await jornada({ projectId: p.id, date: '2026-03-02' });
     const nota = (await enviar()).body[0];
     await firmar(nota);
     await http().post(`/api/weekly-notes/${nota.id}/approve`).set(auth(tokenAdmin)).expect(201);
 
-    await http().post(`/api/weekly-notes/${nota.id}/reopen`).set(auth(tokenAdmin)).send({ reason: 'x' }).expect(403);
-    await http().post(`/api/weekly-notes/${nota.id}/reopen`).set(auth(tokenSuper)).send({}).expect(400);
+    await http().post(`/api/weekly-notes/${nota.id}/reopen`).set(auth(tokenTec)).send({ reason: 'x' }).expect(403);
+    await http().post(`/api/weekly-notes/${nota.id}/reopen`).set(auth(tokenAdmin)).send({}).expect(400);
 
     await http()
       .post(`/api/weekly-notes/${nota.id}/reopen`)
-      .set(auth(tokenSuper))
+      .set(auth(tokenAdmin))
       .send({ reason: 'El cliente pidió corregir el total' })
       .expect(201);
 
     // Reabrir devuelve el día a editable, que es el sentido de reabrir.
     const dia = await ownerClient.dailyEntry.findFirstOrThrow({ where: { projectId: p.id } });
     expect(dia.status).toBe('draft');
+
+    // Y encola el aviso: sin él, el técnico no sabe que tiene que reenviar y refirmar.
+    const aviso = await ownerClient.notification.findFirst({ where: { kind: 'note_reopened' } });
+    expect(aviso).not.toBeNull();
+  });
+
+  it('cerrar sin firma: desde borrador, con motivo, y los días quedan aprobados', async () => {
+    const p = await crearProyecto();
+    await jornada({ projectId: p.id, date: '2026-03-02' });
+    const nota = (await enviar()).body[0];
+    // Un técnico no cierra; sin motivo no se cierra.
+    await http().post(`/api/weekly-notes/${nota.id}/close`).set(auth(tokenTec)).send({ reason: 'x' }).expect(403);
+    await http().post(`/api/weekly-notes/${nota.id}/close`).set(auth(tokenAdmin)).send({}).expect(400);
+
+    // Desde `submitted` sin firma: `approve` lo rechaza (NOTA_SIN_FIRMA), `close` no.
+    await http().post(`/api/weekly-notes/${nota.id}/approve`).set(auth(tokenAdmin)).expect(409);
+    const { body } = await http()
+      .post(`/api/weekly-notes/${nota.id}/close`)
+      .set(auth(tokenAdmin))
+      .send({ reason: 'El técnico ya no está en la empresa' })
+      .expect(201);
+    expect(body.status).toBe('approved');
+    expect(body.signed).toBe(false);
+
+    const dia = await ownerClient.dailyEntry.findFirstOrThrow({ where: { projectId: p.id } });
+    expect(dia.status).toBe('approved');
+    const rastro = await ownerClient.auditLog.findFirstOrThrow({ where: { action: 'approve' } });
+    expect(rastro.reason).toBe('El técnico ya no está en la empresa');
+
+    // Y desde borrador (lo que queda tras desaprobar y corregir) también cierra.
+    await http().post(`/api/weekly-notes/${nota.id}/reopen`).set(auth(tokenAdmin)).send({ reason: 'corregir' }).expect(201);
+    const cerrada = await http()
+      .post(`/api/weekly-notes/${nota.id}/close`)
+      .set(auth(tokenAdmin))
+      .send({ reason: 'Corregido a mano' })
+      .expect(201);
+    expect(cerrada.body.status).toBe('approved');
   });
 });

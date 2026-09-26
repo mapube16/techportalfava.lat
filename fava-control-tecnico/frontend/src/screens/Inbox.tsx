@@ -310,13 +310,36 @@ export default function Inbox({ archivo = false }: { archivo?: boolean }) {
           <ReceiptsBlock noteId={cur.id} soloLectura />
         </div>
 
+        {/* Desaprobar y cerrar sin firma salen en la cola Y en el archivo: son
+            correcciones sobre lo ya decidido (o sobre lo que nadie puede firmar), y eso
+            se hace desde donde se mira. Devolver y aprobar siguen siendo de la cola. */}
+        {cur.status === 'approved' ? (
+          <Button
+            variant="outline"
+            onClick={() => patch({ returnOpen: true, returnMode: 'reopen', returnId: cur.id, returnUpdatedAt: cur.updatedAt })}
+            className="min-h-11 md:min-h-9"
+          >
+            {hi('ureturn', { w: 15 })}
+            {t.btn_unapprove}
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            onClick={() => patch({ returnOpen: true, returnMode: 'close', returnId: cur.id, returnUpdatedAt: cur.updatedAt })}
+            title={t.close_sub}
+            className="min-h-11 md:min-h-9"
+          >
+            {t.btn_close_note}
+          </Button>
+        )}
+
         {/* Decidir es cosa de la cola. En el archivo no salen ni sobre una nota enviada:
             si Andrea quiere aprobarla, va a la Bandeja, que es donde se aprueba. */}
         {!archivo && cur.status === 'submitted' ? (
           <>
             <Button
               variant="destructive"
-              onClick={() => patch({ returnOpen: true, returnId: cur.id, returnUpdatedAt: cur.updatedAt })}
+              onClick={() => patch({ returnOpen: true, returnMode: 'return', returnId: cur.id, returnUpdatedAt: cur.updatedAt })}
               className="min-h-11 md:min-h-9"
             >
               {hi('ureturn', { w: 15 })}

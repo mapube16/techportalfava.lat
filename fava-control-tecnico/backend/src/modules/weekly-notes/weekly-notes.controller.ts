@@ -85,7 +85,7 @@ const quien = (u: UserModel) => ({ id: u.id, name: u.displayName });
  * podria saltar de `draft` a `approved`.
  *
  * Los roles se reparten POR METODO porque el flujo los mezcla: enviar es del tecnico,
- * aprobar y devolver del admin, reabrir del Super Admin. La clase se queda en el
+ * aprobar, devolver, desaprobar y cerrar sin firma del admin. La clase se queda en el
  * conjunto mas amplio y cada metodo estrecha.
  */
 @Controller('api/weekly-notes')
@@ -197,11 +197,18 @@ export class WeeklyNotesController {
     return this.service.return_(quien(actor), id, texto(body?.reason, 'COMENTARIO'), esperado(body));
   }
 
-  /** Deshacer una aprobacion no es rutina: Super Admin y con motivo. */
+  /** Desaprobar: Admin o Super Admin, siempre con motivo. Antes era solo de S y sin boton. */
   @Post(':id/reopen')
-  @Roles('S')
+  @Roles('A', 'S')
   reabrir(@CurrentUser() actor: UserModel, @Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo) {
     return this.service.reopen(quien(actor), id, texto(body?.reason, 'MOTIVO'), esperado(body));
+  }
+
+  /** Cerrar sin firma (tecnico de baja, o corregida a mano por la admin). Con motivo. */
+  @Post(':id/close')
+  @Roles('A', 'S')
+  cerrar(@CurrentUser() actor: UserModel, @Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo) {
+    return this.service.close(quien(actor), id, texto(body?.reason, 'MOTIVO'), esperado(body));
   }
 
   /** NOTA-09: el cargo de ESA semana. Recurso aparte, como los dias vendidos. */

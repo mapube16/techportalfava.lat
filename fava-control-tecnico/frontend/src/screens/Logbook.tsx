@@ -9,6 +9,7 @@ import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getWeek, putEntries } from '../lib/api/dailyEntries';
 import { listProjectsForLog } from '../lib/api/projects';
+import { listTechnicians } from '../lib/api/technicians';
 import { getCatalogs } from '../lib/api/catalogs';
 import { ADMITE_FABRICA, exigeProyecto } from '../lib/conceptos';
 import { hoyLocal, rejillaDelMes, sumarMeses } from '../lib/fecha';
@@ -34,8 +35,19 @@ import type { ConceptCode } from '../lib/api/dailyEntries';
 /** El dia del mes, sobre el string. Sin `Date`, como en el resto de la app. */
 const diaDe = (iso: string) => Number(iso.slice(8, 10));
 
-export default function Logbook() {
+/**
+ * `admin` = «Bitácora por técnico»: la misma rejilla, sobre la bitácora de OTRO. Se
+ * elige el técnico arriba (inactivos incluidos: los días que más se corrigen a mano son
+ * de quien ya no está) y no se bloquea nada en el cliente — qué día se puede tocar lo
+ * decide la nota de esa semana, en el servidor, y el 409 sale en el aviso de siempre.
+ */
+export default function Logbook({ admin = false }: { admin?: boolean }) {
   const { state, t, patch, showToast, refresh, errTexto } = useApp();
+  const [tecnicoId, setTecnicoId] = useState('');
+  const { data: tecnicos } = useApiData(
+    () => (admin ? listTechnicians() : Promise.resolve(null)),
+    [admin],
+  );
 
   const hoy = hoyLocal();
   /** El mes visible, anclado al dia 1. `null` = el de hoy. */
@@ -57,8 +69,9 @@ export default function Logbook() {
   const [pintando, setPintando] = useState(false);
 
   const { data, error } = useApiData(
-    () => getWeek(celdas[0], celdas[41]),
-    [mesActual, state.dataVersion],
+    // En modo admin sin técnico elegido no hay nada que pedir: rejilla vacía.
+    () => (admin && !tecnicoId ? Promise.resolve(null) : getWeek(celdas[0], celdas[41], admin ? tecnicoId : null)),
+    [mesActual, state.dataVersion, admin, tecnicoId],
   );
   const { data: proyectos } = useApiData(listProjectsForLog, []);
   // Los conceptos y sus etiquetas son del catalogo del SERVIDOR (CAT-01): un
@@ -67,7 +80,24 @@ export default function Logbook() {
   const { data: catalogos } = useApiData(getCatalogs, []);
   const conceptos = catalogos?.concepts ?? [];
 
+  const selectorTecnico = admin ? (
+    <select
+      value={tecnicoId}
+      onChange={(e) => { setTecnicoId(e.target.value); setSel([]); }}
+      className={`${inputStyle} mb-3.5`}
+      aria-label={t.techlog_pick}
+    >
+      <option value="">{t.techlog_pick}</option>
+      {(tecnicos ?? []).map((tc) => (
+        <option key={tc.id} value={tc.id}>
+          {tc.fullName}{tc.isActive ? '' : ` (${t.techlog_inactive})`}
+        </option>
+      ))}
+    </select>
+  ) : null;
+
   if (error) return <ApiState error={error} label={t.err_load} />;
+  if (admin && !tecnicoId) return <div className="max-w-[1100px] mx-auto">{selectorTecnico}</div>;
   if (!data) return <ApiState error={null} label={t.loading} />;
 
   const porFecha = new Map(data.entries.map((e) => [e.date, e]));
@@ -85,7 +115,10 @@ export default function Logbook() {
     const st = porFecha.get(f)?.status;
     return st === 'submitted' || st === 'approved';
   };
-  const editable = (f: string) => f >= data.minDate && f <= data.maxDate && !cerrado(f);
+  // La admin no tiene suelo ni bloqueo por estado: solo el futuro. Lo demás lo dice el
+  // servidor (NOTA_APROBADA_DESAPRUEBA, NOTA_EN_REVISION) y sale en el aviso.
+  const editable = (f: string) =>
+    admin ? f <= data.maxDate : f >= data.minDate && f <= data.maxDate && !cerrado(f);
 
   const alternar = (f: string) => {
     if (!editable(f)) return;
@@ -131,6 +164,7 @@ export default function Logbook() {
         // ruido impreso. Se pone desde el cajon, dia por dia.
         dayNote: null,
       },
+      admin ? tecnicoId : null,
     )
       .then(() => {
         showToast('saved');
@@ -147,7 +181,9 @@ export default function Logbook() {
   );
 
   return (
-    <div className="max-w-[1100px] mx-auto flex flex-col md:flex-row gap-4 items-start">
+    <div className="max-w-[1100px] mx-auto">
+    {selectorTecnico}
+    <div className="flex flex-col md:flex-row gap-4 items-start">
       {/* LA REJILLA */}
       <Card className="flex-1 min-w-0 w-full">
         <div className="flex items-end justify-between gap-3 flex-wrap p-4.5 border-b border-border">
@@ -162,14 +198,18 @@ export default function Logbook() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-[21px] font-bold font-cond leading-none">{registrados}</div>
-              <div className="text-[10.5px] text-muted-foreground">{t.lb_registered}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-[21px] font-bold font-cond leading-none text-warn">{huecos}</div>
-              <div className="text-[10.5px] text-muted-foreground">{t.lb_gaps}</div>
-            </div>
+            {admin ? null : (
+              <>
+                <div className="text-right">
+                  <div className="text-[21px] font-bold font-cond leading-none">{registrados}</div>
+                  <div className="text-[10.5px] text-muted-foreground">{t.lb_registered}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[21px] font-bold font-cond leading-none text-warn">{huecos}</div>
+                  <div className="text-[10.5px] text-muted-foreground">{t.lb_gaps}</div>
+                </div>
+              </>
+            )}
             <div className="flex gap-1.5">
               <Button
                 variant="outline"
@@ -228,7 +268,7 @@ export default function Logbook() {
                   // —una descripcion para toda la seleccion— y hay cosas que son de un
                   // solo dia: la nota, los gastos, las maquinas adicionales. Sin esto
                   // habia que ir a «Mi semana» y navegar hasta la semana correcta.
-                  onDoubleClick={() => patch({ logOpen: true, logDate: f })}
+                  onDoubleClick={() => patch({ logOpen: true, logDate: f, logTech: admin ? tecnicoId : null })}
                   // Por que un dia no se deja tocar. Sin el titulo, un dia futuro se
                   // ve igual que uno bloqueado por estar aprobado, y el tecnico no
                   // tiene forma de distinguirlos.
@@ -287,7 +327,7 @@ export default function Logbook() {
                 hoy + 14 h), no una limitacion de esta pantalla: nadie puede declarar
                 el dia que todavia no ha trabajado. Decirlo aqui evita leer la rejilla
                 gris como una averia. */}
-            <div className="mt-1">{t.lb_future_note}</div>
+            {admin ? null : <div className="mt-1">{t.lb_future_note}</div>}
           </div>
         </div>
       </Card>
@@ -429,6 +469,7 @@ export default function Logbook() {
       {err ? (
         <AvisoModal titulo={t.err_save} mensaje={errTexto(err)} onClose={() => setErr(null)} />
       ) : null}
+    </div>
     </div>
   );
 }

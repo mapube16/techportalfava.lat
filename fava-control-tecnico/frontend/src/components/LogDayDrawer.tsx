@@ -66,6 +66,8 @@ export default function LogDayDrawer() {
   const setDesc = (v: string) => setDescs((d) => ({ ...d, [fecha]: v }));
   const [errApi, setErrApi] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+  /** La ADMIN editando a otro (ver `logTech` en state.tsx). */
+  const tecnico = state.logTech;
 
   // La proyección de técnico: solo id, nombre y sus órdenes activas. Nada comercial.
   const { data: proyectos } = useApiData(listProjectsForLog, []);
@@ -80,8 +82,8 @@ export default function LogDayDrawer() {
 
   /** Lo ya registrado ese día: el drawer edita, no crea siempre desde cero. */
   const { data: existente } = useApiData(
-    async () => (await getWeek(fecha, fecha)).entries[0] ?? null,
-    [fecha],
+    async () => (await getWeek(fecha, fecha, tecnico)).entries[0] ?? null,
+    [fecha, tecnico],
   );
 
   /**
@@ -90,7 +92,8 @@ export default function LogDayDrawer() {
    * Guardar, y el tecnico entendia que «le dejaba modificar» un dia ya aprobado por
    * Andrea. Aqui se dice antes de intentarlo, y el boton no se ofrece.
    */
-  const bloqueado = Boolean(existente) && existente!.status !== 'draft' && existente!.status !== 'returned';
+  // A la admin no la bloquea el dia: la gobierna la nota, en el servidor.
+  const bloqueado = !tecnico && Boolean(existente) && existente!.status !== 'draft' && existente!.status !== 'returned';
 
   useEffect(() => {
     if (!existente) return;
@@ -112,7 +115,7 @@ export default function LogDayDrawer() {
   const alternar = (f: string) =>
     setDias((ds) => (ds.includes(f) ? ds.filter((x) => x !== f) : [...ds, f].sort()));
 
-  const close = () => patch({ logOpen: false, logDate: null });
+  const close = () => patch({ logOpen: false, logDate: null, logTech: null });
 
   const proyecto = (proyectos ?? []).find((p) => p.id === projectId);
   /**
@@ -164,6 +167,7 @@ export default function LogDayDrawer() {
         // repetir la misma en siete filas del PDF seria ruido impreso.
         dayNote: dias.length <= 1 ? notaDia.trim() || null : null,
       },
+      tecnico,
     )
       .then(() => {
         close();
@@ -342,8 +346,9 @@ export default function LogDayDrawer() {
                   // Regla de Andrea (2026-08-30): al EXTERNO no se le pagan los libres
                   // remunerados, asi que ni se le ofrece el boton. La regla dura vive
                   // en el servidor; esto solo evita ensenar una opcion que va a fallar.
+                  // A la admin no se le filtra: el servidor valida contra el tecnico REAL.
                   (c) =>
-                    c.code !== 'LR' ||
+                    c.code !== 'LR' || Boolean(tecnico) ||
                     (state.me?.status === 'ok' ? state.me.user.employmentType !== 'EXTERNO' : true),
                 )
                 .map((c) => {
@@ -483,7 +488,8 @@ export default function LogDayDrawer() {
               vacía al recibir el primer gasto (ver `GastosService.crear`).
               Solo con un día porque un gasto es de una fecha concreta, no de las cinco
               de un montaje. Se guarda al instante, con su propio endpoint. */}
-          {dias.length <= 1 ? (
+          {/* Los gastos siguen siendo del tecnico: la admin no los toca desde aqui. */}
+          {dias.length <= 1 && !tecnico ? (
             <DayExpenses fecha={fecha} bloqueado={bloqueado} />
           ) : null}
 

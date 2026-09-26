@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { DailyEntriesController } from './daily-entries.controller';
+import { AuditService } from '../../common/audit/audit.service';
+import { AdminDailyEntriesController, DailyEntriesController } from './daily-entries.controller';
 import { DailyEntriesService } from './daily-entries.service';
 import { GastosController } from './gastos.controller';
 import { GastosService } from './gastos.service';
@@ -10,7 +11,8 @@ import { GastosService } from './gastos.service';
  * nota los LEE al imprimirse; no los posee.
  */
 @Module({
-  controllers: [DailyEntriesController, GastosController],
-  providers: [DailyEntriesService, GastosService],
+  controllers: [DailyEntriesController, AdminDailyEntriesController, GastosController],
+  // `AuditService` en `providers`, como en weekly-notes: la admin deja rastro al escribir.
+  providers: [DailyEntriesService, GastosService, AuditService],
 })
 export class DailyEntriesModule {}

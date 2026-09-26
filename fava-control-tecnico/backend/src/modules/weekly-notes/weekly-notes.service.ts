@@ -31,8 +31,20 @@ const TRANSICIONES: Record<string, string[]> = {
   draft: ['submitted'],
   submitted: ['approved', 'returned'],
   returned: ['submitted'],
-  // Una nota aprobada solo se mueve con `reopen`, que exige motivo y es de Super Admin.
+  // Una nota aprobada solo se mueve con `reopen`, que exige motivo y es del admin.
   approved: ['draft'],
+};
+
+/**
+ * Las transiciones EXTRA de `close`: la admin cierra una nota sin firma, con motivo.
+ * Existe para dos casos que sin esto no tienen salida: el tecnico dado de baja (nadie
+ * puede reenviar ni firmar) y la nota que Andrea corrigio a mano tras desaprobarla.
+ * Separadas de la tabla de arriba para que el flujo normal no las vea.
+ */
+const CIERRE_ADMIN: Record<string, string[]> = {
+  draft: ['approved'],
+  returned: ['approved'],
+  submitted: ['approved'],
 };
 
 /** La vista de una nota. `select` explícito: el contrato no crece solo. */
@@ -623,7 +635,13 @@ export class WeeklyNotesService {
     id: string,
     destino: string,
     action: 'submit' | 'approve' | 'return' | 'reopen',
-    opciones: { reason?: string | null; expectedUpdatedAt?: string; onBehalfOfId?: string | null } = {},
+    opciones: {
+      reason?: string | null;
+      expectedUpdatedAt?: string;
+      onBehalfOfId?: string | null;
+      /** `close`: la admin cierra sin firma y desde cualquier estado abierto. */
+      sinFirma?: boolean;
+    } = {},
   ) {
     const c = this.prisma.client;
     const actual = await c.weeklyNote.findUnique({
@@ -643,7 +661,8 @@ export class WeeklyNotesService {
     if (opciones.expectedUpdatedAt && actual.updatedAt.toISOString() !== opciones.expectedUpdatedAt)
       throw new ConflictException('NOTA_MODIFICADA');
 
-    if (!(TRANSICIONES[actual.status] ?? []).includes(destino))
+    const permitidas = opciones.sinFirma ? CIERRE_ADMIN : TRANSICIONES;
+    if (!(permitidas[actual.status] ?? []).includes(destino))
       throw new ConflictException(`TRANSICION_INVALIDA_${actual.status.toUpperCase()}_A_${destino.toUpperCase()}`);
 
     /**
@@ -658,7 +677,9 @@ export class WeeklyNotesService {
      * que nadie puede resolver. El discriminador es estructural y no una fecha a ojo:
      * si vino del Excel, no se le pide; si la creó la app, sí.
      */
-    if (destino === 'approved' && !actual.sourceSheet && !actual.signedContentHash)
+    // Y SALVO `close`: la admin asume ella lo que el tecnico no puede firmar, con motivo
+    // y con su nombre en el audit_log — es la misma excepcion que la historica, explicita.
+    if (destino === 'approved' && !actual.sourceSheet && !actual.signedContentHash && !opciones.sinFirma)
       throw new ConflictException('NOTA_SIN_FIRMA');
 
     const nota = await c.weeklyNote.update({
@@ -738,13 +759,14 @@ export class WeeklyNotesService {
       reason: opciones.reason ?? null,
     });
 
-    // Fase 9. Solo estas dos: `submit` y `reopen` no le dicen nada nuevo al técnico
-    // (una la hizo él, la otra le devuelve la nota a editable y ya la verá).
+    // Fase 9. `submit` no le dice nada nuevo al técnico (la hizo él). `reopen` sí:
+    // desde que lo hace la admin a diario, sin aviso la nota se queda en borrador y
+    // nadie la reenvía ni la vuelve a firmar.
     //
     // Esto ENCOLA, no envía: el POST a Graph no puede ocurrir aquí dentro. La
     // transacción de la petición retiene una conexión del pool de 10 con timeout de
     // 10 s, y una llamada de red lenta lo agota antes que la CPU (ver `rls.interceptor`).
-    if (action === 'approve' || action === 'return')
+    if (action === 'approve' || action === 'return' || action === 'reopen')
       await this.notif.avisarTransicion(nota, action, opciones.reason);
 
     return plana(nota);
@@ -760,10 +782,19 @@ export class WeeklyNotesService {
     return this.transicionar(actor, id, 'returned', 'return', { reason: reason.trim(), expectedUpdatedAt });
   }
 
-  /** Reabrir una nota aprobada. Exige motivo: deshacer una aprobación no es rutina. */
+  /** Desaprobar (reabrir) una nota aprobada. Exige motivo: deshacer una aprobación deja rastro. */
   reopen(actor: { id: string; name: string }, id: string, reason: string, expectedUpdatedAt?: string) {
     if (!reason.trim()) throw new BadRequestException('MOTIVO_REQUERIDO');
     return this.transicionar(actor, id, 'draft', 'reopen', { reason: reason.trim(), expectedUpdatedAt });
+  }
+
+  /**
+   * Cerrar SIN firma. Para el tecnico que ya no esta y para lo que la admin corrigio a
+   * mano tras desaprobar. Motivo obligatorio: es la admin asumiendo el documento.
+   */
+  close(actor: { id: string; name: string }, id: string, reason: string, expectedUpdatedAt?: string) {
+    if (!reason.trim()) throw new BadRequestException('MOTIVO_REQUERIDO');
+    return this.transicionar(actor, id, 'approved', 'approve', { reason: reason.trim(), expectedUpdatedAt, sinFirma: true });
   }
 
   /** NOTA-09: el cargo de ESA semana, que puede no ser el del maestro. */

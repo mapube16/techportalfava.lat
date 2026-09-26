@@ -57,17 +57,25 @@ export interface EntryInput {
   extraOrderIds?: string[];
 }
 
-/** Rango máximo de 30 días: sin techo un `from` lejano se trae la tabla entera. */
-export const getWeek = (from: string, to: string) =>
-  apiFetch<Week>(`/daily-entries?from=${from}&to=${to}`);
+/**
+ * La bitácora de OTRO, para la admin: `/technicians/:id/daily-entries`. Mismo contrato,
+ * otra ruta y otras reglas de estado (las decide la nota, en el servidor). Sin
+ * `tecnicoId`, la del técnico que llama.
+ */
+const base = (tecnicoId?: string | null) =>
+  tecnicoId ? `/technicians/${tecnicoId}/daily-entries` : '/daily-entries';
+
+/** Rango máximo de 42 días: sin techo un `from` lejano se trae la tabla entera. */
+export const getWeek = (from: string, to: string, tecnicoId?: string | null) =>
+  apiFetch<Week>(`${base(tecnicoId)}?from=${from}&to=${to}`);
 
 /**
  * PUT idempotente por clave natural `(técnico, fecha)`. Reintentar tras un timeout es
  * seguro: no hay cabecera de idempotencia porque no hace falta — verificado con 8
  * escrituras concurrentes sobre la misma clave (1 fila, cero P2002).
  */
-export const putEntry = (date: string, body: EntryInput) =>
-  apiSend<Entry>(`/daily-entries/${date}`, 'PUT', body);
+export const putEntry = (date: string, body: EntryInput, tecnicoId?: string | null) =>
+  apiSend<Entry>(`${base(tecnicoId)}/${date}`, 'PUT', body);
 
 /**
  * BIT-06 — la misma jornada en VARIOS dias, cada uno con su descripcion.
@@ -78,7 +86,8 @@ export const putEntry = (date: string, body: EntryInput) =>
 export const putEntries = (
   days: { date: string; description: string | null }[],
   body: Omit<EntryInput, 'description'>,
-) => apiSend<Entry[]>('/daily-entries', 'PUT', { ...body, days });
+  tecnicoId?: string | null,
+) => apiSend<Entry[]>(base(tecnicoId), 'PUT', { ...body, days });
 
 // ── GASTO-01: los gastos del DÍA en que ocurren ──
 //

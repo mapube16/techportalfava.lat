@@ -43,6 +43,12 @@ export interface AppState {
   /** Fecha 'YYYY-MM-DD' que abre el drawer. `null` = hoy. Sale de la fila de la semana. */
   logDate: string | null;
   /**
+   * El técnico cuya bitácora edita la ADMIN desde «Bitácora por técnico». `null` = la
+   * del que llama. Con él, el cajón escribe por `/technicians/:id/daily-entries` y no
+   * bloquea nada en el cliente: el estado lo decide la nota, en el servidor.
+   */
+  logTech: string | null;
+  /**
    * El lunes que «Mi semana» abre al entrar. `null` = la de hoy. Lo pone Pendientes:
    * «Semana 34 sin enviar» tiene que aterrizar en la 34, no en la de hoy. La pantalla
    * lo consume al montar y lo limpia.
@@ -51,6 +57,8 @@ export interface AppState {
   /** La nota que «Cerrar semana» deja abierta al entrar. Mismo trato que `weekStart`. */
   noteFocus: string | null;
   returnOpen: boolean;
+  /** Un modal, tres acciones con motivo: devolver, desaprobar (reopen) o cerrar sin firma. */
+  returnMode: 'return' | 'reopen' | 'close';
   returnId: string | null;
   /** El `updated_at` que se leyó al abrir el modal: el bloqueo optimista del devolver. */
   returnUpdatedAt: string | null;
@@ -108,9 +116,11 @@ const initialState: AppState = {
   kpiSeg: 'project',
   logOpen: false,
   logDate: null,
+  logTech: null,
   weekStart: null,
   noteFocus: null,
   returnOpen: false,
+  returnMode: 'return',
   returnId: null,
   returnUpdatedAt: null,
   projOpen: false,

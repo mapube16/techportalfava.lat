@@ -7,6 +7,7 @@
 import { LANGS, PLANTILLAS, type Kind, idioma, render } from './plantillas';
 
 const KINDS: Kind[] = [
+  'note_reopened',
   'note_returned',
   'note_approved',
   'week_missing',

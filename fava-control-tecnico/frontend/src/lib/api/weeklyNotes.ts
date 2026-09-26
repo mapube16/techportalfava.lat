@@ -64,8 +64,13 @@ export const approveNote = (id: string, expectedUpdatedAt: string, onBehalfOfId?
 export const returnNote = (id: string, reason: string, expectedUpdatedAt: string) =>
   apiSend<WeeklyNote>(`/weekly-notes/${id}/return`, 'POST', { reason, expectedUpdatedAt });
 
+/** Desaprobar: la nota vuelve a borrador (versión nueva), el PDF firmado se conserva. */
 export const reopenNote = (id: string, reason: string, expectedUpdatedAt: string) =>
   apiSend<WeeklyNote>(`/weekly-notes/${id}/reopen`, 'POST', { reason, expectedUpdatedAt });
+
+/** Cerrar SIN firma: para el técnico que ya no está, o lo corregido a mano. Con motivo. */
+export const closeNote = (id: string, reason: string, expectedUpdatedAt: string) =>
+  apiSend<WeeklyNote>(`/weekly-notes/${id}/close`, 'POST', { reason, expectedUpdatedAt });
 
 export const setNoteRole = (id: string, roleTypeId: string | null) =>
   apiSend<WeeklyNote>(`/weekly-notes/${id}/role`, 'PUT', { roleTypeId });

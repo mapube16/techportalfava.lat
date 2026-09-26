@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Put, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Put, Query } from '@nestjs/common';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { Roles } from '../../common/auth/roles.decorator';
 import { ConceptCode, Phase } from '../../generated/prisma/enums';
@@ -150,11 +150,9 @@ function notaDia(valor: unknown): string | null {
 /**
  * La bitacora es del TECNICO: `@Roles('T')` en la clase y ningun metodo lo relaja.
  *
- * DECISION: no existe `?technicianId=` para administradores. La lectura de la semana
- * ajena es la pantalla de aprobacion de la Fase 4, que llega con su propia
- * autorizacion y su propia pantalla; un parametro aqui seria una regla de permisos que
- * nadie usa y que nadie defiende con un test. RLS ya deja leer al admin
- * (`app.is_admin = 'on'`), asi que el dia que haga falta es una linea, no un rediseño.
+ * No existe `?technicianId=` aqui: la admin tiene SU ruta (`AdminDailyEntriesController`,
+ * abajo), con el tecnico en el path y otras reglas de estado. Mezclar las dos en un
+ * parametro opcional seria una regla de permisos escondida en un query string.
  *
  * Ruta completa en el decorador: sin `setGlobalPrefix` (doctrina de 01-01).
  */
@@ -202,5 +200,49 @@ export class DailyEntriesController {
     // El 409 va primero: sin vinculo no hay nada que validar ni donde escribir.
     const technicianId = this.service.tecnicoDe(actor);
     return this.service.guardar(technicianId, date, jornada(body));
+  }
+}
+
+const quien = (u: UserModel) => ({ id: u.id, name: u.displayName });
+
+/**
+ * La bitacora de OTRO, para la admin. Andrea corrige dias y agrega los que el tecnico
+ * nunca registro; el estado con el que quedan lo decide la nota de esa semana
+ * (`estadoAdmin` en el servicio), no `EDITABLES`.
+ *
+ * Mismo validador de cuerpo (`jornada`, `dias`) que la ruta del tecnico: dos formas de
+ * escribir el mismo dia con reglas distintas es la puerta de atras que 03-01 cerro.
+ */
+@Controller('api/technicians/:technicianId/daily-entries')
+@Roles('A', 'S')
+export class AdminDailyEntriesController {
+  constructor(private readonly service: DailyEntriesService) {}
+
+  @Get()
+  semana(
+    @Param('technicianId', ParseUUIDPipe) technicianId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.service.semana(technicianId, from, to);
+  }
+
+  @Put()
+  guardarVarios(
+    @CurrentUser() actor: UserModel,
+    @Param('technicianId', ParseUUIDPipe) technicianId: string,
+    @Body() body: Cuerpo,
+  ) {
+    return this.service.guardarVarios(technicianId, dias(body?.days), jornada(body), quien(actor));
+  }
+
+  @Put(':date')
+  guardar(
+    @CurrentUser() actor: UserModel,
+    @Param('technicianId', ParseUUIDPipe) technicianId: string,
+    @Param('date') date: string,
+    @Body() body: Cuerpo,
+  ) {
+    return this.service.guardar(technicianId, date, jornada(body), quien(actor));
   }
 }

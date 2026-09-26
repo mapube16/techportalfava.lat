@@ -25,6 +25,12 @@ export const LANGS: readonly Lang[] = ['es', 'it', 'pt'];
 export type Kind =
   | 'note_returned'
   | 'note_approved'
+  /**
+   * La admin desaprobo una nota ya aprobada (`reopen`). Antes no avisaba a nadie porque
+   * nadie reabria; ahora es rutina de Andrea, y el tecnico tiene que reenviar y volver
+   * a firmar — si no se entera, la nota se queda en borrador para siempre.
+   */
+  | 'note_reopened'
   | 'week_missing'
   /**
    * El corte del mes. Nace de la capacitacion del 2026-08-31: Felipe, que trabaja desde
@@ -376,6 +382,19 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
         extra: { texto: 'Manual de uso', ruta: '/manual.html' },
       },
     }),
+    note_reopened: (d) => ({
+      subject: `Nota reabierta — ${d.proyecto}`,
+      cuerpo: {
+        saludo: `Hola, ${d.nombre}:`,
+        datos: [
+          { rotulo: 'Proyecto', valor: d.proyecto ?? '' },
+          { rotulo: 'Semana', valor: semanaLegible(d.semana, 'es') },
+        ],
+        parrafos: ['Su nota semanal, ya aprobada, fue reabierta por administración. Revise los días, vuelva a enviarla y fírmela de nuevo.'],
+        destacado: `Motivo: ${d.comentario}`,
+        boton: 'Revisar la nota',
+      },
+    }),
     note_approved: (d) => ({
       subject: `Nota aprobada — ${d.proyecto}`,
       cuerpo: {
@@ -465,6 +484,19 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
         extra: { texto: 'Manuale d’uso', ruta: '/manual.html' },
       },
     }),
+    note_reopened: (d) => ({
+      subject: `Nota riaperta — ${d.proyecto}`,
+      cuerpo: {
+        saludo: `Gentile ${d.nombre},`,
+        datos: [
+          { rotulo: 'Progetto', valor: d.proyecto ?? '' },
+          { rotulo: 'Settimana', valor: semanaLegible(d.semana, 'it') },
+        ],
+        parrafos: ['La Sua nota settimanale, già approvata, è stata riaperta dall’amministrazione. Verifichi le giornate, la invii di nuovo e la firmi nuovamente.'],
+        destacado: `Motivo: ${d.comentario}`,
+        boton: 'Verificare la nota',
+      },
+    }),
     note_approved: (d) => ({
       subject: `Nota approvata — ${d.proyecto}`,
       cuerpo: {
@@ -547,6 +579,19 @@ const T: Record<Lang, Record<Kind, Plantilla>> = {
         destacado: 'Entre com o seu e-mail da FAVA. Não é necessário criar uma senha.',
         boton: 'Entrar',
         extra: { texto: 'Manual de uso', ruta: '/manual.html' },
+      },
+    }),
+    note_reopened: (d) => ({
+      subject: `Nota reaberta — ${d.proyecto}`,
+      cuerpo: {
+        saludo: `Olá, ${d.nombre},`,
+        datos: [
+          { rotulo: 'Projeto', valor: d.proyecto ?? '' },
+          { rotulo: 'Semana', valor: semanaLegible(d.semana, 'pt') },
+        ],
+        parrafos: ['A sua nota semanal, já aprovada, foi reaberta pela administração. Revise os dias, envie-a de novo e assine-a novamente.'],
+        destacado: `Motivo: ${d.comentario}`,
+        boton: 'Rever a nota',
       },
     }),
     note_approved: (d) => ({

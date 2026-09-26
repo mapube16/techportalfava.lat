@@ -150,7 +150,7 @@ export class NotificationsService {
       updatedAt: Date;
       project: { name: string };
     },
-    action: 'approve' | 'return',
+    action: 'approve' | 'return' | 'reopen',
     reason: string | null | undefined,
   ): Promise<void> {
     // UNA consulta. El nombre del proyecto ya viene en la nota (el `select` NOTA lo
@@ -168,7 +168,7 @@ export class NotificationsService {
       return;
     }
 
-    const kind = action === 'return' ? 'note_returned' : 'note_approved';
+    const kind = action === 'return' ? 'note_returned' : action === 'reopen' ? 'note_reopened' : 'note_approved';
     const semana = nota.weekStart.toISOString().slice(0, 10);
 
     await this.encolar([

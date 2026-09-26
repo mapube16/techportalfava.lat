@@ -329,6 +329,88 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
     await guardar(DIA, datos(), tokenAdmin).expect(403);
   });
 
+  // ── La bitacora de OTRO: la ruta de la admin ──
+
+  const comoAdmin = (fecha: string, body: object, tec = TEC_A, token = tokenAdmin) =>
+    http().put(`/api/technicians/${tec}/daily-entries/${fecha}`).set(auth(token)).send(body);
+
+  /** El lunes de DIA, como lo calcula el servidor: (dow + 6) % 7 dias atras. */
+  const lunesDeDia = (() => {
+    const d = new Date(`${DIA}T00:00:00Z`);
+    return new Date(d.getTime() - ((d.getUTCDay() + 6) % 7) * 86_400_000);
+  })();
+
+  it('un tecnico contra la ruta de admin recibe 403', async () => {
+    await comoAdmin(DIA, datos(), TEC_A, tokenA).expect(403);
+    await http().get(`/api/technicians/${TEC_A}/daily-entries?from=${DIA}&to=${DIA}`).set(auth(tokenA)).expect(403);
+  });
+
+  it('la admin agrega un dia con proyecto: queda aprobado, crea la nota aprobada y deja rastro', async () => {
+    const { body } = await comoAdmin(DIA, datos()).expect(200);
+    expect(body.status).toBe('approved');
+
+    const nota = await ownerClient.weeklyNote.findFirstOrThrow({ where: { technicianId: TEC_A, projectId: proyectoId } });
+    expect(nota.status).toBe('approved');
+    expect(nota.weekStart.toISOString().slice(0, 10)).toBe(lunesDeDia.toISOString().slice(0, 10));
+
+    const rastros = await ownerClient.auditLog.findMany({ orderBy: { createdAt: 'asc' } });
+    expect(rastros.map((r) => `${r.entity}:${r.action}`)).toEqual(['weekly_note:approve', 'daily_entry:update']);
+    expect(rastros[0].reason).toBe('CARGA_ADMIN');
+    expect((rastros[1].after as { status: string }).status).toBe('approved');
+  });
+
+  it('un dia sin proyecto de la admin queda aprobado y sin nota', async () => {
+    const { body } = await comoAdmin(DIA, { conceptCode: 'NR' }).expect(200);
+    expect(body.status).toBe('approved');
+    expect(await ownerClient.weeklyNote.count()).toBe(0);
+  });
+
+  it('con la nota del proyecto APROBADA → 409: primero se desaprueba', async () => {
+    await ownerClient.weeklyNote.create({
+      data: { technicianId: TEC_A, projectId: proyectoId, weekStart: lunesDeDia, status: 'approved' },
+    });
+    const { body } = await comoAdmin(DIA, datos()).expect(409);
+    expect(body.message).toBe('NOTA_APROBADA_DESAPRUEBA');
+  });
+
+  it('con la nota ENVIADA → 409: lo firmado no se reescribe por detras', async () => {
+    await ownerClient.weeklyNote.create({
+      data: { technicianId: TEC_A, projectId: proyectoId, weekStart: lunesDeDia, status: 'submitted' },
+    });
+    const { body } = await comoAdmin(DIA, datos()).expect(409);
+    expect(body.message).toBe('NOTA_EN_REVISION');
+  });
+
+  it('con la nota en BORRADOR (tras desaprobar) el dia hereda draft, aunque estuviera aprobado', async () => {
+    await ownerClient.weeklyNote.create({
+      data: { technicianId: TEC_A, projectId: proyectoId, weekStart: lunesDeDia, status: 'draft' },
+    });
+    await ownerClient.dailyEntry.create({
+      data: { technicianId: TEC_A, projectId: proyectoId, date: new Date(`${DIA}T00:00:00Z`), conceptCode: 'DC', status: 'approved', roleTypeId: ROL_TEST },
+    });
+    const { body } = await comoAdmin(DIA, { ...datos(), description: 'Corregido por Andrea' }).expect(200);
+    expect(body.status).toBe('draft');
+    expect(body.description).toBe('Corregido por Andrea');
+
+    // El `before` del audit es la fila tal como estaba: aprobada y sin descripcion.
+    const rastro = await ownerClient.auditLog.findFirstOrThrow({ where: { entity: 'daily_entry' } });
+    expect((rastro.before as { status: string }).status).toBe('approved');
+  });
+
+  it('el PUT masivo de la admin deja UN rastro con todas las fechas', async () => {
+    const dias = [dia(7), dia(8), dia(9)].map((date) => ({ date, description: 'x' }));
+    const { projectId, orderId, conceptCode, phase } = datos();
+    const { body } = await http()
+      .put(`/api/technicians/${TEC_A}/daily-entries`)
+      .set(auth(tokenAdmin))
+      .send({ projectId, orderId, conceptCode, phase, days: dias })
+      .expect(200);
+    expect(body).toHaveLength(3);
+    const rastros = await ownerClient.auditLog.findMany({ where: { entity: 'daily_entry' } });
+    expect(rastros).toHaveLength(1);
+    expect((rastros[0].after as { dates: string[] }).dates).toEqual(dias.map((d) => d.date));
+  });
+
   // ── BIT-09: el libre remunerado es SOLO de internos (regla de Andrea, 2026-08-30) ──
 
   it('a un tecnico EXTERNO el LR se le rechaza con su motivo; el NR le vale', async () => {

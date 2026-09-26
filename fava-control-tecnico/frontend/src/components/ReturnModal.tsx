@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { FieldError } from '../ui';
 import { useApp } from '../state';
 import { codigo } from '../lib/api/useApiData';
-import { returnNote } from '../lib/api/weeklyNotes';
+import { closeNote, reopenNote, returnNote } from '../lib/api/weeklyNotes';
 
 /**
  * NOTA-03 — devolver exige comentario.
@@ -12,14 +12,26 @@ import { returnNote } from '../lib/api/weeklyNotes';
  * El boton se deshabilita sin texto, pero eso es cortesia: quien manda es el servidor,
  * y por debajo un CHECK del motor impide que una nota quede en `returned` sin comentario
  * aunque el servicio se equivoque.
+ *
+ * El MISMO modal sirve para desaprobar (`reopen`) y para cerrar sin firma (`close`):
+ * las tres son «una accion del admin sobre la nota, con motivo». Cambian los textos y
+ * la llamada; `state.returnMode` dice cual.
  */
+const ACCION = { return: returnNote, reopen: reopenNote, close: closeNote } as const;
+
 export default function ReturnModal() {
   const { state, t, patch, showToast, refresh, errTexto } = useApp();
+  const modo = state.returnMode;
+  const textos = {
+    return: { titulo: t.return_title, sub: t.return_sub, ph: t.return_ph, btn: t.btn_return },
+    reopen: { titulo: t.unapprove_title, sub: t.unapprove_sub, ph: t.unapprove_ph, btn: t.btn_unapprove },
+    close: { titulo: t.close_title, sub: t.close_sub, ph: t.close_ph, btn: t.btn_close_note },
+  }[modo];
   const [comment, setComment] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
-  const close = () => patch({ returnOpen: false, returnId: null, returnUpdatedAt: null });
+  const close = () => patch({ returnOpen: false, returnMode: 'return', returnId: null, returnUpdatedAt: null });
 
   const devolver = () => {
     if (!state.returnId || !comment.trim()) return;
@@ -27,7 +39,7 @@ export default function ReturnModal() {
     setEnviando(true);
     // El `updatedAt` que se leyo al abrir: si otro admin la movio mientras se escribia
     // el comentario, el servidor responde 409 en vez de pisar su decision.
-    returnNote(state.returnId, comment.trim(), state.returnUpdatedAt ?? '')
+    ACCION[modo](state.returnId, comment.trim(), state.returnUpdatedAt ?? '')
       .then(() => {
         close();
         refresh();
@@ -47,14 +59,14 @@ export default function ReturnModal() {
           <div className="size-8 rounded-lg bg-warn-tint text-warn grid place-items-center shrink-0">
             {hi('ureturn', { w: 17 })}
           </div>
-          <div className="text-base font-bold">{t.return_title}</div>
+          <div className="text-base font-bold">{textos.titulo}</div>
         </div>
-        <p className="text-[13px] text-muted-foreground mb-3.5">{t.return_sub}</p>
+        <p className="text-[13px] text-muted-foreground mb-3.5">{textos.sub}</p>
         {/* 16px en móvil: por debajo, Safari hace zoom al enfocar y descuadra el modal. */}
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder={t.return_ph}
+          placeholder={textos.ph}
           className="w-full min-h-24 resize-y border border-input rounded-lg p-3 font-sans text-base md:text-sm bg-muted text-foreground outline-none focus:border-primary"
         />
         {err ? <FieldError msg={errTexto(err)} /> : null}
@@ -68,7 +80,7 @@ export default function ReturnModal() {
             disabled={!comment.trim() || enviando}
             className="min-h-11 md:min-h-9"
           >
-            {t.btn_return}
+            {textos.btn}
           </Button>
         </div>
       </div>

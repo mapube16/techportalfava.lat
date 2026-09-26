@@ -1,9 +1,10 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { AuditService } from '../../common/audit/audit.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { ConceptCode, Phase } from '../../generated/prisma/enums';
 import type { UserModel } from '../../generated/prisma/models';
 import { EDITABLES } from '../../common/estados';
-import { aDate, aTexto, ventana } from './fecha';
+import { aDate, aTexto, lunesDe, ventana } from './fecha';
 
 /**
  * El `select` ES el contrato (doctrina de 02-05). Lo devuelven IGUAL el `GET` de la
@@ -116,9 +117,38 @@ const plana = (f: Cruda) => ({
   updatedAt: f.updatedAt.toISOString(),
 });
 
+/** Quien guarda en nombre del tecnico. Solo lo pasa la ruta de admin. */
+export interface Admin {
+  id: string;
+  name: string;
+}
+
+/**
+ * El estado con el que queda un dia que guarda LA ADMIN, segun la nota de esa semana y
+ * ese proyecto. Pura, para probarla sin base de datos.
+ *
+ * - Aprobada o enviada: no se toca. Lo aprobado se desaprueba primero (`reopen`); lo
+ *   enviado lo firmo el tecnico y se devuelve o se aprueba, no se reescribe por detras.
+ * - Borrador o devuelta: el dia hereda el estado; la cierra el tecnico o la admin (`close`).
+ * - Sin nota: aprobado directo. Es «agregar a mano» — la decision de Andrea.
+ *
+ * Se aplica a la nota del proyecto NUEVO y a la del ANTERIOR si el dia cambia de
+ * proyecto: sacar un dia de una nota aprobada es tan grave como meterlo.
+ */
+export function estadoAdmin(notas: ({ status: string } | null)[]): string {
+  for (const n of notas) {
+    if (n?.status === 'approved') throw new ConflictException('NOTA_APROBADA_DESAPRUEBA');
+    if (n?.status === 'submitted') throw new ConflictException('NOTA_EN_REVISION');
+  }
+  return notas[0]?.status ?? 'approved';
+}
+
 @Injectable()
 export class DailyEntriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   /**
    * PRIMERA puerta de los tres endpoints, antes que la forma de la fecha y que la del
@@ -181,25 +211,52 @@ export class DailyEntriesService {
     technicianId: string,
     dias: { date: string; description: string | null }[],
     comun: Jornada,
+    admin?: Admin,
   ) {
+    // UN rastro por peticion, no 42: lo que se audita es «la admin pinto estos dias
+    // asi», y la lista de fechas lo dice entero. El `before` por dia solo lo deja el
+    // PUT de un dia, que es cuando se corrige uno concreto.
+    const varios = dias.length > 1;
     const escritas: Awaited<ReturnType<DailyEntriesService['guardar']>>[] = [];
-    for (const d of dias)
-      escritas.push(await this.guardar(technicianId, d.date, { ...comun, description: d.description }));
+    let primera: string | null = null;
+    for (const d of dias) {
+      const { id, fila } = await this.escribir(technicianId, d.date, { ...comun, description: d.description }, admin, !varios);
+      primera ??= id;
+      escritas.push(fila);
+    }
+    if (admin && varios)
+      await this.audit.registrar({
+        actorId: admin.id,
+        actorName: admin.name,
+        entity: 'daily_entry',
+        entityId: primera!,
+        action: 'update',
+        after: { technicianId, dates: dias.map((d) => d.date), ...comun, status: escritas[0].status },
+      });
     return escritas;
   }
 
-  async guardar(technicianId: string, fecha: string, datos: Jornada) {
+  async guardar(technicianId: string, fecha: string, datos: Jornada, admin?: Admin) {
+    return (await this.escribir(technicianId, fecha, datos, admin, true)).fila;
+  }
+
+  /** El PUT de verdad. Devuelve el `id` aparte porque la fila publica (`plana`) no lo lleva. */
+  private async escribir(technicianId: string, fecha: string, datos: Jornada, admin: Admin | undefined, auditar: boolean) {
     const date = aDate(fecha);
 
     // BIT-05: enviado = solo lectura. Se comprueba el estado ACTUAL de la fila, no el
     // de su nota: son el mismo dato (`weekly-notes.service.ts` propaga uno al otro) y
     // preguntarle a la nota exigiria derivar su semana aqui, que es donde empiezan las
     // dos verdades sobre si un dia se puede tocar.
+    //
+    // LA ADMIN NO PASA POR AQUI: a ella la gobierna la nota (`estadoAdmin`), que es la
+    // que dice si lo que hay debajo esta firmado o no. `FILA` entera y no `{status}`
+    // porque el suyo deja `before` en el audit_log.
     const actual = await this.prisma.client.dailyEntry.findUnique({
       where: { technicianId_date: { technicianId, date } },
-      select: { status: true },
+      select: FILA,
     });
-    if (actual && !EDITABLES.includes(actual.status))
+    if (!admin && actual && !EDITABLES.includes(actual.status))
       throw new ConflictException('JORNADA_BLOQUEADA');
 
     /**
@@ -259,15 +316,63 @@ export class DailyEntriesService {
       if (orden.projectId !== datos.projectId) throw new BadRequestException('ORDEN_DE_OTRO_PROYECTO');
     }
 
+    /**
+     * El estado lo pone la NOTA cuando guarda la admin. Se miran la del proyecto nuevo
+     * y la del anterior (si cambia): ver `estadoAdmin`. Sin nota y con proyecto, la
+     * nota se crea aprobada aqui mismo — es lo que deja documento (PDF sin firmas,
+     * como las historicas) de un dia que el tecnico nunca envio.
+     */
+    let status: string | undefined;
+    if (admin) {
+      const c = this.prisma.client;
+      const weekStart = aDate(lunesDe(fecha));
+      const proyectos = [...new Set([datos.projectId, actual?.projectId].filter((x): x is string => Boolean(x)))];
+      const notas = proyectos.length
+        ? await c.weeklyNote.findMany({
+            where: { technicianId, weekStart, projectId: { in: proyectos } },
+            select: { projectId: true, status: true },
+          })
+        : [];
+      const notaDe = (p: string | null) => (p ? (notas.find((n) => n.projectId === p) ?? null) : null);
+      status = estadoAdmin([notaDe(datos.projectId), notaDe(actual?.projectId ?? null)]);
+
+      if (datos.projectId && !notaDe(datos.projectId)) {
+        const nota = await c.weeklyNote.create({
+          data: { technicianId, weekStart, projectId: datos.projectId, status: 'approved', roleTypeId: tec?.roleTypeId },
+          select: { id: true },
+        });
+        await this.audit.registrar({
+          actorId: admin.id,
+          actorName: admin.name,
+          entity: 'weekly_note',
+          entityId: nota.id,
+          action: 'approve',
+          after: { status: 'approved', weekStart: lunesDe(fecha), projectId: datos.projectId },
+          reason: 'CARGA_ADMIN',
+        });
+      }
+    }
+
     // El rol se sella al CREAR y no se toca al editar: es el cargo con el que se
     // trabajo ese dia, no el que el tecnico tenga hoy en su ficha. Si mañana le cambian
     // el cargo, la historia no se reescribe — que es justo para lo que existe la columna.
     const fila = await this.prisma.client.dailyEntry.upsert({
       where: { technicianId_date: { technicianId, date } },
-      create: { technicianId, date, status: 'draft', roleTypeId: tec?.roleTypeId ?? null, ...campos },
-      update: { ...campos },
+      create: { technicianId, date, status: status ?? 'draft', roleTypeId: tec?.roleTypeId ?? null, ...campos },
+      update: { ...campos, ...(status ? { status } : {}) },
       select: { id: true },
     });
+
+    if (admin && auditar)
+      await this.audit.registrar({
+        actorId: admin.id,
+        actorName: admin.name,
+        entity: 'daily_entry',
+        entityId: fila.id,
+        action: 'update',
+        before: actual ? plana(actual) : null,
+        after: { technicianId, date: fecha, ...campos, status },
+      });
 
     /**
      * La seleccion se REEMPLAZA entera (borrar + insertar), no se reconcilia fila a fila.
@@ -291,6 +396,6 @@ export class DailyEntriesService {
       where: { id: fila.id },
       select: FILA,
     });
-    return plana(completa);
+    return { id: fila.id, fila: plana(completa) };
   }
 }
