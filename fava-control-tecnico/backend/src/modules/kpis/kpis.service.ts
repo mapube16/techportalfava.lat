@@ -65,6 +65,21 @@ export interface ProyectoVendidoEjecutado {
   rows: FilaVendidoEjecutado[];
   sold: number;
   executed: number;
+  /** La fase EN CURSO: la que heredan los dias nuevos (`projects.current_phase`). */
+  currentPhase: string;
+  /** Lo ejecutado POR TECNICO y fase: lo que se ve al abrir el proyecto en la tabla. */
+  techs: TecnicoPorFase[];
+}
+
+export interface TecnicoPorFase {
+  technicianId: string;
+  name: string;
+  /** El cargo con el que trabajo (el del dia, o el del maestro si el dia no lo trae). */
+  role: string;
+  montaje: number;
+  collaudo: number;
+  /** Dias sin fase: los de la app anteriores a `current_phase`. Se cuentan, no se reparten. */
+  sinFase: number;
 }
 
 // ── KPI-02: la definición del denominador, en UN solo sitio ──
@@ -414,7 +429,12 @@ export class KpisService {
     >`
       SELECT de.project_id, rt.name AS role, de.phase::text AS phase, COUNT(*)::int AS days
         FROM daily_entries de
-        JOIN role_types rt ON rt.id = de.role_type_id
+        -- El cargo de la JORNADA manda y el del maestro es el respaldo: mismo criterio
+        -- que SoldDaysService.ejecutados. Con JOIN directo sobre de.role_type_id
+        -- las jornadas del Excel sin cargo (la migracion 20260901090100 solo relleno
+        -- las de la app) desaparecian del ejecutado sin que nada fallara.
+        JOIN technicians t ON t.id = de.technician_id
+        JOIN role_types rt ON rt.id = COALESCE(de.role_type_id, t.role_type_id)
        WHERE de.project_id IS NOT NULL
          AND de.status IN ('submitted', 'approved')
          AND de.concept_code IS NOT NULL
@@ -426,12 +446,34 @@ export class KpisService {
        GROUP BY 1, 2, 3
     `;
 
+    /**
+     * El MISMO ejecutado, partido por técnico. Mismos filtros que la consulta de arriba
+     * —si no, abrir un proyecto sumaría distinto que su fila— y mismo COALESCE del cargo.
+     * Es vista de admin (el controlador es @Roles('A','S')): la regla de que un técnico
+     * no ve a sus colegas no aplica aquí.
+     */
+    const porTecnico = await this.prisma.client.$queryRaw<
+      { project_id: string; technician_id: string; name: string; role: string; phase: string | null; days: number }[]
+    >`
+      SELECT de.project_id, t.id AS technician_id, t.full_name AS name, rt.name AS role,
+             de.phase::text AS phase, COUNT(*)::int AS days
+        FROM daily_entries de
+        JOIN technicians t ON t.id = de.technician_id
+        JOIN role_types rt ON rt.id = COALESCE(de.role_type_id, t.role_type_id)
+       WHERE de.project_id IS NOT NULL
+         AND de.status IN ('submitted', 'approved')
+         AND de.concept_code IS NOT NULL
+         AND de.date <= CURRENT_DATE
+         AND (${year}::int IS NULL OR EXTRACT(YEAR FROM de.date)::int = ${year}::int)
+       GROUP BY 1, 2, 3, 4, 5
+    `;
+
     // Solo los proyectos que tienen ALGO de lo que hablar: uno sin vendido ni ejecutado
     // es una fila vacía en la gráfica.
     const conDatos = new Set([...vendido, ...ejecutado].map((f) => f.project_id));
     const proyectos = await this.prisma.client.project.findMany({
       where: { id: { in: [...conDatos] } },
-      select: { id: true, name: true, isActive: true, normalHours: true },
+      select: { id: true, name: true, isActive: true, normalHours: true, currentPhase: true },
       orderBy: { name: 'asc' },
     });
 
@@ -453,9 +495,26 @@ export class KpisService {
         tocar(e.role, e.phase).executed += e.days;
 
       const rows = [...filas.values()].sort((a, b) => a.role.localeCompare(b.role));
+
+      // Un técnico con dos cargos en el mismo proyecto sale en DOS filas: son dos
+      // líneas del vendido distintas y fundirlas escondería justo eso.
+      const techs = new Map<string, TecnicoPorFase>();
+      for (const f of porTecnico.filter((x) => x.project_id === p.id)) {
+        const k = `${f.technician_id}|${f.role}`;
+        let t = techs.get(k);
+        if (!t) {
+          t = { technicianId: f.technician_id, name: f.name, role: f.role, montaje: 0, collaudo: 0, sinFase: 0 };
+          techs.set(k, t);
+        }
+        if (f.phase === 'MONTAJE') t.montaje += f.days;
+        else if (f.phase === 'COLLAUDO') t.collaudo += f.days;
+        else t.sinFase += f.days;
+      }
+
       return {
         ...p,
         rows,
+        techs: [...techs.values()].sort((a, b) => a.name.localeCompare(b.name)),
         sold: rows.reduce((s, f) => s + f.sold, 0),
         executed: rows.reduce((s, f) => s + f.executed, 0),
       };

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { Roles } from '../../common/auth/roles.decorator';
+import { Phase } from '../../generated/prisma/enums';
 import type { UserModel } from '../../generated/prisma/models';
 import { camposOrden, opcional, texto } from './orders.dto';
 import { OrdersService } from './orders.service';
@@ -34,6 +35,13 @@ const APARTE = [
   'delta',
   'executed',
 ];
+
+/** La fase en curso: una de las dos del enum, nunca texto libre. */
+function fase(valor: unknown): Phase {
+  if (typeof valor !== 'string' || !(Object.values(Phase) as string[]).includes(valor))
+    throw new BadRequestException('FASE_INVALIDA');
+  return valor as Phase;
+}
 
 function horas(valor: unknown): number | null {
   if (valor === null || valor === undefined) return null;
@@ -133,6 +141,7 @@ export class ProjectsController {
     if (body?.contractNumber !== undefined)
       data.contractNumber = texto(body.contractNumber, 'CONTRATO');
     if (body?.normalHours !== undefined) data.normalHours = horas(body.normalHours);
+    if (body?.currentPhase !== undefined) data.currentPhase = fase(body.currentPhase);
     // Sin esto un body `{ foo: 1 }` moveria `updated_at` sin cambiar nada.
     if (!Object.keys(data).length) throw new BadRequestException('NADA_QUE_EDITAR');
     return this.service.editar(id, data);

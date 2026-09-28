@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import type { Phase } from '../../generated/prisma/enums';
 import { OrdersService } from './orders.service';
 import { SoldDaysService } from './sold-days.service';
 
@@ -31,6 +32,7 @@ const DETALLE = {
   // `oaNumber`, `contractValue` y `currencyCode` NO estan: viven en la orden desde la
   // Fase 2.1. El valor del proyecto es la suma de sus ordenes y se calcula al leer.
   normalHours: true,
+  currentPhase: true,
   isActive: true,
 } as const;
 
@@ -77,6 +79,7 @@ export interface DatosProyecto {
   supply?: string;
   contractNumber?: string;
   normalHours?: number | null;
+  currentPhase?: Phase;
   isActive?: boolean;
 }
 
@@ -90,6 +93,7 @@ interface FilaDetalle {
   supply: string;
   contractNumber: string;
   normalHours: number | null;
+  currentPhase: Phase;
   isActive: boolean;
 }
 
@@ -163,7 +167,7 @@ export class ProjectsService {
   }
 
   /** `createdById` es rastro de autoria y no tiene FK declarada (decision de 02-01). */
-  async crear(actorId: string, data: Required<Omit<DatosProyecto, 'isActive'>>) {
+  async crear(actorId: string, data: Required<Omit<DatosProyecto, 'isActive' | 'currentPhase'>>) {
     return this.plano(
       await this.intentar(() =>
         this.prisma.client.project.create({

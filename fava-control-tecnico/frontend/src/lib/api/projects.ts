@@ -87,6 +87,8 @@ export interface Project {
   supply: string;
   contractNumber: string;
   normalHours: number | null;
+  /** La fase EN CURSO: la heredan los días nuevos. La cambia la admin. */
+  currentPhase: Phase;
   isActive: boolean;
   orders: Order[];
   unassigned: UnassignedRow[];
@@ -101,6 +103,7 @@ export interface ProjectInput {
   contractNumber: string;
   clientNit?: string | null;
   normalHours?: number | null;
+  currentPhase?: Phase;
 }
 
 /** Lo comercial va en la orden. `label` es lo único obligatorio al crearla. */

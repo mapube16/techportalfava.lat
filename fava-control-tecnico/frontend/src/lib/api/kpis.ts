@@ -98,6 +98,20 @@ export interface SoldProject {
   rows: SoldRow[];
   sold: number;
   executed: number;
+  /** La fase EN CURSO del proyecto: la que heredan los días nuevos. */
+  currentPhase: 'MONTAJE' | 'COLLAUDO';
+  /** Lo ejecutado por técnico y fase, para abrir el proyecto en la tabla. */
+  techs: TechPhaseRow[];
+}
+
+export interface TechPhaseRow {
+  technicianId: string;
+  name: string;
+  role: string;
+  montaje: number;
+  collaudo: number;
+  /** Días de la app anteriores a la fase en curso: se cuentan, no se reparten. */
+  sinFase: number;
 }
 
 export const getSoldVsExecuted = (year: number | null) =>

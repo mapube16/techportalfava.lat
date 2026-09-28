@@ -628,6 +628,11 @@ model Project {
   /// El «nh» del prototipo: horas normales pactadas por jornada.
   normalHours Int? @map("normal_hours")
 
+  /// La fase EN CURSO: la heredan las jornadas nuevas de este proyecto (la captura no
+  /// pregunta la fase). Andrea la cambia a COLLAUDO cuando arranca. Una jornada ya
+  /// escrita conserva la suya: cambiar esto no reescribe la historia.
+  currentPhase Phase @default(MONTAJE) @map("current_phase")
+
   isActive Boolean @default(true) @map("is_active")
 
   /// Rastro de autoria, sin FK a proposito: un Restrict impediria dar de baja al

@@ -279,6 +279,29 @@ export class DailyEntriesService {
       where: { id: technicianId },
       select: { employmentType: true, roleTypeId: true },
     });
+
+    /**
+     * LA FASE. La captura no la pregunta (manda `phase: null`), y sin fase el dia no
+     * entraba en la tabla «Por fase» de los KPIs: lo unico que se veia ejecutado era el
+     * historico del Excel. Regla, en este orden:
+     *  1. la que mande el cliente, si manda una;
+     *  2. la que el dia YA tenia — AUNQUE sea ninguna — si sigue en el mismo proyecto:
+     *     editar la descripcion de un dia de montaje no lo pasa a collaudo porque el
+     *     proyecto haya avanzado, y corregir un dia viejo sin fase no le inventa la de hoy;
+     *  3. si el dia es NUEVO o cambia de proyecto, la fase EN CURSO del proyecto
+     *     (`projects.current_phase`, la mueve Andrea).
+     * Sin proyecto no hay fase: un libre no es montaje ni collaudo.
+     */
+    let phase: Phase | null = datos.phase;
+    if (!phase && datos.projectId) {
+      if (actual?.projectId === datos.projectId) phase = actual.phase;
+      else
+        phase =
+          (await this.prisma.client.project.findUnique({
+            where: { id: datos.projectId },
+            select: { currentPhase: true },
+          }))?.currentPhase ?? null;
+    }
     if (datos.conceptCode === 'LR' && tec?.employmentType === 'EXTERNO')
       throw new BadRequestException('LIBRE_REMUNERADO_SOLO_INTERNOS');
 
@@ -295,7 +318,8 @@ export class DailyEntriesService {
     // BIT-10: las extra pasan por la MISMA comprobacion que la principal, en una sola
     // consulta. La principal no cuenta como extra: se descarta antes para que marcarla
     // dos veces no sea un error que el tecnico no entiende.
-    const { extraOrderIds, ...campos } = datos;
+    const { extraOrderIds, ...resto } = datos;
+    const campos = { ...resto, phase: datos.projectId ? phase : null };
     const extras = [...new Set(extraOrderIds ?? [])].filter((id) => id !== datos.orderId);
     if (extras.length) {
       const ordenes = await this.prisma.client.order.findMany({

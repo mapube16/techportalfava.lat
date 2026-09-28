@@ -8,7 +8,7 @@ import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getCatalogs } from '../lib/api/catalogs';
-import { createOrder, deleteOrder, getProject, setSoldDays } from '../lib/api/projects';
+import { createOrder, deleteOrder, getProject, setSoldDays, updateProject } from '../lib/api/projects';
 import type { MatrixRow, Order, Phase } from '../lib/api/projects';
 
 /**
@@ -160,6 +160,19 @@ export default function ProjectDetail() {
       .catch((e: unknown) => setErrOrden(codigo(e)));
   };
 
+  /**
+   * La fase EN CURSO. Es la que heredan los días que se registren desde ahora (la
+   * captura no la pregunta), así que cambiarla es el gesto de «arrancó el collaudo».
+   * Los días ya escritos conservan la suya.
+   */
+  const cambiarFase = (fase: Phase) =>
+    updateProject(p.id, { currentPhase: fase })
+      .then(() => {
+        setData((d) => d && { ...d, p: { ...d.p, currentPhase: fase } });
+        showToast('saved');
+      })
+      .catch((e: unknown) => setErrOrden(codigo(e)));
+
   const metas: [string, string][] = [
     [t.contract, total === 0 ? '—' : money(total, moneda)],
     [t.proj_hours, nf(p.normalHours || 0) + ' h'],
@@ -203,6 +216,17 @@ export default function ProjectDetail() {
               <div className={`text-sm font-semibold mt-0.5 ${i ? 'font-mono' : ''}`}>{b}</div>
             </div>
           ))}
+          <label className="block" title={t.proj_phase_hint}>
+            <span className="block text-[11px] text-muted-foreground uppercase tracking-wide">{t.proj_phase}</span>
+            <select
+              value={p.currentPhase}
+              onChange={(e) => cambiarFase(e.target.value as Phase)}
+              className={`${inputStyle} mt-0.5 min-h-11 md:min-h-9 py-1`}
+            >
+              <option value="MONTAJE">{t.montaje}</option>
+              <option value="COLLAUDO">{t.colaudo}</option>
+            </select>
+          </label>
         </CardContent>
       </Card>
 

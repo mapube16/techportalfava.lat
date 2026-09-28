@@ -26,7 +26,8 @@
  * proyecto intacto y lo dice en el reporte. Ese es el momento de cruzar por tecnico.
  *
  * SOLO TOCA LO QUE TRAJO EL EXCEL (`source_sheet IS NOT NULL`) Y ESTA VACIO
- * (`phase IS NULL`). Una jornada creada desde la app ya declara su fase, y no es de
+ * (`phase IS NULL`). Una jornada de la app hereda la fase EN CURSO de su proyecto
+ * (`projects.current_phase`, desde 2026-09-27; antes llegaba sin fase), y no es de
  * este script decidir por ella.
  *
  * EN UNA TRANSACCION, por el mismo motivo escrito en `migrate-vendido.ts`: el

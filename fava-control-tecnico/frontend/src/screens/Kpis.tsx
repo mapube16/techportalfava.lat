@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ApiState, Ayuda, FiltroVigencia, nf, porVigencia, td, th } from '../ui';
@@ -70,6 +70,10 @@ export default function Kpis() {
    * filtra su propio año.
    */
   const [vigencia, setVigencia] = useState<Vigencia>('activos');
+  /** Los proyectos abiertos en la tabla «Por fase» (se ven sus técnicos). */
+  const [abiertos, setAbiertos] = useState<string[]>([]);
+  const alternarAbierto = (id: string) =>
+    setAbiertos((a) => (a.includes(id) ? a.filter((x) => x !== id) : [...a, id]));
   const projects = porVigencia(vendido ?? [], vigencia);
   const per = projects.map((p) => ({ sold: p.sold, done: p.executed, nh: p.normalHours ?? 0 }));
   const tot = per.reduce(
@@ -353,6 +357,9 @@ export default function Kpis() {
   const phaseRows = projects.map((p) => {
     const mS = porFase(p, 'sold', 'MONTAJE'), mD = porFase(p, 'executed', 'MONTAJE');
     const cS = porFase(p, 'sold', 'COLLAUDO'), cD = porFase(p, 'executed', 'COLLAUDO');
+    // Lo ejecutado SIN fase: los dias de la app anteriores a `current_phase`. Antes se
+    // descartaban y la tabla no se movia aunque se aprobaran notas.
+    const sD = p.rows.filter((r) => r.phase === null).reduce((a, r) => a + r.executed, 0);
     /**
      * UN DELTA POR FASE, no uno agregado.
      *
@@ -362,7 +369,7 @@ export default function Kpis() {
      * opuestas fundidas en una cifra tranquilizadora, en una tabla que se titula «por
      * fase». Convencion: vendido − ejecutado, o sea lo que queda por ejecutar.
      */
-    return { name: p.name, mS, mD, cS, cD, dM: mS - mD, dC: cS - cD };
+    return { id: p.id, name: p.name, fase: p.currentPhase, techs: p.techs, mS, mD, cS, cD, sD, dM: mS - mD, dC: cS - cD };
   });
 
   const byPhase = movil ? (
@@ -394,6 +401,27 @@ export default function Kpis() {
                 {pair(t.montaje, r.mS, r.mD, r.dM, 'var(--primary)')}
                 {pair(t.colaudo, r.cS, r.cD, r.dC, 'var(--accent)')}
               </div>
+              {r.sD ? (
+                <div className="text-[11.5px] text-muted-foreground mt-2">{t.kpi_no_phase}: <span className="font-mono font-bold">{r.sD}</span></div>
+              ) : null}
+              {r.techs.length ? (
+                <details className="mt-2">
+                  <summary className="text-[12px] font-semibold cursor-pointer min-h-11 flex items-center">
+                    {t.kpi_techs_n.replace('{n}', String(r.techs.length))}
+                  </summary>
+                  {r.techs.map((tc) => (
+                    <div key={tc.technicianId + tc.role} className="flex justify-between gap-2 py-1.5 border-t border-border text-[12px]">
+                      <span className="min-w-0">
+                        <span className="font-semibold">{tc.name}</span>
+                        <span className="block text-muted-foreground text-[11px]">{tc.role}</span>
+                      </span>
+                      <span className="font-mono shrink-0">
+                        {tc.montaje} · {tc.collaudo}{tc.sinFase ? ` · ${tc.sinFase}` : ''}
+                      </span>
+                    </div>
+                  ))}
+                </details>
+              ) : null}
             </div>
           );
         })}
@@ -412,23 +440,65 @@ export default function Kpis() {
                   seguidos: asi cada bloque de tres se lee como una frase. */}
               {[t.col_project,
                 t.montaje + ' ' + t.kpi_sold, t.montaje + ' ' + t.kpi_done, 'Δ ' + t.montaje,
-                t.colaudo + ' ' + t.kpi_sold, t.colaudo + ' ' + t.kpi_done, 'Δ ' + t.colaudo].map((c, i) => (
+                t.colaudo + ' ' + t.kpi_sold, t.colaudo + ' ' + t.kpi_done, 'Δ ' + t.colaudo,
+                t.kpi_no_phase].map((c, i) => (
                 <th key={i} className={`${th} ${i ? 'text-center' : 'text-left'}`}>{c}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {phaseRows.map((r) => (
-              <tr key={r.name} className="border-t border-border">
-                <td className={`${td} font-semibold`}>{r.name}</td>
-                <td className={`${td} text-center font-mono`}>{r.mS}</td>
-                <td className={`${td} text-center font-mono`}>{r.mD}</td>
-                {celdaDelta(r.dM)}
-                <td className={`${td} text-center font-mono`}>{r.cS}</td>
-                <td className={`${td} text-center font-mono`}>{r.cD}</td>
-                {celdaDelta(r.dC)}
-              </tr>
-            ))}
+            {phaseRows.map((r) => {
+              const abierto = abiertos.includes(r.id);
+              return (
+                <Fragment key={r.id}>
+                  <tr className="border-t border-border">
+                    <td className={`${td} font-semibold`}>
+                      {/* Abrir el proyecto = ver QUIÉN hizo esos días. Botón y no la fila
+                          entera: así se llega con el teclado y el lector lo anuncia. */}
+                      <button
+                        type="button"
+                        onClick={() => alternarAbierto(r.id)}
+                        aria-expanded={abierto}
+                        disabled={!r.techs.length}
+                        className="flex items-center gap-1.5 text-left cursor-pointer disabled:cursor-default"
+                      >
+                        <span className="text-muted-foreground w-3">{r.techs.length ? (abierto ? '▾' : '▸') : ''}</span>
+                        {r.name}
+                      </button>
+                      <div className="text-[11px] text-muted-foreground font-normal ml-4.5">
+                        {t.proj_phase}: {r.fase === 'COLLAUDO' ? t.colaudo : t.montaje}
+                      </div>
+                    </td>
+                    <td className={`${td} text-center font-mono`}>{r.mS}</td>
+                    <td className={`${td} text-center font-mono`}>{r.mD}</td>
+                    {celdaDelta(r.dM)}
+                    <td className={`${td} text-center font-mono`}>{r.cS}</td>
+                    <td className={`${td} text-center font-mono`}>{r.cD}</td>
+                    {celdaDelta(r.dC)}
+                    <td className={`${td} text-center font-mono text-muted-foreground`}>{r.sD || '—'}</td>
+                  </tr>
+                  {/* Por técnico solo hay EJECUTADO: el vendido es por cargo, no por
+                      persona, así que sus celdas de vendido y delta van vacías. */}
+                  {abierto
+                    ? r.techs.map((tc) => (
+                        <tr key={tc.technicianId + tc.role} className="bg-muted/50 text-[12.5px]">
+                          <td className={`${td} pl-9`}>
+                            {tc.name}
+                            <span className="text-muted-foreground"> · {tc.role}</span>
+                          </td>
+                          <td className={td} />
+                          <td className={`${td} text-center font-mono`}>{tc.montaje}</td>
+                          <td className={td} />
+                          <td className={td} />
+                          <td className={`${td} text-center font-mono`}>{tc.collaudo}</td>
+                          <td className={td} />
+                          <td className={`${td} text-center font-mono text-muted-foreground`}>{tc.sinFase || '—'}</td>
+                        </tr>
+                      ))
+                    : null}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </CardContent>
