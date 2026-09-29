@@ -395,7 +395,7 @@ export default function LogDayDrawer() {
 
           {/* Las dos casillas del día. Se EXCLUYEN: quien está incapacitado no está
               en fábrica, así que marcar «Incapacitado» quita «En fábrica» y la esconde.
-              «En fábrica» solo acompaña a un día trabajado (DC, DFD). */}
+              «En fábrica» solo acompaña a un día trabajado (DC, MD, DFD). */}
           <div className="flex gap-5 flex-wrap mb-3.5">
             <label className="flex items-center gap-2.5 min-h-11 cursor-pointer">
               <input

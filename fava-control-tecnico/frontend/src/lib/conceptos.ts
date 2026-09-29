@@ -16,8 +16,10 @@ import type { ConceptCode } from './api/dailyEntries';
  */
 export const SIN_PROYECTO: ConceptCode[] = ['LR', 'NR', 'IL', 'OTRO'];
 
-/** «En fabrica» es un MODIFICADOR del dia completo y del festivo: dice DONDE ocurrio. */
-export const ADMITE_FABRICA: ConceptCode[] = ['DC', 'DFD'];
+/** «En fabrica» es un MODIFICADOR de los dias trabajados —completo, medio y festivo—:
+    dice DONDE ocurrio. El medio dia entro el 2026-09-28: medio dia en planta es tan
+    real como uno entero, y sin la casilla no habia forma de decirlo. */
+export const ADMITE_FABRICA: ConceptCode[] = ['DC', 'MD', 'DFD'];
 
 /** Si ESTE concepto exige proyecto. La pregunta se hace en dos pantallas. */
 export const exigeProyecto = (c: ConceptCode) => !SIN_PROYECTO.includes(c);

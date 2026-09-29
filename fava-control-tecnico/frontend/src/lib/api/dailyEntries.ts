@@ -22,7 +22,7 @@ export interface Entry {
   machineCode: string | null;
   conceptCode: ConceptCode | null;
   phase: Phase | null;
-  /** «En Fabrica»: modificador de DC y DFD, no un concepto aparte. */
+  /** «En Fabrica»: modificador de DC, MD y DFD, no un concepto aparte. */
   inFactory: boolean;
   description: string | null;
   /** La columna NOTA del papel: horario del dia, o algo que Andrea deba saber. */

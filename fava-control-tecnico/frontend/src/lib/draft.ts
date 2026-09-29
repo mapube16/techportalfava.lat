@@ -22,7 +22,7 @@ export interface FilaDia {
   orderId: string | null;
   conceptCode: string | null;
   phase: 'MONTAJE' | 'COLLAUDO' | null;
-  /** «En Fabrica»: modificador de DC y DFD, no un concepto aparte. */
+  /** «En Fabrica»: modificador de DC, MD y DFD, no un concepto aparte. */
   inFactory: boolean;
   description: string | null;
 }
