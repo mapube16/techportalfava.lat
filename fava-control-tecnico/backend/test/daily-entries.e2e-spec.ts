@@ -365,20 +365,28 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
     expect(await ownerClient.weeklyNote.count()).toBe(0);
   });
 
-  it('con la nota del proyecto APROBADA → 409: primero se desaprueba', async () => {
+  it('con la nota APROBADA la admin cambia el concepto sin desaprobar, y el dia sigue aprobado', async () => {
     await ownerClient.weeklyNote.create({
       data: { technicianId: TEC_A, projectId: proyectoId, weekStart: lunesDeDia, status: 'approved' },
     });
-    const { body } = await comoAdmin(DIA, datos()).expect(409);
-    expect(body.message).toBe('NOTA_APROBADA_DESAPRUEBA');
+    await ownerClient.dailyEntry.create({
+      data: { technicianId: TEC_A, projectId: proyectoId, date: new Date(`${DIA}T00:00:00Z`), conceptCode: 'DC', status: 'approved', roleTypeId: ROL_TEST },
+    });
+    const { body } = await comoAdmin(DIA, { ...datos(), conceptCode: 'MD' }).expect(200);
+    expect(body.conceptCode).toBe('MD');
+    expect(body.status).toBe('approved');
+    const nota = await ownerClient.weeklyNote.findFirstOrThrow({ where: { technicianId: TEC_A } });
+    expect(nota.status).toBe('approved');
+    const rastro = await ownerClient.auditLog.findFirstOrThrow({ where: { entity: 'daily_entry' } });
+    expect((rastro.before as { conceptCode: string }).conceptCode).toBe('DC');
   });
 
-  it('con la nota ENVIADA → 409: lo firmado no se reescribe por detras', async () => {
+  it('con la nota ENVIADA la admin corrige el dia y sigue enviado', async () => {
     await ownerClient.weeklyNote.create({
       data: { technicianId: TEC_A, projectId: proyectoId, weekStart: lunesDeDia, status: 'submitted' },
     });
-    const { body } = await comoAdmin(DIA, datos()).expect(409);
-    expect(body.message).toBe('NOTA_EN_REVISION');
+    const { body } = await comoAdmin(DIA, datos()).expect(200);
+    expect(body.status).toBe('submitted');
   });
 
   it('con la nota en BORRADOR (tras desaprobar) el dia hereda draft, aunque estuviera aprobado', async () => {

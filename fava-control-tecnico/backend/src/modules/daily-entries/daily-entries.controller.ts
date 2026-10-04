@@ -208,7 +208,7 @@ const quien = (u: UserModel) => ({ id: u.id, name: u.displayName });
 /**
  * La bitacora de OTRO, para la admin. Andrea corrige dias y agrega los que el tecnico
  * nunca registro; el estado con el que quedan lo decide la nota de esa semana
- * (`estadoAdmin` en el servicio), no `EDITABLES`.
+ * (`estadoAdmin` en el servicio), no `EDITABLES`: puede tocar incluso un dia aprobado.
  *
  * Mismo validador de cuerpo (`jornada`, `dias`) que la ruta del tecnico: dos formas de
  * escribir el mismo dia con reglas distintas es la puerta de atras que 03-01 cerro.

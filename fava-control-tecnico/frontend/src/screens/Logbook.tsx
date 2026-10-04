@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ApiState, Card, inputStyle } from '../ui';
+import { ApiState, Card, StatusPill, inputStyle } from '../ui';
+import { hi } from '../icons';
 // Solo el mapa codigo->color: las ETIQUETAS vienen del API (CAT-01), que es lo
 // que exige `check-no-free-text`. Los codigos son fijos por enum de Postgres, asi
 // que el color no puede desincronizarse.
@@ -10,6 +11,8 @@ import { codigo, useApiData } from '../lib/api/useApiData';
 import { getWeek, putEntries } from '../lib/api/dailyEntries';
 import { listProjectsForLog } from '../lib/api/projects';
 import { listTechnicians } from '../lib/api/technicians';
+import { approveNote, listNotes } from '../lib/api/weeklyNotes';
+import type { WeeklyNote } from '../lib/api/weeklyNotes';
 import { getCatalogs } from '../lib/api/catalogs';
 import { ADMITE_FABRICA, exigeProyecto } from '../lib/conceptos';
 import { hoyLocal, rejillaDelMes, sumarMeses } from '../lib/fecha';
@@ -47,6 +50,16 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
   const { data: tecnicos } = useApiData(
     () => (admin ? listTechnicians() : Promise.resolve(null)),
     [admin],
+  );
+  /**
+   * Las notas del técnico elegido, para decidir SIN salir de aquí. Andrea corrige un
+   * día y en la misma pantalla aprueba, devuelve, desaprueba o cierra la nota: ir a la
+   * Bandeja a buscarla era perder el hilo. `technicianId` explícito porque a un admin
+   * RLS no le acota nada (ver el @Get() de weekly-notes.controller.ts).
+   */
+  const { data: notas } = useApiData(
+    () => (admin && tecnicoId ? listNotes(undefined, tecnicoId) : Promise.resolve(null)),
+    [admin, tecnicoId, state.dataVersion],
   );
 
   const hoy = hoyLocal();
@@ -115,8 +128,8 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
     const st = porFecha.get(f)?.status;
     return st === 'submitted' || st === 'approved';
   };
-  // La admin no tiene suelo ni bloqueo por estado: solo el futuro. Lo demás lo dice el
-  // servidor (NOTA_APROBADA_DESAPRUEBA, NOTA_EN_REVISION) y sale en el aviso.
+  // La admin no tiene suelo ni bloqueo por estado: solo el futuro. Corrige un día
+  // aprobado ahí mismo, sin desaprobar la nota (el día conserva el estado de su nota).
   const editable = (f: string) =>
     admin ? f <= data.maxDate : f >= data.minDate && f <= data.maxDate && !cerrado(f);
 
@@ -174,6 +187,28 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
       .catch((e: unknown) => setErr(codigo(e)))
       .finally(() => setGuardando(false));
   };
+
+  /** Las notas cuya semana toca la rejilla visible (sus 42 días). */
+  const notasDelMes = (notas ?? [])
+    .filter((n) => {
+      const fin = new Date(Date.parse(`${n.weekStart}T00:00:00Z`) + 6 * 86_400_000).toISOString().slice(0, 10);
+      return fin >= celdas[0] && n.weekStart <= celdas[41];
+    })
+    .sort((a, b) => a.weekStart.localeCompare(b.weekStart) || a.projectName.localeCompare(b.projectName));
+
+  /** Mismo aprobar que la Bandeja: `updatedAt` para no pisar a otro admin (409). */
+  const aprobar = (n: WeeklyNote) => {
+    setErr(null);
+    approveNote(n.id, n.updatedAt)
+      .then(() => {
+        refresh();
+        showToast('saved');
+      })
+      .catch((e: unknown) => setErr(codigo(e)));
+  };
+  /** Devolver, desaprobar y cerrar sin firma piden motivo: el modal de siempre. */
+  const conMotivo = (n: WeeklyNote, returnMode: 'return' | 'reopen' | 'close') =>
+    patch({ returnOpen: true, returnMode, returnId: n.id, returnUpdatedAt: n.updatedAt });
 
   const mesLargo = new Date(`${mesActual}T00:00:00Z`).toLocaleDateString(
     state.lang === 'it' ? 'it-IT' : state.lang === 'pt' ? 'pt-BR' : 'es-CL',
@@ -323,10 +358,9 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
             ) : (
               t.lb_hint
             )}
-            {/* Que el futuro no se registre es la regla del servidor (ventana =
-                hoy + 14 h), no una limitacion de esta pantalla: nadie puede declarar
-                el dia que todavia no ha trabajado. Decirlo aqui evita leer la rejilla
-                gris como una averia. */}
+            {/* Hasta donde se registra por adelantado lo dice el servidor (ventana =
+                hoy + DIAS_ADELANTO), no esta pantalla. Decirlo aqui evita leer la
+                rejilla gris como una averia. */}
             {admin ? null : <div className="mt-1">{t.lb_future_note}</div>}
           </div>
         </div>
@@ -461,6 +495,65 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
             </div>
           </div>
         </Card>
+
+        {/* LAS NOTAS DEL MES — decidir aqui mismo, sin ir a la Bandeja. Los botones son
+            los de la Bandeja y el Archivo, con las mismas reglas: aprobar y devolver
+            solo lo enviado; desaprobar lo aprobado; cerrar sin firma lo que siga abierto. */}
+        {admin ? (
+          <Card>
+            <div className="p-4 flex flex-col gap-2.5">
+              <div className="text-[11.5px] font-bold uppercase tracking-[.05em]">{t.techlog_notes}</div>
+              {notasDelMes.length ? (
+                notasDelMes.map((n) => (
+                  <div key={n.id} className="border border-border rounded-lg p-2.5 flex flex-col gap-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-[12.5px] font-semibold truncate">{n.projectName}</div>
+                        <div className="text-[11px] text-muted-foreground font-mono">
+                          {n.weekStart}
+                          {n.status === 'submitted' && !n.signed ? ` · ${t.techlog_unsigned}` : ''}
+                        </div>
+                      </div>
+                      <StatusPill st={n.status} t={t} />
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => patch({ pdfOpen: true, pdfNoteId: n.id, pdfSigned: n.signed })}
+                        className="min-h-11 md:min-h-8"
+                        aria-label={t.btn_pdf}
+                      >
+                        {hi('eye', { w: 14 })}
+                      </Button>
+                      {n.status === 'submitted' ? (
+                        <>
+                          <Button size="sm" onClick={() => aprobar(n)} className="min-h-11 md:min-h-8 bg-ok text-white hover:bg-ok/90">
+                            {t.btn_approve}
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => conMotivo(n, 'return')} className="min-h-11 md:min-h-8">
+                            {t.btn_return}
+                          </Button>
+                        </>
+                      ) : null}
+                      {n.status === 'approved' ? (
+                        <Button size="sm" variant="outline" onClick={() => conMotivo(n, 'reopen')} className="min-h-11 md:min-h-8">
+                          {t.btn_unapprove}
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => conMotivo(n, 'close')} title={t.close_sub} className="min-h-11 md:min-h-8">
+                          {t.btn_close_note}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-[12px] text-muted-foreground">{t.techlog_no_notes}</div>
+              )}
+            </div>
+          </Card>
+        ) : null}
       </div>
 
       {/* Que el servidor rechace la escritura no es un campo mal escrito: es un cambio

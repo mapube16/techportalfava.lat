@@ -124,23 +124,18 @@ export interface Admin {
 }
 
 /**
- * El estado con el que queda un dia que guarda LA ADMIN, segun la nota de esa semana y
- * ese proyecto. Pura, para probarla sin base de datos.
+ * El estado con el que queda un dia que guarda LA ADMIN: el de la nota de esa semana y
+ * ese proyecto, o aprobado si no hay nota («agregar a mano»). Pura, para probarla sin BD.
  *
- * - Aprobada o enviada: no se toca. Lo aprobado se desaprueba primero (`reopen`); lo
- *   enviado lo firmo el tecnico y se devuelve o se aprueba, no se reescribe por detras.
- * - Borrador o devuelta: el dia hereda el estado; la cierra el tecnico o la admin (`close`).
- * - Sin nota: aprobado directo. Es «agregar a mano» — la decision de Andrea.
- *
- * Se aplica a la nota del proyecto NUEVO y a la del ANTERIOR si el dia cambia de
- * proyecto: sacar un dia de una nota aprobada es tan grave como meterlo.
+ * LA ADMIN EDITA SIN DESAPROBAR (decision del usuario, 2026-09-29). Antes una nota
+ * aprobada o enviada bloqueaba el dia con 409 y habia que desaprobarla primero; Andrea
+ * queria cambiar el concepto ahi mismo. Ahora el dia se corrige y conserva el estado de
+ * su nota: aprobada sigue aprobada. El cambio queda en el audit_log con el antes y el
+ * despues. Lo que NO cambia es el PDF ya firmado: es la evidencia de lo que se firmo
+ * aquel dia y no se regenera (NOTA-07).
  */
-export function estadoAdmin(notas: ({ status: string } | null)[]): string {
-  for (const n of notas) {
-    if (n?.status === 'approved') throw new ConflictException('NOTA_APROBADA_DESAPRUEBA');
-    if (n?.status === 'submitted') throw new ConflictException('NOTA_EN_REVISION');
-  }
-  return notas[0]?.status ?? 'approved';
+export function estadoAdmin(nota: { status: string } | null): string {
+  return nota?.status ?? 'approved';
 }
 
 @Injectable()
@@ -249,8 +244,8 @@ export class DailyEntriesService {
     // preguntarle a la nota exigiria derivar su semana aqui, que es donde empiezan las
     // dos verdades sobre si un dia se puede tocar.
     //
-    // LA ADMIN NO PASA POR AQUI: a ella la gobierna la nota (`estadoAdmin`), que es la
-    // que dice si lo que hay debajo esta firmado o no. `FILA` entera y no `{status}`
+    // LA ADMIN NO PASA POR AQUI: edita cualquier dia, y el estado se lo da su nota
+    // (`estadoAdmin`). `FILA` entera y no `{status}`
     // porque el suyo deja `before` en el audit_log.
     const actual = await this.prisma.client.dailyEntry.findUnique({
       where: { technicianId_date: { technicianId, date } },
@@ -341,8 +336,8 @@ export class DailyEntriesService {
     }
 
     /**
-     * El estado lo pone la NOTA cuando guarda la admin. Se miran la del proyecto nuevo
-     * y la del anterior (si cambia): ver `estadoAdmin`. Sin nota y con proyecto, la
+     * El estado lo pone la NOTA del proyecto del dia cuando guarda la admin: ver
+     * `estadoAdmin`. Sin nota y con proyecto, la
      * nota se crea aprobada aqui mismo — es lo que deja documento (PDF sin firmas,
      * como las historicas) de un dia que el tecnico nunca envio.
      */
@@ -350,17 +345,15 @@ export class DailyEntriesService {
     if (admin) {
       const c = this.prisma.client;
       const weekStart = aDate(lunesDe(fecha));
-      const proyectos = [...new Set([datos.projectId, actual?.projectId].filter((x): x is string => Boolean(x)))];
-      const notas = proyectos.length
-        ? await c.weeklyNote.findMany({
-            where: { technicianId, weekStart, projectId: { in: proyectos } },
-            select: { projectId: true, status: true },
+      const nota = datos.projectId
+        ? await c.weeklyNote.findUnique({
+            where: { technicianId_weekStart_projectId: { technicianId, weekStart, projectId: datos.projectId } },
+            select: { status: true },
           })
-        : [];
-      const notaDe = (p: string | null) => (p ? (notas.find((n) => n.projectId === p) ?? null) : null);
-      status = estadoAdmin([notaDe(datos.projectId), notaDe(actual?.projectId ?? null)]);
+        : null;
+      status = estadoAdmin(nota);
 
-      if (datos.projectId && !notaDe(datos.projectId)) {
+      if (datos.projectId && !nota) {
         const nota = await c.weeklyNote.create({
           data: { technicianId, weekStart, projectId: datos.projectId, status: 'approved', roleTypeId: tec?.roleTypeId },
           select: { id: true },
