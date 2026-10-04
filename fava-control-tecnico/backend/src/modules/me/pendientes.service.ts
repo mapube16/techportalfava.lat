@@ -77,7 +77,9 @@ export class PendientesService {
   }
 
   async mios(technicianId: string): Promise<Pendientes> {
-    const { min, max } = ventana();
+    // `hoy`, no `max`: se puede registrar por adelantado, pero una semana futura no es
+    // un pendiente.
+    const { min, hoy: max } = ventana();
     const filas = await this.prisma.client.dailyEntry.findMany({
       where: { technicianId, date: { gte: aDate(min), lte: aDate(max) } },
       select: { date: true, status: true, conceptCode: true },

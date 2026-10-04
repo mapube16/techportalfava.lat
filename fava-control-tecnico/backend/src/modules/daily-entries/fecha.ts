@@ -72,7 +72,8 @@ export const lunesDe = (s: string): string =>
 /**
  * Ventana de registro, con TOLERANCIA DE HUSO en vez de una zona configurada.
  *
- *   max = dia de (ahora + 14 h)
+ *   hoy = dia de (ahora + 14 h)
+ *   max = hoy + DIAS_ADELANTO
  *   min = dia 1 del mes ANTERIOR al dia de (ahora - 12 h)
  *
  * Los offsets reales van de UTC-12 a UTC+14: con +14 h para el techo y -12 h para el
@@ -91,15 +92,23 @@ export const lunesDe = (s: string): string =>
  * huso del proceso. Este es el UNICO `new Date()` sin argumentos legitimo del modulo,
  * y su resultado NUNCA se escribe en daily_entries.date.
  */
+/**
+ * Dias que un tecnico puede dejar registrados POR ADELANTADO (pedido de un tecnico el
+ * 30-sep: «los demas dias estan bloqueados»). `hoy` sigue siendo el techo de lo que
+ * cuenta como ejecutado (KPIs, pendientes); `max` es solo hasta donde se deja escribir.
+ */
+export const DIAS_ADELANTO = 7;
+
 export function ventana(
   ahora: Date = new Date(), // fecha-ok: el "ahora" de la ventana, nunca la fecha de trabajo
-): { min: string; max: string } {
-  const max = new Date(ahora.getTime() + 14 * HORA_MS).toISOString().slice(0, 10);
+): { min: string; max: string; hoy: string } {
+  const hoy = new Date(ahora.getTime() + 14 * HORA_MS).toISOString().slice(0, 10);
+  const max = sumarDias(hoy, DIAS_ADELANTO);
   const suelo = new Date(ahora.getTime() - 12 * HORA_MS).toISOString().slice(0, 10);
 
   const anho = Number(suelo.slice(0, 4));
   const mes = Number(suelo.slice(5, 7));
   const [a, m] = mes === 1 ? [anho - 1, 12] : [anho, mes - 1];
 
-  return { min: `${a}-${String(m).padStart(2, '0')}-01`, max };
+  return { min: `${a}-${String(m).padStart(2, '0')}-01`, max, hoy };
 }

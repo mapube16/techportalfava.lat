@@ -64,7 +64,7 @@ describe.each(HUSOS)('proceso en %s', (zona, offsetEsperado) => {
     // 00:00 UTC del 1 de septiembre un técnico en UTC-12 todavía está a 31 de agosto,
     // y para él «el mes anterior» es JULIO. La ventana del servidor tiene que contener
     // también la suya. El contrato completo está en fecha.ts.
-    expect(m.ventanaDia1).toEqual({ min: '2026-07-01', max: '2026-09-01' });
+    expect(m.ventanaDia1).toEqual({ min: '2026-07-01', hoy: '2026-09-01', max: '2026-09-08' });
   });
 
   it('ventana: el cruce de año no se descubre en producción', () => {

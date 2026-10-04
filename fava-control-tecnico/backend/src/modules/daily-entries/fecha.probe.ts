@@ -93,7 +93,7 @@ function medir(): Medida {
     }),
     ventanaDia1: ventana(new Date('2026-09-01T00:00:00Z')),
     minCruceAnho: ventana(new Date('2026-01-05T00:00:00Z')).min,
-    maxUtcMas14: ventana(new Date('2026-07-14T23:00:00Z')).max,
+    maxUtcMas14: ventana(new Date('2026-07-14T23:00:00Z')).hoy,
     contencion: OFFSETS_REALES.map((offsetHoras) => {
       const hoy = new Date(ahora.getTime() + offsetHoras * 3_600_000).toISOString().slice(0, 10);
       return {
