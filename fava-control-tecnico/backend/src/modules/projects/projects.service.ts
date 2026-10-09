@@ -61,6 +61,10 @@ const LISTA = {
 const LISTA_TECNICO = {
   id: true,
   name: true,
+  // No es comercial (a diferencia de contractValue/oaNumber/normalHours/currencyCode/
+  // clientName, de arriba): es el estado MONTAJE/COLLAUDO, y el tecnico ahora lo
+  // declara el mismo al registrar su jornada (ver daily-entries.service.ts).
+  currentPhase: true,
   // Lo que el tecnico elige al registrar el dia. `commessaShort` viaja porque es como
   // la maquina se nombra en obra («3428») y es lo que hace distinguibles dos PL 6000
   // del mismo proyecto — el motivo entero de la Fase 2.1.
@@ -139,9 +143,10 @@ export class ProjectsService {
       select: LISTA_TECNICO,
       orderBy: { name: 'asc' },
     });
-    return filas.map(({ id, name, orders }) => ({
+    return filas.map(({ id, name, currentPhase, orders }) => ({
       id,
       name,
+      currentPhase,
       orders: [...orders].sort((a, b) => a.label.localeCompare(b.label)),
     }));
   }

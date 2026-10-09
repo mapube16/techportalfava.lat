@@ -232,10 +232,26 @@ describe('RLS: maestros y catalogos leidos por todos, escritos solo por admin', 
       );
     });
 
-    it.each(TABLAS)('UPDATE en %s no afecta ninguna fila', async (tabla) => {
+    it.each(TABLAS.filter((t) => t !== 'projects'))('UPDATE en %s no afecta ninguna fila', async (tabla) => {
       // El default-deny filtra las filas: Postgres devuelve 0, no un error.
       const filas = await comoTecnico((tx) => tx.$executeRawUnsafe(SQL[tabla].update));
       expect(filas).toBe(0);
+    });
+
+    // `projects` es la excepcion desde 20261009120000: la politica `proj_fase_tecnico`
+    // deja pasar el UPDATE del tecnico (la fase en curso la declara el desde la
+    // bitacora) y el trigger `proj_solo_fase_si_tecnico` lo acota a ESA columna.
+    it('UPDATE en projects de cualquier columna que no sea current_phase devuelve 42501 (trigger)', async () => {
+      await expect(comoTecnico((tx) => tx.$executeRawUnsafe(SQL.projects.update))).rejects.toThrow(
+        /42501/,
+      );
+    });
+
+    it('UPDATE en projects de current_phase SI afecta la fila', async () => {
+      const filas = await comoTecnico((tx) =>
+        tx.$executeRawUnsafe(`UPDATE "projects" SET "current_phase" = 'COLLAUDO' WHERE "name" <> 'Colado'`),
+      );
+      expect(filas).toBeGreaterThan(0);
     });
 
     it.each(TABLAS)('DELETE en %s no borra nada', async (tabla) => {

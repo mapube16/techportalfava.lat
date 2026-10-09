@@ -140,6 +140,9 @@ export const listProjects = () => apiFetch<ProjectListItem[]>('/projects');
 export interface ProjectForLog {
   id: string;
   name: string;
+  /** La fase EN CURSO. El técnico la ve como punto de partida y, si la cambia en el
+      cajón del día, pasa a ser la del proyecto (ver daily-entries.service.ts). */
+  currentPhase: Phase;
   orders: { id: string; label: string; commessaShort: string | null; machineModelId: string | null }[];
 }
 

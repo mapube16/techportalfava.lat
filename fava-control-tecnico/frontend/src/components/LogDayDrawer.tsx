@@ -12,7 +12,7 @@ import { listProjectsForLog } from '../lib/api/projects';
 // Compartidas con la bitacora mensual: dos copias serian dos verdades. Ver lib/conceptos.ts
 import { ADMITE_FABRICA, SIN_PROYECTO } from '../lib/conceptos';
 import { getWeek, putEntries } from '../lib/api/dailyEntries';
-import type { ConceptCode } from '../lib/api/dailyEntries';
+import type { ConceptCode, Phase } from '../lib/api/dailyEntries';
 import { diasDeSemana, hoyLocal, lunesDe } from '../lib/fecha';
 import DayExpenses from './DayExpenses';
 
@@ -42,6 +42,13 @@ export default function LogDayDrawer() {
    * que elegir una y contar las otras en el texto libre.
    */
   const [extraOrderIds, setExtraOrderIds] = useState<string[]>([]);
+  /**
+   * LA FASE del proyecto (MONTAJE/COLLAUDO). La decide ahora el técnico al registrar
+   * su jornada — antes solo la cambiaba Andrea desde «Información del proyecto» — y al
+   * guardar se convierte en la `currentPhase` del proyecto (daily-entries.service.ts).
+   * `null` = sin proyecto, o un día histórico sin fase que no se toca.
+   */
+  const [phase, setPhase] = useState<Phase | null>(null);
   const [concept, setConcept] = useState<ConceptCode>('DC');
   const [inFactory, setInFactory] = useState(false);
   /** Marcada = el día se guarda como incapacidad. No hay botón que elegir. */
@@ -101,6 +108,7 @@ export default function LogDayDrawer() {
     setOrderId(existente.orderId ?? '');
     setExtraOrderIds(existente.extraOrders.map((o) => o.id));
     if (existente.conceptCode) setConcept(existente.conceptCode);
+    setPhase(existente.phase ?? null);
     setInFactory(existente.inFactory);
     setNotaDia(existente.dayNote ?? '');
     setDescs((d) => ({ ...d, [fecha]: existente.description ?? '' }));
@@ -161,7 +169,7 @@ export default function LogDayDrawer() {
         // vacía) para que desmarcar una la quite de verdad.
         extraOrderIds,
         conceptCode: concept,
-        phase: null,
+        phase: exigeProyecto ? phase : null,
         inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
         // Solo en el modo de UN dia: en el relleno multiple la nota es de cada dia y
         // repetir la misma en siete filas del PDF seria ruido impreso.
@@ -254,10 +262,13 @@ export default function LogDayDrawer() {
             <select
               value={projectId}
               onChange={(e) => {
-                setProjectId(e.target.value);
+                const id = e.target.value;
+                setProjectId(id);
                 setOrderId('');
                 // Las máquinas son DEL proyecto: al cambiarlo, las de antes ya no valen.
                 setExtraOrderIds([]);
+                // Y la fase por defecto es la que ese proyecto tiene EN CURSO ahora.
+                setPhase((proyectos ?? []).find((pr) => pr.id === id)?.currentPhase ?? null);
               }}
               className={inputStyle}
             >
@@ -338,6 +349,31 @@ export default function LogDayDrawer() {
             )
           ) : null}
 
+          {/* La fase del proyecto. Solo tiene sentido con proyecto elegido — igual que
+              la máquina — y solo las dos del enum: nada de texto libre. */}
+          {projectId && !proyectoHuerfano
+            ? field(
+                t.proj_phase,
+                <div className="flex gap-1.5">
+                  {(['MONTAJE', 'COLLAUDO'] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setPhase(f)}
+                      aria-pressed={phase === f}
+                      className={`flex-1 min-h-11 px-3 rounded-lg text-[12.5px] font-semibold cursor-pointer border transition-colors ${
+                        phase === f
+                          ? 'border-primary bg-primary text-white'
+                          : 'border-input bg-muted text-muted-foreground hover:bg-accent'
+                      }`}
+                    >
+                      {f === 'MONTAJE' ? t.montaje : t.colaudo}
+                    </button>
+                  ))}
+                </div>,
+              )
+            : null}
+
           {field(
             t.log_concept,
             <div className="grid grid-cols-4 gap-1.5">
@@ -365,6 +401,7 @@ export default function LogDayDrawer() {
                         setProjectId('');
                         setOrderId('');
                         setExtraOrderIds([]);
+                        setPhase(null);
                       }
                     }}
                     title={state.lang === 'it' ? c.labelIt : c.labelEs}
@@ -413,6 +450,7 @@ export default function LogDayDrawer() {
                     setProjectId('');
                     setOrderId('');
                     setExtraOrderIds([]);
+                    setPhase(null);
                   } else {
                     setConcept(conceptoPrevio === INCAPACIDAD ? 'DC' : conceptoPrevio);
                   }

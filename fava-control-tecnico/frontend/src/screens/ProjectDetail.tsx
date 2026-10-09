@@ -161,9 +161,10 @@ export default function ProjectDetail() {
   };
 
   /**
-   * La fase EN CURSO. Es la que heredan los días que se registren desde ahora (la
-   * captura no la pregunta), así que cambiarla es el gesto de «arrancó el collaudo».
-   * Los días ya escritos conservan la suya.
+   * La fase EN CURSO. Es la que heredan los días que se registren desde ahora. Desde
+   * 2026-10 la declara el TÉCNICO desde su bitácora (marcar collaudo en un día la mueve
+   * hacia delante, ver daily-entries.service.ts); este selector queda para corregir
+   * desde Admin, en las dos direcciones. Los días ya escritos conservan la suya.
    */
   const cambiarFase = (fase: Phase) =>
     updateProject(p.id, { currentPhase: fase })

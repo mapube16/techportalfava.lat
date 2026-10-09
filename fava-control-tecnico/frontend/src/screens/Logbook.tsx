@@ -17,7 +17,7 @@ import { getCatalogs } from '../lib/api/catalogs';
 import { ADMITE_FABRICA, exigeProyecto } from '../lib/conceptos';
 import { hoyLocal, rejillaDelMes, sumarMeses } from '../lib/fecha';
 import AvisoModal from '../components/AvisoModal';
-import type { ConceptCode } from '../lib/api/dailyEntries';
+import type { ConceptCode, Phase } from '../lib/api/dailyEntries';
 
 /**
  * BIT-11 — la bitacora del mes (diseno 1b).
@@ -74,6 +74,9 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
   const [concept, setConcept] = useState<ConceptCode | null>(null);
   const [projectId, setProjectId] = useState('');
   const [orderId, setOrderId] = useState('');
+  /** Igual que en el cajón de un día: la fase la elige ahora el técnico, y al guardar
+      se vuelve la `currentPhase` del proyecto (daily-entries.service.ts). */
+  const [phase, setPhase] = useState<Phase | null>(null);
   const [desc, setDesc] = useState('');
   const [inFactory, setInFactory] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -171,7 +174,7 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
         orderId: orderId || null,
         extraOrderIds: [],
         conceptCode: concept,
-        phase: null,
+        phase: pideProyecto ? phase : null,
         inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
         // La nota del dia es de UN dia: repetirla en veintiuna filas del PDF seria
         // ruido impreso. Se pone desde el cajon, dia por dia.
@@ -412,8 +415,10 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
                   <select
                     value={projectId}
                     onChange={(e) => {
-                      setProjectId(e.target.value);
+                      const id = e.target.value;
+                      setProjectId(id);
                       setOrderId(''); // la maquina es de OTRO proyecto: se limpia
+                      setPhase((proyectos ?? []).find((p) => p.id === id)?.currentPhase ?? null);
                     }}
                     className={`${inputStyle} mt-1.5`}
                   >
@@ -453,6 +458,29 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
                     </div>
                   </div>
                 ) : null}
+
+                <div>
+                  <div className="text-[10.5px] font-bold uppercase tracking-[.06em] text-muted-foreground">
+                    {t.proj_phase}
+                  </div>
+                  <div className="flex gap-1.5 mt-1.5">
+                    {(['MONTAJE', 'COLLAUDO'] as const).map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setPhase(f)}
+                        aria-pressed={phase === f}
+                        className={`flex-1 min-h-9 px-2.5 rounded-lg text-[11.5px] font-semibold cursor-pointer border transition-colors ${
+                          phase === f
+                            ? 'border-primary bg-primary text-white'
+                            : 'border-border text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {f === 'MONTAJE' ? t.montaje : t.colaudo}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </>
             ) : null}
 

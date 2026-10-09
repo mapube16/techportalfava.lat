@@ -174,6 +174,32 @@ describe('daily-entries: la semana, el dia y su idempotencia (BIT-01, BIT-02, BI
     expect(body.entries[0]).toEqual(escrita);
   });
 
+  // ── La fase EN CURSO la declara el tecnico desde la bitacora ──
+
+  it('marcar COLLAUDO en un dia pasa el proyecto a COLLAUDO; marcar MONTAJE despues NO lo devuelve', async () => {
+    const fase = () =>
+      ownerClient.project.findUniqueOrThrow({ where: { id: proyectoId }, select: { currentPhase: true } });
+    expect((await fase()).currentPhase).toBe('MONTAJE');
+
+    // Un dia con la fase del proyecto no cambia nada.
+    await guardar(dia(10), datos()).expect(200);
+    expect((await fase()).currentPhase).toBe('MONTAJE');
+
+    // «Arranco el collaudo»: lo dice el tecnico con is_admin = 'off', y el proyecto lo adopta.
+    const { body } = await guardar(DIA, { ...datos(), phase: 'COLLAUDO' }).expect(200);
+    expect(body.phase).toBe('COLLAUDO');
+    expect((await fase()).currentPhase).toBe('COLLAUDO');
+
+    // Corregir un dia viejo a montaje es cosa de ESE dia: el proyecto sigue en collaudo.
+    const { body: viejo } = await guardar(dia(10), datos()).expect(200);
+    expect(viejo.phase).toBe('MONTAJE');
+    expect((await fase()).currentPhase).toBe('COLLAUDO');
+
+    // Y un dia nuevo sin fase hereda la que el tecnico acaba de fijar.
+    const { body: nuevo } = await guardar(dia(11), { ...datos(), phase: null }).expect(200);
+    expect(nuevo.phase).toBe('COLLAUDO');
+  });
+
   it('cada fila lleva projectName y machineCode denormalizados', async () => {
     const p = await proyectoConMaquina({ name: 'Obra Cibao 2026' });
     await guardar(DIA, { ...datos(), projectId: p.id, orderId: p.orderId }).expect(200);

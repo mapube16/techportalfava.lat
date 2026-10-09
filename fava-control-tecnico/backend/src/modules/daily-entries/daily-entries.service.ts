@@ -276,26 +276,52 @@ export class DailyEntriesService {
     });
 
     /**
-     * LA FASE. La captura no la pregunta (manda `phase: null`), y sin fase el dia no
-     * entraba en la tabla «Por fase» de los KPIs: lo unico que se veia ejecutado era el
-     * historico del Excel. Regla, en este orden:
-     *  1. la que mande el cliente, si manda una;
+     * LA FASE. La mayoria de capturas no la pregunta (manda `phase: null`): la bitacora
+     * mensual pinta un concepto sobre varios dias y preguntar la fase ahi duplicaria
+     * lo que el proyecto ya sabe. Regla, en este orden:
+     *  1. la que mande el cliente, si manda una — EL CAJON de un dia la pregunta, y es
+     *     asi como la decision paso del PM al tecnico (antes la cambiaba Andrea desde
+     *     «Informacion del proyecto»; ver el bloque de mas abajo);
      *  2. la que el dia YA tenia — AUNQUE sea ninguna — si sigue en el mismo proyecto:
      *     editar la descripcion de un dia de montaje no lo pasa a collaudo porque el
      *     proyecto haya avanzado, y corregir un dia viejo sin fase no le inventa la de hoy;
      *  3. si el dia es NUEVO o cambia de proyecto, la fase EN CURSO del proyecto
-     *     (`projects.current_phase`, la mueve Andrea).
+     *     (`projects.current_phase`).
      * Sin proyecto no hay fase: un libre no es montaje ni collaudo.
      */
+    const proyectoActual = datos.projectId
+      ? await this.prisma.client.project.findUnique({
+          where: { id: datos.projectId },
+          select: { currentPhase: true },
+        })
+      : null;
+
     let phase: Phase | null = datos.phase;
     if (!phase && datos.projectId) {
-      if (actual?.projectId === datos.projectId) phase = actual.phase;
-      else
-        phase =
-          (await this.prisma.client.project.findUnique({
-            where: { id: datos.projectId },
-            select: { currentPhase: true },
-          }))?.currentPhase ?? null;
+      phase = actual?.projectId === datos.projectId ? actual.phase : proyectoActual?.currentPhase ?? null;
+    }
+
+    /**
+     * LA DECISION SE MUEVE AL TECNICO: marcar COLLAUDO en una jornada de un proyecto
+     * que esta en MONTAJE es el gesto de «arranco el collaudo», y el proyecto lo adopta
+     * como `currentPhase`. Antes solo lo podia hacer Andrea desde la pantalla del
+     * proyecto; esa ruta sigue para corregir.
+     *
+     * SOLO HACIA DELANTE. El cajon manda la fase del dia aunque el tecnico no la toque,
+     * asi que reabrir un dia de montaje de hace tres semanas para arreglar la descripcion
+     * manda `MONTAJE` sobre un proyecto que ya esta en collaudo: eso corrige ESE dia, no
+     * devuelve el proyecto. Volver a montaje es de Admin.
+     *
+     * Con is_admin = 'off' lo deja pasar la politica `proj_fase_tecnico`, y el trigger
+     * `proj_solo_fase_si_tecnico` garantiza que esta es la UNICA columna que un tecnico
+     * puede tocar (migracion 20261009120000). Misma transaccion que el upsert de abajo
+     * (`RlsInterceptor`): si el dia no se escribe, el proyecto tampoco cambia.
+     */
+    if (datos.projectId && datos.phase === 'COLLAUDO' && proyectoActual?.currentPhase === 'MONTAJE') {
+      await this.prisma.client.project.update({
+        where: { id: datos.projectId },
+        data: { currentPhase: 'COLLAUDO' },
+      });
     }
     if (datos.conceptCode === 'LR' && tec?.employmentType === 'EXTERNO')
       throw new BadRequestException('LIBRE_REMUNERADO_SOLO_INTERNOS');
