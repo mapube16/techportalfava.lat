@@ -27,5 +27,29 @@ export const ADMITE_FABRICA: ConceptCode[] = ['DC', 'MD', 'DFD'];
     `de_media_jornada` del motor. */
 export const OTRA_MITAD: ConceptCode[] = ['DVSF', 'DVRC'];
 
+/**
+ * Que se ofrece como «otra mitad» para ESTE concepto, o null si no se pregunta.
+ * Desde MD: ninguna, o un viaje. Desde un viaje: ninguna, o medio dia de trabajo. La
+ * pregunta se hace por los dos lados porque el tecnico puede pensar el dia como «viaje
+ * salida y ademas trabaje la manana» o como «medio dia y ademas viaje»: es el mismo dia.
+ */
+export function opcionesMitad(concept: ConceptCode): (ConceptCode | null)[] | null {
+  if (concept === 'MD') return [null, ...OTRA_MITAD];
+  if (OTRA_MITAD.includes(concept)) return [null, 'MD'];
+  return null;
+}
+
+/**
+ * Lo que se MANDA. La forma canonica (y la unica que admite el CHECK del motor) es
+ * MD + viaje: si el tecnico eligio el viaje como concepto y «medio dia de trabajo» como
+ * otra mitad, se le da la vuelta aqui. Cualquier combinacion que no sea una de las dos
+ * se manda sin otra mitad, en vez de dejar que el servidor la rechace.
+ */
+export function jornadaConMitad(concept: ConceptCode, half: ConceptCode | null) {
+  if (concept === 'MD' && half && OTRA_MITAD.includes(half)) return { conceptCode: concept, halfConceptCode: half };
+  if (OTRA_MITAD.includes(concept) && half === 'MD') return { conceptCode: 'MD' as ConceptCode, halfConceptCode: concept };
+  return { conceptCode: concept, halfConceptCode: null };
+}
+
 /** Si ESTE concepto exige proyecto. La pregunta se hace en dos pantallas. */
 export const exigeProyecto = (c: ConceptCode) => !SIN_PROYECTO.includes(c);

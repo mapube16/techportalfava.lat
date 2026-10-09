@@ -10,7 +10,7 @@ import { codigo, useApiData } from '../lib/api/useApiData';
 import { getCatalogs } from '../lib/api/catalogs';
 import { listProjectsForLog } from '../lib/api/projects';
 // Compartidas con la bitacora mensual: dos copias serian dos verdades. Ver lib/conceptos.ts
-import { ADMITE_FABRICA, OTRA_MITAD, SIN_PROYECTO } from '../lib/conceptos';
+import { ADMITE_FABRICA, SIN_PROYECTO, jornadaConMitad, opcionesMitad } from '../lib/conceptos';
 import { getWeek, putEntries } from '../lib/api/dailyEntries';
 import type { ConceptCode, Phase } from '../lib/api/dailyEntries';
 import { diasDeSemana, hoyLocal, lunesDe } from '../lib/fecha';
@@ -171,10 +171,8 @@ export default function LogDayDrawer() {
         // BIT-10: las demás máquinas del día. Siempre se manda la lista (aunque esté
         // vacía) para que desmarcar una la quite de verdad.
         extraOrderIds,
-        conceptCode: concept,
-        // La otra mitad solo existe en un medio dia: con otro concepto se descarta
-        // aqui, no se deja que el servidor la rechace.
-        halfConceptCode: concept === 'MD' ? halfConcept : null,
+        // Medio dia + viaje, en su forma canonica (MD + viaje) venga por el lado que venga.
+        ...jornadaConMitad(concept, halfConcept),
         phase: exigeProyecto ? phase : null,
         inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
         // Solo en el modo de UN dia: en el relleno multiple la nota es de cada dia y
@@ -402,6 +400,8 @@ export default function LogDayDrawer() {
                     onClick={() => {
                       const codigoNuevo = c.code as ConceptCode;
                       setConcept(codigoNuevo);
+                      // La otra mitad es DE este concepto: con otro ya no significa nada.
+                      setHalfConcept(null);
                       // Un dia sin proyecto no puede quedarse apuntando al de antes.
                       if (SIN_PROYECTO.includes(codigoNuevo)) {
                         setProjectId('');
@@ -436,35 +436,43 @@ export default function LogDayDrawer() {
             })()}
           </div>
 
-          {/* MEDIO DIA + MEDIO VIAJE: la otra mitad del dia. Solo se pregunta con MD y
-              solo ofrece los viajes (ver OTRA_MITAD). «Solo medio dia» es la opcion
-              por defecto: un medio dia sin viaje sigue siendo lo normal. */}
-          {concept === 'MD'
-            ? field(
-                t.log_half_title,
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[null, ...OTRA_MITAD].map((h) => {
-                    const on = halfConcept === h;
-                    const c = h ? conceptos.find((x) => x.code === h) : null;
-                    const color = h ? (CONCEPT_COLOR[h] ?? 'var(--primary)') : 'var(--primary)';
-                    return (
-                      <button
-                        key={h ?? 'none'}
-                        type="button"
-                        onClick={() => setHalfConcept(h)}
-                        aria-pressed={on}
-                        style={on ? { borderColor: color, background: color, color: '#fff' } : undefined}
-                        className={`min-h-11 px-1 py-2 rounded-md text-[12px] font-semibold cursor-pointer border transition-colors ${
-                          on ? '' : 'border-input bg-muted text-muted-foreground hover:bg-accent'
-                        }`}
-                      >
-                        {h ? ((state.lang === 'it' ? c?.labelIt : c?.labelEs) ?? h) : t.log_half_none}
-                      </button>
-                    );
-                  })}
-                </div>,
-              )
-            : null}
+          {/* MEDIO DIA + MEDIO VIAJE: la otra mitad del dia. Se pregunta desde MD (¿y la
+              otra mitad, viaje?) y desde un viaje (¿y la otra mitad, trabajo?): es el
+              mismo dia visto por los dos lados, y se guarda igual (ver jornadaConMitad).
+              La primera opcion es «nada mas», que sigue siendo lo normal. */}
+          {(() => {
+            const opciones = opcionesMitad(concept);
+            if (!opciones) return null;
+            return field(
+              t.log_half_title,
+              <div className="grid grid-cols-3 gap-1.5">
+                {opciones.map((h) => {
+                  const on = halfConcept === h;
+                  const c = h ? conceptos.find((x) => x.code === h) : null;
+                  const color = h ? (CONCEPT_COLOR[h] ?? 'var(--primary)') : 'var(--primary)';
+                  const texto = !h
+                    ? concept === 'MD' ? t.log_half_none : t.log_half_only_travel
+                    : h === 'MD'
+                      ? t.log_half_work
+                      : ((state.lang === 'it' ? c?.labelIt : c?.labelEs) ?? h);
+                  return (
+                    <button
+                      key={h ?? 'none'}
+                      type="button"
+                      onClick={() => setHalfConcept(h)}
+                      aria-pressed={on}
+                      style={on ? { borderColor: color, background: color, color: '#fff' } : undefined}
+                      className={`min-h-11 px-1 py-2 rounded-md text-[12px] font-semibold cursor-pointer border transition-colors ${
+                        on ? '' : 'border-input bg-muted text-muted-foreground hover:bg-accent'
+                      }`}
+                    >
+                      {texto}
+                    </button>
+                  );
+                })}
+              </div>,
+            );
+          })()}
 
           {/* Las dos casillas del día. Se EXCLUYEN: quien está incapacitado no está
               en fábrica, así que marcar «Incapacitado» quita «En fábrica» y la esconde.

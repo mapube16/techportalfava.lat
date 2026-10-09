@@ -14,7 +14,7 @@ import { listTechnicians } from '../lib/api/technicians';
 import { approveNote, listNotes } from '../lib/api/weeklyNotes';
 import type { WeeklyNote } from '../lib/api/weeklyNotes';
 import { getCatalogs } from '../lib/api/catalogs';
-import { ADMITE_FABRICA, OTRA_MITAD, exigeProyecto } from '../lib/conceptos';
+import { ADMITE_FABRICA, exigeProyecto, jornadaConMitad, opcionesMitad } from '../lib/conceptos';
 import { hoyLocal, rejillaDelMes, sumarMeses } from '../lib/fecha';
 import AvisoModal from '../components/AvisoModal';
 import type { ConceptCode, Phase } from '../lib/api/dailyEntries';
@@ -175,8 +175,8 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
         projectId: projectId || null,
         orderId: orderId || null,
         extraOrderIds: [],
-        conceptCode: concept,
-        halfConceptCode: concept === 'MD' ? halfConcept : null,
+        // Medio dia + viaje, en su forma canonica (MD + viaje) venga por el lado que venga.
+        ...jornadaConMitad(concept, halfConcept),
         phase: pideProyecto ? phase : null,
         inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
         // La nota del dia es de UN dia: repetirla en veintiuna filas del PDF seria
@@ -398,7 +398,11 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
                   <button
                     key={c.code}
                     type="button"
-                    onClick={() => setConcept(c.code as ConceptCode)}
+                    onClick={() => {
+                      setConcept(c.code as ConceptCode);
+                      // La otra mitad es DE este concepto: con otro ya no significa nada.
+                      setHalfConcept(null);
+                    }}
                     aria-pressed={on}
                     className={`rounded-lg border-[1.5px] px-2.5 py-2 min-h-14 text-left cursor-pointer transition-colors ${
                       on ? 'border-primary bg-primary-tint' : 'border-border bg-surface hover:bg-muted'
@@ -498,34 +502,44 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
               </>
             ) : null}
 
-            {/* MEDIO DIA + MEDIO VIAJE: la otra mitad del dia. Mismas reglas que el
-                cajon (OTRA_MITAD); aqui se aplica a toda la seleccion. */}
-            {concept === 'MD' ? (
-              <div>
-                <div className="text-[10.5px] font-bold uppercase tracking-[.06em] text-muted-foreground mb-1.5">
-                  {t.log_half_title}
+            {/* MEDIO DIA + MEDIO VIAJE: la otra mitad del dia, preguntada desde MD y
+                desde un viaje. Mismas reglas que el cajon (opcionesMitad /
+                jornadaConMitad); aqui se aplica a toda la seleccion. */}
+            {(() => {
+              const opciones = concept ? opcionesMitad(concept) : null;
+              if (!opciones) return null;
+              return (
+                <div>
+                  <div className="text-[10.5px] font-bold uppercase tracking-[.06em] text-muted-foreground mb-1.5">
+                    {t.log_half_title}
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {opciones.map((h) => {
+                      const on = halfConcept === h;
+                      const c = h ? conceptos.find((x) => x.code === h) : null;
+                      const texto = !h
+                        ? concept === 'MD' ? t.log_half_none : t.log_half_only_travel
+                        : h === 'MD'
+                          ? t.log_half_work
+                          : ((state.lang === 'it' ? c?.labelIt : c?.labelEs) ?? h);
+                      return (
+                        <button
+                          key={h ?? 'none'}
+                          type="button"
+                          onClick={() => setHalfConcept(h)}
+                          aria-pressed={on}
+                          className={`rounded-lg border-[1.5px] px-2 py-2 text-[11px] font-semibold cursor-pointer transition-colors ${
+                            on ? 'border-primary bg-primary-tint' : 'border-border bg-surface hover:bg-muted'
+                          }`}
+                        >
+                          {texto}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[null, ...OTRA_MITAD].map((h) => {
-                    const on = halfConcept === h;
-                    const c = h ? conceptos.find((x) => x.code === h) : null;
-                    return (
-                      <button
-                        key={h ?? 'none'}
-                        type="button"
-                        onClick={() => setHalfConcept(h)}
-                        aria-pressed={on}
-                        className={`rounded-lg border-[1.5px] px-2 py-2 text-[11px] font-semibold cursor-pointer transition-colors ${
-                          on ? 'border-primary bg-primary-tint' : 'border-border bg-surface hover:bg-muted'
-                        }`}
-                      >
-                        {h ? ((state.lang === 'it' ? c?.labelIt : c?.labelEs) ?? h) : t.log_half_none}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
+              );
+            })()}
 
             {concept && ADMITE_FABRICA.includes(concept) ? (
               <label className="flex items-center gap-2 text-[12px] cursor-pointer">
