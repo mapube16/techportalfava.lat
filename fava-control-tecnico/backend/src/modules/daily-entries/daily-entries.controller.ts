@@ -106,6 +106,9 @@ function jornada(body: Cuerpo): Jornada {
     orderId: uuid(body?.orderId, 'ORDEN_INVALIDA'),
     inFactory: body?.inFactory === true,
     conceptCode: deLista(body?.conceptCode, CONCEPTOS, 'CONCEPTO_INVALIDO') as Jornada['conceptCode'],
+    // La otra mitad de un medio dia. Aqui solo la FORMA (es un concepto); que sea un
+    // viaje y que acompañe a MD lo dice `errorMedia` en el servicio.
+    halfConceptCode: deLista(body?.halfConceptCode, CONCEPTOS, 'CONCEPTO_INVALIDO') as Jornada['halfConceptCode'],
     phase: deLista(body?.phase, FASES, 'FASE_INVALIDA') as Jornada['phase'],
     description: descripcion(body?.description),
     dayNote: notaDia(body?.dayNote),

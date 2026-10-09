@@ -24,6 +24,7 @@ const FILA = {
   orderId: true,
   machineModelId: true,
   conceptCode: true,
+  halfConceptCode: true,
   inFactory: true,
   dayNote: true,
   phase: true,
@@ -64,6 +65,8 @@ export interface Jornada {
   projectId: string | null;
   orderId: string | null;
   conceptCode: ConceptCode | null;
+  /** La OTRA MITAD de un medio dia (ver `errorMedia`). */
+  halfConceptCode: ConceptCode | null;
   phase: Phase | null;
   inFactory: boolean;
   description: string | null;
@@ -85,6 +88,7 @@ interface Cruda {
   orderId: string | null;
   machineModelId: string | null;
   conceptCode: ConceptCode | null;
+  halfConceptCode: ConceptCode | null;
   phase: Phase | null;
   inFactory: boolean;
   description: string | null;
@@ -109,6 +113,7 @@ const plana = (f: Cruda) => ({
   // Respaldo del historico: las jornadas migradas del Excel traen modelo pero no orden.
   machineCode: f.order?.label ?? f.machineModel?.code ?? null,
   conceptCode: f.conceptCode,
+  halfConceptCode: f.halfConceptCode,
   phase: f.phase,
   inFactory: f.inFactory,
   description: f.description,
@@ -116,6 +121,31 @@ const plana = (f: Cruda) => ({
   status: f.status,
   updatedAt: f.updatedAt.toISOString(),
 });
+
+/** Lo unico que puede ocupar la OTRA MITAD de un medio dia: el viaje. */
+export const OTRA_MITAD: ConceptCode[] = ['DVSF', 'DVRC'];
+
+/**
+ * MEDIO DIA + MEDIO VIAJE (decision del usuario, 2026-10-09). Lodi trabaja la manana y a
+ * las 17:15 sale al aeropuerto; FAVA Italia lo cuenta como ½ y el viaje de la tarde no
+ * suma aparte. Con un concepto por dia no se podia decir: o era MD con el viaje escondido
+ * en la nota, o era viaje y el trabajo desaparecia.
+ *
+ * `halfConceptCode` NO es un modificador como `inFactory` —los conceptos son de dia, no
+ * de eventualidades—: es un segundo concepto de dia que solo cabe junto a MD y solo si
+ * es un viaje. El CHECK `de_media_jornada` lo garantiza en el motor; esto da el error
+ * con nombre antes del 23514. El dia sigue contando UNA vez en los KPIs, bajo MD:
+ * repartir 0,5/0,5 cambiaria la regla «MD = 1 dia» de todos los medios dias
+ * (`ejecutados` en sold-days.service.ts), y esa es otra decision.
+ *
+ * Pura, para probarla sin BD. Devuelve el codigo del error o null.
+ */
+export function errorMedia(conceptCode: ConceptCode | null, half: ConceptCode | null): string | null {
+  if (!half) return null;
+  if (conceptCode !== 'MD') return 'MEDIA_JORNADA_SOLO_MD';
+  if (!OTRA_MITAD.includes(half)) return 'MEDIA_JORNADA_INVALIDA';
+  return null;
+}
 
 /** Quien guarda en nombre del tecnico. Solo lo pasa la ruta de admin. */
 export interface Admin {
@@ -331,6 +361,12 @@ export class DailyEntriesService {
     // no puede depender de eso: la regla vive aqui, como la del LR de arriba.
     if (datos.conceptCode === 'OTRO' && !datos.description)
       throw new BadRequestException('OTRO_SIN_DESCRIPCION');
+
+    // Con el literal a la vista: `check-errores.mjs` encuentra los codigos buscando
+    // `Exception('CODIGO')`, y uno lanzado desde una variable quedaria sin traducir.
+    const errMedia = errorMedia(datos.conceptCode, datos.halfConceptCode);
+    if (errMedia === 'MEDIA_JORNADA_SOLO_MD') throw new BadRequestException('MEDIA_JORNADA_SOLO_MD');
+    if (errMedia) throw new BadRequestException('MEDIA_JORNADA_INVALIDA');
 
     // La orden tiene que ser DEL proyecto que se declara. El FK solo garantiza que
     // existe, no que sea de este proyecto: sin esta comprobacion un dia de JAV podria

@@ -191,7 +191,13 @@ export default function Week() {
                 <div className="md:contents">
                   <div>
                     {e?.conceptCode ? (
-                      <ConceptPill code={e.conceptCode} lang={state.lang} />
+                      <>
+                        <ConceptPill code={e.conceptCode} lang={state.lang} />
+                        {/* La otra mitad de un medio dia: el viaje de la tarde. */}
+                        {e.halfConceptCode ? (
+                          <span className="ml-1 font-mono text-[11px] text-muted-foreground">+ {e.halfConceptCode}</span>
+                        ) : null}
+                      </>
                     ) : (
                       // El hueco se dice en naranja, como el diseno: en gris se leia
                       // igual que una fila normal y habia que contar los que faltaban.

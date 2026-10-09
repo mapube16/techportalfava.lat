@@ -321,6 +321,7 @@ function Detalle({
                           style={{ color: CONCEPT_COLOR[d.conceptCode] ?? 'var(--primary)' }}
                         >
                           {d.conceptCode} · {etiqueta(d.conceptCode)}
+                          {d.halfConceptCode ? ` + ${etiqueta(d.halfConceptCode)}` : ''}
                         </span>
                       ) : (
                         <span className="text-[10px] text-muted-foreground">{t.week_empty_day}</span>

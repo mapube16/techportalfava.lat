@@ -102,6 +102,8 @@ export const signNote = (id: string, technician: FirmaEntrada, expectedUpdatedAt
 export interface DiaNota {
   date: string;
   conceptCode: string | null;
+  /** La otra mitad de un medio día (el viaje de la tarde), si la hubo. */
+  halfConceptCode: string | null;
   description: string | null;
   inFactory: boolean;
   commessaShort: string | null;

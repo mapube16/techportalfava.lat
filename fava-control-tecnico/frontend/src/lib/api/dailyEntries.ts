@@ -21,6 +21,8 @@ export interface Entry {
   /** La etiqueta de la orden, o el modelo si la jornada viene migrada del Excel. */
   machineCode: string | null;
   conceptCode: ConceptCode | null;
+  /** La OTRA MITAD de un medio día: el viaje de la tarde. Solo con MD (ver lib/conceptos). */
+  halfConceptCode: ConceptCode | null;
   phase: Phase | null;
   /** «En Fabrica»: modificador de DC, MD y DFD, no un concepto aparte. */
   inFactory: boolean;
@@ -46,6 +48,7 @@ export interface EntryInput {
   projectId: string | null;
   orderId: string | null;
   conceptCode: ConceptCode | null;
+  halfConceptCode: ConceptCode | null;
   phase: Phase | null;
   inFactory: boolean;
   description: string | null;

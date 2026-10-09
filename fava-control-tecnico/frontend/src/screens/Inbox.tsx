@@ -89,6 +89,10 @@ function Dias({ nota, lang, dias }: { nota: WeeklyNote; lang: Lang; dias: string
             </div>
             <div className="w-[140px] shrink-0">
               {e?.conceptCode ? <ConceptPill code={e.conceptCode} lang={lang} /> : null}
+              {/* La otra mitad de un medio día: el viaje de la tarde. */}
+              {e?.halfConceptCode ? (
+                <span className="ml-1 font-mono text-[11px] text-muted-foreground">+ {e.halfConceptCode}</span>
+              ) : null}
             </div>
             <div className="flex-1 text-[12.5px] text-muted-foreground leading-relaxed min-w-0">
               {e?.description ?? ''}

@@ -14,7 +14,7 @@ import { listTechnicians } from '../lib/api/technicians';
 import { approveNote, listNotes } from '../lib/api/weeklyNotes';
 import type { WeeklyNote } from '../lib/api/weeklyNotes';
 import { getCatalogs } from '../lib/api/catalogs';
-import { ADMITE_FABRICA, exigeProyecto } from '../lib/conceptos';
+import { ADMITE_FABRICA, OTRA_MITAD, exigeProyecto } from '../lib/conceptos';
 import { hoyLocal, rejillaDelMes, sumarMeses } from '../lib/fecha';
 import AvisoModal from '../components/AvisoModal';
 import type { ConceptCode, Phase } from '../lib/api/dailyEntries';
@@ -79,6 +79,8 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
   const [phase, setPhase] = useState<Phase | null>(null);
   const [desc, setDesc] = useState('');
   const [inFactory, setInFactory] = useState(false);
+  /** La OTRA MITAD de un medio dia: el viaje de la tarde. Solo se pregunta con MD. */
+  const [halfConcept, setHalfConcept] = useState<ConceptCode | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   /** Arrastre: el boton esta pulsado y se van marcando los dias por los que pasa. */
@@ -174,6 +176,7 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
         orderId: orderId || null,
         extraOrderIds: [],
         conceptCode: concept,
+        halfConceptCode: concept === 'MD' ? halfConcept : null,
         phase: pideProyecto ? phase : null,
         inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
         // La nota del dia es de UN dia: repetirla en veintiuna filas del PDF seria
@@ -335,11 +338,22 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
                   {code ? (
                     // El color va en `style` porque Tailwind no puede generar una
                     // utilidad por cada color en tiempo de compilacion.
-                    <span
-                      className="text-[9.5px] font-bold font-mono px-1 py-px rounded self-start text-white"
-                      style={{ background: CONCEPT_COLOR[code] ?? 'var(--primary)' }}
-                    >
-                      {code}
+                    <span className="flex gap-0.5 self-start">
+                      <span
+                        className="text-[9.5px] font-bold font-mono px-1 py-px rounded text-white"
+                        style={{ background: CONCEPT_COLOR[code] ?? 'var(--primary)' }}
+                      >
+                        {code}
+                      </span>
+                      {/* La otra mitad de un medio dia, con el color de SU concepto. */}
+                      {e?.halfConceptCode ? (
+                        <span
+                          className="text-[9.5px] font-bold font-mono px-1 py-px rounded text-white"
+                          style={{ background: CONCEPT_COLOR[e.halfConceptCode] ?? 'var(--primary)' }}
+                        >
+                          {e.halfConceptCode}
+                        </span>
+                      ) : null}
                     </span>
                   ) : (
                     <span className="text-[9.5px] text-muted-foreground">—</span>
@@ -482,6 +496,35 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
                   </div>
                 </div>
               </>
+            ) : null}
+
+            {/* MEDIO DIA + MEDIO VIAJE: la otra mitad del dia. Mismas reglas que el
+                cajon (OTRA_MITAD); aqui se aplica a toda la seleccion. */}
+            {concept === 'MD' ? (
+              <div>
+                <div className="text-[10.5px] font-bold uppercase tracking-[.06em] text-muted-foreground mb-1.5">
+                  {t.log_half_title}
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[null, ...OTRA_MITAD].map((h) => {
+                    const on = halfConcept === h;
+                    const c = h ? conceptos.find((x) => x.code === h) : null;
+                    return (
+                      <button
+                        key={h ?? 'none'}
+                        type="button"
+                        onClick={() => setHalfConcept(h)}
+                        aria-pressed={on}
+                        className={`rounded-lg border-[1.5px] px-2 py-2 text-[11px] font-semibold cursor-pointer transition-colors ${
+                          on ? 'border-primary bg-primary-tint' : 'border-border bg-surface hover:bg-muted'
+                        }`}
+                      >
+                        {h ? ((state.lang === 'it' ? c?.labelIt : c?.labelEs) ?? h) : t.log_half_none}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             ) : null}
 
             {concept && ADMITE_FABRICA.includes(concept) ? (

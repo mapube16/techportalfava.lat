@@ -10,7 +10,7 @@ import { codigo, useApiData } from '../lib/api/useApiData';
 import { getCatalogs } from '../lib/api/catalogs';
 import { listProjectsForLog } from '../lib/api/projects';
 // Compartidas con la bitacora mensual: dos copias serian dos verdades. Ver lib/conceptos.ts
-import { ADMITE_FABRICA, SIN_PROYECTO } from '../lib/conceptos';
+import { ADMITE_FABRICA, OTRA_MITAD, SIN_PROYECTO } from '../lib/conceptos';
 import { getWeek, putEntries } from '../lib/api/dailyEntries';
 import type { ConceptCode, Phase } from '../lib/api/dailyEntries';
 import { diasDeSemana, hoyLocal, lunesDe } from '../lib/fecha';
@@ -51,6 +51,8 @@ export default function LogDayDrawer() {
   const [phase, setPhase] = useState<Phase | null>(null);
   const [concept, setConcept] = useState<ConceptCode>('DC');
   const [inFactory, setInFactory] = useState(false);
+  /** La OTRA MITAD de un medio día: el viaje de la tarde. Solo se pregunta con MD. */
+  const [halfConcept, setHalfConcept] = useState<ConceptCode | null>(null);
   /** Marcada = el día se guarda como incapacidad. No hay botón que elegir. */
   const incapacitado = concept === INCAPACIDAD;
   /** Lo que había puesto antes de marcarla: al desmarcar se vuelve ahí, no a un cajón
@@ -110,6 +112,7 @@ export default function LogDayDrawer() {
     if (existente.conceptCode) setConcept(existente.conceptCode);
     setPhase(existente.phase ?? null);
     setInFactory(existente.inFactory);
+    setHalfConcept(existente.halfConceptCode ?? null);
     setNotaDia(existente.dayNote ?? '');
     setDescs((d) => ({ ...d, [fecha]: existente.description ?? '' }));
   }, [existente, fecha]);
@@ -169,6 +172,9 @@ export default function LogDayDrawer() {
         // vacía) para que desmarcar una la quite de verdad.
         extraOrderIds,
         conceptCode: concept,
+        // La otra mitad solo existe en un medio dia: con otro concepto se descarta
+        // aqui, no se deja que el servidor la rechace.
+        halfConceptCode: concept === 'MD' ? halfConcept : null,
         phase: exigeProyecto ? phase : null,
         inFactory: ADMITE_FABRICA.includes(concept) ? inFactory : false,
         // Solo en el modo de UN dia: en el relleno multiple la nota es de cada dia y
@@ -429,6 +435,36 @@ export default function LogDayDrawer() {
               return c ? (state.lang === 'it' ? c.labelIt : c.labelEs) : '';
             })()}
           </div>
+
+          {/* MEDIO DIA + MEDIO VIAJE: la otra mitad del dia. Solo se pregunta con MD y
+              solo ofrece los viajes (ver OTRA_MITAD). «Solo medio dia» es la opcion
+              por defecto: un medio dia sin viaje sigue siendo lo normal. */}
+          {concept === 'MD'
+            ? field(
+                t.log_half_title,
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[null, ...OTRA_MITAD].map((h) => {
+                    const on = halfConcept === h;
+                    const c = h ? conceptos.find((x) => x.code === h) : null;
+                    const color = h ? (CONCEPT_COLOR[h] ?? 'var(--primary)') : 'var(--primary)';
+                    return (
+                      <button
+                        key={h ?? 'none'}
+                        type="button"
+                        onClick={() => setHalfConcept(h)}
+                        aria-pressed={on}
+                        style={on ? { borderColor: color, background: color, color: '#fff' } : undefined}
+                        className={`min-h-11 px-1 py-2 rounded-md text-[12px] font-semibold cursor-pointer border transition-colors ${
+                          on ? '' : 'border-input bg-muted text-muted-foreground hover:bg-accent'
+                        }`}
+                      >
+                        {h ? ((state.lang === 'it' ? c?.labelIt : c?.labelEs) ?? h) : t.log_half_none}
+                      </button>
+                    );
+                  })}
+                </div>,
+              )
+            : null}
 
           {/* Las dos casillas del día. Se EXCLUYEN: quien está incapacitado no está
               en fábrica, así que marcar «Incapacitado» quita «En fábrica» y la esconde.

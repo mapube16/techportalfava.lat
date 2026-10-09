@@ -342,6 +342,7 @@ export class WeeklyNotesService {
         date: true,
         description: true,
         conceptCode: true,
+        halfConceptCode: true,
         inFactory: true,
         dayNote: true,
         sourceMachine: true,
@@ -353,6 +354,7 @@ export class WeeklyNotesService {
     return entradas.map((e) => ({
       date: aTexto(e.date),
       conceptCode: e.conceptCode,
+      halfConceptCode: e.halfConceptCode,
       description: e.description,
       inFactory: e.inFactory,
       dayNote: e.dayNote,
@@ -403,7 +405,7 @@ export class WeeklyNotesService {
       c.dailyEntry.findMany({
         where: { technicianId: nota.technicianId, projectId: nota.projectId, date: { gte: nota.weekStart, lte: fin } },
         select: {
-          date: true, description: true, conceptCode: true, dayNote: true,
+          date: true, description: true, conceptCode: true, halfConceptCode: true, dayNote: true,
           order: { select: { label: true } },
           // GASTO-01: los gastos escritos el DIA que ocurrieron. Se suman a los de la
           // nota mas abajo — los dos origenes conviven a proposito.
@@ -423,7 +425,13 @@ export class WeeklyNotesService {
       return {
         date: fecha,
         description: e?.description ?? null,
-        categoria: e?.conceptCode ? (etiquetaDe.get(e.conceptCode) ?? null) : null,
+        // Medio dia + viaje: las dos mitades en la misma casilla («Medio día + Viaje
+        // retorno»). Es lo que el papel de FAVA Italia dice con un «½» y una nota.
+        categoria: e?.conceptCode
+          ? [e.conceptCode, e.halfConceptCode]
+              .flatMap((c) => (c ? [etiquetaDe.get(c) ?? c] : []))
+              .join(' + ')
+          : null,
         dayNote: e?.dayNote ?? null,
       };
     });

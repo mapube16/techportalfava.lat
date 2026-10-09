@@ -164,6 +164,11 @@ model DailyEntry {
   /// catalogo en cada escritura de bitacora sin ganar ninguna garantia.
   conceptCode ConceptCode? @map("concept_code")
 
+  /// LA OTRA MITAD de un medio dia: el viaje (salida o retorno) que ocupo la tarde.
+  /// Solo con `conceptCode = MD` y solo DVSF/DVRC — CHECK `de_media_jornada`. No es un
+  /// modificador como `inFactory`: es un segundo concepto DE DIA. El dia cuenta una vez.
+  halfConceptCode ConceptCode? @map("half_concept_code")
+
   /// Nullable a proposito: las hojas diarias del Excel no tienen columna de fase y
   /// TODO el historico entra con NULL. La agregacion necesita un bucket «sin fase»
   /// o el tablero miente por omision.

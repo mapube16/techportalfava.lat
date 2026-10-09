@@ -21,5 +21,11 @@ export const SIN_PROYECTO: ConceptCode[] = ['LR', 'NR', 'IL', 'OTRO'];
     real como uno entero, y sin la casilla no habia forma de decirlo. */
 export const ADMITE_FABRICA: ConceptCode[] = ['DC', 'MD', 'DFD'];
 
+/** Lo que puede ocupar la OTRA MITAD de un medio dia: el viaje de la tarde (2026-10-09).
+    No es un modificador —los conceptos son de dia, no de eventualidades—: es un segundo
+    concepto de dia que solo cabe junto a MD. Misma lista que `errorMedia` y que el CHECK
+    `de_media_jornada` del motor. */
+export const OTRA_MITAD: ConceptCode[] = ['DVSF', 'DVRC'];
+
 /** Si ESTE concepto exige proyecto. La pregunta se hace en dos pantallas. */
 export const exigeProyecto = (c: ConceptCode) => !SIN_PROYECTO.includes(c);
