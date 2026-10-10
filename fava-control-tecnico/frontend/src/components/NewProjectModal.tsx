@@ -7,7 +7,7 @@ import { FieldError, inputError, inputStyle } from '../ui';
 import { useApp } from '../state';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { activos, getCatalogs } from '../lib/api/catalogs';
-import { createOrder, createProject } from '../lib/api/projects';
+import { createOrder, createProject, vePrecios } from '../lib/api/projects';
 
 /**
  * Los campos del encabezado son EXACTAMENTE los que imprimirá la Nota Semanal
@@ -33,7 +33,9 @@ interface Errors {
 }
 
 export default function NewProjectModal() {
-  const { t, patch, go, refresh, showToast, errTexto } = useApp();
+  const { state, t, patch, go, refresh, showToast, errTexto } = useApp();
+  /** El precio es solo del rol A: sin el, no se pide ni se manda (el servidor lo rechazaria). */
+  const precios = vePrecios(state.myRoles);
   const [name, setName] = useState('');
   const [client, setClient] = useState('');
   const [nit, setNit] = useState('');
@@ -67,7 +69,7 @@ export default function NewProjectModal() {
     if (!supply.trim()) errs.supply = true;
     if (!contractNumber.trim()) errs.contractNumber = true;
     const value = parseInt((valueRaw || '').replace(/[^0-9]/g, ''), 10);
-    if (!value || value <= 0) errs.value = true;
+    if (precios && (!value || value <= 0)) errs.value = true;
     if (!machineLabel.trim()) errs.machineLabel = true;
     if (Object.keys(errs).length) {
       setErrors(errs);
@@ -96,8 +98,10 @@ export default function NewProjectModal() {
           // Los 4 primeros dígitos son como se nombra la máquina en obra («3428»).
           commessaShort: commessa.trim().slice(0, 4) || null,
           oaNumber: oa.trim() || null,
-          contractValue: value,
-          currencyCode: monedas.length ? moneda || monedas[0].code : null,
+          // Sin rol A el importe no viaja: el servidor lo rechaza con PRECIO_SOLO_ADMIN.
+          ...(precios
+            ? { contractValue: value, currencyCode: monedas.length ? moneda || monedas[0].code : null }
+            : {}),
         });
         patch({ projOpen: false, selProject: p.id });
         refresh();
@@ -161,17 +165,19 @@ export default function NewProjectModal() {
             {field(t.order_oa, texto(oa, setOa, t.proj_oa_ph, true))}
             {field(t.order_commessa, texto(commessa, setCommessa, '342898', true))}
           </div>
-          <div className="grid grid-cols-[1.4fr_.8fr] gap-3">
-            {field(t.proj_value, texto(valueRaw, setValueRaw, '1.240.000', true, errors.value), errors.value, t.val_positive)}
-            {field(
-              t.proj_cur,
-              <select value={moneda || monedas[0]?.code || ''} onChange={(e) => setMoneda(e.target.value)} className={inputStyle}>
-                {monedas.map((c) => (
-                  <option key={c.code} value={c.code}>{c.code}</option>
-                ))}
-              </select>,
-            )}
-          </div>
+          {precios ? (
+            <div className="grid grid-cols-[1.4fr_.8fr] gap-3">
+              {field(t.proj_value, texto(valueRaw, setValueRaw, '1.240.000', true, errors.value), errors.value, t.val_positive)}
+              {field(
+                t.proj_cur,
+                <select value={moneda || monedas[0]?.code || ''} onChange={(e) => setMoneda(e.target.value)} className={inputStyle}>
+                  {monedas.map((c) => (
+                    <option key={c.code} value={c.code}>{c.code}</option>
+                  ))}
+                </select>,
+              )}
+            </div>
+          ) : null}
           {/* «Horas normales» ya no se pide al crear: era obligatorio y Andrea no lo
               tiene a mano cuando abre el proyecto («eso lo puedes quitar», 31-ago). La
               columna sigue existiendo y se ve en el detalle; se llenara cuando se sepa. */}

@@ -5,6 +5,14 @@ import { apiFetch, apiSend } from './client';
 
 export type Phase = 'MONTAJE' | 'COLLAUDO';
 
+/**
+ * EL PRECIO ES SOLO DEL ROL A (2026-10-09: «lo importante es que solo Andrea pueda
+ * verlos»). El servidor no manda `contractValue` ni `currencyCode` a quien no lo tenga,
+ * y las pantallas ni los piden ni los pintan. Los roles se acumulan: A + S sigue viendo.
+ * Misma regla que `vePrecios` en backend/src/modules/projects/precios.ts.
+ */
+export const vePrecios = (roles: readonly string[]) => roles.includes('A');
+
 export interface ProjectListItem {
   id: string;
   name: string;
@@ -15,10 +23,11 @@ export interface ProjectListItem {
    * SUMA de las órdenes, no una columna del proyecto: JAV tiene tres máquinas con tres
    * importes distintos y J Macedo ninguno a nivel de proyecto. `number`, no string: el
    * servicio convierte el Decimal de Prisma (hallazgo 02-05).
+   * AUSENTE si la cuenta no tiene rol A (ver `vePrecios`).
    */
-  contractValue: number;
+  contractValue?: number;
   /** `null` si las órdenes mezclan monedas: sumarlas y etiquetarlas sería una cifra falsa. */
-  currencyCode: string | null;
+  currencyCode?: string | null;
   normalHours: number | null;
   isActive: boolean;
   /** Etiquetas de las órdenes, ordenadas, listas para los chips. */
@@ -55,9 +64,9 @@ export interface Order {
   /** Los 4 primeros dígitos («3428»): como se nombra la máquina en obra. */
   commessaShort: string | null;
   oaNumber: string | null;
-  /** El importe RESERVADO, no la suma de las líneas de la cotización. */
-  contractValue: number | null;
-  currencyCode: string | null;
+  /** El importe RESERVADO, no la suma de las líneas de la cotización. AUSENTE sin rol A. */
+  contractValue?: number | null;
+  currencyCode?: string | null;
   isActive: boolean;
   /** Su propia matriz vendido/ejecutado/delta, como cada bloque de la hoja del Excel. */
   matrix: MatrixRow[];

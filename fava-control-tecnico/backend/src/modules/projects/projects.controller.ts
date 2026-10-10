@@ -15,6 +15,7 @@ import { Phase } from '../../generated/prisma/enums';
 import type { UserModel } from '../../generated/prisma/models';
 import { camposOrden, opcional, texto } from './orders.dto';
 import { OrdersService } from './orders.service';
+import { vePrecios } from './precios';
 import { type DatosProyecto, ProjectsService } from './projects.service';
 
 type Cuerpo = Record<string, unknown>;
@@ -80,7 +81,8 @@ export class ProjectsController {
   @Roles('T', 'A', 'S')
   listar(@CurrentUser() actor: UserModel) {
     const admin = actor.roles.some((r) => r === 'A' || r === 'S');
-    return admin ? this.service.listar() : this.service.listarParaTecnico();
+    // Tres proyecciones, no dos: el admin SIN rol A recibe la lista sin precio (precios.ts).
+    return admin ? this.service.listar(vePrecios(actor)) : this.service.listarParaTecnico();
   }
 
   /**
@@ -105,8 +107,8 @@ export class ProjectsController {
   }
 
   @Get(':id')
-  detalle(@Param('id', ParseUUIDPipe) id: string) {
-    return this.service.detalle(id);
+  detalle(@CurrentUser() actor: UserModel, @Param('id', ParseUUIDPipe) id: string) {
+    return this.service.detalle(id, vePrecios(actor));
   }
 
   @Post()
@@ -154,8 +156,8 @@ export class ProjectsController {
   }
 
   @Get(':id/orders')
-  ordenes(@Param('id', ParseUUIDPipe) id: string) {
-    return this.orders.listar(id);
+  ordenes(@CurrentUser() actor: UserModel, @Param('id', ParseUUIDPipe) id: string) {
+    return this.orders.listar(id, vePrecios(actor));
   }
 
   /**
@@ -164,13 +166,17 @@ export class ProjectsController {
    * pidio borrar.
    */
   @Post(':id/orders')
-  crearOrden(@Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo) {
-    return this.orders.crear(id, {
-      // La etiqueta es lo unico obligatorio: es lo que el tecnico ve al elegir. Los
-      // demas llegan despues, cuando se firma la orden.
-      label: texto(body?.label, 'ETIQUETA'),
-      ...camposOrden(body),
-    });
+  crearOrden(@CurrentUser() actor: UserModel, @Param('id', ParseUUIDPipe) id: string, @Body() body: Cuerpo) {
+    return this.orders.crear(
+      id,
+      {
+        // La etiqueta es lo unico obligatorio: es lo que el tecnico ve al elegir. Los
+        // demas llegan despues, cuando se firma la orden.
+        label: texto(body?.label, 'ETIQUETA'),
+        ...camposOrden(body),
+      },
+      vePrecios(actor),
+    );
   }
 }
 

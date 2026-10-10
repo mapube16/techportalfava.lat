@@ -36,8 +36,12 @@ const DETALLE = {
   isActive: true,
 } as const;
 
-/** El listado no necesita el encabezado completo: `Projects.tsx` no lo muestra. */
-const LISTA = {
+/**
+ * El listado no necesita el encabezado completo: `Projects.tsx` no lo muestra.
+ * Esta es la version SIN precio: lo que recibe un admin que no tiene rol A (ver
+ * precios.ts). Las etiquetas de los chips salen de un include, no de N+1 consultas.
+ */
+const LISTA_SIN_PRECIO = {
   id: true,
   name: true,
   clientName: true,
@@ -45,7 +49,12 @@ const LISTA = {
   contractNumber: true,
   normalHours: true,
   isActive: true,
-  // Las etiquetas de los chips y el importe salen de un include, no de N+1 consultas.
+  orders: { select: { label: true } },
+} as const;
+
+/** El listado completo, con el importe de cada orden para sumarlo: solo para el rol A. */
+const LISTA = {
+  ...LISTA_SIN_PRECIO,
   orders: { select: { label: true, contractValue: true, currencyCode: true } },
 } as const;
 
@@ -113,7 +122,17 @@ export class ProjectsService {
    * Sin filtro por `isActive`: igual que el maestro de tecnicos, la lista muestra
    * los inactivos y son los SELECTORES del cliente los que filtran.
    */
-  async listar() {
+  async listar(conPrecio: boolean) {
+    if (!conPrecio) {
+      const filas = await this.prisma.client.project.findMany({
+        select: LISTA_SIN_PRECIO,
+        orderBy: { name: 'asc' },
+      });
+      return filas.map(({ orders, ...resto }) => ({
+        ...resto,
+        machineCodes: orders.map((o) => o.label).sort(),
+      }));
+    }
     const filas = await this.prisma.client.project.findMany({
       select: LISTA,
       orderBy: { name: 'asc' },
@@ -151,13 +170,14 @@ export class ProjectsService {
     }));
   }
 
-  async detalle(id: string) {
+  /** `conPrecio` = quien pide tiene rol A: sin el, las ordenes salen sin importe ni moneda. */
+  async detalle(id: string, conPrecio: boolean) {
     const p = await this.prisma.client.project.findUnique({ where: { id }, select: DETALLE });
     if (!p) throw new NotFoundException('PROYECTO_NO_ENCONTRADO');
     // Las filas de la matriz salen del catalogo de roles, nunca de una lista cableada:
     // el delta lo calcula `sold-days.service.ts` y el cliente solo pinta.
     const [ordenes, { porOrden, sinOrden }] = await Promise.all([
-      this.orders.listar(id),
+      this.orders.listar(id, conPrecio),
       this.soldDays.porProyecto(id),
     ]);
     // Una matriz POR ORDEN, como las hojas del Excel: JAV pinta tres bloques

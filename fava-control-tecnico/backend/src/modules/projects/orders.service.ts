@@ -1,21 +1,37 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { soloConPrecio } from './precios';
 
 /**
- * Lo que ve la pantalla de una orden. `select` explicito por el mismo motivo que en
- * proyectos: una columna nueva del esquema no se filtra sola a la respuesta.
+ * Lo que ve de una orden quien NO tiene rol A: todo menos el precio (ver precios.ts).
+ * `select` explicito por el mismo motivo que en proyectos: una columna nueva del
+ * esquema no se filtra sola a la respuesta.
  */
-const ORDEN = {
+const ORDEN_SIN_PRECIO = {
   id: true,
   label: true,
   machineModelId: true,
   commessa: true,
   commessaShort: true,
   oaNumber: true,
-  contractValue: true,
-  currencyCode: true,
   isActive: true,
 } as const;
+
+/** La orden completa, con importe y moneda: solo para el rol A. */
+const ORDEN = { ...ORDEN_SIN_PRECIO, contractValue: true, currencyCode: true } as const;
+
+/** La orden como sale por HTTP. El precio es OPCIONAL: no viaja si quien pide no tiene A. */
+export interface OrdenPublica {
+  id: string;
+  label: string;
+  machineModelId: string | null;
+  commessa: string | null;
+  commessaShort: string | null;
+  oaNumber: string | null;
+  isActive: boolean;
+  contractValue?: number | null;
+  currencyCode?: string | null;
+}
 
 export interface DatosOrden {
   label?: string;
@@ -33,6 +49,7 @@ export interface DatosOrden {
 /** Misma conversion que en `projects.service.ts`: Decimal serializa como string. */
 type Dinero = { toString(): string } | null;
 const dinero = (v: Dinero): number | null => (v === null ? null : Number(v));
+const plano = <T extends { contractValue: Dinero }>(o: T) => ({ ...o, contractValue: dinero(o.contractValue) });
 
 /**
  * La maquina contratada. Vive en el modulo de proyectos porque no tiene ciclo de vida
@@ -46,38 +63,34 @@ const dinero = (v: Dinero): number | null => (v === null ? null : Number(v));
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listar(projectId: string) {
-    const filas = await this.prisma.client.order.findMany({
-      where: { projectId },
-      select: ORDEN,
-      orderBy: { label: 'asc' },
-    });
-    return filas.map((o) => ({ ...o, contractValue: dinero(o.contractValue) }));
+  /** `conPrecio` = quien pide tiene rol A (ver precios.ts). Sin el, la fila sale sin importe ni moneda. */
+  async listar(projectId: string, conPrecio: boolean): Promise<OrdenPublica[]> {
+    const where = { projectId };
+    const orderBy = { label: 'asc' as const };
+    if (!conPrecio) return this.prisma.client.order.findMany({ where, select: ORDEN_SIN_PRECIO, orderBy });
+    const filas = await this.prisma.client.order.findMany({ where, select: ORDEN, orderBy });
+    return filas.map(plano);
   }
 
-  async crear(projectId: string, datos: DatosOrden & { label: string }) {
+  async crear(projectId: string, datos: DatosOrden & { label: string }, conPrecio: boolean): Promise<OrdenPublica> {
     const proyecto = await this.prisma.client.project.findUnique({
       where: { id: projectId },
       select: { id: true },
     });
     if (!proyecto) throw new NotFoundException('PROYECTO_NO_ENCONTRADO');
 
-    const data = await this.resolverModelo(datos);
-    const fila = await this.intentar(() =>
-      this.prisma.client.order.create({
-        data: { ...data, label: datos.label, projectId },
-        select: ORDEN,
-      }),
-    );
-    return { ...fila, contractValue: dinero(fila.contractValue) };
+    const resuelto = await this.resolverModelo(soloConPrecio(datos, conPrecio));
+    const data = { ...resuelto, label: datos.label, projectId };
+    if (!conPrecio)
+      return this.intentar(() => this.prisma.client.order.create({ data, select: ORDEN_SIN_PRECIO }));
+    return plano(await this.intentar(() => this.prisma.client.order.create({ data, select: ORDEN })));
   }
 
-  async editar(id: string, datos: DatosOrden) {
-    const data = await this.resolverModelo(datos);
-    const fila = await this.intentar(() =>
-      this.prisma.client.order.update({ where: { id }, data, select: ORDEN }),
-    );
-    return { ...fila, contractValue: dinero(fila.contractValue) };
+  async editar(id: string, datos: DatosOrden, conPrecio: boolean): Promise<OrdenPublica> {
+    const data = await this.resolverModelo(soloConPrecio(datos, conPrecio));
+    if (!conPrecio)
+      return this.intentar(() => this.prisma.client.order.update({ where: { id }, data, select: ORDEN_SIN_PRECIO }));
+    return plano(await this.intentar(() => this.prisma.client.order.update({ where: { id }, data, select: ORDEN })));
   }
 
   /**

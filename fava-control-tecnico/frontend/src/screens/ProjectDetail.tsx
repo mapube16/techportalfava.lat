@@ -8,7 +8,7 @@ import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { getCatalogs } from '../lib/api/catalogs';
-import { createOrder, deleteOrder, getProject, setSoldDays, updateProject } from '../lib/api/projects';
+import { createOrder, deleteOrder, getProject, setSoldDays, updateProject, vePrecios } from '../lib/api/projects';
 import type { MatrixRow, Order, Phase } from '../lib/api/projects';
 
 /**
@@ -174,8 +174,11 @@ export default function ProjectDetail() {
       })
       .catch((e: unknown) => setErrOrden(codigo(e)));
 
+  /** El precio es solo del rol A: sin el, la fila del contrato no existe (el servidor
+      tampoco manda el importe de las ordenes, asi que `cabeceraOrden` lo omite sola). */
+  const precios = vePrecios(state.myRoles);
   const metas: [string, string][] = [
-    [t.contract, total === 0 ? '—' : money(total, moneda)],
+    ...(precios ? [[t.contract, total === 0 ? '—' : money(total, moneda)] as [string, string]] : []),
     [t.proj_hours, nf(p.normalHours || 0) + ' h'],
     [t.proj_locality, p.locality],
     [t.proj_supply, p.supply],

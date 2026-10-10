@@ -15,7 +15,7 @@ import type { Vigencia } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
-import { listProjects, setProjectActive } from '../lib/api/projects';
+import { listProjects, setProjectActive, vePrecios } from '../lib/api/projects';
 import type { ProjectListItem } from '../lib/api/projects';
 
 /** El valor de contrato puede no estar cargado todavía: un 0 sería un dato falso. */
@@ -25,6 +25,8 @@ const valor = (p: ProjectListItem) =>
 export default function Projects() {
   const { state, t, go, patch, errTexto } = useApp();
   const movil = useIsMobile();
+  /** El precio es solo del rol A: sin el, ni columna ni dato (el servidor tampoco lo manda). */
+  const precios = vePrecios(state.myRoles);
   const { data, setData, error } = useApiData(listProjects, [state.dataVersion]);
   const [errActivo, setErrActivo] = useState<string | null>(null);
   const [cambiando, setCambiando] = useState<string | null>(null);
@@ -115,7 +117,7 @@ export default function Projects() {
                 </div>
                 <div className="flex gap-4.5 mt-2.5 flex-wrap">
                   {meta(t.proj_contract_no, p.contractNumber)}
-                  {meta(t.contract, valor(p))}
+                  {precios ? meta(t.contract, valor(p)) : null}
                   {meta(t.hours_short, nf(p.normalHours || 0) + ' h')}
                 </div>
                 <div className="flex gap-1 flex-wrap mt-2.5">
@@ -153,7 +155,7 @@ export default function Projects() {
               <TableHead>{t.client}</TableHead>
               <TableHead>{t.proj_contract_no}</TableHead>
               <TableHead>{t.proj_country}</TableHead>
-              <TableHead>{t.contract}</TableHead>
+              {precios ? <TableHead>{t.contract}</TableHead> : null}
               <TableHead className="text-right">{t.hours_short}</TableHead>
               <TableHead>{t.orders}</TableHead>
               <TableHead />
@@ -172,7 +174,7 @@ export default function Projects() {
                   <TableCell>{p.clientName}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{p.contractNumber}</TableCell>
                   <TableCell>{p.country}</TableCell>
-                  <TableCell className="font-mono font-semibold">{valor(p)}</TableCell>
+                  {precios ? <TableCell className="font-mono font-semibold">{valor(p)}</TableCell> : null}
                   <TableCell className="font-mono font-semibold text-right">{nf(p.normalHours || 0)} h</TableCell>
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
@@ -202,7 +204,7 @@ export default function Projects() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} className="p-8.5 text-center text-muted-foreground text-[13px]">
+                <TableCell colSpan={precios ? 9 : 8} className="p-8.5 text-center text-muted-foreground text-[13px]">
                   {data.length ? t.filter_no : t.proj_none}
                 </TableCell>
               </TableRow>

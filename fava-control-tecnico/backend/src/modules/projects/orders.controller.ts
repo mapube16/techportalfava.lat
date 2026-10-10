@@ -14,6 +14,7 @@ import { Phase } from '../../generated/prisma/enums';
 import type { UserModel } from '../../generated/prisma/models';
 import { camposOrden, texto, UUID } from './orders.dto';
 import { type DatosOrden, OrdersService } from './orders.service';
+import { vePrecios } from './precios';
 import { SoldDaysService } from './sold-days.service';
 
 type Cuerpo = Record<string, unknown>;
@@ -38,7 +39,11 @@ export class OrdersController {
   ) {}
 
   @Patch(':orderId')
-  editar(@Param('orderId', ParseUUIDPipe) orderId: string, @Body() body: Cuerpo) {
+  editar(
+    @CurrentUser() actor: UserModel,
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @Body() body: Cuerpo,
+  ) {
     const data: DatosOrden = camposOrden(body);
     if (body?.label !== undefined) data.label = texto(body.label, 'ETIQUETA');
     if (body?.isActive !== undefined) {
@@ -46,7 +51,8 @@ export class OrdersController {
       data.isActive = body.isActive;
     }
     if (!Object.keys(data).length) throw new BadRequestException('NADA_QUE_EDITAR');
-    return this.orders.editar(orderId, data);
+    // Sin rol A el importe y la moneda se rechazan, no se descartan (precios.ts).
+    return this.orders.editar(orderId, data, vePrecios(actor));
   }
 
   /**
