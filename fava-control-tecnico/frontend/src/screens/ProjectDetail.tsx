@@ -7,9 +7,25 @@ import { ApiState, inputStyle, money, nf, td, th } from '../ui';
 import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
-import { getCatalogs } from '../lib/api/catalogs';
-import { createOrder, deleteOrder, getProject, setSoldDays, updateProject, vePrecios } from '../lib/api/projects';
-import type { MatrixRow, Order, Phase } from '../lib/api/projects';
+import { activos, getCatalogs } from '../lib/api/catalogs';
+import { createOrder, deleteOrder, getProject, setSoldDays, updateOrder, updateProject, vePrecios } from '../lib/api/projects';
+import type { MatrixRow, Order, Phase, Project } from '../lib/api/projects';
+
+/** Los campos de texto de la cabecera que se editan en sitio (los 7 de la Nota + horas). */
+const CABECERA = ['name', 'clientName', 'clientNit', 'locality', 'country', 'supply', 'contractNumber'] as const;
+type Cabecera = Record<(typeof CABECERA)[number] | 'normalHours', string>;
+type FormOrden = { label: string; commessa: string; oaNumber: string; machineModel: string; contractValue: string; currencyCode: string };
+
+const aCabecera = (p: Project): Cabecera => ({
+  name: p.name,
+  clientName: p.clientName,
+  clientNit: p.clientNit ?? '',
+  locality: p.locality,
+  country: p.country,
+  supply: p.supply,
+  contractNumber: p.contractNumber,
+  normalHours: p.normalHours == null ? '' : String(p.normalHours),
+});
 
 /**
  * Una celda se identifica por (orden, rol, fase). La orden entra en la clave desde la
@@ -25,12 +41,17 @@ export default function ProjectDetail() {
   const [celdas, setCeldas] = useState<Record<string, 'saving' | 'error'>>({});
   const [errOrden, setErrOrden] = useState<string | null>(null);
   const [nueva, setNueva] = useState({ label: '', commessa: '', oaNumber: '', machineModel: '' });
+  /** Formulario de la cabecera abierto (null = solo lectura). */
+  const [cab, setCab] = useState<Cabecera | null>(null);
+  /** La orden en edición y su formulario; una a la vez. */
+  const [edOrden, setEdOrden] = useState<{ id: string; f: FormOrden } | null>(null);
+  const [errCab, setErrCab] = useState<string | null>(null);
 
   const id = state.selProject;
   const { data, setData, error } = useApiData(async () => {
     if (!id) return null;
     const [p, cat] = await Promise.all([getProject(id), getCatalogs()]);
-    return { p, machineModels: cat.machineModels };
+    return { p, machineModels: cat.machineModels, currencies: cat.currencies };
   }, [id, state.dataVersion]);
 
   if (!id) return <ApiState error={null} label={t.proj_pick} />;
@@ -170,13 +191,110 @@ export default function ProjectDetail() {
     updateProject(p.id, { currentPhase: fase })
       .then(() => {
         setData((d) => d && { ...d, p: { ...d.p, currentPhase: fase } });
-        showToast('saved');
+        showToast('proj_saved');
       })
       .catch((e: unknown) => setErrOrden(codigo(e)));
 
   /** El precio es solo del rol A: sin el, la fila del contrato no existe (el servidor
       tampoco manda el importe de las ordenes, asi que `cabeceraOrden` lo omite sola). */
   const precios = vePrecios(state.myRoles);
+  const divisas = activos(data.currencies);
+
+  /**
+   * Cabecera editable en sitio: mismo PATCH que la fase. NIT y horas son opcionales
+   * (vacío = null); el resto el servidor lo exige no vacío, igual que al crear.
+   */
+  const guardarCabecera = () => {
+    if (!cab) return;
+    const h = cab.normalHours.trim();
+    setErrCab(null);
+    updateProject(p.id, {
+      ...Object.fromEntries(CABECERA.map((k) => [k, cab[k].trim()])),
+      clientNit: cab.clientNit.trim() || null,
+      normalHours: h === '' ? null : Number.parseInt(h, 10),
+    })
+      .then((q) => {
+        setData((d) => d && { ...d, p: { ...d.p, ...q, orders: d.p.orders, unassigned: d.p.unassigned } });
+        setCab(null);
+        showToast('proj_saved');
+      })
+      .catch((e: unknown) => setErrCab(codigo(e)));
+  };
+
+  const abrirOrden = (o: Order) =>
+    setEdOrden({
+      id: o.id,
+      f: {
+        label: o.label,
+        commessa: o.commessa ?? '',
+        oaNumber: o.oaNumber ?? '',
+        machineModel: data.machineModels.find((m) => m.id === o.machineModelId)?.code ?? '',
+        contractValue: o.contractValue == null ? '' : String(o.contractValue),
+        currencyCode: o.currencyCode ?? divisas[0]?.code ?? '',
+      },
+    });
+
+  /** PATCH de la orden: el modelo va por CODIGO (se crea si no existe), como al añadir. */
+  const guardarOrden = () => {
+    if (!edOrden || !edOrden.f.label.trim()) return;
+    const f = edOrden.f;
+    const valor = Number.parseInt(f.contractValue.replace(/[^0-9]/g, ''), 10);
+    setErrOrden(null);
+    updateOrder(edOrden.id, {
+      label: f.label.trim(),
+      commessa: f.commessa.trim() || null,
+      commessaShort: f.commessa.trim().slice(0, 4) || null,
+      oaNumber: f.oaNumber.trim() || null,
+      machineModel: f.machineModel.trim() || null,
+      // Sin rol A el importe no viaja: el servidor lo rechazaría (PRECIO_SOLO_ADMIN).
+      ...(precios
+        ? { contractValue: Number.isInteger(valor) ? valor : null, currencyCode: f.currencyCode || null }
+        : {}),
+    })
+      .then((o) => {
+        setData((d) => d && {
+          ...d,
+          p: { ...d.p, orders: d.p.orders.map((x) => (x.id === o.id ? { ...x, ...o } : x)) },
+        });
+        setEdOrden(null);
+        showToast('proj_saved');
+      })
+      .catch((e: unknown) => setErrOrden(codigo(e)));
+  };
+
+  const campo = (label: string, v: string, set: (s: string) => void, mono = false, list?: string) => (
+    <label className="block flex-1 min-w-[140px]">
+      <span className="block text-[11px] text-muted-foreground uppercase tracking-wide">{label}</span>
+      <input list={list} value={v} onChange={(e) => set(e.target.value)} className={`${inputStyle} mt-0.5 ${mono ? 'font-mono' : ''}`} />
+    </label>
+  );
+
+  const formOrden = (o: Order) => {
+    if (!edOrden || edOrden.id !== o.id) return null;
+    const f = edOrden.f;
+    const set = (k: keyof FormOrden) => (v: string) => setEdOrden({ id: o.id, f: { ...f, [k]: v } });
+    return (
+      <div className="flex gap-2 flex-wrap items-end w-full">
+        {campo(t.order_label, f.label, set('label'))}
+        {campo(t.order_commessa, f.commessa, set('commessa'), true)}
+        {campo(t.order_oa, f.oaNumber, set('oaNumber'), true)}
+        {campo(t.order_model, f.machineModel, set('machineModel'), true, 'modelos-maquina')}
+        {precios ? (
+          <>
+            {campo(t.proj_value, f.contractValue, set('contractValue'), true)}
+            <label className="block">
+              <span className="block text-[11px] text-muted-foreground uppercase tracking-wide">{t.proj_cur}</span>
+              <select value={f.currencyCode} onChange={(e) => set('currencyCode')(e.target.value)} className={`${inputStyle} mt-0.5`}>
+                {divisas.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
+            </label>
+          </>
+        ) : null}
+        <Button variant="outline" onClick={() => setEdOrden(null)} className="min-h-11 md:min-h-9">{t.btn_cancel}</Button>
+        <Button onClick={guardarOrden} disabled={!f.label.trim()} className="min-h-11 md:min-h-9">{t.btn_save}</Button>
+      </div>
+    );
+  };
   const metas: [string, string][] = [
     ...(precios ? [[t.contract, total === 0 ? '—' : money(total, moneda)] as [string, string]] : []),
     [t.proj_hours, nf(p.normalHours || 0) + ' h'],
@@ -210,16 +328,39 @@ export default function ProjectDetail() {
 
       <Card>
         <CardContent className="flex gap-6 flex-wrap items-center">
-          <div className="flex-1 min-w-[220px]">
-            <div className="text-xl font-bold">{p.name}</div>
-            <div className="text-[13px] text-muted-foreground mt-0.5">{p.clientName} · {p.country}</div>
-          </div>
-          {metas.map(([a, b], i) => (
-            <div key={a}>
-              <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{a}</div>
-              <div className={`text-sm font-semibold mt-0.5 ${i ? 'font-mono' : ''}`}>{b}</div>
+          {cab ? (
+            <div className="flex gap-3 flex-wrap items-end w-full">
+              {campo(t.proj_name, cab.name, (v) => setCab({ ...cab, name: v }))}
+              {campo(t.client, cab.clientName, (v) => setCab({ ...cab, clientName: v }))}
+              {campo(t.proj_nit, cab.clientNit, (v) => setCab({ ...cab, clientNit: v }), true)}
+              {campo(t.proj_locality, cab.locality, (v) => setCab({ ...cab, locality: v }))}
+              {campo(t.proj_country, cab.country, (v) => setCab({ ...cab, country: v }))}
+              {campo(t.proj_supply, cab.supply, (v) => setCab({ ...cab, supply: v }))}
+              {campo(t.proj_contract_no, cab.contractNumber, (v) => setCab({ ...cab, contractNumber: v }), true)}
+              {campo(t.proj_hours, cab.normalHours, (v) => setCab({ ...cab, normalHours: v.replace(/\D/g, '') }), true)}
+              <Button variant="outline" onClick={() => setCab(null)} className="min-h-11 md:min-h-9">{t.btn_cancel}</Button>
+              <Button onClick={guardarCabecera} className="min-h-11 md:min-h-9">{t.btn_save}</Button>
+              {errCab ? <div className="text-xs text-warn w-full">{errTexto(errCab)}</div> : null}
             </div>
-          ))}
+          ) : (
+            <>
+              <div className="flex-1 min-w-[220px]">
+                <div className="text-xl font-bold flex items-center gap-2">
+                  {p.name}
+                  <Button variant="ghost" size="icon" onClick={() => setCab(aCabecera(p))} aria-label={t.cat_edit} title={t.cat_edit} className="size-8">
+                    {hi('pencil', { w: 15 })}
+                  </Button>
+                </div>
+                <div className="text-[13px] text-muted-foreground mt-0.5">{p.clientName} · {p.country}</div>
+              </div>
+              {metas.map(([a, b], i) => (
+                <div key={a}>
+                  <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{a}</div>
+                  <div className={`text-sm font-semibold mt-0.5 ${i ? 'font-mono' : ''}`}>{b}</div>
+                </div>
+              ))}
+            </>
+          )}
           <label className="block" title={t.proj_phase_hint}>
             <span className="block text-[11px] text-muted-foreground uppercase tracking-wide">{t.proj_phase}</span>
             <select
@@ -295,11 +436,20 @@ export default function ProjectDetail() {
         const de = (phase: Phase) => o.matrix.filter((r) => r.phase === phase);
         return (
           <Card key={o.id} className="p-0 gap-0 overflow-hidden">
-            <CardHeader className="flex-row items-center justify-between border-b p-4">
-              <CardTitle>{cabeceraOrden(o)}</CardTitle>
-              <Button variant="outline" size="sm" onClick={() => quitarOrden(o.id)} className="min-h-11 md:min-h-8 text-[12.5px] shrink-0">
-                {t.order_delete}
-              </Button>
+            <CardHeader className="flex-row items-center justify-between gap-2 flex-wrap border-b p-4">
+              {edOrden?.id === o.id ? formOrden(o) : (
+                <>
+                  <CardTitle>{cabeceraOrden(o)}</CardTitle>
+                  <div className="flex gap-2 shrink-0">
+                    <Button variant="outline" size="sm" onClick={() => abrirOrden(o)} className="min-h-11 md:min-h-8 text-[12.5px]">
+                      {hi('pencil', { w: 13 })} {t.cat_edit}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => quitarOrden(o.id)} className="min-h-11 md:min-h-8 text-[12.5px]">
+                      {t.order_delete}
+                    </Button>
+                  </div>
+                </>
+              )}
             </CardHeader>
             <CardContent className={`p-0 grid ${movil ? 'grid-cols-1' : 'grid-cols-2'}`}>
               <div className={`p-4.5 ${movil ? 'border-b border-border' : 'border-r border-border'}`}>
