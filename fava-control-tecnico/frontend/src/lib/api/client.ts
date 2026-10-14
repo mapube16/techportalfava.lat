@@ -133,6 +133,9 @@ export const getMe = () => apiFetch<MeResponse>('/me');
 export const setMyLang = (lang: Lang) => apiSend<{ lang: Lang }>('/me/lang', 'PUT', { lang });
 export const requestAccess = () => apiFetch<void>('/access-requests', { method: 'POST' });
 export const listAccessRequests = () => apiFetch<AccessRequest[]>('/access-requests');
+/** Aprobar crea la ficha de técnico y el usuario (rol T) en un solo paso. */
+export const approveAccessRequest = (id: string, body: { roleTypeId: string; employmentType: 'INTERNO' | 'EXTERNO' }) =>
+  apiFetch<AccessRequest>(`/access-requests/${id}/approve`, { method: 'POST', body: JSON.stringify(body) });
 export const dismissAccessRequest = (id: string) =>
   apiFetch<void>(`/access-requests/${id}`, {
     method: 'PATCH',

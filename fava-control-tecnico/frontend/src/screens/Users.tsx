@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ApiState, filterBy, initials, inputStyle } from '../ui';
 import { useApp } from '../state';
-import { dismissAccessRequest, listAccessRequests } from '../lib/api/client';
+import { approveAccessRequest, dismissAccessRequest, listAccessRequests } from '../lib/api/client';
+import { activos, getCatalogs } from '../lib/api/catalogs';
 import type { AccessRequest } from '../lib/api/client';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { LOCALE } from '../i18n';
@@ -16,8 +17,13 @@ import type { Role } from '../types';
 // Solicitudes creadas desde la pantalla «sin acceso», vía GET/PATCH /api/access-requests.
 // El feed de notificaciones in-app es Fase 7 (RT-02): aquí solo aterrizan en la lista.
 function AccessRequests() {
-  const { state, t, errTexto } = useApp();
+  const { state, t, errTexto, refresh } = useApp();
   const [reqs, setReqs] = useState<AccessRequest[] | null>(null);
+  /** Lo que decide quien aprueba, por solicitud: tipo de técnico y contratación. */
+  const [sel, setSel] = useState<Record<string, { roleTypeId: string; employmentType: 'INTERNO' | 'EXTERNO' }>>({});
+  const [err, setErr] = useState<string | null>(null);
+  const { data: cat } = useApiData(getCatalogs, []);
+  const tipos = activos(cat?.roleTypes ?? []);
 
   useEffect(() => {
     let alive = true;
@@ -30,6 +36,19 @@ function AccessRequests() {
   }, []);
 
   const pending = (reqs || []).filter((r) => r.status === 'pending');
+
+  /** El servidor crea técnico + usuario; la lista de usuarios de abajo se recarga con `refresh`. */
+  const aprobar = (id: string) => {
+    const s = sel[id] ?? { roleTypeId: tipos[0]?.id ?? '', employmentType: 'INTERNO' as const };
+    if (!s.roleTypeId) return;
+    setErr(null);
+    approveAccessRequest(id, s)
+      .then(() => {
+        setReqs((rs) => (rs || []).filter((r) => r.id !== id));
+        refresh();
+      })
+      .catch((e: unknown) => setErr(codigo(e)));
+  };
 
   const dismiss = (id: string) => {
     setReqs((rs) => (rs || []).filter((r) => r.id !== id)); // optimista
@@ -64,11 +83,32 @@ function AccessRequests() {
               <div className="text-xs text-muted-foreground">
                 {new Date(r.createdAt).toLocaleDateString(LOCALE[state.lang])}
               </div>
+              <select
+                value={sel[r.id]?.roleTypeId ?? tipos[0]?.id ?? ''}
+                onChange={(e) => setSel({ ...sel, [r.id]: { ...(sel[r.id] ?? { employmentType: 'INTERNO' as const }), roleTypeId: e.target.value } })}
+                aria-label={t.role_type}
+                className={`${inputStyle} w-auto min-h-11 md:min-h-8 py-1`}
+              >
+                {tipos.map((rt) => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
+              </select>
+              <select
+                value={sel[r.id]?.employmentType ?? 'INTERNO'}
+                onChange={(e) => setSel({ ...sel, [r.id]: { ...(sel[r.id] ?? { roleTypeId: tipos[0]?.id ?? '' }), employmentType: e.target.value as 'INTERNO' | 'EXTERNO' } })}
+                aria-label={t.tech_employment}
+                className={`${inputStyle} w-auto min-h-11 md:min-h-8 py-1`}
+              >
+                <option value="INTERNO">{t.internal}</option>
+                <option value="EXTERNO">{t.external}</option>
+              </select>
+              <Button size="sm" onClick={() => aprobar(r.id)} disabled={!tipos.length} className="min-h-11 md:min-h-8">
+                {t.btn_approve}
+              </Button>
               <Button variant="outline" size="sm" onClick={() => dismiss(r.id)} className="min-h-11 md:min-h-8">
                 {t.access_requests_dismiss}
               </Button>
             </div>
           ))}
+          {err ? <div className="px-4 pb-3 text-xs text-warn">{errTexto(err)}</div> : null}
         </div>
       ) : (
         <div className="p-row text-[13px] text-muted-foreground">{t.access_requests_empty}</div>
