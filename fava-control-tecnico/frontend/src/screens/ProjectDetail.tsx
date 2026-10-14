@@ -46,6 +46,13 @@ export default function ProjectDetail() {
   /** La orden en edición y su formulario; una a la vez. */
   const [edOrden, setEdOrden] = useState<{ id: string; f: FormOrden } | null>(null);
   const [errCab, setErrCab] = useState<string | null>(null);
+  /**
+   * Filas de la matriz reveladas a mano por orden. Una fila a cero en todo (vendido y
+   * ejecutado, las dos fases) se OCULTA: el catálogo trae todos los tipos y en un
+   * proyecto con cuatro vendidos los otros cinco son ruido. «Quitar» una fila es
+   * ponerla a cero, no hay otro estado que guardar. Esto solo vive en la pantalla.
+   */
+  const [reveladas, setReveladas] = useState<Record<string, string[]>>({});
 
   const id = state.selProject;
   const { data, setData, error } = useApiData(async () => {
@@ -105,7 +112,13 @@ export default function ProjectDetail() {
       });
   };
 
-  const matriz = (orderId: string, filas: MatrixRow[]) => (
+  /** Pone a cero el vendido de las dos fases y la fila desaparece sola (ver `reveladas`). */
+  const quitarFila = (o: Order, roleTypeId: string) => {
+    for (const fila of o.matrix) if (fila.roleTypeId === roleTypeId && fila.sold > 0) guardarCelda(o.id, fila, '0');
+    setReveladas((r) => ({ ...r, [o.id]: (r[o.id] ?? []).filter((x) => x !== roleTypeId) }));
+  };
+
+  const matriz = (o: Order, filas: MatrixRow[], quitables: Set<string>) => (
     <table className="w-full border-collapse text-[13px] mt-1.5">
       <thead>
         <tr>
@@ -116,17 +129,32 @@ export default function ProjectDetail() {
       </thead>
       <tbody>
         {filas.map((fila) => {
-          const k = clave(orderId, fila);
+          const k = clave(o.id, fila);
           const estado = celdas[k];
           return (
             <tr key={k} className={`border-t border-border ${fila.roleTypeActive ? '' : 'opacity-60'}`}>
-              <td className={`${td} font-semibold`}>{fila.roleTypeName}</td>
+              <td className={`${td} font-semibold`}>
+                <span className="inline-flex items-center gap-1">
+                  {fila.roleTypeName}
+                  {quitables.has(fila.roleTypeId) ? (
+                    <button
+                      type="button"
+                      onClick={() => quitarFila(o, fila.roleTypeId)}
+                      aria-label={t.matrix_remove_role}
+                      title={t.matrix_remove_role}
+                      className="text-muted-foreground hover:text-warn px-1 min-h-11 md:min-h-6"
+                    >
+                      {hi('x', { w: 12 })}
+                    </button>
+                  ) : null}
+                </span>
+              </td>
               <td className={`${td} text-center`}>
                 <span className="inline-flex items-center gap-1.5">
                   <input
                     value={edits[k] ?? String(fila.sold)}
                     onChange={(e) => setEdits({ ...edits, [k]: e.target.value })}
-                    onBlur={(e) => guardarCelda(orderId, fila, e.target.value)}
+                    onBlur={(e) => guardarCelda(o.id, fila, e.target.value)}
                     className={`w-11 text-center rounded-md px-1 py-1 bg-muted text-foreground font-mono text-[13px] font-semibold border outline-none focus:border-primary ${
                       estado === 'error' ? 'border-warn' : 'border-input'
                     }`}
@@ -433,7 +461,18 @@ export default function ProjectDetail() {
           JAV pinta tres matrices vendido/ejecutado independientes. */}
       {p.orders.map((o) => {
         const sinFase = o.matrix.filter((r) => r.phase === null);
-        const de = (phase: Phase) => o.matrix.filter((r) => r.phase === phase);
+        // Visible = tiene algún dato en cualquier fase, o la reveló el usuario ahora.
+        const visibles = new Set([
+          ...o.matrix.filter((r) => r.sold > 0 || r.executed > 0).map((r) => r.roleTypeId),
+          ...(reveladas[o.id] ?? []),
+        ]);
+        const de = (phase: Phase) => o.matrix.filter((r) => r.phase === phase && visibles.has(r.roleTypeId));
+        // Con días ejecutados no se quita: la bitácora manda y la fila tiene que cuadrar.
+        const conEjecutado = new Set(o.matrix.filter((r) => r.executed > 0).map((r) => r.roleTypeId));
+        const quitables = new Set([...visibles].filter((id) => !conEjecutado.has(id)));
+        const ocultas = o.matrix
+          .filter((r) => r.phase === 'MONTAJE' && r.roleTypeActive && !visibles.has(r.roleTypeId))
+          .map((r) => ({ id: r.roleTypeId, name: r.roleTypeName }));
         return (
           <Card key={o.id} className="p-0 gap-0 overflow-hidden">
             <CardHeader className="flex-row items-center justify-between gap-2 flex-wrap border-b p-4">
@@ -454,13 +493,25 @@ export default function ProjectDetail() {
             <CardContent className={`p-0 grid ${movil ? 'grid-cols-1' : 'grid-cols-2'}`}>
               <div className={`p-4.5 ${movil ? 'border-b border-border' : 'border-r border-border'}`}>
                 <div className="text-xs font-bold text-primary uppercase tracking-wide">{t.montaje}</div>
-                {matriz(o.id, de('MONTAJE'))}
+                {matriz(o, de('MONTAJE'), quitables)}
               </div>
               <div className="p-4.5">
                 <div className="text-xs font-bold text-accent-brand uppercase tracking-wide">{t.colaudo}</div>
-                {matriz(o.id, de('COLLAUDO'))}
+                {matriz(o, de('COLLAUDO'), quitables)}
               </div>
             </CardContent>
+            {ocultas.length ? (
+              <div className="px-4.5 py-3 border-t border-border">
+                <select
+                  value=""
+                  onChange={(e) => e.target.value && setReveladas((r) => ({ ...r, [o.id]: [...(r[o.id] ?? []), e.target.value] }))}
+                  className={`${inputStyle} w-auto min-h-11 md:min-h-9 py-1`}
+                >
+                  <option value="">{t.matrix_add_role}</option>
+                  {ocultas.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+              </div>
+            ) : null}
             {sinFase.length ? (
               <div className="px-4.5 py-3 border-t border-border">
                 <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{t.matrix_no_phase}</div>
