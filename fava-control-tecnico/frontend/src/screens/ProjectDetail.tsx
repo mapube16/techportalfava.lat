@@ -9,7 +9,7 @@ import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { activos, getCatalogs } from '../lib/api/catalogs';
 import { createOrder, deleteOrder, getExecutedDays, getProject, setSoldDays, updateOrder, updateProject, vePrecios } from '../lib/api/projects';
-import type { ExecutedDay, MatrixRow, Order, Phase, Project } from '../lib/api/projects';
+import type { ExecutedDay, MatrixRow, Order, Phase, Project, ProjectInput } from '../lib/api/projects';
 
 /** Los campos de texto de la cabecera que se editan en sitio (los 7 de la Nota + horas). */
 const CABECERA = ['name', 'clientName', 'clientNit', 'locality', 'country', 'supply', 'contractNumber'] as const;
@@ -285,13 +285,21 @@ export default function ProjectDetail() {
    */
   const guardarCabecera = () => {
     if (!cab) return;
+    // Solo lo que CAMBIO. Los 20 proyectos migrados del Excel tienen localidad, pais,
+    // suministro y contrato vacios; mandarlos enteros obligaba a rellenar los cuatro
+    // para corregir una letra del nombre (el servidor exige no vacio campo a campo).
+    const antes = aCabecera(p);
+    const body: Partial<ProjectInput> = {};
+    for (const k of CABECERA) if (cab[k].trim() !== antes[k]) body[k] = cab[k].trim();
+    if (cab.clientNit.trim() !== antes.clientNit) body.clientNit = cab.clientNit.trim() || null;
     const h = cab.normalHours.trim();
+    if (h !== antes.normalHours) body.normalHours = h === '' ? null : Number.parseInt(h, 10);
+    if (!Object.keys(body).length) {
+      setCab(null);
+      return;
+    }
     setErrCab(null);
-    updateProject(p.id, {
-      ...Object.fromEntries(CABECERA.map((k) => [k, cab[k].trim()])),
-      clientNit: cab.clientNit.trim() || null,
-      normalHours: h === '' ? null : Number.parseInt(h, 10),
-    })
+    updateProject(p.id, body)
       .then((q) => {
         setData((d) => d && { ...d, p: { ...d.p, ...q, orders: d.p.orders, unassigned: d.p.unassigned } });
         setCab(null);
