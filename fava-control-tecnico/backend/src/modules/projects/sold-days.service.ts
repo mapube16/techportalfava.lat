@@ -88,22 +88,34 @@ export class SoldDaysService {
       orderId_roleTypeId_phase_ordinal: { orderId, roleTypeId, phase, ordinal: 0 },
     };
 
+    // La casilla es la SUMA de sus lineas (la migracion del Excel crea ordinales 1..n
+    // para «MECCATRONICO 265» + «MECCATRONICO 98»). Lo que se escribe es esa suma, asi
+    // que las lineas migradas se colapsan en el ordinal 0: hasta 2026-10-15 solo se
+    // tocaba el ordinal 0 y, en una casilla migrada, poner 104 -> 0 dejaba «0 + 104»:
+    // la pantalla volvia a 104 al recargar y la fila no se podia quitar.
+    const lineas = await this.prisma.client.orderSoldDays.findMany({
+      where: { orderId, roleTypeId, phase },
+      select: { soldDays: true },
+    });
+    const actual = lineas.reduce((s, l) => s + l.soldDays, 0);
+
     // NO escribir cuando el valor no cambia. Cada blur sin edicion seria una fila en
     // el `audit_log` append-only de la Fase 4 (AUD-01, que no se puede resumir al
     // escribir) y un `updated_at` movido sin motivo.
-    const actual = await this.prisma.client.orderSoldDays.findUnique({
-      where,
-      select: { soldDays: true },
-    });
-    if (actual?.soldDays !== soldDays) {
-      await this.intentar(() =>
-        this.prisma.client.orderSoldDays.upsert({
+    if (lineas.length === 0 || actual !== soldDays) {
+      // Las dos escrituras van en la transaccion de la peticion (rls.interceptor abre
+      // una por request y `client` es ese TxClient): o se colapsa y se escribe, o nada.
+      await this.intentar(async () => {
+        await this.prisma.client.orderSoldDays.deleteMany({
+          where: { orderId, roleTypeId, phase, ordinal: { gt: 0 } },
+        });
+        await this.prisma.client.orderSoldDays.upsert({
           where,
           create: { orderId, roleTypeId, phase, ordinal: 0, soldDays, updatedById: actorId },
           update: { soldDays, updatedById: actorId },
           select: { id: true },
-        }),
-      );
+        });
+      });
     }
 
     // El delta viaja calculado tambien en la respuesta de la escritura: asi la celda

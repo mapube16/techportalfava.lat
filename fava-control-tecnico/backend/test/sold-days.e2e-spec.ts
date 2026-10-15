@@ -387,6 +387,26 @@ describe('sold-days: matriz vendido/ejecutado/delta (CAT-04)', () => {
     expect(celda(await matrizDe(p.id), ROL_TEST, 'MONTAJE').sold).toBe(7);
   });
 
+  it('una casilla MIGRADA (lineas ordinal 1..n) se colapsa al escribir: el GET devuelve lo escrito, no la suma', async () => {
+    const { p, o } = await proyectoConOrden();
+    // La migracion del Excel deja dos lineas del mismo rol en la misma casilla.
+    await ownerClient.orderSoldDays.createMany({
+      data: [
+        { orderId: o.id, roleTypeId: ROL_TEST, phase: 'MONTAJE', ordinal: 1, soldDays: 265, lineLabel: 'MECCATRONICO 265' },
+        { orderId: o.id, roleTypeId: ROL_TEST, phase: 'MONTAJE', ordinal: 2, soldDays: 98, lineLabel: 'MECCATRONICO 98' },
+      ],
+    });
+    expect(celda(await matrizDe(p.id), ROL_TEST, 'MONTAJE').sold).toBe(363);
+
+    // Hasta 2026-10-15 el PUT solo tocaba el ordinal 0 y esto dejaba «0 + 265 + 98»: la
+    // pantalla volvia a 363 al recargar y la fila no se podia quitar.
+    await vender(o.id, { roleTypeId: ROL_TEST, phase: 'MONTAJE', soldDays: 0 });
+    expect(celda(await matrizDe(p.id), ROL_TEST, 'MONTAJE').sold).toBe(0);
+    expect(
+      await ownerClient.orderSoldDays.count({ where: { orderId: o.id, roleTypeId: ROL_TEST, phase: 'MONTAJE' } }),
+    ).toBe(1);
+  });
+
   // ── La agregacion de ejecutados ──
 
   it('las jornadas con phase NULL aparecen en un bucket «sin fase», no se pierden', async () => {
