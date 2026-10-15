@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { hi } from '../icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,8 +8,8 @@ import { useApp } from '../state';
 import { useIsMobile } from '../lib/useIsMobile';
 import { codigo, useApiData } from '../lib/api/useApiData';
 import { activos, getCatalogs } from '../lib/api/catalogs';
-import { createOrder, deleteOrder, getProject, setSoldDays, updateOrder, updateProject, vePrecios } from '../lib/api/projects';
-import type { MatrixRow, Order, Phase, Project } from '../lib/api/projects';
+import { createOrder, deleteOrder, getExecutedDays, getProject, setSoldDays, updateOrder, updateProject, vePrecios } from '../lib/api/projects';
+import type { ExecutedDay, MatrixRow, Order, Phase, Project } from '../lib/api/projects';
 
 /** Los campos de texto de la cabecera que se editan en sitio (los 7 de la Nota + horas). */
 const CABECERA = ['name', 'clientName', 'clientNit', 'locality', 'country', 'supply', 'contractNumber'] as const;
@@ -53,6 +53,10 @@ export default function ProjectDetail() {
    * ponerla a cero, no hay otro estado que guardar. Esto solo vive en la pantalla.
    */
   const [reveladas, setReveladas] = useState<Record<string, string[]>>({});
+  /** Casillas de «ejecutado» abiertas, por clave (orden|rol|fase). */
+  const [abiertas, setAbiertas] = useState<Record<string, boolean>>({});
+  /** Se piden al abrir la PRIMERA casilla, no con el detalle: la mayoría de visitas no las usa. */
+  const [jornadas, setJornadas] = useState<ExecutedDay[] | null>(null);
 
   const id = state.selProject;
   const { data, setData, error } = useApiData(async () => {
@@ -118,6 +122,48 @@ export default function ProjectDetail() {
     setReveladas((r) => ({ ...r, [o.id]: (r[o.id] ?? []).filter((x) => x !== roleTypeId) }));
   };
 
+  const abrir = (k: string) => {
+    setAbiertas((a) => ({ ...a, [k]: !a[k] }));
+    if (!jornadas) getExecutedDays(p.id).then(setJornadas).catch((e: unknown) => setErrOrden(codigo(e)));
+  };
+
+  /** El número de «ejecutado», pulsable si hay días detrás. */
+  const ejecutado = (k: string, n: number) =>
+    n > 0 ? (
+      <button type="button" onClick={() => abrir(k)} aria-expanded={!!abiertas[k]} title={t.exec_detail}
+        className="font-mono font-semibold underline decoration-dotted underline-offset-4 hover:text-primary min-h-11 md:min-h-6 px-1">
+        {n}
+      </button>
+    ) : n;
+
+  /**
+   * Quién fue y qué días: la pivot del Excel (reunión 2026-10-14). Agrupado por técnico.
+   * Filtra en el cliente la lista del servidor, que ya viene con el filtro de la matriz.
+   */
+  const detalle = (orderId: string | null, roleTypeId: string, phase: Phase | null) => {
+    if (!jornadas) return <div className="text-xs text-muted-foreground">{t.loading}</div>;
+    const mias = jornadas.filter((j) => j.orderId === orderId && j.roleTypeId === roleTypeId && j.phase === phase);
+    const porTecnico = new Map<string, ExecutedDay[]>();
+    for (const j of mias) porTecnico.set(j.technician, [...(porTecnico.get(j.technician) ?? []), j]);
+    const dia = (iso: string) => iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(2, 4);
+    return (
+      <div className="rounded-md bg-muted/60 p-3 flex flex-col gap-2.5 text-[12.5px]">
+        {[...porTecnico].map(([nombre, dias]) => (
+          <div key={nombre}>
+            <div className="font-semibold">{nombre} · <span className="font-mono">{dias.length}</span> {t.exec_days}</div>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {dias.map((j) => (
+                <span key={j.date} title={j.description ?? ''} className="font-mono text-[11.5px] bg-card border border-border rounded px-1.5 py-0.5">
+                  {dia(j.date)}{j.concept ? ` ${j.concept}` : ''}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const matriz = (o: Order, filas: MatrixRow[], quitables: Set<string>) => (
     <table className="w-full border-collapse text-[13px] mt-1.5">
       <thead>
@@ -132,7 +178,8 @@ export default function ProjectDetail() {
           const k = clave(o.id, fila);
           const estado = celdas[k];
           return (
-            <tr key={k} className={`border-t border-border ${fila.roleTypeActive ? '' : 'opacity-60'}`}>
+            <Fragment key={k}>
+            <tr className={`border-t border-border ${fila.roleTypeActive ? '' : 'opacity-60'}`}>
               <td className={`${td} font-semibold`}>
                 <span className="inline-flex items-center gap-1">
                   {fila.roleTypeName}
@@ -142,7 +189,7 @@ export default function ProjectDetail() {
                       onClick={() => quitarFila(o, fila.roleTypeId)}
                       aria-label={t.matrix_remove_role}
                       title={t.matrix_remove_role}
-                      className="text-muted-foreground hover:text-warn px-1 min-h-11 md:min-h-6"
+                      className="no-print text-muted-foreground hover:text-warn px-1 min-h-11 md:min-h-6"
                     >
                       {hi('x', { w: 12 })}
                     </button>
@@ -155,7 +202,7 @@ export default function ProjectDetail() {
                     value={edits[k] ?? String(fila.sold)}
                     onChange={(e) => setEdits({ ...edits, [k]: e.target.value })}
                     onBlur={(e) => guardarCelda(o.id, fila, e.target.value)}
-                    className={`w-11 text-center rounded-md px-1 py-1 bg-muted text-foreground font-mono text-[13px] font-semibold border outline-none focus:border-primary ${
+                    className={`print-plain w-11 text-center rounded-md px-1 py-1 bg-muted text-foreground font-mono text-[13px] font-semibold border outline-none focus:border-primary ${
                       estado === 'error' ? 'border-warn' : 'border-input'
                     }`}
                   />
@@ -167,11 +214,15 @@ export default function ProjectDetail() {
                   />
                 </span>
               </td>
-              <td className={`${td} text-center font-mono font-semibold`}>{fila.executed}</td>
+              <td className={`${td} text-center font-mono font-semibold`}>{ejecutado(k, fila.executed)}</td>
               <td className={`${td} text-center font-mono font-bold ${fila.delta < 0 ? 'text-warn' : 'text-ok'}`}>
                 {(fila.delta > 0 ? '+' : '') + fila.delta}
               </td>
             </tr>
+            {abiertas[k] ? (
+              <tr><td colSpan={4} className="px-3 pb-3">{detalle(o.id, fila.roleTypeId, fila.phase)}</td></tr>
+            ) : null}
+            </Fragment>
           );
         })}
       </tbody>
@@ -350,9 +401,16 @@ export default function ProjectDetail() {
 
   return (
     <div className="flex flex-col gap-4 max-w-[1000px]">
-      <Button variant="outline" onClick={() => go('projects')} className="self-start min-h-11 md:min-h-9">
-        ← {t.t_projects}
-      </Button>
+      <div className="no-print flex gap-2 justify-between">
+        <Button variant="outline" onClick={() => go('projects')} className="min-h-11 md:min-h-9">
+          ← {t.t_projects}
+        </Button>
+        {/* «Como una impresión de pantalla» (Andrea, 2026-10-14): el navegador guarda la
+            página como PDF. Los detalles por técnico abiertos salen también. */}
+        <Button variant="outline" onClick={() => window.print()} className="min-h-11 md:min-h-9">
+          {hi('download', { w: 15 })} {t.proj_pdf}
+        </Button>
+      </div>
 
       <Card>
         <CardContent className="flex gap-6 flex-wrap items-center">
@@ -375,7 +433,7 @@ export default function ProjectDetail() {
               <div className="flex-1 min-w-[220px]">
                 <div className="text-xl font-bold flex items-center gap-2">
                   {p.name}
-                  <Button variant="ghost" size="icon" onClick={() => setCab(aCabecera(p))} aria-label={t.cat_edit} title={t.cat_edit} className="size-8">
+                  <Button variant="ghost" size="icon" onClick={() => setCab(aCabecera(p))} aria-label={t.cat_edit} title={t.cat_edit} className="no-print size-8">
                     {hi('pencil', { w: 15 })}
                   </Button>
                 </div>
@@ -403,7 +461,7 @@ export default function ProjectDetail() {
         </CardContent>
       </Card>
 
-      <Card className="p-0 gap-0 overflow-hidden">
+      <Card className="no-print p-0 gap-0 overflow-hidden">
         <CardHeader className="border-b p-4">
           <CardTitle>{t.orders}</CardTitle>
         </CardHeader>
@@ -479,7 +537,7 @@ export default function ProjectDetail() {
               {edOrden?.id === o.id ? formOrden(o) : (
                 <>
                   <CardTitle>{cabeceraOrden(o)}</CardTitle>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="no-print flex gap-2 shrink-0">
                     <Button variant="outline" size="sm" onClick={() => abrirOrden(o)} className="min-h-11 md:min-h-8 text-[12.5px]">
                       {hi('pencil', { w: 13 })} {t.cat_edit}
                     </Button>
@@ -501,7 +559,7 @@ export default function ProjectDetail() {
               </div>
             </CardContent>
             {ocultas.length ? (
-              <div className="px-4.5 py-3 border-t border-border">
+              <div className="no-print px-4.5 py-3 border-t border-border">
                 <select
                   value=""
                   onChange={(e) => e.target.value && setReveladas((r) => ({ ...r, [o.id]: [...(r[o.id] ?? []), e.target.value] }))}
@@ -517,16 +575,24 @@ export default function ProjectDetail() {
                 <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{t.matrix_no_phase}</div>
                 <table className="w-full border-collapse text-[13px] mt-1.5">
                   <tbody>
-                    {sinFase.map((fila) => (
-                      <tr key={clave(o.id, fila)} className="border-t border-border">
-                        <td className={`${td} font-semibold`}>{fila.roleTypeName}</td>
-                        <td className={`${td} text-center font-mono`}>{fila.sold}</td>
-                        <td className={`${td} text-center font-mono font-semibold`}>{fila.executed}</td>
-                        <td className={`${td} text-center font-mono font-bold ${fila.delta < 0 ? 'text-warn' : 'text-ok'}`}>
-                          {(fila.delta > 0 ? '+' : '') + fila.delta}
-                        </td>
-                      </tr>
-                    ))}
+                    {sinFase.map((fila) => {
+                      const k = clave(o.id, fila);
+                      return (
+                        <Fragment key={k}>
+                          <tr className="border-t border-border">
+                            <td className={`${td} font-semibold`}>{fila.roleTypeName}</td>
+                            <td className={`${td} text-center font-mono`}>{fila.sold}</td>
+                            <td className={`${td} text-center font-mono font-semibold`}>{ejecutado(k, fila.executed)}</td>
+                            <td className={`${td} text-center font-mono font-bold ${fila.delta < 0 ? 'text-warn' : 'text-ok'}`}>
+                              {(fila.delta > 0 ? '+' : '') + fila.delta}
+                            </td>
+                          </tr>
+                          {abiertas[k] ? (
+                            <tr><td colSpan={4} className="px-3 pb-3">{detalle(o.id, fila.roleTypeId, null)}</td></tr>
+                          ) : null}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -546,15 +612,23 @@ export default function ProjectDetail() {
           <CardContent className="p-0">
             <Table>
               <TableBody>
-                {p.unassigned.map((f) => (
-                  <TableRow key={`${f.roleTypeId}|${f.phase ?? ''}`}>
-                    <TableCell className="font-semibold">{f.roleTypeName}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {f.phase === null ? t.matrix_no_phase : f.phase === 'MONTAJE' ? t.montaje : t.colaudo}
-                    </TableCell>
-                    <TableCell className="text-center font-mono font-bold text-warn">{f.executed}</TableCell>
-                  </TableRow>
-                ))}
+                {p.unassigned.map((f) => {
+                  const k = `|${f.roleTypeId}|${f.phase ?? ''}`;
+                  return (
+                    <Fragment key={k}>
+                      <TableRow>
+                        <TableCell className="font-semibold">{f.roleTypeName}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {f.phase === null ? t.matrix_no_phase : f.phase === 'MONTAJE' ? t.montaje : t.colaudo}
+                        </TableCell>
+                        <TableCell className="text-center font-mono font-bold text-warn">{ejecutado(k, f.executed)}</TableCell>
+                      </TableRow>
+                      {abiertas[k] ? (
+                        <TableRow><TableCell colSpan={3}>{detalle(null, f.roleTypeId, f.phase)}</TableCell></TableRow>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>

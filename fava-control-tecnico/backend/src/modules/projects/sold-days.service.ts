@@ -238,6 +238,39 @@ export class SoldDaysService {
     return new Map(filas.map((f) => [clave(f.order_id, f.role_type_id, f.phase), f.days]));
   }
 
+  /**
+   * Las jornadas DETRAS de cada «ejecutado»: quien, que dia, con que concepto. Es la
+   * pivot del Excel que Andrea abria para saber quien fue el electricista (reunion
+   * 2026-10-14). MISMO filtro y misma regla de cargo que `ejecutados`: si se separan,
+   * el detalle deja de sumar el numero de la casilla y nadie se da cuenta.
+   */
+  async jornadas(projectId: string) {
+    return this.prisma.client.$queryRaw<
+      {
+        orderId: string | null;
+        roleTypeId: string;
+        phase: Phase | null;
+        technician: string;
+        date: string;
+        concept: string | null;
+        description: string | null;
+      }[]
+    >`
+      SELECT de.order_id                              AS "orderId",
+             COALESCE(de.role_type_id, t.role_type_id) AS "roleTypeId",
+             de.phase,
+             t.full_name                              AS technician,
+             to_char(de.date, 'YYYY-MM-DD')           AS date,
+             de.concept_code::text                    AS concept,
+             de.description
+        FROM daily_entries de
+        JOIN technicians  t ON t.id = de.technician_id
+       WHERE de.project_id = ${projectId}::uuid
+         AND de.status = 'approved'
+       ORDER BY t.full_name, de.date
+    `;
+  }
+
   /** El unico FK que el cliente puede errar aqui es el rol: la orden viene de la ruta. */
   private async intentar<T>(op: () => Promise<T>): Promise<T> {
     try {

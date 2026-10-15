@@ -111,6 +111,12 @@ export class ProjectsController {
     return this.service.detalle(id, vePrecios(actor));
   }
 
+  /** Quien y que dias hay detras de cada «ejecutado» de la matriz. A·S, como la clase. */
+  @Get(':id/executed')
+  jornadas(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.jornadas(id);
+  }
+
   @Post()
   crear(@CurrentUser() actor: UserModel, @Body() body: Cuerpo) {
     sinRecursosAparte(body);

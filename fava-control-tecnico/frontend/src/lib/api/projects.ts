@@ -168,6 +168,20 @@ export const listProjectsForLog = () => apiFetch<ProjectForLog[]>('/projects/par
 
 export const getProject = (id: string) => apiFetch<Project>(`/projects/${id}`);
 
+/** Una jornada aprobada detrás de un «ejecutado». Mismo filtro que la matriz. */
+export interface ExecutedDay {
+  orderId: string | null;
+  roleTypeId: string;
+  phase: Phase | null;
+  technician: string;
+  /** YYYY-MM-DD */
+  date: string;
+  concept: string | null;
+  description: string | null;
+}
+
+export const getExecutedDays = (id: string) => apiFetch<ExecutedDay[]>(`/projects/${id}/executed`);
+
 /** POST y PATCH devuelven el proyecto SIN `orders` ni `unassigned`: eso es del GET. */
 export const createProject = (body: ProjectInput) => apiSend<Project>('/projects', 'POST', body);
 

@@ -191,6 +191,11 @@ export class ProjectsService {
     };
   }
 
+  /** El detalle del ejecutado: lo pide la pantalla al abrir una casilla, no el GET del detalle. */
+  jornadas(id: string) {
+    return this.soldDays.jornadas(id);
+  }
+
   /** `createdById` es rastro de autoria y no tiene FK declarada (decision de 02-01). */
   async crear(actorId: string, data: Required<Omit<DatosProyecto, 'isActive' | 'currentPhase'>>) {
     return this.plano(

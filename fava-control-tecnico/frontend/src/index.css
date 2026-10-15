@@ -455,3 +455,12 @@
     max-height: 92vh;
   }
 }
+
+/* PDF del proyecto = imprimir la página (window.print). Fuera de capa y con !important
+   para ganarle a `.fava-aside` y a las utilidades de display. */
+@media print {
+  .fava-aside, header, .no-print { display: none !important; }
+  body { background: #fff !important; }
+  .print-plain { border-color: transparent !important; background: transparent !important; }
+  [class*='shadow'] { box-shadow: none !important; }
+}
