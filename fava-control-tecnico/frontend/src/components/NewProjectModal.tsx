@@ -27,7 +27,6 @@ interface Errors {
   locality?: boolean;
   country?: boolean;
   supply?: boolean;
-  contractNumber?: boolean;
   value?: boolean;
   machineLabel?: boolean;
 }
@@ -38,11 +37,9 @@ export default function NewProjectModal() {
   const precios = vePrecios(state.myRoles);
   const [name, setName] = useState('');
   const [client, setClient] = useState('');
-  const [nit, setNit] = useState('');
   const [locality, setLocality] = useState('');
   const [country, setCountry] = useState('');
   const [supply, setSupply] = useState('');
-  const [contractNumber, setContractNumber] = useState('');
   const [oa, setOa] = useState('');
   const [commessa, setCommessa] = useState('');
   const [machineLabel, setMachineLabel] = useState('');
@@ -67,7 +64,6 @@ export default function NewProjectModal() {
     if (!locality.trim()) errs.locality = true;
     if (!country.trim()) errs.country = true;
     if (!supply.trim()) errs.supply = true;
-    if (!contractNumber.trim()) errs.contractNumber = true;
     const value = parseInt((valueRaw || '').replace(/[^0-9]/g, ''), 10);
     if (precios && (!value || value <= 0)) errs.value = true;
     if (!machineLabel.trim()) errs.machineLabel = true;
@@ -81,11 +77,9 @@ export default function NewProjectModal() {
     createProject({
       name: name.trim(),
       clientName: client.trim(),
-      clientNit: nit.trim() || null,
       locality: locality.trim(),
       country: country.trim(),
       supply: supply.trim(),
-      contractNumber: contractNumber.trim(),
     })
       .then(async (p) => {
         await createOrder(p.id, {
@@ -126,6 +120,9 @@ export default function NewProjectModal() {
     <input
       value={v}
       onChange={(e) => set(e.target.value)}
+      // El navegador rellenaba estos campos con números guardados de otros formularios
+      // (el contrato salía con la commessa). Nada de aquí se repite entre proyectos.
+      autoComplete="off"
       placeholder={ph}
       className={`${err ? inputError : inputStyle} ${mono ? 'font-mono' : ''}`}
     />
@@ -149,18 +146,14 @@ export default function NewProjectModal() {
 
         <div className="px-5.5 pb-5.5 pt-3.5 flex flex-col gap-3.5">
           {field(t.proj_name, texto(name, setName, t.proj_name_ph, false, errors.name), errors.name)}
-          <div className="grid grid-cols-2 gap-3">
-            {field(t.client, texto(client, setClient, t.proj_client_ph, false, errors.client), errors.client)}
-            {field(t.proj_nit, texto(nit, setNit, t.proj_nit_ph, true))}
-          </div>
+          {/* NIT y N° de contrato fuera del alta (Andrea, 2026-10-30): no los tiene al
+              abrir el proyecto. Se completan con el lápiz del detalle si llegan. */}
+          {field(t.client, texto(client, setClient, t.proj_client_ph, false, errors.client), errors.client)}
           <div className="grid grid-cols-2 gap-3">
             {field(t.proj_locality, texto(locality, setLocality, t.proj_locality_ph, false, errors.locality), errors.locality)}
             {field(t.proj_country, texto(country, setCountry, t.proj_country_ph, false, errors.country), errors.country)}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {field(t.proj_supply, texto(supply, setSupply, t.proj_supply_ph, false, errors.supply), errors.supply)}
-            {field(t.proj_contract_no, texto(contractNumber, setContractNumber, t.proj_contract_no_ph, true, errors.contractNumber), errors.contractNumber)}
-          </div>
+          {field(t.proj_supply, texto(supply, setSupply, t.proj_supply_ph, false, errors.supply), errors.supply)}
           <div className="grid grid-cols-2 gap-3">
             {field(t.order_oa, texto(oa, setOa, t.proj_oa_ph, true))}
             {field(t.order_commessa, texto(commessa, setCommessa, '342898', true))}

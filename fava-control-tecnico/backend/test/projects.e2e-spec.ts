@@ -196,7 +196,7 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
 
   // ── Campos obligatorios: sin ellos el PDF sale mutilado ──
 
-  it.each(['clientName', 'locality', 'country', 'supply', 'contractNumber', 'name'])(
+  it.each(['clientName', 'locality', 'country', 'supply', 'name'])(
     'POST sin %s → 400',
     async (campo) => {
       const body: Record<string, unknown> = { ...ENCABEZADO };
@@ -204,6 +204,13 @@ describe('projects: encabezado de la Nota, Decimal como number y RBAC (CAT-03)',
       await http().post('/api/projects').set(auth(tokenAdmin)).send(body).expect(400);
     },
   );
+
+  it('POST sin contractNumber → 201 con contrato vacio (Andrea lo quito del alta, 2026-10-30)', async () => {
+    const body: Record<string, unknown> = { ...ENCABEZADO };
+    delete body.contractNumber;
+    const res = await http().post('/api/projects').set(auth(tokenAdmin)).send(body).expect(201);
+    expect(res.body.contractNumber).toBe('');
+  });
 
   it('la moneda ya no se acepta en el proyecto: es un recurso aparte → 400', async () => {
     const res = await http()

@@ -129,7 +129,9 @@ export class ProjectsController {
       locality: texto(body?.locality, 'LOCALIDAD'),
       country: texto(body?.country, 'PAIS'),
       supply: texto(body?.supply, 'SUMINISTRO'),
-      contractNumber: texto(body?.contractNumber, 'CONTRATO'),
+      // Opcional desde 2026-10-30: Andrea lo tacho del alta (llega despues, o nunca; los
+      // 20 proyectos del Excel lo tienen vacio). La columna es NOT NULL: vacio = ''.
+      contractNumber: opcional(body?.contractNumber, 'CONTRATO') ?? '',
       // OA, importe y moneda ya NO se piden aqui: son de la orden (POST /:id/orders).
       // `sinRecursosAparte` los rechaza con 400 en vez de descartarlos en silencio.
       normalHours: horas(body?.normalHours),

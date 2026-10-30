@@ -109,7 +109,8 @@ export interface ProjectInput {
   locality: string;
   country: string;
   supply: string;
-  contractNumber: string;
+  /** Opcional en el alta desde 2026-10-30; vacío = ''. */
+  contractNumber?: string;
   clientNit?: string | null;
   normalHours?: number | null;
   currentPhase?: Phase;
