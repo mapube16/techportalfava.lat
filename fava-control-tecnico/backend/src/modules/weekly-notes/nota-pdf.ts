@@ -31,8 +31,8 @@ const URLResolver = (require('pdfmake/js/URLResolver.js') as { default: new () =
  * NOTA-05 — la Nota de Prestación Semanal, campo por campo como el papel.
  *
  * La referencia es `docs/Reporte 02 - Ivan Cortés - Grupo Bocel …pdf`, y de ahí salen
- * los literales en mayúsculas, el orden de los bloques y hasta la columna NOTA que
- * repite el número de contrato en los siete días.
+ * los literales en mayúsculas y el orden de los bloques. La columna NOTA ya no repite el
+ * número de contrato (2026-10-30): lleva la nota del día del técnico o va en blanco.
  *
  * POR QUÉ pdfmake Y NO Puppeteer, que es lo que recomendaba la investigación:
  * Puppeteer exige Chromium, y la propia investigación avisa de que Railpack no instala
@@ -293,11 +293,11 @@ export function definicionNota(d: DatosNota): TDocumentDefinitions {
               eti(DIAS[i] ?? '', { alignment: 'center', fontSize: 8 }),
               eti(f.description ?? ' ', { alignment: 'center', fontSize: 8 }),
               eti(f.categoria ?? ' ', { alignment: 'center', fontSize: 8 }),
-              // La nota DEL DIA si el tecnico escribio una («HORARIO 7 AM - 5 PM»);
-              // si no, el n.º de contrato, que es lo que el papel repetia en las
-              // siete filas. Pedido por Andrea (2026-08-30): esa columna existia y no
-              // habia forma de escribir en ella.
-              eti(f.dayNote || d.contractNumber || ' ', { alignment: 'center', fontSize: 8 }),
+              // La nota DEL DIA si el tecnico escribio una («HORARIO 7 AM - 5 PM»), y si
+              // no, en blanco. Hasta 2026-10-30 caia al n.º de contrato porque el papel lo
+              // repetia en las siete filas, pero Andrea lo veia como un numero metido por
+              // defecto en la nota del tecnico, y el contrato ya va en la cabecera.
+              eti(f.dayNote || ' ', { alignment: 'center', fontSize: 8 }),
             ]),
           ],
         },
