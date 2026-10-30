@@ -12,18 +12,17 @@ import { createOrder, deleteOrder, getExecutedDays, getProject, setSoldDays, upd
 import type { ExecutedDay, MatrixRow, Order, Phase, Project, ProjectInput } from '../lib/api/projects';
 
 /** Los campos de texto de la cabecera que se editan en sitio (los 7 de la Nota + horas). */
-const CABECERA = ['name', 'clientName', 'clientNit', 'locality', 'country', 'supply', 'contractNumber'] as const;
+/** NIT y N° de contrato fuera de la pantalla (Andrea, 2026-10-30): no los usa. Las columnas siguen. */
+const CABECERA = ['name', 'clientName', 'locality', 'country', 'supply'] as const;
 type Cabecera = Record<(typeof CABECERA)[number] | 'normalHours', string>;
 type FormOrden = { label: string; commessa: string; oaNumber: string; machineModel: string; contractValue: string; currencyCode: string };
 
 const aCabecera = (p: Project): Cabecera => ({
   name: p.name,
   clientName: p.clientName,
-  clientNit: p.clientNit ?? '',
   locality: p.locality,
   country: p.country,
   supply: p.supply,
-  contractNumber: p.contractNumber,
   normalHours: p.normalHours == null ? '' : String(p.normalHours),
 });
 
@@ -291,7 +290,6 @@ export default function ProjectDetail() {
     const antes = aCabecera(p);
     const body: Partial<ProjectInput> = {};
     for (const k of CABECERA) if (cab[k].trim() !== antes[k]) body[k] = cab[k].trim();
-    if (cab.clientNit.trim() !== antes.clientNit) body.clientNit = cab.clientNit.trim() || null;
     const h = cab.normalHours.trim();
     if (h !== antes.normalHours) body.normalHours = h === '' ? null : Number.parseInt(h, 10);
     if (!Object.keys(body).length) {
@@ -387,8 +385,6 @@ export default function ProjectDetail() {
     [t.proj_hours, nf(p.normalHours || 0) + ' h'],
     [t.proj_locality, p.locality],
     [t.proj_supply, p.supply],
-    [t.proj_contract_no, p.contractNumber],
-    [t.proj_nit, p.clientNit ?? '—'],
   ];
 
   /** Cabecera de una orden: es la línea que Andrea busca para ubicar el trabajo. */
@@ -426,11 +422,9 @@ export default function ProjectDetail() {
             <div className="flex gap-3 flex-wrap items-end w-full">
               {campo(t.proj_name, cab.name, (v) => setCab({ ...cab, name: v }))}
               {campo(t.client, cab.clientName, (v) => setCab({ ...cab, clientName: v }))}
-              {campo(t.proj_nit, cab.clientNit, (v) => setCab({ ...cab, clientNit: v }), true)}
               {campo(t.proj_locality, cab.locality, (v) => setCab({ ...cab, locality: v }))}
               {campo(t.proj_country, cab.country, (v) => setCab({ ...cab, country: v }))}
               {campo(t.proj_supply, cab.supply, (v) => setCab({ ...cab, supply: v }))}
-              {campo(t.proj_contract_no, cab.contractNumber, (v) => setCab({ ...cab, contractNumber: v }), true)}
               {campo(t.proj_hours, cab.normalHours, (v) => setCab({ ...cab, normalHours: v.replace(/\D/g, '') }), true)}
               <Button variant="outline" onClick={() => setCab(null)} className="min-h-11 md:min-h-9">{t.btn_cancel}</Button>
               <Button onClick={guardarCabecera} className="min-h-11 md:min-h-9">{t.btn_save}</Button>
