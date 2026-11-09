@@ -473,7 +473,11 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
                     onChange={(e) => {
                       const id = e.target.value;
                       setProjectId(id);
-                      setOrderId(''); // la maquina es de OTRO proyecto: se limpia
+                      // La maquina es de OTRO proyecto: se limpia. Si el nuevo tiene UNA sola,
+                      // se marca: sin maquina el dia no suma al ejecutado (el servidor
+                      // tambien la completa, esto es para que se vea).
+                      const suyas = (proyectos ?? []).find((p) => p.id === id)?.orders ?? [];
+                      setOrderId(suyas.length === 1 ? suyas[0].id : '');
                       setPhase((proyectos ?? []).find((p) => p.id === id)?.currentPhase ?? null);
                     }}
                     className={`${inputStyle} mt-1.5`}

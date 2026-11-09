@@ -397,6 +397,21 @@ export class DailyEntriesService {
       if (orden.projectId !== datos.projectId) throw new BadRequestException('ORDEN_DE_OTRO_PROYECTO');
     }
 
+    // Un proyecto con UNA sola maquina activa no deja duda de a cual fue el dia. Sin esto
+    // el dia se guardaba sin maquina (el boton es opcional y nadie lo pulsaba) y caia en
+    // «Jornadas sin maquina asignada»: no sumaba al ejecutado de la maquina aunque el
+    // proyecto solo tuviera esa. Caso real: 11 dias de electricista en AJ Vierci que Andrea
+    // corrigio a mano y seguian en 0 (2026-11-10). Aqui y no en la pantalla: pasan por aqui
+    // el tecnico, la bitacora de la admin y cualquier cliente futuro.
+    if (datos.projectId && !datos.orderId && !extras.length) {
+      const activas = await this.prisma.client.order.findMany({
+        where: { projectId: datos.projectId, isActive: true },
+        select: { id: true },
+        take: 2,
+      });
+      if (activas.length === 1) campos.orderId = activas[0].id;
+    }
+
     /**
      * El estado lo pone la NOTA del proyecto del dia cuando guarda la admin: ver
      * `estadoAdmin`. Sin nota y con proyecto, la

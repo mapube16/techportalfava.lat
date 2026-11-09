@@ -268,7 +268,10 @@ export default function LogDayDrawer() {
               onChange={(e) => {
                 const id = e.target.value;
                 setProjectId(id);
-                setOrderId('');
+                // Con UNA sola máquina en el proyecto se marca sola: sin máquina el día no
+                // suma al ejecutado (el servidor también la completa; esto es para verla).
+                const suyas = (proyectos ?? []).find((pr) => pr.id === id)?.orders ?? [];
+                setOrderId(suyas.length === 1 ? suyas[0].id : '');
                 // Las máquinas son DEL proyecto: al cambiarlo, las de antes ya no valen.
                 setExtraOrderIds([]);
                 // Y la fase por defecto es la que ese proyecto tiene EN CURSO ahora.
