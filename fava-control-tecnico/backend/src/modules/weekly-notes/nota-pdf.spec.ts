@@ -1,4 +1,4 @@
-import { renderizarNota } from './nota-pdf';
+import { renderizarNota, renderizarNotas } from './nota-pdf';
 import type { DatosNota } from './nota-pdf';
 
 /**
@@ -65,6 +65,14 @@ describe('renderizarNota', () => {
     // Si midieran lo mismo, las imágenes no se habrían embebido y el PDF que firma el
     // cliente saldría con las casillas vacías — sin que nada fallara.
     expect(firmado.length).toBeGreaterThan(borrador.length);
+  });
+
+  it('varias notas salen en UN PDF, una por página (descarga por rango)', async () => {
+    const paginas = (b: Buffer) => (b.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+    const una = await renderizarNota(datos);
+    const tres = await renderizarNotas([datos, conFirmas, datos]);
+    expect(tres.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(paginas(tres)).toBe(3 * paginas(una));
   });
 
   it('es determinista: el mismo contenido produce el mismo tamaño', async () => {

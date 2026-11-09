@@ -124,6 +124,10 @@ export const previewNotePdf = (id: string) => apiBlob(`/weekly-notes/${id}/pdf/p
 /** Los bytes YA firmados. 404 mientras la nota no tenga firma. */
 export const downloadNotePdf = (id: string) => apiBlob(`/weekly-notes/${id}/pdf`);
 
+/** Las notas de un rango en UN PDF. `technicianId` solo lo usa un admin. */
+export const downloadNotesRange = (desde: string, hasta: string, technicianId?: string | null) =>
+  apiBlob(`/weekly-notes/pdf?desde=${desde}&hasta=${hasta}${technicianId ? `&technicianId=${technicianId}` : ''}`);
+
 /** CAT-06: lo que el diálogo de baja necesita ANTES de desactivar a nadie. */
 export const pendingNotes = (technicianId: string) =>
   apiFetch<{ count: number }>(`/technicians/${technicianId}/pending-notes`);

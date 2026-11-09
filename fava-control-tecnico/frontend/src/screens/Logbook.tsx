@@ -11,7 +11,7 @@ import { codigo, useApiData } from '../lib/api/useApiData';
 import { getWeek, putEntries } from '../lib/api/dailyEntries';
 import { listProjectsForLog } from '../lib/api/projects';
 import { listTechnicians } from '../lib/api/technicians';
-import { approveNote, listNotes } from '../lib/api/weeklyNotes';
+import { approveNote, downloadNotesRange, listNotes } from '../lib/api/weeklyNotes';
 import type { WeeklyNote } from '../lib/api/weeklyNotes';
 import { getCatalogs } from '../lib/api/catalogs';
 import { ADMITE_FABRICA, exigeProyecto, jornadaConMitad, opcionesMitad } from '../lib/conceptos';
@@ -85,6 +85,9 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
   const [err, setErr] = useState<string | null>(null);
   /** Arrastre: el boton esta pulsado y se van marcando los dias por los que pasa. */
   const [pintando, setPintando] = useState(false);
+  /** Rango de la descarga en PDF. Vacío = el mes que se está viendo. */
+  const [rango, setRango] = useState<{ desde: string; hasta: string } | null>(null);
+  const [bajando, setBajando] = useState(false);
 
   const { data, error } = useApiData(
     // En modo admin sin técnico elegido no hay nada que pedir: rejilla vacía.
@@ -221,9 +224,44 @@ export default function Logbook({ admin = false }: { admin?: boolean }) {
     { month: 'long', year: 'numeric', timeZone: 'UTC' },
   );
 
+  // El mes a la vista como rango por defecto: es lo que Andrea pidió (1 al 31 de octubre).
+  const desde = rango?.desde ?? `${mesActual.slice(0, 7)}-01`;
+  const hasta = rango?.hasta ?? (() => {
+    const [a, m] = mesActual.slice(0, 7).split('-').map(Number);
+    return `${mesActual.slice(0, 7)}-${String(new Date(a, m, 0).getDate()).padStart(2, '0')}`;
+  })();
+  const bajarPdf = () => {
+    setBajando(true);
+    setErr(null);
+    downloadNotesRange(desde, hasta, admin ? tecnicoId : null)
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `notas-${desde}-a-${hasta}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      })
+      .catch((e: unknown) => setErr(codigo(e)))
+      .finally(() => setBajando(false));
+  };
+
   return (
     <div className="max-w-[1100px] mx-auto">
     {selectorTecnico}
+    <div className="flex items-end gap-2 flex-wrap mb-3">
+      <label className="block">
+        <span className="block text-[11px] text-muted-foreground uppercase tracking-wide">{t.range_from}</span>
+        <input type="date" value={desde} onChange={(e) => setRango({ desde: e.target.value, hasta })} className={`${inputStyle} mt-0.5`} />
+      </label>
+      <label className="block">
+        <span className="block text-[11px] text-muted-foreground uppercase tracking-wide">{t.range_to}</span>
+        <input type="date" value={hasta} onChange={(e) => setRango({ desde, hasta: e.target.value })} className={`${inputStyle} mt-0.5`} />
+      </label>
+      <Button variant="outline" onClick={bajarPdf} disabled={bajando || !desde || !hasta || hasta < desde} className="min-h-11 md:min-h-9">
+        {hi('download', { w: 15 })} {bajando ? t.loading : t.range_pdf}
+      </Button>
+    </div>
     <div className="flex flex-col md:flex-row gap-4 items-start">
       {/* LA REJILLA */}
       <Card className="flex-1 min-w-0 w-full">

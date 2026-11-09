@@ -1,5 +1,5 @@
 import { dirname, join } from 'node:path';
-import type { Column, ContentText, TableCell, TableCellProperties, TDocumentDefinitions } from 'pdfmake/interfaces';
+import type { Column, Content, ContentText, TableCell, TableCellProperties, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { LOGO_SVG } from './fava-logo';
 
 /**
@@ -343,8 +343,25 @@ export function definicionNota(d: DatosNota): TDocumentDefinitions {
  * estado que reutilizar y esto se ejecuta un puñado de veces por semana.
  */
 export async function renderizarNota(d: DatosNota): Promise<Buffer> {
+  return imprimir(definicionNota(d));
+}
+
+/**
+ * Varias notas en UN solo PDF, cada una desde página nueva: la descarga por rango de
+ * fechas (Andrea, 2026-11-08: «del 1 al 31 de octubre y que descargue un solo PDF»).
+ * Reusa `definicionNota` tal cual: cada página es la misma Nota que se ve suelta.
+ */
+export async function renderizarNotas(ds: DatosNota[]): Promise<Buffer> {
+  const defs = ds.map(definicionNota);
+  return imprimir({
+    ...defs[0],
+    content: defs.map((d, i) => ({ stack: d.content as Content[], ...(i ? { pageBreak: 'before' as const } : {}) })),
+  });
+}
+
+async function imprimir(def: TDocumentDefinitions): Promise<Buffer> {
   const printer = new PdfPrinter(FUENTES, undefined, new URLResolver());
-  const doc = await printer.createPdfKitDocument(definicionNota(d));
+  const doc = await printer.createPdfKitDocument(def);
   return new Promise((resolve, reject) => {
     const trozos: Buffer[] = [];
     doc.on('data', (c: Buffer) => trozos.push(c));

@@ -24,6 +24,8 @@ import type { Lang } from '../types';
 const ES: Record<string, string> = {
   // ── La semana y sus notas ──
   SEMANA_VACIA: 'No hay ningún día registrado en esta semana. Registra al menos uno antes de enviarla.',
+  SIN_NOTAS_EN_RANGO: 'No hay notas semanales en esas fechas. Las semanas que no se enviaron no tienen nota.',
+  RANGO_DEMASIADO_LARGO: 'El rango es demasiado largo. Descarga como mucho tres meses de una vez.',
   SEMANA_YA_ENVIADA: 'Esta semana ya está enviada y no queda nada por mandar. Si necesitas corregir algo, pide a un administrador que te la devuelva.',
   PROYECTO_YA_APROBADO: 'Uno de los días nuevos es de un proyecto cuya nota ya está aprobada. Un administrador tiene que reabrirla antes de poder añadirle días.',
   JORNADA_BLOQUEADA: 'Ese día ya se envió y no se puede editar. Si hay que cambiarlo, pide que te devuelvan la semana.',
@@ -115,6 +117,8 @@ const ES: Record<string, string> = {
 
 const IT: Record<string, string> = {
   SEMANA_VACIA: 'Non c’è nessun giorno registrato in questa settimana. Registrane almeno uno prima di inviarla.',
+  SIN_NOTAS_EN_RANGO: 'Non ci sono note settimanali in queste date. Le settimane non inviate non hanno nota.',
+  RANGO_DEMASIADO_LARGO: 'L’intervallo è troppo lungo. Scarica al massimo tre mesi alla volta.',
   SEMANA_YA_ENVIADA: 'Questa settimana è già stata inviata e non resta nulla da mandare. Se devi correggere qualcosa, chiedi a un amministratore di restituirtela.',
   PROYECTO_YA_APROBADO: 'Uno dei giorni nuovi appartiene a un progetto la cui nota è già approvata. Un amministratore deve riaprirla prima di aggiungerle giorni.',
   JORNADA_BLOQUEADA: 'Quel giorno è già stato inviato e non si può modificare. Se va cambiato, chiedi che ti restituiscano la settimana.',
@@ -201,6 +205,8 @@ const IT: Record<string, string> = {
 
 const PT: Record<string, string> = {
   SEMANA_VACIA: 'Não há nenhum dia registrado nesta semana. Registre pelo menos um antes de enviá-la.',
+  SIN_NOTAS_EN_RANGO: 'Não há notas semanais nessas datas. As semanas não enviadas não têm nota.',
+  RANGO_DEMASIADO_LARGO: 'O intervalo é longo demais. Baixe no máximo três meses de uma vez.',
   SEMANA_YA_ENVIADA: 'Esta semana já foi enviada e não resta nada a mandar. Se precisar corrigir algo, peça a um administrador que a devolva.',
   PROYECTO_YA_APROBADO: 'Um dos dias novos é de um projeto cuja nota já está aprovada. Um administrador precisa reabri-la antes de acrescentar dias.',
   JORNADA_BLOQUEADA: 'Esse dia já foi enviado e não pode ser editado. Se precisa mudar, peça que devolvam a semana.',

@@ -4,8 +4,8 @@ import { AuditService } from '../../common/audit/audit.service';
 import { EDITABLES } from '../../common/estados';
 import { NotificationsService } from '../../common/notifications/notifications.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { aDate, aTexto } from '../daily-entries/fecha';
-import { renderizarNota } from './nota-pdf';
+import { aDate, aTexto, lunesDe } from '../daily-entries/fecha';
+import { renderizarNota, renderizarNotas } from './nota-pdf';
 import type { DatosNota, FilaNota as FilaPdfDia, Gasto } from './nota-pdf';
 
 /** Lo que trae cada firma del cuerpo del `POST :id/sign`. Validado en el controlador. */
@@ -482,6 +482,40 @@ export class WeeklyNotesService {
    * llamada es un PDF nuevo en memoria — es lo correcto para un borrador que todavía
    * puede cambiar en el próximo tecleo.
    */
+  /**
+   * Todas las notas de un técnico cuyas semanas tocan el rango, en un solo PDF y en
+   * orden de semana. Semanas ENTERAS: la Nota es semanal y cortar sus siete filas por
+   * el borde del rango dejaría un papel que no existe. Lleva las firmas que haya, de la
+   * versión vigente; las notas sin firmar salen como su vista previa.
+   */
+  async pdfRango(technicianId: string, desde: string, hasta: string): Promise<Buffer> {
+    const c = this.prisma.client;
+    const notas = await c.weeklyNote.findMany({
+      where: { technicianId, weekStart: { gte: aDate(lunesDe(desde)), lte: aDate(hasta) } },
+      select: { id: true, version: true },
+      orderBy: [{ weekStart: 'asc' }, { id: 'asc' }],
+    });
+    if (!notas.length) throw new NotFoundException('SIN_NOTAS_EN_RANGO');
+    const datos: DatosNota[] = [];
+    for (const n of notas) {
+      const firmas = await c.noteSignature.findMany({
+        where: { noteId: n.id, version: n.version },
+        select: { kind: true, imagePng: true, signedAt: true },
+      });
+      const png = (kind: string) => {
+        const f = firmas.find((x) => x.kind === kind);
+        return f ? Buffer.from(f.imagePng).toString('base64') : undefined;
+      };
+      datos.push(
+        await this.datosParaPdf(
+          n.id,
+          firmas.length ? { tecnico: png('technician'), cliente: png('client'), fecha: aTexto(firmas[0].signedAt) } : undefined,
+        ),
+      );
+    }
+    return renderizarNotas(datos);
+  }
+
   async previsualizarPdf(id: string): Promise<Buffer> {
     return renderizarNota(await this.datosParaPdf(id));
   }

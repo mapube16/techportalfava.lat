@@ -113,6 +113,34 @@ export class WeeklyNotesController {
     return this.service.listar(status, technicianId);
   }
 
+  /**
+   * Las notas de un técnico entre dos fechas, en UN PDF. El técnico solo baja las suyas
+   * (el id sale del token); el admin elige a quién. Va ANTES de `:id`: si no, la ruta
+   * `:id` con ParseUUIDPipe atraparía «pdf» y respondería 400.
+   */
+  @Get('pdf')
+  async pdfRango(
+    @CurrentUser() actor: UserModel,
+    @Query('desde') desde: string | undefined,
+    @Query('hasta') hasta: string | undefined,
+    @Query('technicianId') technicianId: string | undefined,
+    @Res() res: Response,
+  ) {
+    const admin = actor.roles.some((r) => r === 'A' || r === 'S');
+    const tecnico = admin && technicianId ? technicianId : actor.technicianId;
+    if (!tecnico || !UUID.test(tecnico)) throw new BadRequestException('TECNICO_INVALIDO');
+    const iso = /^\d{4}-\d{2}-\d{2}$/;
+    if (!desde || !hasta || !iso.test(desde) || !iso.test(hasta) || hasta < desde)
+      throw new BadRequestException('RANGO_INVALIDO');
+    // Techo de un trimestre: una descarga de años entera es un PDF de cientos de páginas
+    // generado en la petición. Si hace falta más, se pide por partes.
+    if ((Date.parse(hasta) - Date.parse(desde)) / 86_400_000 > 93) throw new BadRequestException('RANGO_DEMASIADO_LARGO');
+    const bytes = await this.service.pdfRango(tecnico, desde, hasta);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="notas-${desde}-a-${hasta}.pdf"`);
+    res.send(bytes);
+  }
+
   @Get(':id')
   detalle(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.detalle(id);
